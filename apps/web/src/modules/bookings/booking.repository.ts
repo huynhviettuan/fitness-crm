@@ -1,7 +1,7 @@
 import type { Db } from "@/lib/db/prisma";
 import type { BookingStatus, Prisma } from "@/generated/prisma/client";
 import { lockContract } from "@/modules/contracts/contract.repository";
-import { ACTIVE_BOOKING_STATUSES } from "@/modules/bookings/booking.domain";
+import { ACTIVE_BOOKING_STATUSES } from "@flow/shared/bookings";
 
 const bookingInclude = {
   customer: { select: { id: true, customerCode: true, fullName: true } },

@@ -5,7 +5,7 @@ import { LOCKING_TRANSACTION, prisma, type Db } from "@/lib/db/prisma";
 import { isUniqueViolation } from "@/lib/db/errors";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors/app-error";
-import { calendarDateInTimeZone } from "@/lib/format";
+import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { assertCan } from "@/lib/permissions/assert";
 import { parseInput } from "@/lib/validation/parse";
 import type { Actor } from "@/lib/auth/session";
@@ -22,13 +22,11 @@ import {
   isEditable,
   type ContractFigures,
   type EffectiveContractStatus,
-} from "@/modules/contracts/contract.domain";
-import {
   contractInputSchema,
   idempotencyKeySchema,
   listContractsSchema,
   type ContractData,
-} from "@/modules/contracts/contract.schema";
+} from "@flow/shared/contracts";
 
 const AUDITED_FIELDS = ["packageName", "contractValue", "totalSessions", "startDate", "endDate"] as const;
 

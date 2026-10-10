@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth/auth-client";
 import { LOCALES } from "@/i18n/config";
-import type { Role } from "@/lib/permissions";
+import type { Role } from "@flow/shared/permissions";
 import { setLocaleAction } from "@/app/(crm)/actions";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";

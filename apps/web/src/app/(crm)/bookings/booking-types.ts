@@ -1,4 +1,4 @@
-import type { BookingStatus } from "@/modules/bookings/booking.domain";
+import type { BookingStatus } from "@flow/shared/bookings";
 
 // Shapes the booking screens pass from server to client components.
 

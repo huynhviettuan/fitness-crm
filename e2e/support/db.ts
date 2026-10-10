@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaClient } from "../../apps/web/src/generated/prisma/client";
 import { createUserWithPassword } from "../../apps/web/src/modules/users/user.repository";
-import type { Role } from "../../apps/web/src/lib/permissions";
+import type { Role } from "@flow/shared/permissions";
 
 export function e2eDatabaseUrl(): string {
   const url = process.env.E2E_DATABASE_URL;

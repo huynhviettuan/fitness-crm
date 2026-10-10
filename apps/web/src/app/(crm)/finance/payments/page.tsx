@@ -7,7 +7,7 @@ import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import { collectedBetween, listPayments } from "@/modules/finance/payment.service";
 import { FinanceTabs, MonthNav } from "../finance-nav";
 import { pageParam, selectedMonth } from "../month";

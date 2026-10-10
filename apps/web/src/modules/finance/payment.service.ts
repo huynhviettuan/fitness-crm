@@ -5,23 +5,24 @@ import { LOCKING_TRANSACTION, prisma, type Db } from "@/lib/db/prisma";
 import { isUniqueViolation } from "@/lib/db/errors";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors/app-error";
-import { calendarDateInTimeZone } from "@/lib/format";
+import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { assertCan } from "@/lib/permissions/assert";
 import { parseInput } from "@/lib/validation/parse";
 import type { Actor } from "@/lib/auth/session";
 import { recordAudit } from "@/modules/audit/audit.repository";
 import { findContract, lockContract } from "@/modules/contracts/contract.repository";
 import { contractViewsByIds, type ContractView } from "@/modules/contracts/contract.service";
-import { idempotencyKeySchema } from "@/modules/contracts/contract.schema";
+import { idempotencyKeySchema } from "@flow/shared/contracts";
 import * as repo from "@/modules/finance/payment.repository";
-import { exceedsContractValue, isFutureDay } from "@/modules/finance/finance.domain";
 import {
+  exceedsContractValue,
+  isFutureDay,
   debtListSchema,
   listPaymentsSchema,
   paymentInputSchema,
   voidSchema,
   type PaymentData,
-} from "@/modules/finance/finance.schema";
+} from "@flow/shared/finance";
 
 /** What the UI and API see. */
 export type PaymentView = {

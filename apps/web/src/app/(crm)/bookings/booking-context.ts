@@ -1,5 +1,5 @@
 import "server-only";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import { listTrainers, trainerIdOfUser } from "@/modules/trainers/trainer.service";
 import type { BookingPermissions, TrainerOption } from "./booking-types";

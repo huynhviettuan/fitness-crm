@@ -3,7 +3,7 @@
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { requireActionUser } from "@/lib/auth/current-user";
 import { cancelBooking, createBooking, markNoShow, rescheduleBooking } from "@/modules/bookings/booking.service";
-import type { BookingInput, RescheduleInput } from "@/modules/bookings/booking.schema";
+import type { BookingInput, RescheduleInput } from "@flow/shared/bookings";
 import { checkIn, completeSession } from "@/modules/sessions/session.service";
 
 export async function createBookingAction(input: BookingInput): Promise<ActionResult> {

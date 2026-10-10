@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;

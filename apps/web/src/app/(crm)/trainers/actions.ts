@@ -3,7 +3,7 @@
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { requireActionUser } from "@/lib/auth/current-user";
 import { createTrainer, updateTrainer } from "@/modules/trainers/trainer.service";
-import type { TrainerInput } from "@/modules/trainers/trainer.schema";
+import type { TrainerInput } from "@flow/shared/trainers";
 
 export async function createTrainerAction(input: TrainerInput): Promise<ActionResult<{ trainerCode: string }>> {
   return runAction(async () => {

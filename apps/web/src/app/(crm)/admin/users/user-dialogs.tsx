@@ -6,21 +6,14 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
-import { ROLES, type Role } from "@/lib/permissions";
-import { createUserSchema } from "@/modules/users/user.schema";
+import { ROLES, type Role } from "@flow/shared/permissions";
+import { createUserSchema } from "@flow/shared/users";
 import { changeUserRoleAction, createUserAction, resetUserPasswordAction } from "./actions";
 
 type DialogProps = { open: boolean; onOpenChange: (open: boolean) => void };

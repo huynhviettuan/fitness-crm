@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { isAppError } from "@/lib/errors/app-error";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import { getCustomer } from "@/modules/customers/customer.service";
 import { listContracts } from "@/modules/contracts/contract.service";

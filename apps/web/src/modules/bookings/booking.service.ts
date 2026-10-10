@@ -5,13 +5,13 @@ import { LOCKING_TRANSACTION, prisma, type Db } from "@/lib/db/prisma";
 import { isExclusionViolation } from "@/lib/db/errors";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors/app-error";
-import { calendarDateInTimeZone, instantAt } from "@/lib/format";
+import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
 import { assertCan, forbidden } from "@/lib/permissions/assert";
 import { parseInput } from "@/lib/validation/parse";
 import type { Actor } from "@/lib/auth/session";
 import { diffFields, recordAudit } from "@/modules/audit/audit.repository";
 import * as contractRepo from "@/modules/contracts/contract.repository";
-import { effectiveStatus } from "@/modules/contracts/contract.domain";
+import { effectiveStatus } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "@/modules/contracts/contract.service";
 import { findTrainer } from "@/modules/trainers/trainer.repository";
 import { trainerIdOfUser } from "@/modules/trainers/trainer.service";
@@ -24,13 +24,11 @@ import {
   hasSessionForNewBooking,
   isWithinContractPeriod,
   type BookingStatus,
-} from "@/modules/bookings/booking.domain";
-import {
   bookingInputSchema,
   dayBookingsSchema,
   listBookingsSchema,
   rescheduleSchema,
-} from "@/modules/bookings/booking.schema";
+} from "@flow/shared/bookings";
 
 /** At most this many bookings in one calendar day; far above one gym's capacity. */
 const DAY_LIMIT = 1000;

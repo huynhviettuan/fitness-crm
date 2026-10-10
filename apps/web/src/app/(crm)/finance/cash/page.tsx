@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { formatMonth } from "@/lib/format";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import { financeSummary, listCashTransactions } from "@/modules/finance/cash.service";
 import { CashTable, RecordCashButton } from "../cash";
 import { FinanceTabs, MonthNav } from "../finance-nav";

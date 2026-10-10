@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import en from "../../messages/en.json";
 import vi from "../../messages/vi.json";
-import { ERROR_HTTP_STATUS } from "@/lib/errors/app-error";
+import { ERROR_HTTP_STATUS } from "@flow/shared/errors";
 import { localeFromAcceptLanguage } from "@/i18n/config";
 
 function keys(value: unknown, prefix = ""): string[] {

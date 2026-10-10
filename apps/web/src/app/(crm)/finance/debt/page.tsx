@@ -6,7 +6,7 @@ import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import { listDebts } from "@/modules/finance/payment.service";
 import { ContractsTable } from "../../contracts/contracts-table";
 import { FinanceTabs } from "../finance-nav";

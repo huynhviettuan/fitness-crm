@@ -7,14 +7,7 @@ import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SelectField, TextField, applyFieldErrors, useValidationMessage } from "@/components/form-fields";
 import { notify } from "@/components/notify";
@@ -22,7 +15,7 @@ import { useErrorMessage } from "@/components/use-error-message";
 import { MIN_CUSTOMER_QUERY_LENGTH, useCustomerSearch, type CustomerSearchResult } from "@/components/use-customer-search";
 import type { ActionResult } from "@/lib/actions/result";
 import { formatDate, formatTime } from "@/lib/format";
-import { bookingInputSchema, rescheduleSchema } from "@/modules/bookings/booking.schema";
+import { bookingInputSchema, rescheduleSchema } from "@flow/shared/bookings";
 import { createBookingAction, rescheduleBookingAction } from "./actions";
 import type { BookingRow, TrainerOption } from "./booking-types";
 

@@ -8,11 +8,7 @@ import { parseInput } from "@/lib/validation/parse";
 import type { Actor } from "@/lib/auth/session";
 import { diffFields, recordAudit } from "@/modules/audit/audit.repository";
 import * as repo from "@/modules/customers/customer.repository";
-import {
-  createCustomerSchema,
-  listCustomersSchema,
-  updateCustomerSchema,
-} from "@/modules/customers/customer.schema";
+import { createCustomerSchema, listCustomersSchema, updateCustomerSchema } from "@flow/shared/customers";
 
 const AUDITED_FIELDS = ["fullName", "phone", "email", "dateOfBirth", "notes", "status"] as const;
 

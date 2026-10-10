@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import { prisma } from "@/lib/db/prisma";
-import type { Role } from "@/lib/permissions";
+import type { Role } from "@flow/shared/permissions";
 import type { Actor } from "@/lib/auth/session";
 import { createUserWithPassword } from "@/modules/users/user.repository";
 

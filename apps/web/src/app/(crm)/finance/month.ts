@@ -1,7 +1,8 @@
 import "server-only";
 import { env } from "@/lib/env";
-import { calendarDateInTimeZone, formatDateOnly } from "@/lib/format";
-import { monthRange } from "@/modules/finance/finance.domain";
+import { calendarDateInTimeZone } from "@flow/shared/validation";
+import { formatDateOnly } from "@/lib/format";
+import { monthRange } from "@flow/shared/finance";
 
 /** The month in ?month=yyyy-MM, or the gym's current month (A-001). */
 export function selectedMonth(param: string | string[] | undefined) {

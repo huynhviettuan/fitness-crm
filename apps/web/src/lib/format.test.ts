@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatDateOnly, formatDateTime, formatMoney, formatTime, instantAt, parseDateOnly } from "@/lib/format";
+import { formatDate, formatDateOnly, formatDateTime, formatMoney, formatTime } from "@/lib/format";
 
 const GYM_TZ = "Asia/Ho_Chi_Minh";
 
@@ -32,22 +32,5 @@ describe("dates in the gym timezone", () => {
 describe("calendar dates (date of birth)", () => {
   it("never shifts a stored SQL date by a day", () => {
     expect(formatDateOnly(new Date("1990-03-15T00:00:00Z"))).toBe("15/03/1990");
-  });
-
-  it("parses dd/MM/yyyy to UTC midnight", () => {
-    expect(parseDateOnly("15/03/1990")?.toISOString()).toBe("1990-03-15T00:00:00.000Z");
-    expect(parseDateOnly(" 01/01/2000 ")?.toISOString()).toBe("2000-01-01T00:00:00.000Z");
-  });
-
-  it.each(["31/02/2026", "2026-03-15", "15/3/1990", "", "abc"])("rejects %j", (value) => {
-    expect(parseDateOnly(value)).toBeNull();
-  });
-});
-
-describe("instantAt", () => {
-  it("turns a gym day and wall-clock time into the UTC instant", () => {
-    const day = new Date("2026-10-15T00:00:00Z");
-    expect(instantAt(day, "18:00", GYM_TZ)).toEqual(new Date("2026-10-15T11:00:00Z"));
-    expect(instantAt(day, "00:30", GYM_TZ)).toEqual(new Date("2026-10-14T17:30:00Z"));
   });
 });

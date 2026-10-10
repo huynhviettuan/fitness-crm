@@ -1,6 +1,6 @@
 import "server-only";
 import { AppError } from "@/lib/errors/app-error";
-import { can, type Permission, type Role } from "@/lib/permissions";
+import { can, type Permission, type Role } from "@flow/shared/permissions";
 import { logSecurityEvent } from "@/lib/security/log";
 
 /** Throws FORBIDDEN, and logs the denial (A09), when the actor's role lacks the permission. */

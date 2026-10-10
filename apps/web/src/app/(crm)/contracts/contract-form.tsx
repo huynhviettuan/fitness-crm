@@ -10,7 +10,7 @@ import { TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
-import { contractInputSchema, type ContractInput } from "@/modules/contracts/contract.schema";
+import { contractInputSchema, type ContractInput } from "@flow/shared/contracts";
 
 export type ContractFormValues = {
   packageName: string;

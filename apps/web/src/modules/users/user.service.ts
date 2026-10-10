@@ -14,7 +14,7 @@ import {
   resetPasswordSchema,
   setLocaleSchema,
   setUserStatusSchema,
-} from "@/modules/users/user.schema";
+} from "@flow/shared/users";
 
 export type UserSummary = NonNullable<Awaited<ReturnType<typeof repo.findUserById>>>;
 

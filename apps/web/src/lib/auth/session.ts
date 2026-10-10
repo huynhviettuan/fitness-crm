@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
-import { ROLES, type Role } from "@/lib/permissions";
+import { ROLES, type Role } from "@flow/shared/permissions";
 import type { AppLocale } from "@/lib/format";
 
 export type CurrentUser = {

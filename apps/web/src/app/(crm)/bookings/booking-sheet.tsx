@@ -14,13 +14,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
 import { formatDate, formatTime } from "@/lib/format";
-import {
-  canCancelBooking,
-  canCheckIn,
-  canComplete,
-  canMarkNoShow,
-  canReschedule,
-} from "@/modules/bookings/booking.domain";
+import { canCancelBooking, canCheckIn, canComplete, canMarkNoShow, canReschedule } from "@flow/shared/bookings";
 import { cancelBookingAction, checkInAction, completeSessionAction, markNoShowAction } from "./actions";
 import { BookingFormDialog } from "./booking-form";
 import type { BookingPermissions, BookingRow, TrainerOption } from "./booking-types";

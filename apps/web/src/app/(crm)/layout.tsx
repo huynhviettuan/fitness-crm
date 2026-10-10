@@ -2,7 +2,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar, type NavItemKey } from "@/components/app-shell/app-sidebar";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 
 // Every page in the CRM reads the session, so it renders per request instead of
 // from a prerendered shell (see next.config.ts).

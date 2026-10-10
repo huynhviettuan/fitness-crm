@@ -15,7 +15,7 @@ import {
   updateCustomerSchema,
   type CreateCustomerInput,
   type UpdateCustomerInput,
-} from "@/modules/customers/customer.schema";
+} from "@flow/shared/customers";
 
 export type CustomerFormValues = {
   fullName: string;

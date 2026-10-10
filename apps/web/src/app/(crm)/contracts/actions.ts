@@ -2,13 +2,8 @@
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { requireActionUser } from "@/lib/auth/current-user";
-import {
-  activateContract,
-  cancelContract,
-  createContract,
-  updateContract,
-} from "@/modules/contracts/contract.service";
-import type { ContractInput } from "@/modules/contracts/contract.schema";
+import { activateContract, cancelContract, createContract, updateContract } from "@/modules/contracts/contract.service";
+import type { ContractInput } from "@flow/shared/contracts";
 
 /** `idempotencyKey` is generated when the form opens, so a double submit reuses it (T-015). */
 export async function createContractAction(

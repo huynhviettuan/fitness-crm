@@ -8,14 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PencilIcon, UserPlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
@@ -24,7 +17,7 @@ import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ErrorCode, FieldErrors } from "@/lib/errors/app-error";
-import { trainerInputSchema } from "@/modules/trainers/trainer.schema";
+import { trainerInputSchema } from "@flow/shared/trainers";
 import { createTrainerAction, updateTrainerAction } from "./actions";
 
 export type TrainerRow = {

@@ -3,7 +3,7 @@
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { requireActionUser } from "@/lib/auth/current-user";
 import { createCustomer, updateCustomer } from "@/modules/customers/customer.service";
-import type { CreateCustomerInput, UpdateCustomerInput } from "@/modules/customers/customer.schema";
+import type { CreateCustomerInput, UpdateCustomerInput } from "@flow/shared/customers";
 
 export async function createCustomerAction(
   input: CreateCustomerInput,

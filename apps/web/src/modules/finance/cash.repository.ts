@@ -1,6 +1,6 @@
 import type { Db } from "@/lib/db/prisma";
 import type { CashTransactionType, Prisma } from "@/generated/prisma/client";
-import type { CashTransactionData } from "@/modules/finance/finance.schema";
+import type { CashTransactionData } from "@flow/shared/finance";
 
 const cashInclude = {
   createdBy: { select: { name: true } },

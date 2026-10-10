@@ -8,7 +8,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { parseDateOnly } from "@/lib/format";
+import { parseDateOnly } from "@flow/shared/validation";
 import type { TrainerOption } from "../bookings/booking-types";
 
 const ALL = "all";

@@ -1,0 +1,37 @@
+{
+  "name": "@flow/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zod schemas, response shapes, permission keys, error codes, and pure domain rules shared by the API and the web app.",
+  "type": "module",
+  "exports": {
+    "./bookings": { "types": "./dist/bookings/index.d.ts", "default": "./dist/bookings/index.js" },
+    "./contracts": { "types": "./dist/contracts/index.d.ts", "default": "./dist/contracts/index.js" },
+    "./customers": { "types": "./dist/customers/index.d.ts", "default": "./dist/customers/index.js" },
+    "./errors": { "types": "./dist/errors/index.d.ts", "default": "./dist/errors/index.js" },
+    "./finance": { "types": "./dist/finance/index.d.ts", "default": "./dist/finance/index.js" },
+    "./permissions": { "types": "./dist/permissions/index.d.ts", "default": "./dist/permissions/index.js" },
+    "./trainers": { "types": "./dist/trainers/index.d.ts", "default": "./dist/trainers/index.js" },
+    "./users": { "types": "./dist/users/index.d.ts", "default": "./dist/users/index.js" },
+    "./validation": { "types": "./dist/validation/index.d.ts", "default": "./dist/validation/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "date-fns": "^4.4.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@flow/config": "workspace:*",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}

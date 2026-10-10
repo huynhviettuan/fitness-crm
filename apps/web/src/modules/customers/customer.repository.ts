@@ -1,7 +1,7 @@
 import type { Db } from "@/lib/db/prisma";
 import type { CustomerStatus, Prisma } from "@/generated/prisma/client";
-import { normalizeForSearch, normalizePhone } from "@/lib/text";
-import { formatCustomerCode } from "@/modules/customers/customer.code";
+import { normalizeForSearch, normalizePhone } from "@flow/shared/validation";
+import { formatCustomerCode } from "@flow/shared/customers";
 
 export type CustomerWrite = {
   fullName: string;

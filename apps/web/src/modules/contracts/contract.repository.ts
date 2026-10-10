@@ -1,8 +1,8 @@
 import type { Db } from "@/lib/db/prisma";
 import type { ContractStatus, Prisma } from "@/generated/prisma/client";
-import { normalizeForSearch } from "@/lib/text";
-import { formatContractCode } from "@/modules/contracts/contract.domain";
-import type { ContractData } from "@/modules/contracts/contract.schema";
+import { normalizeForSearch } from "@flow/shared/validation";
+import { formatContractCode } from "@flow/shared/contracts";
+import type { ContractData } from "@flow/shared/contracts";
 
 const withCustomer = {
   customer: { select: { id: true, customerCode: true, fullName: true } },

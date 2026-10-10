@@ -1,7 +1,7 @@
 // OWASP A01:2025 Broken Access Control, A04:2025 Cryptographic Failures (secrets in responses).
 import { expect, test } from "../fixtures";
 import { discoverApiRoutes } from "../support/routes";
-import type { Role } from "../../apps/web/src/lib/permissions";
+import type { Role } from "@flow/shared/permissions";
 
 const routes = discoverApiRoutes();
 

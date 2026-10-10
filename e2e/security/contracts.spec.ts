@@ -4,7 +4,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { PT24, createContractViaApi, createCustomerViaApi } from "../support/data";
-import type { Role } from "../../apps/web/src/lib/permissions";
+import type { Role } from "@flow/shared/permissions";
 
 test.describe("A01 contract roles (docs/09, A-015)", () => {
   const createExpectations: [Role, number][] = [

@@ -31,7 +31,8 @@ async function main() {
 
 async function seed(prisma: typeof import("@/lib/db/prisma").prisma) {
   const { env } = await import("@/lib/env");
-  const { calendarDateInTimeZone, formatDateOnly } = await import("@/lib/format");
+  const { formatDateOnly } = await import("@/lib/format");
+  const { calendarDateInTimeZone } = await import("@flow/shared/validation");
   const { createUser } = await import("@/modules/users/user.service");
   const { createTrainer, updateTrainer } = await import("@/modules/trainers/trainer.service");
   const { createCustomer, updateCustomer } = await import("@/modules/customers/customer.service");

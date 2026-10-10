@@ -8,7 +8,7 @@ import { parseInput } from "@/lib/validation/parse";
 import type { Actor } from "@/lib/auth/session";
 import { diffFields, recordAudit } from "@/modules/audit/audit.repository";
 import * as repo from "@/modules/trainers/trainer.repository";
-import { listTrainersSchema, trainerInputSchema, type TrainerData } from "@/modules/trainers/trainer.schema";
+import { listTrainersSchema, trainerInputSchema, type TrainerData } from "@flow/shared/trainers";
 
 const AUDITED_FIELDS = ["fullName", "status", "userId"] as const;
 

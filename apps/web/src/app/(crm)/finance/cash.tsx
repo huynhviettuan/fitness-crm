@@ -7,14 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ReceiptTextIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
@@ -24,7 +17,7 @@ import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
-import { CASH_TRANSACTION_TYPES, cashTransactionInputSchema, type CashTransactionInput } from "@/modules/finance/finance.schema";
+import { CASH_TRANSACTION_TYPES, cashTransactionInputSchema, type CashTransactionInput } from "@flow/shared/finance";
 import { recordCashTransactionAction, voidCashTransactionAction } from "./actions";
 import { VoidDialog } from "./void-dialog";
 

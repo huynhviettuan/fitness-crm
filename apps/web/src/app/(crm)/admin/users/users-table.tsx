@@ -6,19 +6,14 @@ import { useTranslations } from "next-intl";
 import { MoreHorizontalIcon, UserPlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
 import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
-import type { Role } from "@/lib/permissions";
+import type { Role } from "@flow/shared/permissions";
 import { setUserStatusAction } from "./actions";
 import { ChangeRoleDialog, CreateUserDialog, ResetPasswordDialog } from "./user-dialogs";
 

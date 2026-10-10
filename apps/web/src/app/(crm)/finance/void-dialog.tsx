@@ -18,7 +18,7 @@ import { TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
-import { voidSchema, type VoidInput } from "@/modules/finance/finance.schema";
+import { voidSchema, type VoidInput } from "@flow/shared/finance";
 
 type VoidDialogProps = {
   open: boolean;

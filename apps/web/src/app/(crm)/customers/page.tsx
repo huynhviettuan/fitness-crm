@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import { listCustomers } from "@/modules/customers/customer.service";
 import { CreateCustomerButton } from "./customer-sheets";
 import { CustomersTable } from "./customers-table";

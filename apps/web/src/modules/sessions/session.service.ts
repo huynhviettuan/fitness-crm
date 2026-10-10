@@ -6,7 +6,7 @@ import { recordAudit } from "@/modules/audit/audit.repository";
 import { findContract } from "@/modules/contracts/contract.repository";
 import { contractView, type ContractView } from "@/modules/contracts/contract.service";
 import { moveStatus } from "@/modules/bookings/booking.repository";
-import { canCheckIn, canComplete, isWithinContractPeriod } from "@/modules/bookings/booking.domain";
+import { canCheckIn, canComplete, isWithinContractPeriod } from "@flow/shared/bookings";
 import {
   bookingView,
   changeLockedBooking,

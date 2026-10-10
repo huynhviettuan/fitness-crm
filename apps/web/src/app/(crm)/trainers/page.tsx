@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@/lib/permissions";
+import { can } from "@flow/shared/permissions";
 import { listTrainerLogins, listTrainers } from "@/modules/trainers/trainer.service";
 import { CreateTrainerButton, TrainersTable } from "./trainers-table";
 

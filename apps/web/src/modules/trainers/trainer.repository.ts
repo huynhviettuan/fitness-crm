@@ -1,6 +1,6 @@
 import type { Db } from "@/lib/db/prisma";
 import type { Prisma } from "@/generated/prisma/client";
-import { formatTrainerCode, type TrainerData } from "@/modules/trainers/trainer.schema";
+import { formatTrainerCode, type TrainerData } from "@flow/shared/trainers";
 
 const withUser = {
   user: { select: { id: true, name: true, email: true } },
