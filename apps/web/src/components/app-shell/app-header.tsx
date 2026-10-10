@@ -13,7 +13,7 @@ export function AppHeader({ user, showSearch }: { user: CurrentUser; showSearch:
       <SidebarTrigger aria-label={t("toggleSidebar")} />
       <Separator orientation="vertical" className="h-5!" />
       <div className="flex flex-1 items-center">{showSearch && <CustomerSearch />}</div>
-      <UserMenu user={{ name: user.name, email: user.email, role: user.role }} />
+      <UserMenu user={{ name: user.name, email: user.email, roleName: user.role.name }} />
     </header>
   );
 }

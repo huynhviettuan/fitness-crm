@@ -1,7 +1,7 @@
 // OWASP A01:2025 Broken Access Control, A04:2025 Cryptographic Failures (secrets in responses).
 import { expect, test } from "../fixtures";
 import { discoverApiRoutes } from "../support/routes";
-import type { Role } from "@flow/shared/permissions";
+import { E2E_BRANCH_ID, type Role } from "../support/db";
 
 const routes = discoverApiRoutes();
 
@@ -28,9 +28,9 @@ test.describe("A01 every API route requires a session", () => {
 test.describe("A01 roles are enforced on the server (docs/09)", () => {
   const createExpectations: [Role, number][] = [
     ["ADMIN", 201],
-    ["MANAGER", 201],
+    ["FITNESS_MANAGER", 201],
     ["RECEPTIONIST", 201],
-    ["TRAINER", 403],
+    ["PT", 403],
     ["ACCOUNTANT", 403],
   ];
 
@@ -43,7 +43,7 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
     });
   }
 
-  for (const role of ["TRAINER", "ACCOUNTANT"] as const) {
+  for (const role of ["PT", "ACCOUNTANT"] as const) {
     test(`${role} cannot update a customer`, async ({ apiAs, testTag }) => {
       const reception = await apiAs("RECEPTIONIST");
       const customer = await (
@@ -64,7 +64,7 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
       await reception.post("/api/v1/customers", { data: { fullName: `Hidden ${testTag}`, phone: "0909000333" } })
     ).json();
 
-    const trainer = await apiAs("TRAINER");
+    const trainer = await apiAs("PT");
 
     expect((await trainer.get(`/api/v1/customers/${customer.id}`)).status()).toBe(404);
     expect((await (await trainer.get(`/api/v1/customers?search=${testTag}`)).json()).total).toBe(0);
@@ -105,10 +105,23 @@ test.describe("A04 responses never expose secrets", () => {
 
   test("the current-user and customer APIs return only safe fields", async ({ apiAs, testTag }) => {
     const api = await apiAs("ADMIN");
-    await api.post("/api/v1/customers", { data: { fullName: `Secrets ${testTag}`, phone: "0909000555" } });
+    // An admin with every branch names the branch, since other tests may add branches.
+    await api.post("/api/v1/customers", { data: { fullName: `Secrets ${testTag}`, phone: "0909000555", branchId: E2E_BRANCH_ID } });
 
     const me = await api.get("/api/v1/me");
-    expect(Object.keys(await me.json()).sort()).toEqual(["email", "id", "locale", "name", "permissions", "role", "trainerId"]);
+    expect(Object.keys(await me.json()).sort()).toEqual([
+      "allBranches",
+      "branches",
+      "dataScopes",
+      "email",
+      "id",
+      "locale",
+      "maskedFields",
+      "name",
+      "permissions",
+      "role",
+      "trainerId",
+    ]);
     for (const path of ["/api/v1/me", "/api/v1/customers"]) {
       expect(await (await api.get(path)).text()).not.toMatch(FORBIDDEN_KEYS);
     }

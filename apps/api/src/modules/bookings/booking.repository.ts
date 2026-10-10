@@ -49,7 +49,10 @@ export function findBooking(db: Db, id: string, visibility: Prisma.BookingWhereI
   return db.booking.findFirst({ where: { AND: [{ id }, visibility] }, include: bookingInclude });
 }
 
-export function createBooking(db: Db, data: BookingSlot & { customerId: string; contractId: string }): Promise<BookingRecord> {
+export function createBooking(
+  db: Db,
+  data: BookingSlot & { customerId: string; contractId: string; branchId: string },
+): Promise<BookingRecord> {
   return db.booking.create({ data, include: bookingInclude });
 }
 

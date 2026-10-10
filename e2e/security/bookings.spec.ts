@@ -4,16 +4,16 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi } from "../support/data";
-import type { Role } from "@flow/shared/permissions";
+import type { Role } from "../support/db";
 
 const SLOT = { date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" };
 
 test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => {
   const trainerExpectations: [Role, number][] = [
     ["ADMIN", 201],
-    ["MANAGER", 201],
+    ["FITNESS_MANAGER", 201],
     ["RECEPTIONIST", 403],
-    ["TRAINER", 403],
+    ["PT", 403],
     ["ACCOUNTANT", 403],
   ];
   for (const [role, status] of trainerExpectations) {
@@ -25,10 +25,10 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
 
   const bookingExpectations: [Role, number][] = [
     ["ADMIN", 201],
-    ["MANAGER", 201],
+    ["FITNESS_MANAGER", 201],
     ["RECEPTIONIST", 201],
     // A-007: a trainer books only for their own trainer record.
-    ["TRAINER", 403],
+    ["PT", 403],
     ["ACCOUNTANT", 403],
   ];
   for (const [role, status] of bookingExpectations) {
@@ -43,7 +43,7 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
     // OQ-011: the receptionist's "limited" completion is not defined, so denied (T-024).
     ["RECEPTIONIST", 403],
     ["ACCOUNTANT", 403],
-    ["MANAGER", 200],
+    ["FITNESS_MANAGER", 200],
   ];
   for (const [role, status] of completeExpectations) {
     test(`${role} completing a checked-in session gets ${status}`, async ({ apiAs, testTag }) => {
@@ -71,7 +71,7 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
   test("a trainer cannot open or act on another trainer's booking, even with its real id (A-007)", async ({ apiAs, testTag }) => {
     const { refs } = await bookingSetup(apiAs, testTag);
     const booking = await createBookingViaApi(await apiAs("RECEPTIONIST"), refs, SLOT);
-    const trainer = await apiAs("TRAINER");
+    const trainer = await apiAs("PT");
 
     expect((await trainer.get(`/api/v1/bookings/${booking.id}`)).status()).toBe(404);
     expect((await trainer.post(`/api/v1/bookings/${booking.id}/cancel`)).status()).toBe(404);
@@ -119,7 +119,7 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
 test.describe("A06 concurrency abuse over HTTP", () => {
   test("ten simultaneous completions consume one session (INT-001)", async ({ apiAs, testTag }) => {
     const { refs } = await bookingSetup(apiAs, testTag);
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     const booking = await createBookingViaApi(manager, refs, SLOT);
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
 
@@ -133,7 +133,7 @@ test.describe("A06 concurrency abuse over HTTP", () => {
   test("two overlapping bookings sent together: one is created (INT-003)", async ({ apiAs, testTag }) => {
     const first = await bookingSetup(apiAs, testTag);
     const second = await bookingSetup(apiAs, `${testTag}b`);
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
 
     const responses = await Promise.all([
       manager.post("/api/v1/bookings", { data: { ...first.refs, ...SLOT } }),
@@ -174,13 +174,13 @@ test.describe("A10 booking input errors", () => {
     expect(await outside.json()).toMatchObject({ code: "BOOKING_OUTSIDE_CONTRACT_PERIOD" });
 
     const booking = await createBookingViaApi(reception, refs, SLOT);
-    const early = await (await apiAs("MANAGER")).post(`/api/v1/bookings/${booking.id}/complete`);
+    const early = await (await apiAs("FITNESS_MANAGER")).post(`/api/v1/bookings/${booking.id}/complete`);
     expect(early.status()).toBe(409);
     expect(await early.json()).toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
   test("unknown or malformed booking ids are 404 for every action", async ({ apiAs }) => {
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     for (const id of [randomUUID(), "not-a-uuid"]) {
       for (const action of ["check-in", "complete", "cancel", "no-show"]) {
         const response = await manager.post(`/api/v1/bookings/${id}/${action}`);
@@ -190,7 +190,7 @@ test.describe("A10 booking input errors", () => {
   });
 
   test("a trainer update with an unknown id is 404, and invalid fields are 400", async ({ apiAs, testTag }) => {
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     const trainer = await createTrainerViaApi(manager, testTag);
 
     expect((await manager.patch(`/api/v1/trainers/${randomUUID()}`, { data: { fullName: "X" } })).status()).toBe(404);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { branchRefSchema } from "../branches/branch.schema.js";
 import { listOf } from "../validation/index.js";
 import { TRAINER_STATUSES } from "./trainer.schema.js";
 
@@ -6,6 +7,7 @@ export const trainerSchema = z
   .object({
     id: z.uuid(),
     trainerCode: z.string(),
+    branch: branchRefSchema,
     fullName: z.string(),
     status: z.enum(TRAINER_STATUSES),
     /** The linked login (A-010), if any. */

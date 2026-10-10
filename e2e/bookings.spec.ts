@@ -98,7 +98,7 @@ test.describe("bookings as a receptionist", () => {
 });
 
 test.describe("sessions as a manager", () => {
-  test.use(signedInAs("MANAGER"));
+  test.use(signedInAs("FITNESS_MANAGER"));
 
   test("E2E-004/005: completing consumes exactly one session, and a retry consumes nothing more", async ({
     page,
@@ -107,7 +107,7 @@ test.describe("sessions as a manager", () => {
     contractDetailPage,
   }) => {
     const { contract, refs } = await bookingSetup(apiAs, testTag);
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     const booking = await createBookingViaApi(manager, refs, { date: BOOKING_DAY.date, startTime: "07:00", endTime: "08:00" });
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
 
@@ -139,7 +139,7 @@ test.describe("sessions as a manager", () => {
     contractDetailPage,
   }) => {
     const { contract, trainer, refs } = await bookingSetup(apiAs, testTag, { totalSessions: "1" });
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     const booking = await createBookingViaApi(manager, refs, { date: BOOKING_DAY.date, startTime: "07:00", endTime: "08:00" });
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
     await manager.post(`/api/v1/bookings/${booking.id}/complete`);
@@ -162,7 +162,7 @@ test.describe("sessions as a manager", () => {
     sessionsPage,
   }) => {
     const { customer, refs } = await bookingSetup(apiAs, testTag);
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     const today = gymToday();
     await createBookingViaApi(manager, refs, { date: today.date, startTime: "05:00", endTime: "05:30" });
     await createBookingViaApi(manager, refs, { date: today.date, startTime: "05:30", endTime: "06:00" });
@@ -195,7 +195,7 @@ test.describe("sessions as a manager", () => {
     customerBookingsTab,
   }) => {
     const { customer, contract, refs } = await bookingSetup(apiAs, testTag);
-    const manager = await apiAs("MANAGER");
+    const manager = await apiAs("FITNESS_MANAGER");
     await createBookingViaApi(manager, refs, { date: BOOKING_DAY.date, startTime: "07:00", endTime: "08:00" });
     await createBookingViaApi(manager, refs, { date: BOOKING_DAY.date, startTime: "08:00", endTime: "09:00" });
 
@@ -214,7 +214,7 @@ test.describe("sessions as a manager", () => {
 });
 
 test.describe("as a trainer on a phone", () => {
-  test.use({ ...signedInAs("TRAINER"), viewport: { width: 375, height: 812 } });
+  test.use({ ...signedInAs("PT"), viewport: { width: 375, height: 812 } });
 
   test("a trainer sees only their own column and completes their own session (A-007, A-012)", async ({
     page,
@@ -224,7 +224,7 @@ test.describe("as a trainer on a phone", () => {
   }) => {
     const reception = await apiAs("RECEPTIONIST");
     const { customer, refs } = await bookingSetup(apiAs, testTag);
-    const { trainerId } = await (await (await apiAs("TRAINER")).get("/api/v1/me")).json();
+    const { trainerId } = await (await (await apiAs("PT")).get("/api/v1/me")).json();
     const day = randomBookingDay();
     const booking = await createBookingViaApi(reception, { ...refs, trainerId }, { date: day.date, startTime: "10:00", endTime: "11:00" });
     await reception.post(`/api/v1/bookings/${booking.id}/check-in`);
@@ -244,7 +244,7 @@ test.describe("as a trainer on a phone", () => {
 });
 
 test.describe("trainers as a manager", () => {
-  test.use(signedInAs("MANAGER"));
+  test.use(signedInAs("FITNESS_MANAGER"));
 
   test("a manager adds a trainer, who then has a column in the PT calendar", async ({ page, testTag, trainersPage, calendarPage }) => {
     const name = `PT ${testTag}`;

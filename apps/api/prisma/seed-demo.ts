@@ -39,7 +39,9 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const { checkIn, completeSession } = await import("../src/modules/sessions/session.service.js");
   const { recordPayment, voidPayment } = await import("../src/modules/finance/payment.service.js");
   const { recordCashTransaction, voidCashTransaction } = await import("../src/modules/finance/cash.service.js");
+  const { loadCurrentUser } = await import("../src/platform/auth/actor.js");
   type Actor = import("../src/platform/auth/session.js").Actor;
+  const actorOf = async (userId: string): Promise<Actor> => (await loadCurrentUser(prisma, userId))!;
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
@@ -57,23 +59,27 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     const date = new Date(today.getTime() + offset * 86_400_000);
     return [date.getUTCDate(), date.getUTCMonth() + 1].map((n) => String(n).padStart(2, "0")).join("/") + `/${date.getUTCFullYear()}`;
   };
-  const asAdmin: Actor = { id: admin.id, role: "ADMIN" };
+  const asAdmin = await actorOf(admin.id);
+  // Everything goes to the default branch the migration created (D-014).
+  const branch = await prisma.branch.findFirstOrThrow({ orderBy: { createdAt: "asc" }, select: { id: true } });
 
-  // --- Staff: one account per role, signing in with the seed admin's password.
-  const staff = {} as Record<"MANAGER" | "RECEPTIONIST" | "TRAINER" | "ACCOUNTANT", Actor>;
-  for (const [role, name, email] of [
-    ["MANAGER", "Phạm Quốc Bảo", DEMO_MANAGER_EMAIL],
+  // --- Staff: one account per default role (09_RBAC.md), signing in with the seed admin's password.
+  const staff = {} as Record<"FITNESS_MANAGER" | "RECEPTIONIST" | "PT" | "ACCOUNTANT" | "CONSULTING", Actor>;
+  for (const [code, name, email] of [
+    ["FITNESS_MANAGER", "Phạm Quốc Bảo", DEMO_MANAGER_EMAIL],
     ["RECEPTIONIST", "Võ Thị Hồng", "demo-receptionist@fitness-crm.test"],
-    ["TRAINER", "Trần Minh Khoa", "demo-trainer@fitness-crm.test"],
+    ["PT", "Trần Minh Khoa", "demo-trainer@fitness-crm.test"],
     ["ACCOUNTANT", "Đặng Thu Trang", "demo-accountant@fitness-crm.test"],
+    ["CONSULTING", "Bùi Ngọc Lan", "demo-consulting@fitness-crm.test"],
   ] as const) {
-    const user = await createUser(asAdmin, { name, email, role, password });
-    staff[role] = { id: user.id, role };
+    const role = await prisma.role.findUniqueOrThrow({ where: { code }, select: { id: true } });
+    const user = await createUser(asAdmin, { name, email, roleId: role.id, branchIds: [branch.id], password });
+    staff[code] = await actorOf(user.id);
   }
-  const { MANAGER: manager, RECEPTIONIST: reception, ACCOUNTANT: accountant } = staff;
+  const { FITNESS_MANAGER: manager, RECEPTIONIST: reception, ACCOUNTANT: accountant } = staff;
 
   // --- Trainers: Khoa signs in as the demo trainer; Nam has left.
-  const khoa = await createTrainer(manager, { fullName: "Trần Minh Khoa", userId: staff.TRAINER.id });
+  const khoa = await createTrainer(manager, { fullName: "Trần Minh Khoa", userId: staff.PT.id });
   const ha = await createTrainer(manager, { fullName: "Lê Thu Hà" });
   const anh = await createTrainer(manager, { fullName: "Phạm Đức Anh" });
   const nam = await createTrainer(manager, { fullName: "Nguyễn Hoàng Nam" });
@@ -103,7 +109,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const PT12 = { pkg: "PT 12 buổi", value: "6.500.000", sessions: 12 };
   async function contract(customerId: string, spec: ContractSpec, activate = true) {
     const { contract: created } = await createContract(
-      reception,
+      manager,
       customerId,
       { packageName: spec.pkg, contractValue: spec.value, totalSessions: String(spec.sessions), startDate: day(spec.start), endDate: day(spec.end) },
       randomUUID(),
@@ -206,7 +212,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
 
   // Sơn: imported at go-live with opening balances (D-011), as the import tool will do.
   const { contract: c10Draft } = await createContract(
-    reception,
+    manager,
     son.id,
     { packageName: PT24.pkg, contractValue: PT24.value, totalSessions: "24", startDate: day(-150), endDate: day(30) },
     randomUUID(),
@@ -249,7 +255,13 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const counts = await Promise.all([prisma.customer.count(), prisma.contract.count(), prisma.booking.count(), prisma.payment.count()]);
   console.log(`Demo data loaded: ${counts[0]} customers, ${counts[1]} contracts, ${counts[2]} bookings, ${counts[3]} payments.`);
   console.log("Sign in as any of these with the same password as SEED_ADMIN_PASSWORD in .env:");
-  for (const email of [DEMO_MANAGER_EMAIL, "demo-receptionist@fitness-crm.test", "demo-trainer@fitness-crm.test", "demo-accountant@fitness-crm.test"]) {
+  for (const email of [
+    DEMO_MANAGER_EMAIL,
+    "demo-receptionist@fitness-crm.test",
+    "demo-trainer@fitness-crm.test",
+    "demo-accountant@fitness-crm.test",
+    "demo-consulting@fitness-crm.test",
+  ]) {
     console.log(`  ${email}`);
   }
 }

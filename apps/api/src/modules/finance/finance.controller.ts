@@ -12,7 +12,7 @@ import {
   paymentSchema,
   voidSchema,
 } from "@flow/shared/finance";
-import { CurrentActor } from "../../platform/auth/auth.guard.js";
+import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
@@ -29,6 +29,7 @@ const CASH_FILTERS = ["from", "to", "type", "status", "page", "pageSize"] as con
 export class PaymentsController {
   /** Contract payments, newest first (FR-PAY-002). Days are dd/MM/yyyy, inclusive. */
   @Get()
+  @RequirePermission("payment.view")
   @ApiOptionalQuery(...PAYMENT_FILTERS)
   @ApiResult(paymentPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
@@ -37,6 +38,7 @@ export class PaymentsController {
 
   /** Confirmed payments received between two gym days, inclusive (dd/MM/yyyy). */
   @Get("collected")
+  @RequirePermission("payment.view")
   @ApiOptionalQuery("from", "to")
   @ApiResult(collectedSchema)
   async collected(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
@@ -45,6 +47,7 @@ export class PaymentsController {
 
   /** A-008: the body carries the reason; a repeat returns the voided payment. */
   @Post(":id/void")
+  @RequirePermission("payment.void")
   @HttpCode(200)
   @ApiResult(paymentSchema)
   async void(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: voidSchema }) body: unknown) {
@@ -58,6 +61,7 @@ export class PaymentsController {
 export class DebtsController {
   /** Contracts that still owe money, largest debt first (BR-013, A-022). */
   @Get()
+  @RequirePermission("payment.view")
   @ApiOptionalQuery("page", "pageSize")
   @ApiResult(debtPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
@@ -70,6 +74,7 @@ export class DebtsController {
 @Controller("cash-transactions")
 export class CashTransactionsController {
   @Get()
+  @RequirePermission("cash.manage")
   @ApiOptionalQuery(...CASH_FILTERS)
   @ApiResult(cashTransactionPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
@@ -78,6 +83,7 @@ export class CashTransactionsController {
 
   /** T-015: a replay with the same key returns 200 with the original transaction. */
   @Post()
+  @RequirePermission("cash.manage")
   @ApiIdempotencyKey()
   @ApiResult(cashTransactionSchema, 201, "Created")
   @ApiResult(cashTransactionSchema, 200, "Replayed")
@@ -94,6 +100,7 @@ export class CashTransactionsController {
 
   /** Totals for a period (FR-CASH-002), dd/MM/yyyy inclusive. */
   @Get("summary")
+  @RequirePermission("cash.manage")
   @ApiOptionalQuery("from", "to")
   @ApiResult(financeSummarySchema)
   async summary(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
@@ -102,6 +109,7 @@ export class CashTransactionsController {
 
   /** A-009: the body carries the reason; a repeat returns the voided transaction. */
   @Post(":id/void")
+  @RequirePermission("cash.manage")
   @HttpCode(200)
   @ApiResult(cashTransactionSchema)
   async void(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: voidSchema }) body: unknown) {

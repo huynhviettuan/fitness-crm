@@ -4,7 +4,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaClient } from "../../apps/api/src/generated/prisma/client";
 import { createUserWithPassword } from "../../apps/api/src/modules/users/user.repository";
-import type { Role } from "@flow/shared/permissions";
 
 export function e2eDatabaseUrl(): string {
   const url = process.env.E2E_DATABASE_URL;
@@ -19,30 +18,50 @@ export function connect(): PrismaClient {
 
 export const E2E_PASSWORD = "E2e-password-123";
 
+/** The default roles the specs sign in with (09_RBAC.md), by code. */
+export type Role = "ADMIN" | "FITNESS_MANAGER" | "RECEPTIONIST" | "PT" | "ACCOUNTANT" | "CONSULTING";
+
 /** One account per role, shared read-only by the specs through saved sessions. */
 export const E2E_USERS: Record<Role, { name: string; email: string }> = {
   ADMIN: { name: "E2E Quản trị", email: "e2e-admin@fitness-crm.test" },
-  MANAGER: { name: "E2E Quản lý", email: "e2e-manager@fitness-crm.test" },
+  FITNESS_MANAGER: { name: "E2E Quản lý", email: "e2e-manager@fitness-crm.test" },
   RECEPTIONIST: { name: "E2E Lễ tân", email: "e2e-receptionist@fitness-crm.test" },
-  TRAINER: { name: "E2E Huấn luyện viên", email: "e2e-trainer@fitness-crm.test" },
+  PT: { name: "E2E Huấn luyện viên", email: "e2e-trainer@fitness-crm.test" },
   ACCOUNTANT: { name: "E2E Kế toán", email: "e2e-accountant@fitness-crm.test" },
+  CONSULTING: { name: "E2E Tư vấn", email: "e2e-consulting@fitness-crm.test" },
 };
 
-/** The trainer record the E2E TRAINER login is linked to (A-010). */
+/** The branch the migration creates; every E2E record goes there. */
+export const E2E_BRANCH_ID = "b0000000-0000-4000-8000-000000000001";
+
+/** The trainer record the E2E PT login is linked to (A-010). */
 export const E2E_TRAINER_NAME = "E2E PT Huấn luyện";
 
 export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
     `TRUNCATE TABLE "audit_events", "payments", "cash_transactions", "sessions", "bookings", "trainers", "contracts", "customers", "auth_sessions",
-     "auth_accounts", "auth_verifications", "auth_rate_limits", "users" CASCADE`,
+     "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
+  // Roles and branches the specs created; the migration's defaults stay.
+  await prisma.role.deleteMany({ where: { code: null } });
+  await prisma.branch.deleteMany({ where: { id: { not: E2E_BRANCH_ID } } });
   const passwordHash = await hashPassword(E2E_PASSWORD);
   for (const [role, user] of Object.entries(E2E_USERS) as [Role, { name: string; email: string }][]) {
-    const created = await createUserWithPassword(prisma, { ...user, role }, passwordHash);
-    if (role === "TRAINER") {
+    const { id: roleId } = await prisma.role.findUniqueOrThrow({ where: { code: role }, select: { id: true } });
+    const created = await createUserWithPassword(
+      prisma,
+      { ...user, roleId, allBranches: role === "ADMIN", branchIds: [E2E_BRANCH_ID] },
+      passwordHash,
+    );
+    if (role === "PT") {
       const [{ value }] = await prisma.$queryRaw<{ value: bigint }[]>`SELECT nextval('trainer_code_seq') AS value`;
       await prisma.trainer.create({
-        data: { trainerCode: `PT${value.toString().padStart(3, "0")}`, fullName: E2E_TRAINER_NAME, userId: created.id },
+        data: {
+          trainerCode: `PT${value.toString().padStart(3, "0")}`,
+          fullName: E2E_TRAINER_NAME,
+          userId: created.id,
+          branchId: E2E_BRANCH_ID,
+        },
       });
     }
   }

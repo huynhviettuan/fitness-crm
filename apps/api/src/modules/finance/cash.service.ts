@@ -6,37 +6,25 @@ import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { assertCan } from "../../platform/permissions/assert.js";
+import { inBranches, isMasked, isOwnOnly, resolveBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { idempotencyKeySchema } from "@flow/shared/contracts";
 import * as repo from "./cash.repository.js";
 import { sumConfirmedPayments } from "./payment.repository.js";
+import { paymentsVisibleTo } from "./payment.service.js";
 import {
   isFutureDay,
   cashTransactionInputSchema,
   listCashTransactionsSchema,
   periodSchema,
   voidSchema,
+  type CashTransaction,
   type CashTransactionData,
 } from "@flow/shared/finance";
 
-/** What the UI and API see. */
-export type CashTransactionView = {
-  id: string;
-  type: "INCOME" | "EXPENSE";
-  category: string;
-  amount: number;
-  description: string | null;
-  reference: string | null;
-  occurredOn: Date;
-  status: "CONFIRMED" | "VOIDED";
-  createdAt: Date;
-  createdBy: string;
-  voidedAt: Date | null;
-  voidedBy: string | null;
-  voidReason: string | null;
-};
+export type CashTransactionView = CashTransaction;
 
 export type CashTransactionPage = { items: CashTransactionView[]; total: number; page: number; pageSize: number };
 
@@ -44,15 +32,13 @@ export type CashTransactionPage = { items: CashTransactionView[]; total: number;
  * Totals for a period (FR-CASH-002). Contract payments and other income stay separate
  * lines, with no net figure, until OQ-007 decides whether payments count as income.
  */
-export type FinanceSummary = { contractPayments: number; otherIncome: number; expense: number };
+export type FinanceSummary = { contractPayments: number | null; otherIncome: number | null; expense: number | null };
 
 export async function listCashTransactions(actor: Actor, rawQuery: unknown): Promise<CashTransactionPage> {
   assertCan(actor, "cash.manage");
   const query = parseInput(listCashTransactionsSchema, rawQuery);
   const where: Prisma.CashTransactionWhereInput = {
-    type: query.type,
-    status: query.status,
-    occurredOn: { gte: query.from, lte: query.to },
+    AND: [cashVisibleTo(actor), { type: query.type, status: query.status, occurredOn: { gte: query.from, lte: query.to } }],
   };
   const { items, total } = await repo.listCashTransactions(prisma, where, {
     skip: (query.page - 1) * query.pageSize,
@@ -64,10 +50,13 @@ export async function listCashTransactions(actor: Actor, rawQuery: unknown): Pro
 export async function financeSummary(actor: Actor, rawPeriod: unknown): Promise<FinanceSummary> {
   assertCan(actor, "cash.manage");
   const { from, to } = parseInput(periodSchema, rawPeriod);
+  // Totals hidden from the actor's role (D-017).
+  if (isMasked(actor, "receipts.totals")) return { contractPayments: null, otherIncome: null, expense: null };
+  const visible = cashVisibleTo(actor);
   const [contractPayments, otherIncome, expense] = await Promise.all([
-    sumConfirmedPayments(prisma, { paidOn: { gte: from, lte: to } }),
-    repo.sumConfirmedCash(prisma, "INCOME", from, to),
-    repo.sumConfirmedCash(prisma, "EXPENSE", from, to),
+    sumConfirmedPayments(prisma, { AND: [paymentsVisibleTo(actor), { paidOn: { gte: from, lte: to } }] }),
+    repo.sumConfirmedCash(prisma, "INCOME", from, to, visible),
+    repo.sumConfirmedCash(prisma, "EXPENSE", from, to, visible),
   ]);
   return { contractPayments, otherIncome, expense };
 }
@@ -91,7 +80,8 @@ export async function recordCashTransaction(
 
   try {
     const created = await prisma.$transaction(async (tx) => {
-      const transaction = await repo.createCashTransaction(tx, { ...data, idempotencyKey: key.data, createdById: actor.id });
+      const branchId = await resolveBranch(tx, actor, data.branchId);
+      const transaction = await repo.createCashTransaction(tx, { ...data, branchId, idempotencyKey: key.data, createdById: actor.id });
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "cash_transaction",
@@ -118,7 +108,7 @@ export async function voidCashTransaction(actor: Actor, id: string, input: unkno
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
   return prisma.$transaction(async (tx) => {
-    const transaction = await repo.findCashTransaction(tx, id);
+    const transaction = await repo.findCashTransaction(tx, id, cashVisibleTo(actor));
     if (!transaction) throw new AppError("NOT_FOUND");
     if (transaction.status === "VOIDED") return toView(transaction);
 
@@ -153,6 +143,7 @@ async function replayOf(key: string, data: CashTransactionData, actor: Actor): P
 function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
   return {
     id: transaction.id,
+    branch: transaction.branch,
     type: transaction.type,
     category: transaction.category,
     amount: Number(transaction.amount),
@@ -166,4 +157,12 @@ function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
     voidedBy: transaction.voidedBy?.name ?? null,
     voidReason: transaction.voidReason,
   };
+}
+
+/**
+ * Which income and expense records an actor may see: their branches, and with "own"
+ * voucher scope only the ones they recorded (D-017, A-029).
+ */
+function cashVisibleTo(actor: Actor): Prisma.CashTransactionWhereInput {
+  return { AND: [inBranches(actor), isOwnOnly(actor, "vouchers") ? { createdById: actor.id } : {}] };
 }

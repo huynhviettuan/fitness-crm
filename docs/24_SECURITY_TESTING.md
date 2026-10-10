@@ -29,6 +29,8 @@ Scanning our own app locally needs no permission. Before scanning a deployed env
 
 M1 slice 1 (2026-10-10) moved the suite onto the NestJS API without changing what it checks: browsers still call `/api/v1` on the web origin, which forwards to the API (T-053). The access-control inventory now comes from the OpenAPI document, so it also covers the new read endpoints. The entries below describe the Phases 0–4 code.
 
+M1 slice 2 (2026-10-10) replaced the fixed roles with the permission tree (T-054). `e2e/security/permissions.spec.ts` signs in as a role with no permissions and walks every operation in the OpenAPI document (`403` everywhere except `/me`), checks that a Fitness Manager cannot reach users, roles, or branches, and that another branch's customer is `404`. `apps/api/test/integration/permissions.int.test.ts` covers overrides, data scope (*only mine*), hidden fields, branch access, allowed hours (refused at sign-in and on the next request), the login history, and self-protection. `apps/api/src/openapi.test.ts` fails when an endpoint declares no permission. The role matrices in the contract, booking, and finance specs now follow doc 09.
+
 Phase 2 added `e2e/security/contracts.spec.ts`: contract role matrix, mass assignment of status/code/opening balances, Idempotency-Key required and not reusable, and input errors.
 
 Phase 4 added `e2e/security/finance.spec.ts`: payment, void, and cash role matrix (a trainer cannot void, E2E-009); mass assignment of status, contract, and recorder; INT-004 and INT-005 over HTTP, including five identical submissions at once; input errors, future dates, overpayment, and payments on a cancelled contract.

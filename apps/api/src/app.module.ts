@@ -3,6 +3,8 @@ import type { MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "./platform/auth/auth.guard.js";
 import { MeController } from "./platform/auth/me.controller.js";
+import { BranchesController } from "./platform/branches/branches.controller.js";
+import { RolesController } from "./platform/roles/roles.controller.js";
 import { ErrorFilter } from "./platform/http/error.filter.js";
 import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
@@ -26,6 +28,8 @@ import { UsersController } from "./modules/users/users.controller.js";
     DebtsController,
     CashTransactionsController,
     UsersController,
+    RolesController,
+    BranchesController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

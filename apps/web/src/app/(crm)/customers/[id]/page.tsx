@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { DateTime } from "@/components/date-time";
+import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
+import { HiddenValue } from "@/components/hidden-value";
 import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
@@ -37,12 +39,14 @@ export const instant = false;
 
 export async function generateMetadata({ params }: PageProps<"/customers/[id]">): Promise<Metadata> {
   const user = await requirePageUser();
+  if (!can(user, "customer.view")) return {};
   const customer = await loadCustomer(user, (await params).id);
   return { title: `${customer.customerCode} · ${customer.fullName}` };
 }
 
 export default async function CustomerPage({ params }: PageProps<"/customers/[id]">) {
   const user = await requirePageUser();
+  if (!can(user, "customer.view")) return <ForbiddenState />;
   const customer = await loadCustomer(user, (await params).id);
   const t = await getTranslations("customers");
   const tc = await getTranslations("contracts");
@@ -60,8 +64,9 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
 
   const details: { label: string; value: React.ReactNode }[] = [
     { label: t("fields.customerCode"), value: <span className="font-mono">{customer.customerCode}</span> },
-    { label: t("fields.phone"), value: customer.phone },
-    { label: t("fields.email"), value: customer.email },
+    { label: t("fields.branch"), value: customer.branch.name },
+    { label: t("fields.phone"), value: customer.maskedFields.includes("phone") ? <HiddenValue /> : customer.phone },
+    { label: t("fields.email"), value: customer.maskedFields.includes("email") ? <HiddenValue /> : customer.email },
     {
       label: t("fields.dateOfBirth"),
       value: customer.dateOfBirth && <DateTime value={customer.dateOfBirth} format="dateOnly" />,
@@ -75,7 +80,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     <>
       <PageHeader
         title={customer.fullName}
-        description={`${customer.customerCode} · ${customer.phone}`}
+        description={[customer.customerCode, customer.phone].filter(Boolean).join(" · ")}
         actions={can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
       />
       <Tabs defaultValue="overview">
@@ -106,7 +111,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
         </TabsContent>
         {contracts && (
           <TabsContent value="contracts" className="space-y-4">
-            {can(user, "contract.manage") && (
+            {can(user, "contract.create") && (
               <div className="flex justify-end">
                 <CreateContractButton customerId={customer.id} />
               </div>

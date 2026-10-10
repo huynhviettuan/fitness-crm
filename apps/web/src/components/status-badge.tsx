@@ -14,6 +14,8 @@ const STATUS_VARIANTS = {
   // A voided amount is also struck through (Money `struck`).
   payment: { CONFIRMED: "success", VOIDED: "muted" },
   cashTransaction: { CONFIRMED: "success", VOIDED: "muted" },
+  branch: { ACTIVE: "success", INACTIVE: "muted" },
+  login: { SUCCESS: "success", FAILED: "destructive" },
 } as const satisfies Record<string, Record<string, BadgeVariant>>;
 
 // Larger surfaces in a status color, e.g. booking blocks in the PT calendar.

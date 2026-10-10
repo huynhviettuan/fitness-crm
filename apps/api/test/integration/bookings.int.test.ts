@@ -13,7 +13,7 @@ import {
 } from "../../src/modules/bookings/booking.service.js";
 import { checkIn, completeSession } from "../../src/modules/sessions/session.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestUser } from "../support/factories.js";
+import { createTestUser, DEFAULT_BRANCH_ID } from "../support/factories.js";
 import { activeContract, book, bookingScenario, CONTRACT, linkedTrainer } from "../support/bookings.js";
 
 afterEach(async () => {
@@ -193,6 +193,7 @@ describe("trainer overlap (BR-010)", () => {
     await expect(
       prisma.booking.create({
         data: {
+          branchId: DEFAULT_BRANCH_ID,
           customerId: scenario.customer.id,
           contractId: scenario.contract.id,
           trainerId: scenario.trainer.id,
@@ -204,6 +205,7 @@ describe("trainer overlap (BR-010)", () => {
     await expect(
       prisma.booking.create({
         data: {
+          branchId: DEFAULT_BRANCH_ID,
           customerId: scenario.customer.id,
           contractId: scenario.contract.id,
           trainerId: scenario.trainer.id,
@@ -304,7 +306,7 @@ describe("roles and trainer scope", () => {
 
   it("a trainer login without a trainer record cannot book (A-010)", async () => {
     const scenario = await bookingScenario();
-    const { actor: trainer } = await createTestUser("TRAINER");
+    const { actor: trainer } = await createTestUser("PT");
 
     await expect(book(trainer, scenario)).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect((await listBookings(trainer, {})).total).toBe(0);

@@ -4,7 +4,7 @@ import { auth } from "../../src/platform/auth/auth.js";
 import { createCustomer, listCustomers } from "../../src/modules/customers/customer.service.js";
 import { createUser, setUserStatus } from "../../src/modules/users/user.service.js";
 import { resetDatabase } from "../support/database.js";
-import { TEST_PASSWORD, createTestUser } from "../support/factories.js";
+import { TEST_PASSWORD, createTestUser, DEFAULT_BRANCH_ID, roleId } from "../support/factories.js";
 
 type LogLine = Record<string, unknown>;
 
@@ -40,12 +40,12 @@ function rawLog(): string {
 
 describe("A09 security events are logged", () => {
   it("a permission denial records who, which role, and what was attempted", async () => {
-    const { actor } = await createTestUser("TRAINER");
+    const { actor } = await createTestUser("PT");
 
     await expect(createCustomer(actor, { fullName: "X", phone: "0909000000" })).rejects.toMatchObject({ code: "FORBIDDEN" });
 
     expect(securityEvents()).toContainEqual(
-      expect.objectContaining({ event: "authz.denied", userId: actor.id, role: "TRAINER", permission: "customer.manage" }),
+      expect.objectContaining({ event: "authz.denied", userId: actor.id, roleId: actor.roleId, permission: "customer.manage" }),
     );
   });
 
@@ -70,7 +70,7 @@ describe("A09 security events are logged", () => {
   });
 
   it("a successful sign-in is logged without the password", async () => {
-    const { user } = await createTestUser("MANAGER");
+    const { user } = await createTestUser("FITNESS_MANAGER");
 
     await auth.api.signInEmail({ body: { email: user.email, password: TEST_PASSWORD } });
 
@@ -82,7 +82,7 @@ describe("A09 security events are logged", () => {
     const { actor: admin } = await createTestUser("ADMIN");
     const password = "Initial-secret-456";
 
-    await createUser(admin, { name: "Log Test", email: "log-test@fitness-crm.test", role: "TRAINER", password });
+    await createUser(admin, { name: "Log Test", email: "log-test@fitness-crm.test", roleId: await roleId("PT"), branchIds: [DEFAULT_BRANCH_ID], password });
 
     expect(rawLog()).not.toContain(password);
   });

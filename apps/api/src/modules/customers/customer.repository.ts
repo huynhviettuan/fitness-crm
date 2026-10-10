@@ -3,6 +3,10 @@ import type { CustomerStatus, Prisma } from "../../generated/prisma/client.js";
 import { normalizeForSearch, normalizePhone } from "@flow/shared/validation";
 import { formatCustomerCode } from "@flow/shared/customers";
 
+const withBranch = { branch: { select: { id: true, name: true } } } as const;
+
+export type CustomerRecord = Prisma.CustomerGetPayload<{ include: typeof withBranch }>;
+
 export type CustomerWrite = {
   fullName: string;
   phone: string;
@@ -18,9 +22,10 @@ export async function nextCustomerCode(db: Db): Promise<string> {
   return formatCustomerCode(row.value);
 }
 
-export function createCustomer(db: Db, customerCode: string, data: CustomerWrite) {
+export function createCustomer(db: Db, customerCode: string, data: CustomerWrite & { branchId: string; createdById: string }) {
   return db.customer.create({
     data: { ...data, customerCode, searchName: normalizeForSearch(data.fullName) },
+    include: withBranch,
   });
 }
 
@@ -31,22 +36,25 @@ export function updateCustomer(db: Db, id: string, data: Partial<CustomerWrite>)
       ...data,
       ...(data.fullName !== undefined && { searchName: normalizeForSearch(data.fullName) }),
     },
+    include: withBranch,
   });
 }
 
 export function findCustomer(db: Db, id: string, visibility: Prisma.CustomerWhereInput) {
-  return db.customer.findFirst({ where: { AND: [{ id }, visibility] } });
+  return db.customer.findFirst({ where: { AND: [{ id }, visibility] }, include: withBranch });
 }
 
 export async function listCustomers(
   db: Db,
   query: { q: string; page: number; pageSize: number },
   visibility: Prisma.CustomerWhereInput,
+  searchPhone: boolean,
 ) {
-  const where: Prisma.CustomerWhereInput = { AND: [visibility, searchWhere(query.q)] };
+  const where: Prisma.CustomerWhereInput = { AND: [visibility, searchWhere(query.q, searchPhone)] };
   const [items, total] = await Promise.all([
     db.customer.findMany({
       where,
+      include: withBranch,
       orderBy: { createdAt: "desc" },
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
@@ -56,8 +64,9 @@ export async function listCustomers(
   return { items, total };
 }
 
-// FR-CUS-002: search by code, name (ignoring Vietnamese accents), or phone.
-function searchWhere(q: string): Prisma.CustomerWhereInput {
+// FR-CUS-002: search by code, name (ignoring Vietnamese accents), or phone, unless the
+// phone is hidden from the user (D-017).
+function searchWhere(q: string, searchPhone: boolean): Prisma.CustomerWhereInput {
   const term = q.trim();
   if (term === "") return {};
 
@@ -66,7 +75,7 @@ function searchWhere(q: string): Prisma.CustomerWhereInput {
     OR: [
       { customerCode: { contains: term, mode: "insensitive" } },
       { searchName: { contains: normalizeForSearch(term) } },
-      ...(/^\+?\d+$/.test(phoneTerm) ? [{ phone: { contains: phoneTerm } }] : []),
+      ...(searchPhone && /^\+?\d+$/.test(phoneTerm) ? [{ phone: { contains: phoneTerm } }] : []),
     ],
   };
 }

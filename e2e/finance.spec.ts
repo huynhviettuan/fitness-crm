@@ -25,7 +25,7 @@ test.describe("finance as a receptionist", () => {
     contractDetailPage,
   }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(reception, (await createCustomerViaApi(reception, testTag)).id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activate: true });
     const toasts = page.getByRole("region", { name: labels.common.notifications });
 
     await contractDetailPage.goto(contract.id);
@@ -48,7 +48,7 @@ test.describe("finance as a receptionist", () => {
 
   test("a payment above what is still owed is refused (OQ-003 interim)", async ({ page, apiAs, testTag, contractDetailPage }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(reception, (await createCustomerViaApi(reception, testTag)).id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activate: true });
     await recordPaymentViaApi(reception, contract.id, "10.000.000");
 
     await contractDetailPage.goto(contract.id);
@@ -84,7 +84,7 @@ test.describe("finance as an accountant", () => {
     contractDetailPage,
   }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(reception, (await createCustomerViaApi(reception, testTag)).id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activate: true });
     await recordPaymentViaApi(reception, contract.id, "5.000.000");
 
     await contractDetailPage.goto(contract.id);

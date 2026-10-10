@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { branchChoice } from "../branches/branch.schema.js";
 import { hasNoControlCharacters } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
@@ -24,6 +25,8 @@ const userId = z
 
 /** Create and update take the same fields; the trainer code is never accepted (T-019). */
 export const trainerInputSchema = z.object({
+  /** The branch the trainer works at (D-014); kept when left out on an update. */
+  branchId: branchChoice,
   fullName,
   status: z.enum(TRAINER_STATUSES, { error: "invalidChoice" }).prefault("ACTIVE"),
   userId: userId.prefault(""),

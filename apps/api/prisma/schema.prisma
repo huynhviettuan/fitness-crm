@@ -14,12 +14,11 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole {
-  ADMIN
-  MANAGER
-  RECEPTIONIST
-  TRAINER
-  ACCOUNTANT
+// D-017: a role's reach per resource: everything in the user's branches, or only the
+// records the user is responsible for.
+enum DataScope {
+  ALL
+  OWN
 }
 
 enum UserStatus {
@@ -90,7 +89,10 @@ model User {
   email         String     @unique
   emailVerified Boolean    @default(false) @map("email_verified")
   image         String?
-  role          UserRole
+  roleId        String     @map("role_id") @db.Uuid
+  role          Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  // D-014: every branch, including ones created later; otherwise the granted branches.
+  allBranches   Boolean    @default(false) @map("all_branches")
   status        UserStatus @default(ACTIVE)
   locale        Locale     @default(vi)
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -102,14 +104,146 @@ model User {
   contractsCreated  Contract[]
   // A-010: a TRAINER user acts on bookings through this link.
   trainer           Trainer?
-  sessionsCheckedIn Session[]         @relation("SessionCheckedInBy")
-  sessionsCompleted Session[]         @relation("SessionCompletedBy")
-  paymentsRecorded  Payment[]         @relation("PaymentCreatedBy")
-  paymentsVoided    Payment[]         @relation("PaymentVoidedBy")
-  cashRecorded      CashTransaction[] @relation("CashTransactionCreatedBy")
-  cashVoided        CashTransaction[] @relation("CashTransactionVoidedBy")
+  sessionsCheckedIn Session[]                @relation("SessionCheckedInBy")
+  sessionsCompleted Session[]                @relation("SessionCompletedBy")
+  paymentsRecorded  Payment[]                @relation("PaymentCreatedBy")
+  paymentsVoided    Payment[]                @relation("PaymentVoidedBy")
+  cashRecorded      CashTransaction[]        @relation("CashTransactionCreatedBy")
+  cashVoided        CashTransaction[]        @relation("CashTransactionVoidedBy")
+  customersCreated  Customer[]
+  branches          UserBranch[]
+  overrides         UserPermissionOverride[]
+  accessWindows     UserAccessWindow[]
+  loginEvents       LoginEvent[]
 
+  @@index([roleId])
   @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Branches, roles, and permissions (D-014, D-017, T-046). Permission keys, data-scope
+// resources, and maskable fields are a catalog in @flow/shared; rows here configure them.
+// ---------------------------------------------------------------------------
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  address   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  users            UserBranch[]
+  customers        Customer[]
+  contracts        Contract[]
+  trainers         Trainer[]
+  bookings         Booking[]
+  payments         Payment[]
+  cashTransactions CashTransaction[]
+
+  @@map("branches")
+}
+
+model Role {
+  id           String   @id @default(uuid()) @db.Uuid
+  // Set on the default roles (09_RBAC.md) so code and tests can find them; null for
+  // roles admin creates. Never shown to users.
+  code         String?  @unique
+  name         String   @unique
+  description  String?
+  clonedFromId String?  @map("cloned_from_id") @db.Uuid
+  clonedFrom   Role?    @relation("RoleClones", fields: [clonedFromId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  clones      Role[]           @relation("RoleClones")
+  users       User[]
+  permissions RolePermission[]
+  dataScopes  RoleDataScope[]
+  fieldMasks  RoleFieldMask[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  roleId     String @map("role_id") @db.Uuid
+  role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission String
+
+  @@id([roleId, permission])
+  @@map("role_permissions")
+}
+
+// A resource without a row is OWN: a new resource is closed until admin opens it.
+model RoleDataScope {
+  roleId   String    @map("role_id") @db.Uuid
+  role     Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  resource String
+  scope    DataScope
+
+  @@id([roleId, resource])
+  @@map("role_data_scopes")
+}
+
+model RoleFieldMask {
+  roleId String @map("role_id") @db.Uuid
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  field  String
+
+  @@id([roleId, field])
+  @@map("role_field_masks")
+}
+
+// A user inherits the role and can have single permissions switched on or off.
+model UserPermissionOverride {
+  userId     String  @map("user_id") @db.Uuid
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission String
+  granted    Boolean
+
+  @@id([userId, permission])
+  @@map("user_permission_overrides")
+}
+
+model UserBranch {
+  userId   String @map("user_id") @db.Uuid
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branchId String @map("branch_id") @db.Uuid
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@id([userId, branchId])
+  @@map("user_branches")
+}
+
+// Allowed sign-in days and times in the gym timezone (D-017). No rows: any time.
+model UserAccessWindow {
+  id        String @id @default(uuid()) @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // ISO weekdays, 1 = Monday … 7 = Sunday.
+  weekdays  Int[]
+  startTime String @map("start_time")
+  endTime   String @map("end_time")
+
+  @@index([userId])
+  @@map("user_access_windows")
+}
+
+// Every sign-in attempt (D-017). Insert-only.
+model LoginEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  success   Boolean
+  // Why a sign-in failed: WRONG_PASSWORD, UNKNOWN_USER, DISABLED, OUTSIDE_HOURS, RATE_LIMITED.
+  reason    String?
+  ip        String?
+  userAgent String?  @map("user_agent")
+  at        DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, at])
+  @@map("login_history")
 }
 
 model AuthSession {
@@ -192,6 +326,8 @@ model AuditEvent {
 
 model Customer {
   id           String         @id @default(uuid()) @db.Uuid
+  branchId     String         @map("branch_id") @db.Uuid
+  branch       Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
   // Generated from the customer_code_seq sequence (T-019, A-003). Never updated.
   customerCode String         @unique @map("customer_code")
   fullName     String         @map("full_name")
@@ -202,6 +338,9 @@ model Customer {
   dateOfBirth  DateTime?      @map("date_of_birth") @db.Date
   status       CustomerStatus @default(ACTIVE)
   notes        String?
+  // D-017 data scope "own" (A-029); null for customers created before it was recorded.
+  createdById  String?        @map("created_by") @db.Uuid
+  createdBy    User?          @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -210,6 +349,7 @@ model Customer {
 
   @@index([phone])
   @@index([searchName])
+  @@index([branchId])
   @@map("customers")
 }
 
@@ -220,6 +360,8 @@ model Customer {
 
 model Contract {
   id                  String         @id @default(uuid()) @db.Uuid
+  branchId            String         @map("branch_id") @db.Uuid
+  branch              Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
   // Generated from the contract_code_seq sequence (T-019, A-003). Never updated.
   contractCode        String         @unique @map("contract_code")
   customerId          String         @map("customer_id") @db.Uuid
@@ -244,6 +386,7 @@ model Contract {
   payments Payment[]
 
   @@index([customerId])
+  @@index([branchId])
   @@map("contracts")
 }
 
@@ -253,6 +396,8 @@ model Contract {
 
 model Trainer {
   id          String        @id @default(uuid()) @db.Uuid
+  branchId    String        @map("branch_id") @db.Uuid
+  branch      Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
   // Generated from the trainer_code_seq sequence (T-019, A-003). Never updated.
   trainerCode String        @unique @map("trainer_code")
   fullName    String        @map("full_name")
@@ -265,6 +410,7 @@ model Trainer {
 
   bookings Booking[]
 
+  @@index([branchId])
   @@map("trainers")
 }
 
@@ -273,6 +419,8 @@ model Trainer {
 // scheduled_end > scheduled_start by a CHECK (BR-011); both are in migration SQL.
 model Booking {
   id             String        @id @default(uuid()) @db.Uuid
+  branchId       String        @map("branch_id") @db.Uuid
+  branch         Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
   customerId     String        @map("customer_id") @db.Uuid
   customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   contractId     String        @map("contract_id") @db.Uuid
@@ -291,6 +439,7 @@ model Booking {
   @@index([customerId])
   @@index([trainerId, scheduledStart])
   @@index([scheduledStart])
+  @@index([branchId])
   @@map("bookings")
 }
 
@@ -320,6 +469,8 @@ model Session {
 
 model Payment {
   id             String            @id @default(uuid()) @db.Uuid
+  branchId       String            @map("branch_id") @db.Uuid
+  branch         Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
   contractId     String            @map("contract_id") @db.Uuid
   contract       Contract          @relation(fields: [contractId], references: [id], onDelete: Restrict)
   amount         Decimal           @db.Decimal(14, 0)
@@ -339,11 +490,14 @@ model Payment {
 
   @@index([contractId, status])
   @@index([paidOn])
+  @@index([branchId])
   @@map("payments")
 }
 
 model CashTransaction {
   id             String              @id @default(uuid()) @db.Uuid
+  branchId       String              @map("branch_id") @db.Uuid
+  branch         Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
   type           CashTransactionType
   category       String
   amount         Decimal             @db.Decimal(14, 0)
@@ -362,5 +516,6 @@ model CashTransaction {
   voidReason     String?             @map("void_reason")
 
   @@index([occurredOn])
+  @@index([branchId])
   @@map("cash_transactions")
 }

@@ -5,13 +5,16 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
+import { HiddenValue } from "@/components/hidden-value";
 import { StatusBadge } from "@/components/status-badge";
 
 export type CustomerRow = {
   id: string;
   customerCode: string;
   fullName: string;
-  phone: string;
+  /** Null when the phone is hidden from the user (D-017). */
+  phone: string | null;
+  branch: { id: string; name: string };
   status: "ACTIVE" | "INACTIVE";
   createdAt: Date;
 };
@@ -44,7 +47,8 @@ export function CustomersTable({ customers, empty, footer }: CustomersTableProps
         </Link>
       ),
     },
-    { id: "phone", header: t("fields.phone"), cell: ({ row }) => row.original.phone },
+    { id: "phone", header: t("fields.phone"), cell: ({ row }) => row.original.phone ?? <HiddenValue /> },
+    { id: "branch", header: t("fields.branch"), cell: ({ row }) => row.original.branch.name },
     {
       id: "status",
       header: t("fields.status"),

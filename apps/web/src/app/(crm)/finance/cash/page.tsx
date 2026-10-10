@@ -4,6 +4,7 @@ import { ReceiptTextIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { HiddenValue } from "@/components/hidden-value";
 import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
@@ -44,7 +45,7 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={<RecordCashButton />} />
+      <PageHeader title={t("title")} description={t("description")} actions={<RecordCashButton branches={user.branches} />} />
       <FinanceTabs active="cash" showCash />
       <MonthNav path="/finance/cash" month={month.from} thisMonth={month.thisMonth} />
       <section aria-label={t("month", { month: formatMonth(month.from) })} className="mb-2 grid gap-4 sm:grid-cols-3">
@@ -56,7 +57,7 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xl font-semibold">
-              <Money amount={amount} />
+              {amount === null ? <HiddenValue /> : <Money amount={amount} />}
             </CardContent>
           </Card>
         ))}

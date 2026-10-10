@@ -4,7 +4,7 @@ import { labels } from "./support/labels";
 
 // E2E-009 (part 1): roles are enforced on the server, not only hidden in the UI.
 test.describe("as a trainer", () => {
-  test.use(signedInAs("TRAINER"));
+  test.use(signedInAs("PT"));
 
   test("there is no administration menu and user management is refused", async ({ page, shell }) => {
     await page.goto("/dashboard");

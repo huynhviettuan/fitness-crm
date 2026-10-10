@@ -23,10 +23,11 @@ afterEach(async () => {
 
 const pt24 = { packageName: "PT 24 buổi", contractValue: "12.000.000", totalSessions: "24", startDate: "01/10/2026", endDate: "31/03/2027" };
 
+/** A Fitness Manager, who creates and approves contracts (09_RBAC.md), and a customer. */
 async function setup() {
-  const { actor: reception } = await createTestUser("RECEPTIONIST");
-  const customer = await createCustomer(reception, { fullName: "Nguyễn Văn An", phone: "0909123456" });
-  return { reception, customer };
+  const { actor: seller } = await createTestUser("FITNESS_MANAGER");
+  const customer = await createCustomer(seller, { fullName: "Nguyễn Văn An", phone: "0909123456" });
+  return { seller, customer };
 }
 
 function create(actor: Actor, customerId: string, input: object = pt24, key = randomUUID()) {
@@ -35,9 +36,9 @@ function create(actor: Actor, customerId: string, input: object = pt24, key = ra
 
 describe("createContract", () => {
   it("creates a DRAFT with a generated code, derived figures, and an audit event", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
 
-    const { contract, replayed } = await create(reception, customer.id);
+    const { contract, replayed } = await create(seller, customer.id);
 
     expect(replayed).toBe(false);
     expect(contract).toMatchObject({
@@ -52,18 +53,18 @@ describe("createContract", () => {
       debt: 12_000_000,
     });
     const audit = await prisma.auditEvent.findMany({ where: { entityId: contract.id } });
-    expect(audit).toEqual([expect.objectContaining({ action: "contract.created", actorUserId: reception.id })]);
+    expect(audit).toEqual([expect.objectContaining({ action: "contract.created", actorUserId: seller.id })]);
   });
 
   it("gives contracts created at the same time different codes (T-019)", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
 
-    const results = await Promise.all(Array.from({ length: 8 }, () => create(reception, customer.id)));
+    const results = await Promise.all(Array.from({ length: 8 }, () => create(seller, customer.id)));
 
     expect(new Set(results.map((r) => r.contract.contractCode)).size).toBe(8);
   });
 
-  it.each(["TRAINER", "ACCOUNTANT"] as const)("refuses a %s (docs/09)", async (role) => {
+  it.each(["PT", "ACCOUNTANT"] as const)("refuses a %s (docs/09)", async (role) => {
     const { customer } = await setup();
     const { actor } = await createTestUser(role);
 
@@ -71,15 +72,15 @@ describe("createContract", () => {
   });
 
   it("refuses an unknown customer", async () => {
-    const { reception } = await setup();
+    const { seller } = await setup();
 
-    await expect(create(reception, randomUUID())).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(create(seller, randomUUID())).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("returns field errors and saves nothing for invalid input", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
 
-    await expect(create(reception, customer.id, { ...pt24, contractValue: "12.5", endDate: "01/01/2026" })).rejects.toMatchObject({
+    await expect(create(seller, customer.id, { ...pt24, contractValue: "12.5", endDate: "01/01/2026" })).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
       fieldErrors: { contractValue: ["invalidAmount"] },
     });
@@ -89,19 +90,19 @@ describe("createContract", () => {
 
 describe("duplicate submission (T-015)", () => {
   it("requires an idempotency key", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
 
     for (const key of [undefined, "", "not-a-uuid"]) {
-      await expect(createContract(reception, customer.id, pt24, key)).rejects.toMatchObject({ code: "IDEMPOTENCY_KEY_REQUIRED" });
+      await expect(createContract(seller, customer.id, pt24, key)).rejects.toMatchObject({ code: "IDEMPOTENCY_KEY_REQUIRED" });
     }
   });
 
   it("a replay with the same key returns the original and creates nothing new", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
     const key = randomUUID();
 
-    const first = await create(reception, customer.id, pt24, key);
-    const second = await create(reception, customer.id, pt24, key);
+    const first = await create(seller, customer.id, pt24, key);
+    const second = await create(seller, customer.id, pt24, key);
 
     expect(second).toEqual({ contract: first.contract, replayed: true });
     expect(await prisma.contract.count()).toBe(1);
@@ -109,20 +110,20 @@ describe("duplicate submission (T-015)", () => {
   });
 
   it("the same key with different content is refused", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
     const key = randomUUID();
-    await create(reception, customer.id, pt24, key);
+    await create(seller, customer.id, pt24, key);
 
-    await expect(create(reception, customer.id, { ...pt24, totalSessions: "12" }, key)).rejects.toMatchObject({
+    await expect(create(seller, customer.id, { ...pt24, totalSessions: "12" }, key)).rejects.toMatchObject({
       code: "IDEMPOTENCY_KEY_REUSED",
     });
   });
 
   it("a double-click (same key sent at the same time) creates one contract", async () => {
-    const { reception, customer } = await setup();
+    const { seller, customer } = await setup();
     const key = randomUUID();
 
-    const results = await Promise.all(Array.from({ length: 5 }, () => create(reception, customer.id, pt24, key)));
+    const results = await Promise.all(Array.from({ length: 5 }, () => create(seller, customer.id, pt24, key)));
 
     expect(new Set(results.map((r) => r.contract.id)).size).toBe(1);
     expect(await prisma.contract.count()).toBe(1);
@@ -131,41 +132,42 @@ describe("duplicate submission (T-015)", () => {
 
 describe("status changes", () => {
   it("activates a draft once, and a repeat changes nothing", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
 
-    expect((await activateContract(reception, contract.id)).status).toBe("ACTIVE");
-    expect((await activateContract(reception, contract.id)).status).toBe("ACTIVE");
+    expect((await activateContract(seller, contract.id)).status).toBe("ACTIVE");
+    expect((await activateContract(seller, contract.id)).status).toBe("ACTIVE");
 
     expect(await prisma.auditEvent.count({ where: { entityId: contract.id, action: "contract.activated" } })).toBe(1);
   });
 
   it("concurrent activations record exactly one transition", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
 
-    await Promise.all(Array.from({ length: 5 }, () => activateContract(reception, contract.id)));
+    await Promise.all(Array.from({ length: 5 }, () => activateContract(seller, contract.id)));
 
     expect(await prisma.auditEvent.count({ where: { entityId: contract.id, action: "contract.activated" } })).toBe(1);
   });
 
-  it("only Admin and Manager can cancel (A-015)", async () => {
-    const { reception, customer } = await setup();
-    const { actor: manager } = await createTestUser("MANAGER");
-    const { contract } = await create(reception, customer.id);
-    await activateContract(reception, contract.id);
+  it("a receptionist cannot cancel; a Fitness Manager can (09_RBAC.md)", async () => {
+    const { seller, customer } = await setup();
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const { actor: reception } = await createTestUser("RECEPTIONIST");
+    const { contract } = await create(seller, customer.id);
+    await activateContract(seller, contract.id);
 
     await expect(cancelContract(reception, contract.id)).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect((await cancelContract(manager, contract.id)).status).toBe("CANCELLED");
     expect((await cancelContract(manager, contract.id)).status).toBe("CANCELLED");
-    await expect(activateContract(reception, contract.id)).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
+    await expect(activateContract(seller, contract.id)).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
   it("an expired contract cannot be cancelled", async () => {
-    const { reception, customer } = await setup();
-    const { actor: manager } = await createTestUser("MANAGER");
-    const { contract } = await create(reception, customer.id, { ...pt24, startDate: "01/01/2025", endDate: "31/12/2025" });
-    expect((await activateContract(reception, contract.id)).status).toBe("EXPIRED");
+    const { seller, customer } = await setup();
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const { contract } = await create(seller, customer.id, { ...pt24, startDate: "01/01/2025", endDate: "31/12/2025" });
+    expect((await activateContract(seller, contract.id)).status).toBe("EXPIRED");
 
     await expect(cancelContract(manager, contract.id)).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
@@ -173,10 +175,10 @@ describe("status changes", () => {
 
 describe("editing (OQ-015 interim: drafts only)", () => {
   it("a draft can be edited, and the change is audited", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
 
-    const updated = await updateContract(reception, contract.id, { ...pt24, totalSessions: "12", contractValue: "6.000.000" });
+    const updated = await updateContract(seller, contract.id, { ...pt24, totalSessions: "12", contractValue: "6.000.000" });
 
     expect(updated).toMatchObject({ totalSessions: 12, contractValue: 6_000_000, contractCode: contract.contractCode });
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { entityId: contract.id, action: "contract.updated" } });
@@ -186,11 +188,11 @@ describe("editing (OQ-015 interim: drafts only)", () => {
   });
 
   it("an active contract cannot be edited", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
-    await activateContract(reception, contract.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
+    await activateContract(seller, contract.id);
 
-    await expect(updateContract(reception, contract.id, { ...pt24, totalSessions: "48" })).rejects.toMatchObject({
+    await expect(updateContract(seller, contract.id, { ...pt24, totalSessions: "48" })).rejects.toMatchObject({
       code: "CONTRACT_NOT_EDITABLE",
     });
   });
@@ -198,12 +200,12 @@ describe("editing (OQ-015 interim: drafts only)", () => {
 
 describe("reading", () => {
   it("counts opening balances of an imported contract (D-011)", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
     // Set as the import tool will (OQ-014): directly, once.
     await prisma.contract.update({ where: { id: contract.id }, data: { openingSessionsUsed: 8, openingPaidAmount: 5_000_000 } });
 
-    expect(await getContract(reception, contract.id)).toMatchObject({
+    expect(await getContract(seller, contract.id)).toMatchObject({
       remainingSessions: 16,
       openingPaidAmount: 5_000_000,
       paidAmount: 5_000_000,
@@ -212,40 +214,40 @@ describe("reading", () => {
   });
 
   it("reports EXPIRED from the end date and the gym's clock, with no job (INT-008)", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id, { ...pt24, startDate: "01/10/2026", endDate: "10/10/2026" });
-    await activateContract(reception, contract.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id, { ...pt24, startDate: "01/10/2026", endDate: "10/10/2026" });
+    await activateContract(seller, contract.id);
 
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-10T16:59:00Z")); // 23:59 in the gym
-    expect((await getContract(reception, contract.id)).status).toBe("ACTIVE");
+    expect((await getContract(seller, contract.id)).status).toBe("ACTIVE");
     vi.setSystemTime(new Date("2026-10-10T17:00:00Z")); // 00:00 the next day
-    expect((await getContract(reception, contract.id)).status).toBe("EXPIRED");
+    expect((await getContract(seller, contract.id)).status).toBe("EXPIRED");
   });
 
   it("a trainer sees no contracts until bookings exist (OQ-006 interim)", async () => {
-    const { reception, customer } = await setup();
-    const { actor: trainer } = await createTestUser("TRAINER");
-    const { contract } = await create(reception, customer.id);
+    const { seller, customer } = await setup();
+    const { actor: trainer } = await createTestUser("PT");
+    const { contract } = await create(seller, customer.id);
 
     expect((await listContracts(trainer, {})).total).toBe(0);
     await expect(getContract(trainer, contract.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("searches by contract code, package, and customer name without accents", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
-    const other = await createCustomer(reception, { fullName: "Lê Thị Hoa", phone: "0388777666" });
-    await create(reception, other.id, { ...pt24, packageName: "Yoga 12 buổi" });
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
+    const other = await createCustomer(seller, { fullName: "Lê Thị Hoa", phone: "0388777666" });
+    await create(seller, other.id, { ...pt24, packageName: "Yoga 12 buổi" });
 
     for (const q of [contract.contractCode.toLowerCase(), "pt 24", "nguyen van"]) {
-      expect((await listContracts(reception, { q })).items.map((c) => c.id), q).toEqual([contract.id]);
+      expect((await listContracts(seller, { q })).items.map((c) => c.id), q).toEqual([contract.id]);
     }
   });
 
   it("the database itself refuses impossible contracts", async () => {
-    const { reception, customer } = await setup();
-    const { contract } = await create(reception, customer.id);
+    const { seller, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
 
     await expect(prisma.contract.update({ where: { id: contract.id }, data: { totalSessions: 0 } })).rejects.toThrow();
     await expect(prisma.contract.update({ where: { id: contract.id }, data: { openingSessionsUsed: 25 } })).rejects.toThrow();

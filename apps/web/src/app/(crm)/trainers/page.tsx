@@ -24,8 +24,8 @@ export default async function TrainersPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={<CreateTrainerButton logins={logins} />} />
-      <TrainersTable trainers={trainers} logins={logins} />
+      <PageHeader title={t("title")} description={t("description")} actions={<CreateTrainerButton logins={logins} branches={user.branches} />} />
+      <TrainersTable trainers={trainers} logins={logins} branches={user.branches} />
     </>
   );
 }

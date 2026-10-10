@@ -12,14 +12,9 @@
     "calendar": "Lịch PT",
     "sessions": "Buổi tập",
     "trainers": "Huấn luyện viên",
-    "finance": "Tài chính"
-  },
-  "roles": {
-    "ADMIN": "Quản trị viên",
-    "MANAGER": "Quản lý",
-    "RECEPTIONIST": "Lễ tân",
-    "TRAINER": "Huấn luyện viên",
-    "ACCOUNTANT": "Kế toán"
+    "finance": "Tài chính",
+    "roles": "Vai trò và phân quyền",
+    "branches": "Chi nhánh"
   },
   "status": {
     "customer": {
@@ -54,6 +49,14 @@
     "cashTransaction": {
       "CONFIRMED": "Đã xác nhận",
       "VOIDED": "Đã hủy bỏ"
+    },
+    "branch": {
+      "ACTIVE": "Đang hoạt động",
+      "INACTIVE": "Ngừng hoạt động"
+    },
+    "login": {
+      "SUCCESS": "Thành công",
+      "FAILED": "Thất bại"
     }
   },
   "common": {
@@ -70,7 +73,10 @@
     "notProvided": "Chưa có",
     "toggleSidebar": "Ẩn/hiện thanh bên",
     "close": "Đóng",
-    "notifications": "Thông báo"
+    "notifications": "Thông báo",
+    "hidden": "Đã ẩn",
+    "chooseBranch": "Chọn chi nhánh",
+    "back": "Quay lại"
   },
   "auth": {
     "title": "Đăng nhập",
@@ -125,7 +131,8 @@
       "dateOfBirth": "Ngày sinh",
       "status": "Trạng thái",
       "notes": "Ghi chú",
-      "createdAt": "Ngày tạo"
+      "createdAt": "Ngày tạo",
+      "branch": "Chi nhánh"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
@@ -150,7 +157,8 @@
       "status": "Trạng thái",
       "password": "Mật khẩu ban đầu",
       "newPassword": "Mật khẩu mới",
-      "createdAt": "Ngày tạo"
+      "createdAt": "Ngày tạo",
+      "branches": "Chi nhánh"
     },
     "passwordHint": "Tối thiểu 10 ký tự.",
     "rolePlaceholder": "Chọn vai trò",
@@ -167,7 +175,61 @@
     "disabled": "Đã vô hiệu hóa {name}",
     "enable": "Kích hoạt lại",
     "enabled": "Đã kích hoạt lại {name}",
-    "rowActions": "Thao tác cho {name}"
+    "rowActions": "Thao tác cho {name}",
+    "allBranches": "Tất cả chi nhánh",
+    "allBranchesHint": "Kể cả chi nhánh mở sau này.",
+    "branchesSaved": "Đã lưu chi nhánh",
+    "back": "Danh sách người dùng",
+    "open": "Mở",
+    "tabs": {
+      "info": "Thông tin",
+      "permissions": "Quyền riêng",
+      "accessHours": "Giờ đăng nhập",
+      "logins": "Lịch sử đăng nhập"
+    },
+    "overrides": {
+      "description": "Bật hoặc tắt từng quyền cho riêng người này; các quyền khác theo vai trò {role}.",
+      "inherit": "Theo vai trò ({value})",
+      "on": "Bật",
+      "off": "Tắt",
+      "granted": "có",
+      "notGranted": "không",
+      "saved": "Đã lưu quyền riêng"
+    },
+    "accessHours": {
+      "description": "Người dùng chỉ đăng nhập và làm việc được trong các khung giờ này (giờ phòng tập). Không có khung giờ nào: đăng nhập bất kỳ lúc nào.",
+      "none": "Chưa giới hạn: đăng nhập bất kỳ lúc nào.",
+      "add": "Thêm khung giờ",
+      "remove": "Xóa khung giờ",
+      "from": "Từ",
+      "to": "Đến",
+      "weekdays": "Ngày",
+      "saved": "Đã lưu giờ đăng nhập",
+      "days": {
+        "1": "T2",
+        "2": "T3",
+        "3": "T4",
+        "4": "T5",
+        "5": "T6",
+        "6": "T7",
+        "7": "CN"
+      }
+    },
+    "logins": {
+      "at": "Thời gian",
+      "result": "Kết quả",
+      "success": "Thành công",
+      "failed": "Thất bại",
+      "ip": "Địa chỉ IP",
+      "device": "Thiết bị",
+      "empty": "Chưa có lần đăng nhập nào.",
+      "reasons": {
+        "WRONG_PASSWORD": "Sai mật khẩu",
+        "UNKNOWN_USER": "Không có tài khoản",
+        "DISABLED": "Tài khoản bị vô hiệu hóa",
+        "OUTSIDE_HOURS": "Ngoài giờ được phép"
+      }
+    }
   },
   "forbidden": {
     "title": "Bạn không có quyền xem trang này",
@@ -188,7 +250,7 @@
     "FORBIDDEN": "Bạn không có quyền thực hiện thao tác này.",
     "NOT_FOUND": "Không tìm thấy dữ liệu.",
     "EMAIL_ALREADY_USED": "Email này đã được dùng cho một tài khoản khác.",
-    "CANNOT_CHANGE_OWN_ACCESS": "Bạn không thể đổi vai trò hoặc vô hiệu hóa chính tài khoản của mình.",
+    "CANNOT_CHANGE_OWN_ACCESS": "Bạn không thể thay đổi quyền truy cập của chính mình.",
     "INTERNAL_ERROR": "Đã xảy ra lỗi. Hãy thử lại.",
     "UNSUPPORTED_MEDIA_TYPE": "Dữ liệu gửi lên phải ở dạng JSON.",
     "IDEMPOTENCY_KEY_REQUIRED": "Yêu cầu thiếu mã chống gửi trùng. Hãy tải lại trang và thử lại.",
@@ -220,10 +282,12 @@
     "endTimeNotAfterStart": "Giờ kết thúc phải sau giờ bắt đầu.",
     "invalidChoice": "Hãy chọn một mục trong danh sách.",
     "trainerUnavailable": "Huấn luyện viên này không nhận lịch mới.",
-    "userNotTrainer": "Chỉ liên kết được tài khoản có vai trò Huấn luyện viên.",
+    "userNotTrainer": "Chỉ liên kết được tài khoản có vai trò chỉ xem lịch của mình (như PT).",
     "userAlreadyLinked": "Tài khoản này đã liên kết với một huấn luyện viên khác.",
     "amountNotPositive": "Số tiền phải lớn hơn 0.",
-    "futureDate": "Ngày không được sau hôm nay."
+    "futureDate": "Ngày không được sau hôm nay.",
+    "nameAlreadyUsed": "Tên này đã được dùng.",
+    "duplicate": "Có mục bị lặp."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -295,7 +359,8 @@
       "trainerCode": "Mã HLV",
       "fullName": "Họ và tên",
       "status": "Trạng thái",
-      "login": "Tài khoản đăng nhập"
+      "login": "Tài khoản đăng nhập",
+      "branch": "Chi nhánh"
     }
   },
   "bookings": {
@@ -433,7 +498,122 @@
       "category": "Hạng mục",
       "occurredOn": "Ngày",
       "reference": "Số chứng từ",
-      "description": "Diễn giải"
+      "description": "Diễn giải",
+      "branch": "Chi nhánh"
     }
+  },
+  "permissions": {
+    "groups": {
+      "system": "Hệ thống",
+      "customers": "Khách hàng",
+      "contracts": "Hợp đồng",
+      "schedule": "Lịch PT và buổi tập",
+      "employees": "Nhân sự",
+      "cashbook": "Sổ quỹ"
+    },
+    "labels": {
+      "user": {
+        "manage": "Quản lý người dùng"
+      },
+      "role": {
+        "manage": "Quản lý vai trò và phân quyền"
+      },
+      "branch": {
+        "manage": "Quản lý chi nhánh"
+      },
+      "customer": {
+        "view": "Xem khách hàng",
+        "manage": "Thêm và sửa khách hàng"
+      },
+      "contract": {
+        "view": "Xem hợp đồng",
+        "create": "Tạo và sửa hợp đồng nháp",
+        "approve": "Duyệt (kích hoạt) hợp đồng",
+        "cancel": "Hủy hợp đồng"
+      },
+      "booking": {
+        "view": "Xem lịch PT và buổi tập",
+        "manage": "Đặt, đổi giờ, hủy lịch, đánh dấu vắng"
+      },
+      "session": {
+        "checkIn": "Check-in buổi tập",
+        "complete": "Hoàn thành buổi tập"
+      },
+      "trainer": {
+        "view": "Xem huấn luyện viên",
+        "manage": "Thêm và sửa huấn luyện viên"
+      },
+      "payment": {
+        "view": "Xem thanh toán và công nợ",
+        "record": "Ghi nhận thanh toán",
+        "void": "Hủy thanh toán"
+      },
+      "cash": {
+        "manage": "Thu chi khác (xem, ghi, hủy)"
+      }
+    },
+    "resources": {
+      "customers": "Khách hàng",
+      "contracts": "Hợp đồng",
+      "schedule": "Lịch PT",
+      "vouchers": "Phiếu thu chi"
+    },
+    "scopes": {
+      "ALL": "Tất cả trong chi nhánh được giao",
+      "OWN": "Chỉ của mình"
+    },
+    "masks": {
+      "customer": {
+        "phone": "Số điện thoại khách hàng",
+        "email": "Email khách hàng"
+      },
+      "receipts": {
+        "totals": "Tổng tiền trên danh sách thu chi"
+      }
+    }
+  },
+  "roles": {
+    "title": "Vai trò và phân quyền",
+    "description": "Mỗi vai trò là một bộ quyền, phạm vi dữ liệu và thông tin bị ẩn. Thay đổi có hiệu lực ngay với mọi người dùng của vai trò.",
+    "create": "Thêm vai trò",
+    "createDescription": "Đặt tên, chọn quyền, phạm vi dữ liệu và thông tin cần ẩn.",
+    "edit": "Sửa vai trò",
+    "clone": "Nhân bản",
+    "cloneTitle": "Nhân bản {name}",
+    "cloneDescription": "Vai trò mới có cùng quyền, phạm vi và thông tin ẩn; sau đó chỉnh lại theo nhu cầu.",
+    "cloned": "Đã tạo {name}",
+    "created": "Đã tạo vai trò {name}",
+    "saved": "Đã lưu vai trò",
+    "default": "Mặc định",
+    "users": "{count, plural, other {# người dùng}}",
+    "fields": {
+      "name": "Tên vai trò",
+      "description": "Mô tả",
+      "permissions": "Quyền",
+      "dataScopes": "Phạm vi dữ liệu",
+      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi.",
+      "fieldMasks": "Thông tin bị ẩn",
+      "fieldMasksHint": "Ẩn trên mọi màn hình và không tìm kiếm được.",
+      "users": "Người dùng"
+    },
+    "backToList": "Danh sách vai trò",
+    "emptyTitle": "Chưa có vai trò"
+  },
+  "branches": {
+    "title": "Chi nhánh",
+    "description": "Mỗi khách hàng, hợp đồng, buổi tập và phiếu thu chi thuộc một chi nhánh. Chi nhánh ngừng hoạt động không nhận dữ liệu mới.",
+    "create": "Thêm chi nhánh",
+    "edit": "Sửa chi nhánh",
+    "created": "Đã thêm {name}",
+    "saved": "Đã lưu chi nhánh",
+    "fields": {
+      "name": "Tên chi nhánh",
+      "address": "Địa chỉ",
+      "status": "Trạng thái",
+      "active": "Đang hoạt động"
+    },
+    "active": "Đang hoạt động",
+    "inactive": "Ngừng hoạt động",
+    "rowActions": "Thao tác cho {name}"
   }
 }

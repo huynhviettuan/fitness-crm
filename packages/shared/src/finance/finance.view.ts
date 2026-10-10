@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { branchRefSchema } from "../branches/branch.schema.js";
 import { contractSchema } from "../contracts/contract.view.js";
 import { customerRefSchema } from "../customers/customer.view.js";
 import { instant, pageOf } from "../validation/index.js";
@@ -29,8 +30,11 @@ export const paymentSchema = z
 
 export const paymentPageSchema = pageOf(paymentSchema).meta({ id: "PaymentPage" });
 
-/** Confirmed payments received in a period (D-011: no opening balances). */
-export const collectedSchema = z.object({ total: z.int() }).meta({ id: "Collected" });
+/**
+ * Confirmed payments received in a period (D-011: no opening balances). Null when the
+ * role has receipt totals hidden (D-017).
+ */
+export const collectedSchema = z.object({ total: z.int().nullable() }).meta({ id: "Collected" });
 
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
 export const debtPageSchema = pageOf(contractSchema).meta({ id: "DebtPage" });
@@ -38,6 +42,7 @@ export const debtPageSchema = pageOf(contractSchema).meta({ id: "DebtPage" });
 export const cashTransactionSchema = z
   .object({
     id: z.uuid(),
+    branch: branchRefSchema,
     type: z.enum(CASH_TRANSACTION_TYPES),
     category: z.string(),
     amount: z.int(),
@@ -57,9 +62,10 @@ export const cashTransactionPageSchema = pageOf(cashTransactionSchema).meta({ id
 /**
  * Totals for a period (FR-CASH-002). Contract payments and other income stay separate
  * lines, with no net figure, until OQ-007 decides whether payments count as income.
+ * Each is null when the role has receipt totals hidden (D-017).
  */
 export const financeSummarySchema = z
-  .object({ contractPayments: z.int(), otherIncome: z.int(), expense: z.int() })
+  .object({ contractPayments: z.int().nullable(), otherIncome: z.int().nullable(), expense: z.int().nullable() })
   .meta({ id: "FinanceSummary" });
 
 export type Payment = z.output<typeof paymentSchema>;

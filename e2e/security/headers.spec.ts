@@ -65,7 +65,7 @@ test.describe("A02 login page under CSP", () => {
     });
 
     await loginPage.goto();
-    await loginPage.signIn(E2E_USERS.MANAGER.email, E2E_PASSWORD);
+    await loginPage.signIn(E2E_USERS.FITNESS_MANAGER.email, E2E_PASSWORD);
 
     await expect(shell.main).toBeVisible();
     expect(violations).toEqual([]);

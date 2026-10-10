@@ -61,7 +61,7 @@ In `docs/18_DECISIONS_ASSUMPTIONS.md`:
 
 - TypeScript strict mode everywhere.
 - Validate all external input at the API boundary with Zod schemas shared from `packages/shared`.
-- Every endpoint declares a permission key and is checked by the API guards: effective permissions, branch access, login hours, data scope, field masking (T-046). Hiding UI is never authorization. Until the M1 permission-tree slice lands, services authorize with `assertCan` against the role matrix in `packages/shared` (T-020), and the web hides UI from the permissions `GET /me` returns.
+- Every endpoint declares a permission key and is checked by the API guards: effective permissions, branch access, login hours, data scope, field masking (T-046). Hiding UI is never authorization. Controllers declare `@RequirePermission(...)` or `@AnySignedInUser()`; services check data scope and branches through `platform/permissions` (T-054), and the web hides UI from the permissions `GET /me` returns.
 - Use database transactions for operations that change more than one record; keep lock order contract → session/booking (T-013, T-036, T-040, T-050).
 - Creates of contracts, receipts, expense vouchers, and change vouchers require an idempotency key (T-015).
 - Never trust client-calculated debt, sessions left, payment state, prices, or permissions.
@@ -97,7 +97,7 @@ apps/
 ├── web/                      # Next.js: routes, components, i18n messages
 │   └── src/lib/api/          # typed API client (generated from apps/api/openapi.json) and one module per area
 └── api/                      # NestJS
-    ├── src/platform/         # auth, http (guards, errors, OpenAPI), db, permissions, audit; later branches,
+    ├── src/platform/         # auth, http (guards, errors, OpenAPI), db, permissions, roles, branches, audit; later
     │                         # approvals, trash, config, notifications, files, jobs
     ├── src/modules/          # leads, consulting, customers, services, contracts, contract-changes,
     │                         # schedule, classes, workouts, cashbook, tasks, mail, employees, reports

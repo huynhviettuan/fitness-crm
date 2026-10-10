@@ -4,22 +4,22 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { createContractViaApi, createCustomerViaApi, gymToday, recordPaymentViaApi } from "../support/data";
-import type { Role } from "@flow/shared/permissions";
+import type { Role } from "../support/db";
 
 const PAYMENT = { amount: "1.000.000", method: "CASH", paidOn: gymToday().date };
 
 async function activeContract(apiAs: (role: Role) => Promise<import("@playwright/test").APIRequestContext>, tag: string) {
   const reception = await apiAs("RECEPTIONIST");
-  return createContractViaApi(reception, (await createCustomerViaApi(reception, tag)).id, { activate: true });
+  return createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, tag)).id, { activate: true });
 }
 
 test.describe("A01 finance roles (docs/09, A-021)", () => {
   const recordExpectations: [Role, number][] = [
     ["ADMIN", 201],
-    ["MANAGER", 201],
+    ["FITNESS_MANAGER", 201],
     ["RECEPTIONIST", 201],
     ["ACCOUNTANT", 201],
-    ["TRAINER", 403],
+    ["PT", 403],
   ];
   for (const [role, status] of recordExpectations) {
     test(`${role} recording a payment gets ${status}`, async ({ apiAs, testTag }) => {
@@ -35,7 +35,7 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
   const voidExpectations: [Role, number][] = [
     ["RECEPTIONIST", 403],
     // E2E-009 (part 2): a trainer cannot void payments.
-    ["TRAINER", 403],
+    ["PT", 403],
     ["ACCOUNTANT", 200],
   ];
   for (const [role, status] of voidExpectations) {
@@ -50,7 +50,7 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
 
   const cashExpectations: [Role, number][] = [
     ["RECEPTIONIST", 403],
-    ["TRAINER", 403],
+    ["PT", 403],
     ["ACCOUNTANT", 201],
   ];
   for (const [role, status] of cashExpectations) {
@@ -65,7 +65,7 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
 
   test("a trainer cannot read a contract's payments or the cash book", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
-    const trainer = await apiAs("TRAINER");
+    const trainer = await apiAs("PT");
 
     expect((await trainer.get(`/api/v1/contracts/${contract.id}/payments`)).status()).toBe(403);
     expect((await trainer.get("/api/v1/cash-transactions")).status()).toBe(403);
@@ -163,7 +163,7 @@ test.describe("A10 finance input errors", () => {
     expect(over.status()).toBe(422);
     expect(await over.json()).toMatchObject({ code: "PAYMENT_EXCEEDS_CONTRACT_VALUE" });
 
-    await (await apiAs("MANAGER")).post(`/api/v1/contracts/${contract.id}/cancel`);
+    await (await apiAs("FITNESS_MANAGER")).post(`/api/v1/contracts/${contract.id}/cancel`);
     const cancelled = await send(contract.id, "1.000.000");
     expect(cancelled.status()).toBe(409);
     expect(await cancelled.json()).toMatchObject({ code: "PAYMENT_CONTRACT_CANCELLED" });

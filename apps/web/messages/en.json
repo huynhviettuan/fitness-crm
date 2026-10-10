@@ -12,14 +12,9 @@
     "calendar": "PT Calendar",
     "sessions": "Sessions",
     "trainers": "Trainers",
-    "finance": "Finance"
-  },
-  "roles": {
-    "ADMIN": "Admin",
-    "MANAGER": "Manager",
-    "RECEPTIONIST": "Receptionist",
-    "TRAINER": "Trainer",
-    "ACCOUNTANT": "Accountant"
+    "finance": "Finance",
+    "roles": "Roles and permissions",
+    "branches": "Branches"
   },
   "status": {
     "customer": {
@@ -54,6 +49,14 @@
     "cashTransaction": {
       "CONFIRMED": "Confirmed",
       "VOIDED": "Voided"
+    },
+    "branch": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive"
+    },
+    "login": {
+      "SUCCESS": "Succeeded",
+      "FAILED": "Failed"
     }
   },
   "common": {
@@ -70,7 +73,10 @@
     "notProvided": "Not provided",
     "toggleSidebar": "Toggle sidebar",
     "close": "Close",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "hidden": "Hidden",
+    "chooseBranch": "Choose a branch",
+    "back": "Back"
   },
   "auth": {
     "title": "Sign in",
@@ -125,7 +131,8 @@
       "dateOfBirth": "Date of birth",
       "status": "Status",
       "notes": "Notes",
-      "createdAt": "Created"
+      "createdAt": "Created",
+      "branch": "Branch"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
@@ -150,7 +157,8 @@
       "status": "Status",
       "password": "Initial password",
       "newPassword": "New password",
-      "createdAt": "Created"
+      "createdAt": "Created",
+      "branches": "Branches"
     },
     "passwordHint": "At least 10 characters.",
     "rolePlaceholder": "Choose a role",
@@ -167,7 +175,61 @@
     "disabled": "{name} disabled",
     "enable": "Enable",
     "enabled": "{name} enabled",
-    "rowActions": "Actions for {name}"
+    "rowActions": "Actions for {name}",
+    "allBranches": "All branches",
+    "allBranchesHint": "Including branches opened later.",
+    "branchesSaved": "Branches saved",
+    "back": "All users",
+    "open": "Open",
+    "tabs": {
+      "info": "Details",
+      "permissions": "Own permissions",
+      "accessHours": "Sign-in hours",
+      "logins": "Sign-in history"
+    },
+    "overrides": {
+      "description": "Switch single permissions on or off for this person only; the rest follow the role {role}.",
+      "inherit": "As the role ({value})",
+      "on": "On",
+      "off": "Off",
+      "granted": "yes",
+      "notGranted": "no",
+      "saved": "Own permissions saved"
+    },
+    "accessHours": {
+      "description": "The user can sign in and work only in these windows (gym time). No windows: any time.",
+      "none": "Not limited: they can sign in at any time.",
+      "add": "Add window",
+      "remove": "Remove window",
+      "from": "From",
+      "to": "To",
+      "weekdays": "Days",
+      "saved": "Sign-in hours saved",
+      "days": {
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat",
+        "7": "Sun"
+      }
+    },
+    "logins": {
+      "at": "Time",
+      "result": "Result",
+      "success": "Succeeded",
+      "failed": "Failed",
+      "ip": "IP address",
+      "device": "Device",
+      "empty": "No sign-ins yet.",
+      "reasons": {
+        "WRONG_PASSWORD": "Wrong password",
+        "UNKNOWN_USER": "No such account",
+        "DISABLED": "Account disabled",
+        "OUTSIDE_HOURS": "Outside allowed hours"
+      }
+    }
   },
   "forbidden": {
     "title": "You don't have access to this page",
@@ -188,7 +250,7 @@
     "FORBIDDEN": "You don't have permission to do that.",
     "NOT_FOUND": "That record doesn't exist.",
     "EMAIL_ALREADY_USED": "That email is already used by another account.",
-    "CANNOT_CHANGE_OWN_ACCESS": "You can't change the role or status of your own account.",
+    "CANNOT_CHANGE_OWN_ACCESS": "You cannot change your own access.",
     "INTERNAL_ERROR": "Something went wrong. Try again.",
     "UNSUPPORTED_MEDIA_TYPE": "The request body must be JSON.",
     "IDEMPOTENCY_KEY_REQUIRED": "The request is missing its duplicate-submission key. Reload the page and try again.",
@@ -220,10 +282,12 @@
     "endTimeNotAfterStart": "The end time must be after the start time.",
     "invalidChoice": "Choose an option from the list.",
     "trainerUnavailable": "This trainer isn't taking new bookings.",
-    "userNotTrainer": "Only a login with the Trainer role can be linked.",
+    "userNotTrainer": "Only logins whose role sees only its own schedule (such as PT) can be linked.",
     "userAlreadyLinked": "This login is already linked to another trainer.",
     "amountNotPositive": "Enter an amount greater than 0.",
-    "futureDate": "The date can't be later than today."
+    "futureDate": "The date can't be later than today.",
+    "nameAlreadyUsed": "This name is already used.",
+    "duplicate": "Some entries appear twice."
   },
   "contracts": {
     "title": "Contracts",
@@ -295,7 +359,8 @@
       "trainerCode": "Code",
       "fullName": "Full name",
       "status": "Status",
-      "login": "Login"
+      "login": "Login",
+      "branch": "Branch"
     }
   },
   "bookings": {
@@ -433,7 +498,122 @@
       "category": "Category",
       "occurredOn": "Date",
       "reference": "Reference",
-      "description": "Description"
+      "description": "Description",
+      "branch": "Branch"
     }
+  },
+  "permissions": {
+    "groups": {
+      "system": "System",
+      "customers": "Customers",
+      "contracts": "Contracts",
+      "schedule": "PT schedule and sessions",
+      "employees": "Staff",
+      "cashbook": "Cash book"
+    },
+    "labels": {
+      "user": {
+        "manage": "Manage users"
+      },
+      "role": {
+        "manage": "Manage roles and permissions"
+      },
+      "branch": {
+        "manage": "Manage branches"
+      },
+      "customer": {
+        "view": "View customers",
+        "manage": "Add and edit customers"
+      },
+      "contract": {
+        "view": "View contracts",
+        "create": "Create and edit draft contracts",
+        "approve": "Approve (activate) contracts",
+        "cancel": "Cancel contracts"
+      },
+      "booking": {
+        "view": "View the PT calendar and sessions",
+        "manage": "Book, reschedule, cancel, mark no-show"
+      },
+      "session": {
+        "checkIn": "Check in sessions",
+        "complete": "Complete sessions"
+      },
+      "trainer": {
+        "view": "View trainers",
+        "manage": "Add and edit trainers"
+      },
+      "payment": {
+        "view": "View payments and debt",
+        "record": "Record payments",
+        "void": "Void payments"
+      },
+      "cash": {
+        "manage": "Other income and expenses (view, record, void)"
+      }
+    },
+    "resources": {
+      "customers": "Customers",
+      "contracts": "Contracts",
+      "schedule": "PT schedule",
+      "vouchers": "Receipts and expenses"
+    },
+    "scopes": {
+      "ALL": "Everything in their branches",
+      "OWN": "Only their own"
+    },
+    "masks": {
+      "customer": {
+        "phone": "Customer phone",
+        "email": "Customer email"
+      },
+      "receipts": {
+        "totals": "Totals on receipt and expense lists"
+      }
+    }
+  },
+  "roles": {
+    "title": "Roles and permissions",
+    "description": "A role is a set of permissions, data scopes, and hidden fields. Changes apply at once to everyone with the role.",
+    "create": "Add role",
+    "createDescription": "Name it, then choose permissions, data scopes, and hidden fields.",
+    "edit": "Edit role",
+    "clone": "Clone",
+    "cloneTitle": "Clone {name}",
+    "cloneDescription": "The new role gets the same permissions, scopes, and hidden fields; adjust it afterwards.",
+    "cloned": "Created {name}",
+    "created": "Created role {name}",
+    "saved": "Role saved",
+    "default": "Default",
+    "users": "{count, plural, one {# user} other {# users}}",
+    "fields": {
+      "name": "Role name",
+      "description": "Description",
+      "permissions": "Permissions",
+      "dataScopes": "Data scope",
+      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered.",
+      "fieldMasks": "Hidden fields",
+      "fieldMasksHint": "Hidden on every screen, and not searchable.",
+      "users": "Users"
+    },
+    "backToList": "All roles",
+    "emptyTitle": "No roles yet"
+  },
+  "branches": {
+    "title": "Branches",
+    "description": "Every customer, contract, session, and voucher belongs to a branch. An inactive branch takes no new records.",
+    "create": "Add branch",
+    "edit": "Edit branch",
+    "created": "Added {name}",
+    "saved": "Branch saved",
+    "fields": {
+      "name": "Branch name",
+      "address": "Address",
+      "status": "Status",
+      "active": "Active"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "rowActions": "Actions for {name}"
   }
 }

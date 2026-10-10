@@ -1,42 +1,26 @@
-import { z } from "zod";
+import { prisma } from "../db/prisma.js";
+import { env } from "../env.js";
+import { isWithinAccessWindows } from "./access-hours.js";
+import { loadCurrentUser, type CurrentUser } from "./actor.js";
 import { auth } from "./auth.js";
-import { ROLES, type Role } from "@flow/shared/permissions";
 
-export type CurrentUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  locale: "vi" | "en";
-};
-
-/** What a service needs to authorize and audit an action. */
-export type Actor = Pick<CurrentUser, "id" | "role">;
-
-const sessionUserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  role: z.enum(ROLES),
-  status: z.enum(["ACTIVE", "DISABLED"]),
-  locale: z.enum(["vi", "en"]),
-});
+export type { Actor, CurrentUser } from "./actor.js";
 
 /**
- * Resolves the signed-in user from request headers. The session and the user's
- * role and status are read from the database on every call; a disabled user gets
- * null even while their session cookie is still valid (T-017).
+ * Resolves the signed-in user from request headers. The session, the user's status,
+ * role, overrides, branches, and access hours are read from the database on every call:
+ * a disabled user, or one outside their allowed hours, gets null even while their
+ * session cookie is still valid (T-017, D-017).
  */
-export async function getSessionUser(headers: Headers): Promise<CurrentUser | null> {
+export async function getSessionUser(headers: Headers, now: Date = new Date()): Promise<CurrentUser | null> {
   const session = await auth.api.getSession({
     headers,
     query: { disableCookieCache: true },
   });
   if (!session) return null;
 
-  const parsed = sessionUserSchema.safeParse(session.user);
-  if (!parsed.success || parsed.data.status !== "ACTIVE") return null;
-
-  const { id, name, email, role, locale } = parsed.data;
-  return { id, name, email, role, locale };
+  const user = await loadCurrentUser(prisma, session.user.id);
+  if (!user || user.status !== "ACTIVE") return null;
+  if (!isWithinAccessWindows(user.accessWindows, now, env.GYM_TIMEZONE)) return null;
+  return user;
 }

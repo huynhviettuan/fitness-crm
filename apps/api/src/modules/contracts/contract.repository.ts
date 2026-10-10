@@ -30,7 +30,7 @@ export async function nextContractCode(db: Db): Promise<string> {
 
 export function createContract(
   db: Db,
-  data: ContractData & { customerId: string; contractCode: string; idempotencyKey: string; createdById: string },
+  data: ContractData & { customerId: string; branchId: string; contractCode: string; idempotencyKey: string; createdById: string },
 ): Promise<ContractRecord> {
   return db.contract.create({ data, include: withCustomer });
 }

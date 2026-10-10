@@ -106,10 +106,20 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
   );
 }
 
-type CashFormValues = { type: string; category: string; amount: string; occurredOn: string; reference: string; description: string };
+type CashFormValues = {
+  branchId: string;
+  type: string;
+  category: string;
+  amount: string;
+  occurredOn: string;
+  reference: string;
+  description: string;
+};
+
+type BranchOption = { id: string; name: string };
 
 /** "Record income or expense": six fields, so a Dialog (docs/23 §7). */
-export function RecordCashButton() {
+export function RecordCashButton({ branches }: { branches: BranchOption[] }) {
   const t = useTranslations("finance");
   const [open, setOpen] = useState(false);
   // New key each time the dialog opens; retries and double-clicks inside it reuse it (T-015).
@@ -131,13 +141,13 @@ export function RecordCashButton() {
           <DialogTitle>{t("recordCash")}</DialogTitle>
           <DialogDescription>{t("recordCashDescription")}</DialogDescription>
         </DialogHeader>
-        <CashForm idempotencyKey={idempotencyKey} onDone={() => setOpen(false)} />
+        <CashForm idempotencyKey={idempotencyKey} branches={branches} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function CashForm({ idempotencyKey, onDone }: { idempotencyKey: string; onDone: () => void }) {
+function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string; branches: BranchOption[]; onDone: () => void }) {
   const t = useTranslations();
   const router = useRouter();
   const timeZone = useTimeZone() ?? "UTC";
@@ -146,7 +156,15 @@ function CashForm({ idempotencyKey, onDone }: { idempotencyKey: string; onDone: 
   // Same schema as the server for instant feedback; raw values are sent and re-parsed there.
   const form = useForm<CashFormValues>({
     resolver: zodResolver(cashTransactionInputSchema, undefined, { raw: true }) as never,
-    defaultValues: { type: "", category: "", amount: "", occurredOn: formatDate(new Date(), timeZone), reference: "", description: "" },
+    defaultValues: {
+      branchId: "",
+      type: "",
+      category: "",
+      amount: "",
+      occurredOn: formatDate(new Date(), timeZone),
+      reference: "",
+      description: "",
+    },
   });
 
   const onSubmit = form.handleSubmit((values) =>
@@ -167,6 +185,16 @@ function CashForm({ idempotencyKey, onDone }: { idempotencyKey: string; onDone: 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <FieldGroup>
+        {/* Asked only when the user works in more than one branch (D-014). */}
+        {branches.length > 1 && (
+          <SelectField
+            control={form.control}
+            name="branchId"
+            label={t("finance.fields.branch")}
+            placeholder={t("common.chooseBranch")}
+            options={branches.map((branch) => ({ value: branch.id, label: branch.name }))}
+          />
+        )}
         <div className="grid grid-cols-2 gap-4">
           <SelectField
             control={form.control}

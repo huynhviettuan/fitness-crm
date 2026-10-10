@@ -54,7 +54,7 @@ describe("recordCashTransaction", () => {
     });
   });
 
-  it.each(["RECEPTIONIST", "TRAINER"] as const)("refuses a %s (docs/09)", async (role) => {
+  it.each(["RECEPTIONIST", "PT"] as const)("refuses a %s (docs/09)", async (role) => {
     const { actor } = await createTestUser(role);
 
     await expect(record(actor)).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -64,13 +64,13 @@ describe("recordCashTransaction", () => {
 
 describe("voidCashTransaction (A-009)", () => {
   it("voids with a reason, and a repeat returns the current state", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { transaction } = await record(manager);
 
     const voided = await voidCashTransaction(manager, transaction.id, { reason: "Nhập sai số tiền" });
     const again = await voidCashTransaction(manager, transaction.id, { reason: "Khác" });
 
-    expect(voided).toMatchObject({ status: "VOIDED", voidReason: "Nhập sai số tiền", voidedBy: "MANAGER test user" });
+    expect(voided).toMatchObject({ status: "VOIDED", voidReason: "Nhập sai số tiền", voidedBy: "FITNESS_MANAGER test user" });
     expect(again.voidReason).toBe("Nhập sai số tiền");
     expect(await prisma.auditEvent.count({ where: { entityId: transaction.id, action: "cash_transaction.voided" } })).toBe(1);
   });
@@ -78,7 +78,7 @@ describe("voidCashTransaction (A-009)", () => {
 
 describe("financeSummary (FR-CASH-002, OQ-007 interim)", () => {
   it("totals confirmed income, expenses, and contract payments as separate lines for the period", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(manager, { fullName: "Nguyễn Văn An", phone: "0909123456" });
     const contract = await activeContract(manager, customer.id);
     await recordPayment(manager, contract.id, { amount: "5.000.000", method: "BANK_TRANSFER", paidOn: "02/10/2026" }, randomUUID());

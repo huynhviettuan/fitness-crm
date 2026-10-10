@@ -39,7 +39,7 @@ describe("createCustomer", () => {
     expect(codes.size).toBe(10);
   });
 
-  it.each(["TRAINER", "ACCOUNTANT"] as const)("rejects a %s (docs/09)", async (role) => {
+  it.each(["PT", "ACCOUNTANT"] as const)("rejects a %s (docs/09)", async (role) => {
     const { actor } = await createTestUser(role);
 
     await expect(createCustomer(actor, validCustomer)).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -59,7 +59,7 @@ describe("createCustomer", () => {
 
 describe("updateCustomer", () => {
   it("audits only the fields that changed, with before and after", async () => {
-    const { actor } = await createTestUser("MANAGER");
+    const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);
 
     await updateCustomer(actor, customer.id, { phone: "0911 222 333", fullName: validCustomer.fullName });
@@ -69,7 +69,7 @@ describe("updateCustomer", () => {
   });
 
   it("writes no audit event when nothing changed", async () => {
-    const { actor } = await createTestUser("MANAGER");
+    const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);
 
     await updateCustomer(actor, customer.id, { fullName: validCustomer.fullName });
@@ -78,7 +78,7 @@ describe("updateCustomer", () => {
   });
 
   it("never changes the customer code (BR-001)", async () => {
-    const { actor } = await createTestUser("MANAGER");
+    const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);
 
     const updated = await updateCustomer(actor, customer.id, { customerCode: "KH999999", status: "INACTIVE" });
@@ -88,7 +88,7 @@ describe("updateCustomer", () => {
   });
 
   it("keeps the search name in sync with the full name", async () => {
-    const { actor } = await createTestUser("MANAGER");
+    const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);
 
     await updateCustomer(actor, customer.id, { fullName: "Trần Thị Bích" });
@@ -128,7 +128,7 @@ describe("listCustomers search (FR-CUS-002)", () => {
 describe("customer visibility", () => {
   it("a trainer sees no customers until bookings exist (OQ-006 interim)", async () => {
     const { actor: receptionist } = await createTestUser("RECEPTIONIST");
-    const { actor: trainer } = await createTestUser("TRAINER");
+    const { actor: trainer } = await createTestUser("PT");
     const customer = await createCustomer(receptionist, validCustomer);
 
     expect((await listCustomers(trainer, {})).total).toBe(0);

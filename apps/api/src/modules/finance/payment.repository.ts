@@ -1,5 +1,5 @@
 import type { Db } from "../../platform/db/prisma.js";
-import type { PaymentMethod, Prisma } from "../../generated/prisma/client.js";
+import { Prisma, type PaymentMethod } from "../../generated/prisma/client.js";
 
 const paymentInclude = {
   contract: {
@@ -13,13 +13,21 @@ export type PaymentRecord = Prisma.PaymentGetPayload<{ include: typeof paymentIn
 
 export function createPayment(
   db: Db,
-  data: { contractId: string; amount: number; method: PaymentMethod; paidOn: Date; idempotencyKey: string; createdById: string },
+  data: {
+    contractId: string;
+    branchId: string;
+    amount: number;
+    method: PaymentMethod;
+    paidOn: Date;
+    idempotencyKey: string;
+    createdById: string;
+  },
 ): Promise<PaymentRecord> {
   return db.payment.create({ data, include: paymentInclude });
 }
 
-export function findPayment(db: Db, id: string): Promise<PaymentRecord | null> {
-  return db.payment.findUnique({ where: { id }, include: paymentInclude });
+export function findPayment(db: Db, id: string, visibility: Prisma.PaymentWhereInput = {}): Promise<PaymentRecord | null> {
+  return db.payment.findFirst({ where: { AND: [{ id }, visibility] }, include: paymentInclude });
 }
 
 export function findPaymentByIdempotencyKey(db: Db, idempotencyKey: string): Promise<PaymentRecord | null> {
@@ -63,17 +71,35 @@ export async function confirmedPaidByContract(db: Db, contractIds: string[]): Pr
   return new Map(rows.map((row) => [row.contractId, Number(row._sum.amount ?? 0)]));
 }
 
+/** Which contracts a debt list may show: branches and "own" scope (D-014, D-017, A-029). */
+export type DebtScope = { branchIds: string[] | "ALL"; ownBy: { userId: string; trainerId: string | null } | null };
+
+function debtScopeSql(scope: DebtScope): Prisma.Sql {
+  const branch = scope.branchIds === "ALL" ? Prisma.sql`TRUE` : Prisma.sql`c.branch_id = ANY(${scope.branchIds}::uuid[])`;
+  if (!scope.ownBy) return branch;
+  const { userId, trainerId } = scope.ownBy;
+  const viaTrainer = trainerId
+    ? Prisma.sql`OR EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id = c.customer_id AND b.trainer_id = ${trainerId}::uuid)`
+    : Prisma.empty;
+  return Prisma.sql`${branch} AND (
+    c.created_by = ${userId}::uuid
+    OR EXISTS (SELECT 1 FROM customers cu WHERE cu.id = c.customer_id AND cu.created_by = ${userId}::uuid)
+    ${viaTrainer}
+  )`;
+}
+
 /**
  * Contracts that still owe money, largest debt first (BR-013). Drafts have not taken
  * effect and are left out (A-022); cancelled contracts keep their debt (OQ-013 interim).
  */
-export async function contractsWithDebt(db: Db, options: { skip: number; take: number }) {
+export async function contractsWithDebt(db: Db, scope: DebtScope, options: { skip: number; take: number }) {
+  const where = debtScopeSql(scope);
   const [rows, [{ total }]] = await Promise.all([
     db.$queryRaw<{ id: string }[]>`
       SELECT c.id
       FROM contracts c
       LEFT JOIN payments p ON p.contract_id = c.id AND p.status = 'CONFIRMED'
-      WHERE c.status <> 'DRAFT'
+      WHERE c.status <> 'DRAFT' AND ${where}
       GROUP BY c.id
       HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
       ORDER BY c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) DESC, c.contract_code
@@ -83,7 +109,7 @@ export async function contractsWithDebt(db: Db, options: { skip: number; take: n
         SELECT c.id
         FROM contracts c
         LEFT JOIN payments p ON p.contract_id = c.id AND p.status = 'CONFIRMED'
-        WHERE c.status <> 'DRAFT'
+        WHERE c.status <> 'DRAFT' AND ${where}
         GROUP BY c.id
         HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
       ) owing`,

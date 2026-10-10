@@ -29,7 +29,8 @@
         },
         "tags": [
           "me"
-        ]
+        ],
+        "x-permission": "authenticated"
       }
     },
     "/api/v1/me/locale": {
@@ -75,7 +76,8 @@
         },
         "tags": [
           "me"
-        ]
+        ],
+        "x-permission": "authenticated"
       }
     },
     "/api/v1/customers": {
@@ -131,7 +133,8 @@
         },
         "tags": [
           "customers"
-        ]
+        ],
+        "x-permission": "customer.view"
       },
       "post": {
         "operationId": "CustomersController_create",
@@ -143,6 +146,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
                   "fullName": {
                     "type": "string",
                     "minLength": 1,
@@ -198,7 +215,8 @@
         },
         "tags": [
           "customers"
-        ]
+        ],
+        "x-permission": "customer.manage"
       }
     },
     "/api/v1/customers/{id}": {
@@ -238,7 +256,8 @@
         },
         "tags": [
           "customers"
-        ]
+        ],
+        "x-permission": "customer.view"
       },
       "patch": {
         "operationId": "CustomersController_update",
@@ -314,7 +333,8 @@
         },
         "tags": [
           "customers"
-        ]
+        ],
+        "x-permission": "customer.manage"
       }
     },
     "/api/v1/customers/{id}/contracts": {
@@ -370,7 +390,8 @@
         },
         "tags": [
           "customers"
-        ]
+        ],
+        "x-permission": "contract.view"
       },
       "post": {
         "operationId": "CustomersController_createContract",
@@ -479,7 +500,8 @@
         },
         "tags": [
           "customers"
-        ]
+        ],
+        "x-permission": "contract.create"
       }
     },
     "/api/v1/contracts": {
@@ -543,7 +565,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "contract.view"
       }
     },
     "/api/v1/contracts/{id}": {
@@ -583,7 +606,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "contract.view"
       },
       "patch": {
         "operationId": "ContractsController_update",
@@ -673,7 +697,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "contract.create"
       }
     },
     "/api/v1/contracts/{id}/activate": {
@@ -713,7 +738,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "contract.approve"
       }
     },
     "/api/v1/contracts/{id}/cancel": {
@@ -753,7 +779,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "contract.cancel"
       }
     },
     "/api/v1/contracts/{id}/payments": {
@@ -809,7 +836,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "payment.view"
       },
       "post": {
         "operationId": "ContractsController_recordPayment",
@@ -906,7 +934,8 @@
         },
         "tags": [
           "contracts"
-        ]
+        ],
+        "x-permission": "payment.record"
       }
     },
     "/api/v1/trainers": {
@@ -946,7 +975,8 @@
         },
         "tags": [
           "trainers"
-        ]
+        ],
+        "x-permission": "trainer.view"
       },
       "post": {
         "operationId": "TrainersController_create",
@@ -958,6 +988,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
                   "fullName": {
                     "type": "string",
                     "minLength": 1,
@@ -1025,7 +1069,8 @@
         },
         "tags": [
           "trainers"
-        ]
+        ],
+        "x-permission": "trainer.manage"
       }
     },
     "/api/v1/trainers/logins": {
@@ -1056,7 +1101,8 @@
         },
         "tags": [
           "trainers"
-        ]
+        ],
+        "x-permission": "trainer.manage"
       }
     },
     "/api/v1/trainers/{id}": {
@@ -1079,6 +1125,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
                   "fullName": {
                     "type": "string",
                     "minLength": 1,
@@ -1146,7 +1206,8 @@
         },
         "tags": [
           "trainers"
-        ]
+        ],
+        "x-permission": "trainer.manage"
       }
     },
     "/api/v1/bookings": {
@@ -1250,7 +1311,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.view"
       },
       "post": {
         "operationId": "BookingsController_create",
@@ -1325,7 +1387,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.manage"
       }
     },
     "/api/v1/bookings/{id}": {
@@ -1365,7 +1428,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.view"
       },
       "patch": {
         "operationId": "BookingsController_reschedule",
@@ -1439,7 +1503,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.manage"
       }
     },
     "/api/v1/bookings/{id}/cancel": {
@@ -1479,7 +1544,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.manage"
       }
     },
     "/api/v1/bookings/{id}/no-show": {
@@ -1519,7 +1585,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.manage"
       }
     },
     "/api/v1/bookings/{id}/check-in": {
@@ -1559,7 +1626,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "session.checkIn"
       }
     },
     "/api/v1/bookings/{id}/complete": {
@@ -1599,7 +1667,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "session.complete"
       }
     },
     "/api/v1/schedule": {
@@ -1647,7 +1716,8 @@
         },
         "tags": [
           "bookings"
-        ]
+        ],
+        "x-permission": "booking.view"
       }
     },
     "/api/v1/payments": {
@@ -1735,7 +1805,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "payment.view"
       }
     },
     "/api/v1/payments/collected": {
@@ -1783,7 +1854,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "payment.view"
       }
     },
     "/api/v1/payments/{id}/void": {
@@ -1842,7 +1914,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "payment.void"
       }
     },
     "/api/v1/debts": {
@@ -1890,7 +1963,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "payment.view"
       }
     },
     "/api/v1/cash-transactions": {
@@ -1970,7 +2044,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "cash.manage"
       },
       "post": {
         "operationId": "CashTransactionsController_record",
@@ -1992,6 +2067,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
                   "type": {
                     "type": "string",
                     "enum": [
@@ -2072,7 +2161,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "cash.manage"
       }
     },
     "/api/v1/cash-transactions/summary": {
@@ -2120,7 +2210,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "cash.manage"
       }
     },
     "/api/v1/cash-transactions/{id}/void": {
@@ -2179,7 +2270,8 @@
         },
         "tags": [
           "finance"
-        ]
+        ],
+        "x-permission": "cash.manage"
       }
     },
     "/api/v1/users": {
@@ -2210,7 +2302,8 @@
         },
         "tags": [
           "users"
-        ]
+        ],
+        "x-permission": "user.manage"
       },
       "post": {
         "operationId": "UsersController_create",
@@ -2230,26 +2323,32 @@
                   "email": {
                     "type": "string"
                   },
-                  "role": {
+                  "roleId": {
                     "type": "string",
-                    "enum": [
-                      "ADMIN",
-                      "MANAGER",
-                      "RECEPTIONIST",
-                      "TRAINER",
-                      "ACCOUNTANT"
-                    ]
+                    "format": "uuid"
                   },
                   "password": {
                     "type": "string",
                     "minLength": 10,
                     "maxLength": 128
+                  },
+                  "allBranches": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "branchIds": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
                   }
                 },
                 "required": [
                   "name",
                   "email",
-                  "role",
+                  "roleId",
                   "password"
                 ]
               }
@@ -2280,7 +2379,49 @@
         },
         "tags": [
           "users"
-        ]
+        ],
+        "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "operationId": "UsersController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "x-permission": "user.manage"
       }
     },
     "/api/v1/users/{id}/role": {
@@ -2303,19 +2444,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "role": {
+                  "roleId": {
                     "type": "string",
-                    "enum": [
-                      "ADMIN",
-                      "MANAGER",
-                      "RECEPTIONIST",
-                      "TRAINER",
-                      "ACCOUNTANT"
-                    ]
+                    "format": "uuid"
                   }
                 },
                 "required": [
-                  "role"
+                  "roleId"
                 ]
               }
             }
@@ -2345,7 +2480,8 @@
         },
         "tags": [
           "users"
-        ]
+        ],
+        "x-permission": "user.manage"
       }
     },
     "/api/v1/users/{id}/status": {
@@ -2407,7 +2543,355 @@
         },
         "tags": [
           "users"
-        ]
+        ],
+        "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/users/{id}/branches": {
+      "put": {
+        "operationId": "UsersController_setBranches",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "allBranches": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "branchIds": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/users/{id}/overrides": {
+      "put": {
+        "operationId": "UsersController_setOverrides",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "overrides": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "permission": {
+                          "type": "string",
+                          "enum": [
+                            "user.manage",
+                            "role.manage",
+                            "branch.manage",
+                            "customer.view",
+                            "customer.manage",
+                            "contract.view",
+                            "contract.create",
+                            "contract.approve",
+                            "contract.cancel",
+                            "booking.view",
+                            "booking.manage",
+                            "session.checkIn",
+                            "session.complete",
+                            "trainer.view",
+                            "trainer.manage",
+                            "payment.view",
+                            "payment.record",
+                            "payment.void",
+                            "cash.manage"
+                          ]
+                        },
+                        "granted": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "permission",
+                        "granted"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "overrides"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/users/{id}/access-hours": {
+      "put": {
+        "operationId": "UsersController_setAccessHours",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "windows": {
+                    "maxItems": 14,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "weekdays": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "enum": [
+                                  1
+                                ]
+                              },
+                              {
+                                "type": "number",
+                                "enum": [
+                                  2
+                                ]
+                              },
+                              {
+                                "type": "number",
+                                "enum": [
+                                  3
+                                ]
+                              },
+                              {
+                                "type": "number",
+                                "enum": [
+                                  4
+                                ]
+                              },
+                              {
+                                "type": "number",
+                                "enum": [
+                                  5
+                                ]
+                              },
+                              {
+                                "type": "number",
+                                "enum": [
+                                  6
+                                ]
+                              },
+                              {
+                                "type": "number",
+                                "enum": [
+                                  7
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "startTime": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "endTime": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      },
+                      "required": [
+                        "weekdays",
+                        "startTime",
+                        "endTime"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "windows"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/users/{id}/logins": {
+      "get": {
+        "operationId": "UsersController_logins",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginEventPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "x-permission": "user.manage"
       }
     },
     "/api/v1/users/{id}/password": {
@@ -2460,7 +2944,580 @@
         },
         "tags": [
           "users"
-        ]
+        ],
+        "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/roles": {
+      "get": {
+        "operationId": "RolesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "roles"
+        ],
+        "x-permission": "role.manage | user.manage"
+      },
+      "post": {
+        "operationId": "RolesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "user.manage",
+                        "role.manage",
+                        "branch.manage",
+                        "customer.view",
+                        "customer.manage",
+                        "contract.view",
+                        "contract.create",
+                        "contract.approve",
+                        "contract.cancel",
+                        "booking.view",
+                        "booking.manage",
+                        "session.checkIn",
+                        "session.complete",
+                        "trainer.view",
+                        "trainer.manage",
+                        "payment.view",
+                        "payment.record",
+                        "payment.void",
+                        "cash.manage"
+                      ]
+                    }
+                  },
+                  "dataScopes": {
+                    "type": "object",
+                    "properties": {
+                      "customers": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
+                      "contracts": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
+                      "schedule": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
+                      "vouchers": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "customers",
+                      "contracts",
+                      "schedule",
+                      "vouchers"
+                    ]
+                  },
+                  "fieldMasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "customer.phone",
+                        "customer.email",
+                        "receipts.totals"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "permissions",
+                  "dataScopes",
+                  "fieldMasks"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "roles"
+        ],
+        "x-permission": "role.manage"
+      }
+    },
+    "/api/v1/roles/{id}": {
+      "get": {
+        "operationId": "RolesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "roles"
+        ],
+        "x-permission": "role.manage"
+      },
+      "put": {
+        "operationId": "RolesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "permissions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "user.manage",
+                        "role.manage",
+                        "branch.manage",
+                        "customer.view",
+                        "customer.manage",
+                        "contract.view",
+                        "contract.create",
+                        "contract.approve",
+                        "contract.cancel",
+                        "booking.view",
+                        "booking.manage",
+                        "session.checkIn",
+                        "session.complete",
+                        "trainer.view",
+                        "trainer.manage",
+                        "payment.view",
+                        "payment.record",
+                        "payment.void",
+                        "cash.manage"
+                      ]
+                    }
+                  },
+                  "dataScopes": {
+                    "type": "object",
+                    "properties": {
+                      "customers": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
+                      "contracts": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
+                      "schedule": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
+                      "vouchers": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "customers",
+                      "contracts",
+                      "schedule",
+                      "vouchers"
+                    ]
+                  },
+                  "fieldMasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "customer.phone",
+                        "customer.email",
+                        "receipts.totals"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "permissions",
+                  "dataScopes",
+                  "fieldMasks"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "roles"
+        ],
+        "x-permission": "role.manage"
+      }
+    },
+    "/api/v1/roles/{id}/clone": {
+      "post": {
+        "operationId": "RolesController_clone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Role"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "roles"
+        ],
+        "x-permission": "role.manage"
+      }
+    },
+    "/api/v1/branches": {
+      "get": {
+        "operationId": "BranchesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BranchList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "branches"
+        ],
+        "x-permission": "branch.manage"
+      },
+      "post": {
+        "operationId": "BranchesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "address": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Branch"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "branches"
+        ],
+        "x-permission": "branch.manage"
+      }
+    },
+    "/api/v1/branches/{id}": {
+      "patch": {
+        "operationId": "BranchesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "address": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Branch"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "branches"
+        ],
+        "x-permission": "branch.manage"
       }
     }
   },
@@ -2547,14 +3604,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "ADMIN",
-              "MANAGER",
-              "RECEPTIONIST",
-              "TRAINER",
-              "ACCOUNTANT"
-            ]
+            "$ref": "#/components/schemas/RoleRef"
           },
           "locale": {
             "type": "string",
@@ -2573,10 +3623,14 @@
             "items": {
               "type": "string",
               "enum": [
+                "user.manage",
+                "role.manage",
+                "branch.manage",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
-                "contract.manage",
+                "contract.create",
+                "contract.approve",
                 "contract.cancel",
                 "booking.view",
                 "booking.manage",
@@ -2587,8 +3641,43 @@
                 "payment.view",
                 "payment.record",
                 "payment.void",
-                "cash.manage",
-                "user.manage"
+                "cash.manage"
+              ]
+            }
+          },
+          "dataScopes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "OWN"
+              ]
+            },
+            "required": [
+              "customers",
+              "contracts",
+              "schedule",
+              "vouchers"
+            ]
+          },
+          "allBranches": {
+            "type": "boolean"
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchRef"
+            }
+          },
+          "maskedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "customer.phone",
+                "customer.email",
+                "receipts.totals"
               ]
             }
           }
@@ -2600,7 +3689,43 @@
           "role",
           "locale",
           "trainerId",
-          "permissions"
+          "permissions",
+          "dataScopes",
+          "allBranches",
+          "branches",
+          "maskedFields"
+        ]
+      },
+      "RoleRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "BranchRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
         ]
       },
       "CustomerPage": {
@@ -2639,10 +3764,14 @@
           "customerCode": {
             "type": "string"
           },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
           "fullName": {
             "type": "string"
           },
           "phone": {
+            "nullable": true,
             "type": "string"
           },
           "email": {
@@ -2672,11 +3801,22 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "maskedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "phone",
+                "email"
+              ]
+            }
           }
         },
         "required": [
           "id",
           "customerCode",
+          "branch",
           "fullName",
           "phone",
           "email",
@@ -2684,7 +3824,8 @@
           "status",
           "notes",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "maskedFields"
         ]
       },
       "ContractPage": {
@@ -2957,6 +4098,9 @@
           "trainerCode": {
             "type": "string"
           },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
           "fullName": {
             "type": "string"
           },
@@ -2992,6 +4136,7 @@
         "required": [
           "id",
           "trainerCode",
+          "branch",
           "fullName",
           "status",
           "user"
@@ -3216,6 +4361,7 @@
         "type": "object",
         "properties": {
           "total": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -3282,6 +4428,9 @@
             "type": "string",
             "format": "uuid"
           },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
           "type": {
             "type": "string",
             "enum": [
@@ -3337,6 +4486,7 @@
         },
         "required": [
           "id",
+          "branch",
           "type",
           "category",
           "amount",
@@ -3355,12 +4505,15 @@
         "type": "object",
         "properties": {
           "contractPayments": {
+            "nullable": true,
             "type": "integer"
           },
           "otherIncome": {
+            "nullable": true,
             "type": "integer"
           },
           "expense": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -3398,14 +4551,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "ADMIN",
-              "MANAGER",
-              "RECEPTIONIST",
-              "TRAINER",
-              "ACCOUNTANT"
-            ]
+            "$ref": "#/components/schemas/RoleRef"
           },
           "status": {
             "type": "string",
@@ -3421,6 +4567,15 @@
               "en"
             ]
           },
+          "allBranches": {
+            "type": "boolean"
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchRef"
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -3433,7 +4588,376 @@
           "role",
           "status",
           "locale",
+          "allBranches",
+          "branches",
           "createdAt"
+        ]
+      },
+      "UserDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/RoleRef"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DISABLED"
+            ]
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "vi",
+              "en"
+            ]
+          },
+          "allBranches": {
+            "type": "boolean"
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchRef"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "overrides": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "permission": {
+                  "type": "string",
+                  "enum": [
+                    "user.manage",
+                    "role.manage",
+                    "branch.manage",
+                    "customer.view",
+                    "customer.manage",
+                    "contract.view",
+                    "contract.create",
+                    "contract.approve",
+                    "contract.cancel",
+                    "booking.view",
+                    "booking.manage",
+                    "session.checkIn",
+                    "session.complete",
+                    "trainer.view",
+                    "trainer.manage",
+                    "payment.view",
+                    "payment.record",
+                    "payment.void",
+                    "cash.manage"
+                  ]
+                },
+                "granted": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "permission",
+                "granted"
+              ]
+            }
+          },
+          "accessWindows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "weekdays": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "enum": [
+                          1
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          2
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          3
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          4
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          5
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          6
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          7
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "startTime": {
+                  "type": "string"
+                },
+                "endTime": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "weekdays",
+                "startTime",
+                "endTime"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "status",
+          "locale",
+          "allBranches",
+          "branches",
+          "createdAt",
+          "overrides",
+          "accessWindows"
+        ]
+      },
+      "LoginEventPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoginEvent"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "LoginEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "reason": {
+            "nullable": true,
+            "type": "string"
+          },
+          "ip": {
+            "nullable": true,
+            "type": "string"
+          },
+          "userAgent": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "success",
+          "reason",
+          "ip",
+          "userAgent"
+        ]
+      },
+      "RoleList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Role": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "user.manage",
+                "role.manage",
+                "branch.manage",
+                "customer.view",
+                "customer.manage",
+                "contract.view",
+                "contract.create",
+                "contract.approve",
+                "contract.cancel",
+                "booking.view",
+                "booking.manage",
+                "session.checkIn",
+                "session.complete",
+                "trainer.view",
+                "trainer.manage",
+                "payment.view",
+                "payment.record",
+                "payment.void",
+                "cash.manage"
+              ]
+            }
+          },
+          "dataScopes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "OWN"
+              ]
+            },
+            "required": [
+              "customers",
+              "contracts",
+              "schedule",
+              "vouchers"
+            ]
+          },
+          "fieldMasks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "customer.phone",
+                "customer.email",
+                "receipts.totals"
+              ]
+            }
+          },
+          "userCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "permissions",
+          "dataScopes",
+          "fieldMasks",
+          "userCount"
+        ]
+      },
+      "BranchList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Branch"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Branch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "nullable": true,
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "active"
         ]
       }
     }

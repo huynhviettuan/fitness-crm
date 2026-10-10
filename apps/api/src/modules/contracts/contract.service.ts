@@ -6,10 +6,12 @@ import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { assertCan } from "../../platform/permissions/assert.js";
+import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import { findCustomer } from "../customers/customer.repository.js";
+import { ownCustomers, visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import * as bookingRepo from "../bookings/booking.repository.js";
 import { confirmedPaidByContract } from "../finance/payment.repository.js";
 import * as repo from "./contract.repository.js";
@@ -79,13 +81,13 @@ export async function createContract(
   input: unknown,
   idempotencyKey: unknown,
 ): Promise<{ contract: ContractView; replayed: boolean }> {
-  assertCan(actor, "contract.manage");
+  assertCan(actor, "contract.create");
   const key = idempotencyKeySchema.safeParse(idempotencyKey);
   if (!key.success) throw new AppError("IDEMPOTENCY_KEY_REQUIRED");
   const data = parseInput(contractInputSchema, input);
-  if (!z.uuid().safeParse(customerId).success || !(await findCustomer(prisma, customerId, {}))) {
-    throw new AppError("NOT_FOUND");
-  }
+  // Only for a customer the actor can see; the contract belongs to the customer's branch (D-014).
+  const customer = z.uuid().safeParse(customerId).success ? await findCustomer(prisma, customerId, customersVisibleTo(actor)) : null;
+  if (!customer) throw new AppError("NOT_FOUND");
 
   const replay = await replayOf(key.data, customerId, data, actor);
   if (replay) return { contract: replay, replayed: true };
@@ -96,6 +98,7 @@ export async function createContract(
       const contract = await repo.createContract(tx, {
         ...data,
         customerId,
+        branchId: customer.branchId,
         contractCode,
         idempotencyKey: key.data,
         createdById: actor.id,
@@ -127,7 +130,7 @@ export async function createContract(
 
 /** Drafts only, until OQ-015 decides what may change on an active contract. */
 export async function updateContract(actor: Actor, id: string, input: unknown): Promise<ContractView> {
-  assertCan(actor, "contract.manage");
+  assertCan(actor, "contract.create");
   const data = parseInput(contractInputSchema, input);
   const today = gymToday();
 
@@ -147,7 +150,7 @@ export async function updateContract(actor: Actor, id: string, input: unknown): 
 
 /** Repeating an activation that already happened returns the current state (docs/07). */
 export async function activateContract(actor: Actor, id: string): Promise<ContractView> {
-  assertCan(actor, "contract.manage");
+  assertCan(actor, "contract.approve");
   const today = gymToday();
   return prisma.$transaction(async (tx) => {
     const before = await getOrThrow(tx, actor, id);
@@ -273,8 +276,11 @@ function gymToday(): Date {
   return calendarDateInTimeZone(env.GYM_TIMEZONE);
 }
 
-/** Trainers see only contracts of customers with a booking assigned to them (OQ-006 interim, docs/09). */
+/**
+ * Which contracts an actor may see: their branches, and with "own" scope the contracts
+ * they created or of the customers they are responsible for (D-017, A-029).
+ */
 export function contractsVisibleTo(actor: Actor): Prisma.ContractWhereInput {
-  if (actor.role === "TRAINER") return { customer: { bookings: { some: { trainer: { userId: actor.id } } } } };
-  return {};
+  const own: Prisma.ContractWhereInput = { OR: [{ createdById: actor.id }, { customer: ownCustomers(actor) }] };
+  return { AND: [inBranches(actor), isOwnOnly(actor, "contracts") ? own : {}] };
 }

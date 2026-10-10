@@ -1,7 +1,15 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { changeUserRole, createUser, resetUserPassword, setUserStatus } from "@/lib/api/users";
+import {
+  changeUserRole,
+  createUser,
+  resetUserPassword,
+  setUserAccessHours,
+  setUserBranches,
+  setUserOverrides,
+  setUserStatus,
+} from "@/lib/api/users";
 
 /** The forms send the target user's id with the other fields; the API takes it in the path. */
 function split(input: unknown): { userId: string; body: unknown } {
@@ -12,10 +20,10 @@ function split(input: unknown): { userId: string; body: unknown } {
   return { userId: "-", body: input };
 }
 
-export async function createUserAction(input: unknown): Promise<ActionResult<{ name: string }>> {
+export async function createUserAction(input: unknown): Promise<ActionResult<{ id: string; name: string }>> {
   return runAction(async () => {
     const user = await createUser(input);
-    return { name: user.name };
+    return { id: user.id, name: user.name };
   });
 }
 
@@ -30,6 +38,27 @@ export async function setUserStatusAction(input: unknown): Promise<ActionResult>
   return runAction(async () => {
     const { userId, body } = split(input);
     await setUserStatus(userId, body);
+  });
+}
+
+export async function setUserBranchesAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const { userId, body } = split(input);
+    await setUserBranches(userId, body);
+  });
+}
+
+export async function setUserOverridesAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const { userId, body } = split(input);
+    await setUserOverrides(userId, body);
+  });
+}
+
+export async function setUserAccessHoursAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const { userId, body } = split(input);
+    await setUserAccessHours(userId, body);
   });
 }
 

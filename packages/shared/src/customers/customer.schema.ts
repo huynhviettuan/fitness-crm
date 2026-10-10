@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { branchChoice } from "../branches/branch.schema.js";
 import { parseDateOnly, normalizePhone, hasNoControlCharacters } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
@@ -50,6 +51,7 @@ const notes = z
   .transform(emptyToNull);
 
 export const createCustomerSchema = z.object({
+  branchId: branchChoice,
   fullName,
   phone,
   email: email.prefault(""),

@@ -64,6 +64,7 @@ The source of truth for the product is the customer's brief v2, `docs/source/BRI
 | T-051 | **Email** goes through a transactional provider (Resend recommended, Amazon SES as the low-cost alternative) via an outbox table with retries; Flow's domain is authenticated with SPF, DKIM, and DMARC. |
 | T-052 | **Files and sensitive fields.** Transfer receipts and ID scans are stored in private S3-compatible storage (Cloudflare R2) behind signed URLs. ID numbers and health data are encrypted at the application level (AES-256-GCM, key from the environment or a key manager). |
 | T-053 | **Browsers reach the API through the web app** (2026-10-10, M1 slice 1). The web app's Server Components and Server Actions call the API server-to-server, forwarding the session cookie, the Origin (already checked by Next.js), and the client address. Requests the browser makes itself (Better Auth sign-in and sign-out, customer search, direct `/api/*` calls) go to the web app's `/api/[...path]` route, which forwards them to `API_URL` with `X-Forwarded-For`. One origin keeps the session cookie first-party, the CSP's `connect-src 'self'`, and the Origin check a single comparison (the web app's URL, `BETTER_AUTH_URL` in the API); no CORS is needed. A route handler is used instead of a Next.js rewrite because rewrites do not forward the client address, which sign-in rate limits key on. Direct API clients without `X-Forwarded-For` are keyed on their connection address. Replaces the parent-domain cookie first planned in `26_TECH_PROPOSAL.md` §5. |
+| T-054 | **Permission model as built** (2026-10-10, M1 slice 2). The permission catalog (keys, tree groups, data-scope resources, maskable fields) lives in code in `packages/shared/src/permissions`; there is no `permissions` table, and a role or override naming an unknown key is refused. Roles, their permissions, data scopes, and field masks are tables. Effective permissions = the role's permissions, plus overrides switched on, minus overrides switched off. A missing data-scope row means *only mine*, so a new resource is closed until admin opens it. Each endpoint declares `@RequirePermission(...)` (any of the keys) or `@AnySignedInUser()`; the guard refuses an endpoint that declares neither, and a unit test checks that every operation in `openapi.json` carries `x-permission`. Status and allowed hours are checked at sign-in and again on every request, so a disabled account or a closed window ends the session at once. Masked fields are returned as `null` with the field name in `maskedFields`; masked totals are `null`. A user's branches are checked on every read and write; records of other branches answer `404`. The catalog holds only the Phases 0–4 resources now and grows with each milestone. |
 
 ## Earlier decisions (brief v1) and their status
 
@@ -135,11 +136,11 @@ The source of truth for the product is the customer's brief v2, `docs/source/BRI
 | A-007 | A trainer acts only on their own bookings. | — | Superseded by D-017 (PT data scope: own customers and schedule). |
 | A-008 | Payments are CONFIRMED or VOIDED. | — | Superseded by D-034/D-035 (receipts deleted to trash). |
 | A-009 | Cash transactions are voided and re-recorded. | — | Superseded by D-034/D-035. |
-| A-010 | A trainer record may exist without a login. | — | Superseded by brief §8.4 (every employee has an account; PTs are employees). |
+| A-010 | A trainer record may exist without a login. | — | Superseded by brief §8.4 (every employee has an account; PTs are employees); interim linking in A-030. |
 | A-011 | Default UI language Vietnamese. | brief §11 | Active |
 | A-012 | Device targets. | — | Amended by D-043 (leads, PT calendar, workout log at phone width). |
 | A-013 | Customer status ACTIVE/INACTIVE set by staff. | — | Superseded by D-040. |
-| A-014 | An admin cannot change their own role or disable their own account. | — | Active |
+| A-014 | An admin cannot change their own role or disable their own account. | — | Active; extended in M1 slice 2: nobody changes their own branches, overrides, or allowed hours, or removes user or role management from their own role. |
 | A-015 | Contract permissions. | — | Superseded by D-017/D-018. |
 | A-016 | Booking and trainer permissions. | — | Superseded by D-017. |
 | A-017 | The session's own day is checked against the contract dates. | BR-012 | Active (with OQ-001). |
@@ -154,6 +155,11 @@ The source of truth for the product is the customer's brief v2, `docs/source/BRI
 | A-026 | The PT allocation value of a contract is its value after discounts, excluding VAT, until OQ-022 says otherwise. | brief §6.5 | Active |
 | A-027 | Email language: Vietnamese for nationality group "Việt Nam", English otherwise. | brief §8.3 | Active |
 | A-028 | Sizing for the first 12 months: up to 5 branches, 100 staff accounts, 5,000 customers, 50,000 sessions per year. Used for hosting and cost estimates only. | OQ-028 open | Active |
+| A-029 | *Only mine* (D-017) for the Phases 0–4 resources: a customer is mine if I created it or one of its sessions is with my trainer record; a contract if I created it or its customer is mine; a session if it is with my trainer record or its customer was created by me; a receipt or cash entry if I recorded it. Lead ownership replaces "created by" for customers in M2. | D-017 | Active |
+| A-030 | Until employees land (M1 slice 6), a trainer record links to a login whose role keeps the PT schedule *only mine*; that login acts as that trainer. | A-010, brief §8.4 | Active |
+| A-031 | Branch of a new record: the branch the user chose, if active and granted to them; otherwise their only usable branch; otherwise the request is refused with *branch required*. Contracts, sessions, and receipts take the branch of their customer or contract. | D-014 | Active |
+| A-032 | Migration of the fixed roles: Manager → Fitness Manager, Receptionist → Receptionist, Trainer → PT, Accountant → custom role "Kế toán" (cash book and receipts, view of customers, contracts, schedule, trainers). Existing records go to the default branch "Chi nhánh chính", and their creator is taken from the audit log. | `25_BRIEF_V2_GAP_ANALYSIS.md` | Active |
+| A-033 | Login history reasons for a refused sign-in: wrong password, unknown account, disabled account, outside allowed hours. An unknown account is logged by email without a user. | D-017 | Active |
 
 ## Technical items still to select
 

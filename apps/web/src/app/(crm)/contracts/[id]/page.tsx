@@ -6,6 +6,7 @@ import { BanknoteIcon, CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
+import { ForbiddenState } from "@/components/forbidden-state";
 import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -36,12 +37,14 @@ export const instant = false;
 
 export async function generateMetadata({ params }: PageProps<"/contracts/[id]">): Promise<Metadata> {
   const user = await requirePageUser();
+  if (!can(user, "contract.view")) return {};
   const contract = await loadContract(user, (await params).id);
   return { title: `${contract.contractCode} · ${contract.packageName}` };
 }
 
 export default async function ContractPage({ params }: PageProps<"/contracts/[id]">) {
   const user = await requirePageUser();
+  if (!can(user, "contract.view")) return <ForbiddenState />;
   const contract = await loadContract(user, (await params).id);
   const t = await getTranslations("contracts");
   const f = (key: Parameters<typeof t>[0]) => t(key);
@@ -61,12 +64,11 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     ? (await listBookings({ contractId: contract.id, status: "BOOKED", pageSize: 100 })).items
     : [];
 
-  const manage = can(user, "contract.manage");
   const actions = (
     <>
-      {manage && isEditable(contract.status) && <EditContractButton contract={contract} />}
+      {can(user, "contract.create") && isEditable(contract.status) && <EditContractButton contract={contract} />}
       {cancellable && <CancelContractButton contract={contract} bookings={toCancel} />}
-      {manage && canActivate(contract.status) && <ActivateContractButton contract={contract} />}
+      {can(user, "contract.approve") && canActivate(contract.status) && <ActivateContractButton contract={contract} />}
     </>
   );
 

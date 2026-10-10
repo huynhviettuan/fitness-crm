@@ -3,29 +3,26 @@ import { prisma, type Db } from "../../platform/db/prisma.js";
 import { isUniqueViolation } from "../../platform/db/errors.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
+import { inBranches, resolveBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import * as repo from "./trainer.repository.js";
-import { listTrainersSchema, trainerInputSchema, type TrainerData } from "@flow/shared/trainers";
+import {
+  listTrainersSchema,
+  trainerInputSchema,
+  type Trainer as TrainerView,
+  type TrainerData,
+  type TrainerLogin,
+} from "@flow/shared/trainers";
 
-const AUDITED_FIELDS = ["fullName", "status", "userId"] as const;
+const AUDITED_FIELDS = ["fullName", "status", "userId", "branchId"] as const;
 
-export type TrainerView = {
-  id: string;
-  trainerCode: string;
-  fullName: string;
-  status: "ACTIVE" | "INACTIVE";
-  /** The linked login (A-010), if any. */
-  user: { id: string; name: string; email: string } | null;
-};
-
-export type TrainerLogin = { id: string; name: string; email: string; linkedTrainerId: string | null };
-
+/** Trainers of the actor's branches (D-014). */
 export async function listTrainers(actor: Actor, rawQuery: unknown = {}): Promise<TrainerView[]> {
   assertCan(actor, "trainer.view");
   const { activeOnly } = parseInput(listTrainersSchema, rawQuery);
-  const trainers = await repo.listTrainers(prisma, activeOnly ? { status: "ACTIVE" } : {});
+  const trainers = await repo.listTrainers(prisma, { AND: [inBranches(actor), activeOnly ? { status: "ACTIVE" } : {}] });
   return trainers.map(toView);
 }
 
@@ -36,7 +33,8 @@ export async function createTrainer(actor: Actor, input: unknown): Promise<Train
   return withLinkConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
       await assertLinkable(tx, data.userId, null);
-      const trainer = await repo.createTrainer(tx, await repo.nextTrainerCode(tx), data);
+      const branchId = await resolveBranch(tx, actor, data.branchId);
+      const trainer = await repo.createTrainer(tx, await repo.nextTrainerCode(tx), { ...data, branchId });
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "trainer",
@@ -56,11 +54,13 @@ export async function updateTrainer(actor: Actor, id: string, input: unknown): P
 
   return withLinkConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
-      const before = await repo.findTrainer(tx, id);
+      const before = await repo.findTrainer(tx, id, inBranches(actor));
       if (!before) throw new AppError("NOT_FOUND");
       await assertLinkable(tx, data.userId, id);
+      // Left out: the trainer stays at their branch.
+      const branchId = data.branchId ? await resolveBranch(tx, actor, data.branchId) : before.branchId;
 
-      const after = await repo.updateTrainer(tx, id, data);
+      const after = await repo.updateTrainer(tx, id, { ...data, branchId });
       const changes = diffFields(before, after, AUDITED_FIELDS);
       if (Object.keys(changes).length > 0) {
         await recordAudit(tx, { actorUserId: actor.id, entityType: "trainer", entityId: id, action: "trainer.updated", metadata: { changes } });
@@ -70,7 +70,7 @@ export async function updateTrainer(actor: Actor, id: string, input: unknown): P
   );
 }
 
-/** Logins that can be linked to a trainer record: users with the TRAINER role (A-010). */
+/** Logins that can be linked to a trainer record (A-010): see repo.listTrainerLogins. */
 export async function listTrainerLogins(actor: Actor): Promise<TrainerLogin[]> {
   assertCan(actor, "trainer.manage");
   const users = await repo.listTrainerLogins(prisma);
@@ -82,11 +82,10 @@ export async function trainerIdOfUser(userId: string): Promise<string | null> {
   return (await repo.findTrainerByUserId(prisma, userId))?.id ?? null;
 }
 
-/** A-010: only a TRAINER user can be linked, and to one trainer record at most. */
+/** A-010: only a login that acts as a trainer can be linked, and to one trainer record at most. */
 async function assertLinkable(db: Db, userId: TrainerData["userId"], trainerId: string | null): Promise<void> {
   if (!userId) return;
-  const user = await repo.findUserRole(db, userId);
-  if (user?.role !== "TRAINER") throw linkError("userNotTrainer");
+  if (!(await repo.canActAsTrainer(db, userId))) throw linkError("userNotTrainer");
   const linked = await repo.findTrainerByUserId(db, userId);
   if (linked && linked.id !== trainerId) throw linkError("userAlreadyLinked");
 }
@@ -109,6 +108,7 @@ function toView(trainer: repo.TrainerRecord): TrainerView {
   return {
     id: trainer.id,
     trainerCode: trainer.trainerCode,
+    branch: trainer.branch,
     fullName: trainer.fullName,
     status: trainer.status,
     user: trainer.user,

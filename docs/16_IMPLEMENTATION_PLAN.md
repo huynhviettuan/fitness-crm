@@ -25,7 +25,8 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | Milestone | Slice | Status |
 |---|---|---|
 | M1 | 1. Monorepo restructure: pnpm + Turborepo; `apps/web`, `apps/api` (NestJS), `packages/shared`, `packages/config`, `e2e`; web calls the API through the generated client (T-043, T-053) | **Done** 2026-10-10 (`26_TECH_PROPOSAL.md` §8) |
-| M1 | Next: branches and the permission tree (roles, overrides, data scope, masks, login hours, login history) with endpoint permission guards (T-046), then configuration, approvals, audit before/after, trash, employees, notifications, tasks | Not started |
+| M1 | 2. Branches and the permission tree: configurable roles, per-user overrides, data scope, hidden fields, branch access, allowed hours, login history; endpoint permission guard (T-046, T-054); admin screens for users, roles, branches | **Done** 2026-10-10 |
+| M1 | Next: 3 configuration and option lists, 4 audit before/after and trash, 5 approvals, 6 employees, 7 notifications and tasks | Not started |
 
 ## Open questions per milestone
 

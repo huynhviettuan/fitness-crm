@@ -2,7 +2,8 @@
 // never from @playwright/test, and never construct page objects themselves.
 import { randomUUID } from "node:crypto";
 import { test as base, expect, type APIRequestContext } from "@playwright/test";
-import type { Role } from "@flow/shared/permissions";
+import type { Role } from "./support/db";
+import { BranchesPage, RolesPage, UserDetailPage } from "./pages/admin";
 import { AppShell } from "./pages/app-shell";
 import { CalendarPage, CustomerBookingsTab, SessionsPage, TrainersPage } from "./pages/bookings";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
@@ -24,10 +25,14 @@ type Fixtures = {
   sessionsPage: SessionsPage;
   trainersPage: TrainersPage;
   financePage: FinancePage;
+  branchesPage: BranchesPage;
+  rolesPage: RolesPage;
+  userDetailPage: UserDetailPage;
   /**
    * A unique marker for names this test creates. Teardown deletes every customer and
    * trainer whose name contains it, with their contracts, bookings, and payments, and
    * every cash transaction whose category contains it, even if the test failed halfway.
+   * Users, roles, and branches whose name contains it go too.
    */
   testTag: string;
   /**
@@ -36,6 +41,8 @@ type Fixtures = {
    * act as another site, or null to send none. Disposed after the test.
    */
   apiAs: (role: Role | null, options?: { origin?: string | null }) => Promise<APIRequestContext>;
+  /** Like apiAs, for an account the test created: signs in with its email and password. */
+  apiSignedIn: (email: string, password: string) => Promise<APIRequestContext>;
 };
 
 export const test = base.extend<Fixtures>({
@@ -50,6 +57,9 @@ export const test = base.extend<Fixtures>({
   sessionsPage: async ({ page }, use) => use(new SessionsPage(page)),
   trainersPage: async ({ page }, use) => use(new TrainersPage(page)),
   financePage: async ({ page }, use) => use(new FinancePage(page)),
+  branchesPage: async ({ page }, use) => use(new BranchesPage(page)),
+  rolesPage: async ({ page }, use) => use(new RolesPage(page)),
+  userDetailPage: async ({ page }, use) => use(new UserDetailPage(page)),
 
   apiAs: async ({ playwright, baseURL }, use) => {
     const contexts: APIRequestContext[] = [];
@@ -60,6 +70,18 @@ export const test = base.extend<Fixtures>({
         extraHTTPHeaders: origin ? { origin } : {},
       });
       contexts.push(context);
+      return context;
+    });
+    await Promise.all(contexts.map((context) => context.dispose()));
+  },
+
+  apiSignedIn: async ({ playwright, baseURL }, use) => {
+    const contexts: APIRequestContext[] = [];
+    await use(async (email, password) => {
+      const context = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { origin: baseURL! } });
+      contexts.push(context);
+      const response = await context.post("/api/auth/sign-in/email", { data: { email, password } });
+      if (!response.ok()) throw new Error(`Sign-in as ${email} failed: ${response.status()}`);
       return context;
     });
     await Promise.all(contexts.map((context) => context.dispose()));
@@ -93,6 +115,17 @@ export const test = base.extend<Fixtures>({
       await prisma.contract.deleteMany({ where: { id: { in: contractIds } } });
       await prisma.customer.deleteMany({ where: { id: { in: customerIds } } });
       await prisma.trainer.deleteMany({ where: { id: { in: trainerIds } } });
+
+      // Accounts, roles, and branches the test created. Their sign-ins, grants, and
+      // overrides go with them (cascade); audit events they wrote first (restricted).
+      const userIds = ids(await prisma.user.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
+      await prisma.auditEvent.deleteMany({ where: { OR: [{ actorUserId: { in: userIds } }, { entityId: { in: userIds } }] } });
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+      const roleIds = ids(await prisma.role.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
+      const branchIds = ids(await prisma.branch.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...roleIds, ...branchIds] } } });
+      await prisma.role.deleteMany({ where: { id: { in: roleIds } } });
+      await prisma.branch.deleteMany({ where: { id: { in: branchIds } } });
     } finally {
       await prisma.$disconnect();
     }

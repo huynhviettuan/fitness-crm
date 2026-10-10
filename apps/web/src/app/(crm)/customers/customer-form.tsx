@@ -18,6 +18,7 @@ import {
 } from "@flow/shared/customers";
 
 export type CustomerFormValues = {
+  branchId: string;
   fullName: string;
   phone: string;
   email: string;
@@ -29,13 +30,17 @@ export type CustomerFormValues = {
 type CustomerFormProps = {
   mode: "create" | "edit";
   defaultValues: CustomerFormValues;
+  /** Branches to choose from when creating; with one, it is used without asking (D-014). */
+  branches?: { id: string; name: string }[];
+  /** Fields hidden from this user (D-017): not shown, and not sent. */
+  masked?: ("phone" | "email")[];
   /** The Server Action to call with the raw form values. */
   submit: (values: CreateCustomerInput & UpdateCustomerInput) => Promise<ActionResult<unknown>>;
   onSaved: (result: unknown) => void;
   onCancel: () => void;
 };
 
-export function CustomerForm({ mode, defaultValues, submit, onSaved, onCancel }: CustomerFormProps) {
+export function CustomerForm({ mode, defaultValues, branches = [], masked = [], submit, onSaved, onCancel }: CustomerFormProps) {
   const t = useTranslations();
   const errorMessage = useErrorMessage();
   const [pending, startTransition] = useTransition();
@@ -49,9 +54,15 @@ export function CustomerForm({ mode, defaultValues, submit, onSaved, onCancel }:
   const form = useForm<CustomerFormValues>({ resolver: resolver as never, defaultValues });
 
   const onSubmit = form.handleSubmit((values) => {
-    const { status, ...fields } = values;
+    const { status, branchId, phone, email, ...rest } = values;
+    const fields = {
+      ...rest,
+      ...(masked.includes("phone") ? {} : { phone }),
+      ...(masked.includes("email") ? {} : { email }),
+    };
     startTransition(async () => {
-      const result = await submit(mode === "create" ? fields : { ...fields, status });
+      const input = mode === "create" ? { ...fields, phone, branchId } : { ...fields, status };
+      const result = await submit(input as CreateCustomerInput & UpdateCustomerInput);
       if (result.ok) return onSaved(result.data);
       applyFieldErrors(form.setError, result.fieldErrors);
       notify.error(errorMessage(result.code));
@@ -61,16 +72,29 @@ export function CustomerForm({ mode, defaultValues, submit, onSaved, onCancel }:
   return (
     <form onSubmit={onSubmit} noValidate className="flex h-full flex-col">
       <FieldGroup className="flex-1 overflow-y-auto px-4">
+        {mode === "create" && branches.length > 1 && (
+          <SelectField
+            control={form.control}
+            name="branchId"
+            label={t("customers.fields.branch")}
+            placeholder={t("common.chooseBranch")}
+            options={branches.map((branch) => ({ value: branch.id, label: branch.name }))}
+          />
+        )}
         <TextField control={form.control} name="fullName" label={t("customers.fields.fullName")} autoComplete="off" />
-        <TextField
-          control={form.control}
-          name="phone"
-          label={t("customers.fields.phone")}
-          type="tel"
-          inputMode="tel"
-          placeholder={t("customers.phonePlaceholder")}
-        />
-        <TextField control={form.control} name="email" label={t("customers.fields.email")} type="email" />
+        {!masked.includes("phone") && (
+          <TextField
+            control={form.control}
+            name="phone"
+            label={t("customers.fields.phone")}
+            type="tel"
+            inputMode="tel"
+            placeholder={t("customers.phonePlaceholder")}
+          />
+        )}
+        {!masked.includes("email") && (
+          <TextField control={form.control} name="email" label={t("customers.fields.email")} type="email" />
+        )}
         <TextField
           control={form.control}
           name="dateOfBirth"

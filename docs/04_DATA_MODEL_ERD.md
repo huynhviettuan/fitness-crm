@@ -52,15 +52,15 @@ erDiagram
 | `branches` | name, address, active |
 | `employees` | code (prefix NV), full_name, birth_date, gender, phone, email, id_document (encrypted), department_option_id, team, title, branch_id, work_status |
 | `pt_schedules` | employee_id, weekday or date, start_time, end_time, kind (shift, day off) |
-| `user_accounts` | username, email, employee_id (unique), role_id, active; Better Auth `auth_*` tables keep sessions and password hashes |
+| `user_accounts` | username, email, employee_id (unique), role_id, all_branches, active; Better Auth `auth_*` tables keep sessions and password hashes |
 | `user_branches` | user_id, branch_id |
-| `user_access_windows` | user_id, weekdays, from_time, to_time |
-| `login_history` | user_id, at, device, ip, success |
-| `roles` | name, description, cloned_from |
-| `permissions` | key (e.g. `contracts.approve`), module, action, label — seeded from code |
+| `user_access_windows` | user_id, weekdays (ISO 1–7), start_time, end_time (`HH:mm`, half-open, gym timezone); no rows = any time |
+| `login_history` | user_id (null for an unknown account), email, at, success, reason (A-033), ip, user_agent |
+| `roles` | code (seeded roles only), name (unique), description, cloned_from |
+| *(no table)* | The permission catalog (key, group, label) lives in `packages/shared` (T-054) |
 | `role_permissions` | role_id, permission_key |
 | `user_permission_overrides` | user_id, permission_key, granted (on/off) |
-| `role_data_scopes` | role_id, resource (leads, members, contracts, schedule, vouchers, staff, history), scope (ALL, OWN) |
+| `role_data_scopes` | role_id, resource (leads, members, contracts, schedule, vouchers, staff, history), scope (ALL, OWN); a missing row = OWN |
 | `role_field_masks` | role_id, field (member phone, email, address, documents; receipt totals) |
 | `approval_rules` | action_type, required, approver_role_id, escalation_threshold, escalation_role_id, overdue_hours |
 | `approval_requests` | action_type, entity_type, entity_id, payload (json), submitted_by, status, decided_by, decided_at, reason_option_id, reason_note; check: decided_by ≠ submitted_by |

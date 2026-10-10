@@ -20,6 +20,7 @@
     "db:seed:demo": "tsx prisma/seed-demo.ts"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@flow/shared": "workspace:*",
     "@nestjs/common": "^12.1.2",
     "@nestjs/core": "^12.1.2",

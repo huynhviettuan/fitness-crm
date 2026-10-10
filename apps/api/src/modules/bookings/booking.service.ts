@@ -6,6 +6,7 @@ import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
 import { assertCan, forbidden } from "../../platform/permissions/assert.js";
+import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
@@ -13,7 +14,6 @@ import * as contractRepo from "../contracts/contract.repository.js";
 import { effectiveStatus } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { findTrainer } from "../trainers/trainer.repository.js";
-import { trainerIdOfUser } from "../trainers/trainer.service.js";
 import * as repo from "./booking.repository.js";
 import {
   OPEN_BOOKING_STATUSES,
@@ -102,7 +102,7 @@ export async function getBooking(actor: Actor, id: string): Promise<BookingView>
 export async function createBooking(actor: Actor, input: unknown): Promise<BookingView> {
   assertCan(actor, "booking.manage");
   const data = parseInput(bookingInputSchema, input);
-  await assertOwnTrainer(actor, data.trainerId);
+  assertOwnTrainer(actor, data.trainerId);
   const slot = toSlot(data);
 
   return withOverlapMapped(() =>
@@ -118,7 +118,13 @@ export async function createBooking(actor: Actor, input: unknown): Promise<Booki
       const open = await repo.countBookingsOfContract(tx, contract.id, OPEN_BOOKING_STATUSES);
       if (!hasSessionForNewBooking(remaining, open)) throw new AppError("CONTRACT_NO_REMAINING_SESSIONS");
 
-      const booking = await repo.createBooking(tx, { ...slot, customerId: data.customerId, contractId: data.contractId });
+      // A booking belongs to its contract's branch (D-014).
+      const booking = await repo.createBooking(tx, {
+        ...slot,
+        customerId: data.customerId,
+        contractId: data.contractId,
+        branchId: contract.branchId,
+      });
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "booking",
@@ -140,7 +146,7 @@ export async function createBooking(actor: Actor, input: unknown): Promise<Booki
 export async function rescheduleBooking(actor: Actor, id: string, input: unknown): Promise<BookingView> {
   assertCan(actor, "booking.manage");
   const data = parseInput(rescheduleSchema, input);
-  await assertOwnTrainer(actor, data.trainerId);
+  assertOwnTrainer(actor, data.trainerId);
   const slot = toSlot(data);
 
   return withOverlapMapped(() =>
@@ -234,10 +240,15 @@ export async function bookingView(db: Db, actor: Actor, id: string): Promise<Boo
   return toBookingView(booking);
 }
 
-/** A-007: a trainer sees only bookings assigned to their own trainer record. */
+/**
+ * Which bookings an actor may see: their branches, and with "own" schedule scope only
+ * their own sessions as PT and the bookings of customers they created (D-017, A-029).
+ */
 export function bookingsVisibleTo(actor: Actor): Prisma.BookingWhereInput {
-  if (actor.role === "TRAINER") return { trainer: { userId: actor.id } };
-  return {};
+  const own: Prisma.BookingWhereInput = {
+    OR: [...(actor.trainerId ? [{ trainerId: actor.trainerId }] : []), { customer: { createdById: actor.id } }],
+  };
+  return { AND: [inBranches(actor), isOwnOnly(actor, "schedule") ? own : {}] };
 }
 
 /** The gym day a booking falls on (A-001). */
@@ -267,14 +278,13 @@ async function assertBookable(
 }
 
 /**
- * A-007, A-010: a trainer books only for their own trainer record, and must be linked
- * to one.
+ * With "own" schedule scope (the PT role), a user books only for the trainer record their
+ * login is linked to, and must be linked to one (D-017, A-010).
  */
-async function assertOwnTrainer(actor: Actor, trainerId: string): Promise<void> {
-  if (actor.role !== "TRAINER") return;
-  const own = await trainerIdOfUser(actor.id);
-  if (!own) throw forbidden(actor, "booking.manage", "trainer login not linked to a trainer record");
-  if (own !== trainerId) throw forbidden(actor, "booking.manage", "booking for another trainer");
+function assertOwnTrainer(actor: Actor, trainerId: string): void {
+  if (!isOwnOnly(actor, "schedule")) return;
+  if (!actor.trainerId) throw forbidden(actor, "booking.manage", "login not linked to a trainer record");
+  if (actor.trainerId !== trainerId) throw forbidden(actor, "booking.manage", "booking for another trainer");
 }
 
 /** Two overlapping bookings that passed the pre-check together: the constraint decides (T-014). */

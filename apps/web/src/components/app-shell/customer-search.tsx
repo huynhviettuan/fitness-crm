@@ -69,7 +69,7 @@ export function CustomerSearch() {
                   <CommandItem key={customer.id} value={customer.id} onSelect={select}>
                     <span className="font-mono text-xs text-muted-foreground">{customer.customerCode}</span>
                     <span className="truncate">{customer.fullName}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{customer.phone}</span>
+                    {customer.phone && <span className="ml-auto text-xs text-muted-foreground">{customer.phone}</span>}
                   </CommandItem>
                 ))}
             </CommandList>

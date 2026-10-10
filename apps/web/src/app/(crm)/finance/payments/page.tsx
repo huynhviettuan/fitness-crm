@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { BanknoteIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { HiddenValue } from "@/components/hidden-value";
 import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
@@ -42,7 +43,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
       <p className="mb-4 text-sm">
         <span className="text-muted-foreground">{t("collected")}: </span>
         <span className="font-semibold">
-          <Money amount={collected} />
+          {collected === null ? <HiddenValue /> : <Money amount={collected} />}
         </span>
       </p>
       <PaymentsTable

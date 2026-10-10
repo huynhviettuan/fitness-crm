@@ -4,10 +4,10 @@ import { fill, labels } from "./support/labels";
 
 const f = labels.contracts.fields;
 
-test.describe("contracts as a receptionist", () => {
-  test.use(signedInAs("RECEPTIONIST"));
+test.describe("contracts as a Fitness Manager", () => {
+  test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-001 (part 2): a receptionist adds a contract for a customer and activates it", async ({
+  test("E2E-001 (part 2): a Fitness Manager adds a contract for a customer and activates it", async ({
     page,
     apiAs,
     testTag,
@@ -33,8 +33,6 @@ test.describe("contracts as a receptionist", () => {
 
     await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.ACTIVE);
     await expect(contractDetailPage.action(labels.contracts.edit)).toHaveCount(0);
-    // A receptionist may not cancel (A-015).
-    await expect(contractDetailPage.action(labels.contracts.cancel)).toHaveCount(0);
 
     await customerContractsTab.open(customer.id);
     await expect(customerContractsTab.table.getByRole("row").filter({ hasText: PT24.packageName })).toContainText(
@@ -59,13 +57,37 @@ test.describe("contracts as a receptionist", () => {
   });
 });
 
+test.describe("contracts as a receptionist", () => {
+  test.use(signedInAs("RECEPTIONIST"));
+
+  test("a receptionist sees contracts but cannot add, edit, activate, or cancel them (09_RBAC.md)", async ({
+    apiAs,
+    testTag,
+    customerContractsTab,
+    contractDetailPage,
+  }) => {
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id);
+
+    await customerContractsTab.open(customer.id);
+    await expect(customerContractsTab.table.getByRole("row").filter({ hasText: PT24.packageName })).toBeVisible();
+    await expect(customerContractsTab.createButton).toHaveCount(0);
+
+    await contractDetailPage.goto(contract.id);
+    await expect(contractDetailPage.heading(PT24.packageName)).toBeVisible();
+    for (const action of [labels.contracts.edit, labels.contracts.activate, labels.contracts.cancel]) {
+      await expect(contractDetailPage.action(action)).toHaveCount(0);
+    }
+  });
+});
+
 test.describe("contracts as a manager", () => {
-  test.use(signedInAs("MANAGER"));
+  test.use(signedInAs("FITNESS_MANAGER"));
 
   test("a manager cancels an active contract after confirming", async ({ apiAs, testTag, contractDetailPage }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const contract = await createContractViaApi(reception, customer.id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activate: true });
 
     await contractDetailPage.goto(contract.id);
     await contractDetailPage.confirmAction(labels.contracts.cancel);

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-export type CustomerSearchResult = { id: string; customerCode: string; fullName: string; phone: string };
+/** `phone` is null when it is hidden from the user (D-017). */
+export type CustomerSearchResult = { id: string; customerCode: string; fullName: string; phone: string | null };
 
 export const MIN_CUSTOMER_QUERY_LENGTH = 2;
 

@@ -14,12 +14,13 @@ afterEach(async () => {
   await resetDatabase();
 });
 
-/** A receptionist and a 12,000,000 active contract. */
+/** A receptionist, who records payments, and a 12,000,000 contract a Fitness Manager sold. */
 async function setup() {
   const { actor: reception } = await createTestUser("RECEPTIONIST");
+  const { actor: manager } = await createTestUser("FITNESS_MANAGER");
   const customer = await createCustomer(reception, { fullName: "Nguyễn Văn An", phone: "0909123456" });
-  const contract = await activeContract(reception, customer.id);
-  return { reception, customer, contract };
+  const contract = await activeContract(manager, customer.id);
+  return { reception, manager, customer, contract };
 }
 
 const pay = (actor: Actor, contractId: string, amount: string | number, key = randomUUID(), paidOn = "05/10/2026") =>
@@ -100,9 +101,8 @@ describe("recordPayment", () => {
   });
 
   it("accepts draft and expired contracts, but not cancelled ones (OQ-013 interim)", async () => {
-    const { reception, customer, contract } = await setup();
-    const { contract: draft } = await createContract(reception, customer.id, CONTRACT, randomUUID());
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { reception, manager, customer, contract } = await setup();
+    const { contract: draft } = await createContract(manager, customer.id, CONTRACT, randomUUID());
     await cancelContract(manager, contract.id);
 
     await expect(pay(reception, draft.id, 1_000_000)).resolves.toBeDefined();
@@ -127,7 +127,7 @@ describe("recordPayment", () => {
     expect(await prisma.payment.count()).toBe(0);
   });
 
-  it.each(["TRAINER"] as const)("refuses a %s (docs/09)", async (role) => {
+  it.each(["PT"] as const)("refuses a %s (docs/09)", async (role) => {
     const { contract } = await setup();
     const { actor } = await createTestUser(role);
 
@@ -159,17 +159,18 @@ describe("voidPayment (A-008)", () => {
 
   it("a repeat returns the current state and keeps the first reason", async () => {
     const { reception, contract } = await setup();
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await voidPayment(manager, payment.id, { reason: "Lần một" });
-    const again = await voidPayment(manager, payment.id, { reason: "Lần hai" });
+    await voidPayment(accountant, payment.id, { reason: "Lần một" });
+    const again = await voidPayment(accountant, payment.id, { reason: "Lần hai" });
 
     expect(again).toMatchObject({ status: "VOIDED", voidReason: "Lần một" });
     expect(await prisma.auditEvent.count({ where: { entityId: payment.id, action: "payment.voided" } })).toBe(1);
   });
 
-  it.each(["RECEPTIONIST", "TRAINER"] as const)("refuses a %s (docs/09)", async (role) => {
+  // 09_RBAC.md: deleting vouchers is Admin's (and the custom Kế toán role's).
+  it.each(["RECEPTIONIST", "PT", "FITNESS_MANAGER"] as const)("refuses a %s (docs/09)", async (role) => {
     const { reception, contract } = await setup();
     const { actor } = await createTestUser(role);
     const { payment } = await pay(reception, contract.id, 5_000_000);
@@ -189,10 +190,10 @@ describe("voidPayment (A-008)", () => {
 describe("reading", () => {
   it("lists payments by contract, customer, status, and day; totals what was collected", async () => {
     const { reception, customer, contract } = await setup();
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const a = await pay(reception, contract.id, 1_000_000, randomUUID(), "01/10/2026");
     const b = await pay(reception, contract.id, 2_000_000, randomUUID(), "05/10/2026");
-    await voidPayment(manager, a.payment.id, { reason: "Sai" });
+    await voidPayment(accountant, a.payment.id, { reason: "Sai" });
 
     expect((await listPayments(reception, { customerId: customer.id })).items.map((p) => p.id)).toEqual([b.payment.id, a.payment.id]);
     expect((await listPayments(reception, { status: "VOIDED" })).items.map((p) => p.id)).toEqual([a.payment.id]);
@@ -201,10 +202,10 @@ describe("reading", () => {
   });
 
   it("the debt list shows owing contracts, largest first, without drafts (A-022)", async () => {
-    const { reception, customer, contract } = await setup();
-    const small = await activeContract(reception, customer.id, { contractValue: "2.000.000" });
-    const paidUp = await activeContract(reception, customer.id, { contractValue: "1.000.000" });
-    await createContract(reception, customer.id, CONTRACT, randomUUID()); // draft
+    const { reception, manager, customer, contract } = await setup();
+    const small = await activeContract(manager, customer.id, { contractValue: "2.000.000" });
+    const paidUp = await activeContract(manager, customer.id, { contractValue: "1.000.000" });
+    await createContract(manager, customer.id, CONTRACT, randomUUID()); // draft
     await pay(reception, paidUp.id, 1_000_000);
 
     const debts = await listDebts(reception, {});
@@ -217,15 +218,15 @@ describe("reading", () => {
   });
 
   it("a trainer cannot list payments or debts", async () => {
-    const { actor: trainer } = await createTestUser("TRAINER");
+    const { actor: trainer } = await createTestUser("PT");
 
     await expect(listPayments(trainer, {})).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(listDebts(trainer, {})).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("contract lists carry each contract's own paid amount", async () => {
-    const { reception, customer, contract } = await setup();
-    const other = await activeContract(reception, customer.id);
+    const { reception, manager, customer, contract } = await setup();
+    const other = await activeContract(manager, customer.id);
     await pay(reception, contract.id, 3_000_000);
 
     const items = (await listContracts(reception, { customerId: customer.id })).items;

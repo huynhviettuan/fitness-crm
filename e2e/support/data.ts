@@ -62,14 +62,14 @@ export async function createBookingViaApi(
  * collide with another test's trainer. Everything carries the tag.
  */
 export async function bookingSetup(
-  apiAs: (role: "RECEPTIONIST" | "MANAGER") => Promise<APIRequestContext>,
+  apiAs: (role: "RECEPTIONIST" | "FITNESS_MANAGER") => Promise<APIRequestContext>,
   tag: string,
   contract: Partial<typeof PT24> = {},
 ) {
   const reception = await apiAs("RECEPTIONIST");
   const customer = await createCustomerViaApi(reception, tag);
-  const created = await createContractViaApi(reception, customer.id, { activate: true, data: contract });
-  const trainer = await createTrainerViaApi(await apiAs("MANAGER"), tag);
+  const created = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activate: true, data: contract });
+  const trainer = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), tag);
   return { customer, contract: created, trainer, refs: { customerId: customer.id, contractId: created.id, trainerId: trainer.id } };
 }
 

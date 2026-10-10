@@ -115,8 +115,12 @@ export class CustomerContractsTab {
     return this.shell.main.getByRole("tabpanel", { name: labels.customers.tabs.contracts });
   }
 
+  get createButton(): Locator {
+    return this.panel.getByRole("button", { name: labels.contracts.create });
+  }
+
   async openCreate(): Promise<ContractFormSheet> {
-    await this.panel.getByRole("button", { name: labels.contracts.create }).click();
+    await this.createButton.click();
     return new ContractFormSheet(this.page.getByRole("dialog", { name: labels.contracts.create }));
   }
 

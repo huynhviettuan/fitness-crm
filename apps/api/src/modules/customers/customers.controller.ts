@@ -3,7 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { contractInputSchema, contractPageSchema, contractSchema } from "@flow/shared/contracts";
 import { createCustomerSchema, customerPageSchema, customerSchema, updateCustomerSchema } from "@flow/shared/customers";
-import { CurrentActor } from "../../platform/auth/auth.guard.js";
+import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
@@ -17,6 +17,7 @@ import { createCustomer, getCustomer, listCustomers, updateCustomer } from "./cu
 export class CustomersController {
   /** Search by code, name, or phone (FR-CUS-002). */
   @Get()
+  @RequirePermission("customer.view")
   @ApiOptionalQuery("search", "page", "pageSize")
   @ApiResult(customerPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
@@ -25,18 +26,21 @@ export class CustomersController {
   }
 
   @Post()
+  @RequirePermission("customer.manage")
   @ApiResult(customerSchema, 201, "Created")
   async create(@CurrentActor() actor: CurrentUser, @Body({ schema: createCustomerSchema }) body: unknown) {
     return encode(customerSchema, await createCustomer(actor, body));
   }
 
   @Get(":id")
+  @RequirePermission("customer.view")
   @ApiResult(customerSchema)
   async get(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
     return encode(customerSchema, await getCustomer(actor, id));
   }
 
   @Patch(":id")
+  @RequirePermission("customer.manage")
   @ApiResult(customerSchema)
   async update(
     @CurrentActor() actor: CurrentUser,
@@ -47,6 +51,7 @@ export class CustomersController {
   }
 
   @Get(":id/contracts")
+  @RequirePermission("contract.view")
   @ApiOptionalQuery("page", "pageSize")
   @ApiResult(contractPageSchema)
   async contracts(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Req() request: Request) {
@@ -56,6 +61,7 @@ export class CustomersController {
 
   /** T-015: a replay with the same key returns 200 with the original contract. */
   @Post(":id/contracts")
+  @RequirePermission("contract.create")
   @ApiIdempotencyKey()
   @ApiResult(contractSchema, 201, "Created")
   @ApiResult(contractSchema, 200, "Replayed")

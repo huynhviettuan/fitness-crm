@@ -79,12 +79,14 @@ Since M1 slice 1 the API is the NestJS app; its OpenAPI document is `apps/api/op
 
 | Area | Endpoints |
 |---|---|
-| Me | `GET /me` (user, `trainerId`, `permissions`), `PATCH /me/locale` |
+| Me | `GET /me` (user, role, `trainerId`, effective `permissions`, `dataScopes`, `allBranches`, usable `branches`, `maskedFields`), `PATCH /me/locale` |
 | Customers | `/customers` (`?search=&page=&pageSize=`), `/customers/:id`, `/customers/:id/contracts` (list; create with `Idempotency-Key`) |
 | Contracts | `/contracts` (`?q=&customerId=`), `/contracts/:id`, `/contracts/:id/activate`, `/contracts/:id/cancel`, `/contracts/:id/payments` (list; record with `Idempotency-Key`) |
 | Trainers | `/trainers` (`?activeOnly=`), `/trainers/:id`, `/trainers/logins` |
 | Bookings | `/bookings` (filters), `/bookings/:id` (get, reschedule), `/bookings/:id/cancel`, `/no-show`, `/check-in`, `/complete`; `/schedule?date=&trainerId=` (one gym day) |
 | Money | `/payments` (filters), `/payments/collected?from=&to=`, `/payments/:id/void`, `/debts`, `/cash-transactions` (list; record with `Idempotency-Key`), `/cash-transactions/summary?from=&to=`, `/cash-transactions/:id/void` |
-| Users | `/users` (list, create), `/users/:id/role`, `/users/:id/status`, `/users/:id/password` (`PUT`) |
+| Users | `/users` (list, create with role and branches), `/users/:id` (detail), `/users/:id/role`, `/users/:id/status`, `/users/:id/password`, `/users/:id/branches`, `/users/:id/overrides`, `/users/:id/access-hours` (`PUT`), `/users/:id/logins` (login history, paged) |
+| Roles | `/roles` (list, create), `/roles/:id` (get, `PUT` permissions, data scopes, hidden fields), `/roles/:id/clone` |
+| Branches | `/branches` (list, create), `/branches/:id` (`PATCH` name, address, active) |
 
-Calendar days in queries and bodies are `dd/MM/yyyy`; responses carry instants and calendar days as ISO 8601 (calendar days at UTC midnight). Lists answer `{ items, total, page, pageSize }` without `totals` yet. These resources are replaced by the ones above as their milestones land.
+Calendar days in queries and bodies are `dd/MM/yyyy`; responses carry instants and calendar days as ISO 8601 (calendar days at UTC midnight). Lists answer `{ items, total, page, pageSize }` without `totals` yet. Since M1 slice 2 every operation states its permission keys in `x-permission` (T-054); customers, contracts, trainers, sessions, receipts, and cash entries carry a `branch`, creates take an optional `branchId` (A-031), and masked fields come back as `null` with their names in `maskedFields`. These resources are replaced by the ones above as their milestones land.

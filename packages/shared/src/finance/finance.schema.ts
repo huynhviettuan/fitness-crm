@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { branchChoice } from "../branches/branch.schema.js";
 import { calendarDate, vndAmount, hasNoControlCharacters } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
@@ -24,6 +25,7 @@ export const paymentInputSchema = z.object({
 });
 
 export const cashTransactionInputSchema = z.object({
+  branchId: branchChoice,
   type: z.enum(CASH_TRANSACTION_TYPES, { error: "invalidChoice" }),
   // Free text until the gym gives a list (OQ-016).
   category: text(100).pipe(z.string().min(1, { error: "required" })),

@@ -87,6 +87,23 @@ Each role also has a **discount threshold**: the largest discount it may approve
 - Nobody approves their own submission.
 - Requests pending longer than the configured time remind the approver and notify their superior.
 
+## Built so far (M1 slice 2, 2026-10-10)
+
+The model above runs in the API (T-054) for the resources that exist today. Screens: **Administration → Users** (role, branches, per-user overrides, allowed hours, login history), **Roles** (permission tree, data scope, hidden fields, clone), and **Branches**.
+
+| Group | Permission keys |
+|---|---|
+| System | `user.manage`, `role.manage`, `branch.manage` |
+| Customers | `customer.view`, `customer.manage` |
+| Contract operations | `contract.view`, `contract.create`, `contract.approve`, `contract.cancel` |
+| PT schedule | `booking.view`, `booking.manage`, `session.checkIn`, `session.complete` |
+| Employees | `trainer.view`, `trainer.manage` |
+| Cash book | `payment.view`, `payment.record`, `payment.void`, `cash.manage` |
+
+Data-scope resources: customers, contracts, schedule, vouchers (*only mine* per A-029). Hideable fields: customer phone, customer email, receipt totals.
+
+Seeded roles (initial configuration, editable): Admin (everything), Fitness Manager (everything except voiding receipts and the System group), Master (view only), Consulting (*only mine*; customers, contract create, receipts), PT (*only mine*; schedule and session actions), Receptionist (customers, schedule, check-in, receipts; no contract create), Marketing (no permissions; phone and email hidden), and the custom role "Kế toán" migrated from the old Accountant (A-032). The rest of the tree (leads, approvals, configuration, trash, reports, sensitive session actions) is added by the milestone that builds each module.
+
 ## Status of the first brief's model
 
-The five fixed roles (Admin, Manager, Receptionist, Trainer, Accountant), the code matrix, and the "limited" cells (T-020, T-024, A-007, A-015, A-016, A-021) are superseded by this page. They remain in the Phases 0–4 code until milestone M1.
+The five fixed roles (Admin, Manager, Receptionist, Trainer, Accountant), the code matrix, and the "limited" cells (T-020, T-024, A-007, A-015, A-016, A-021) are superseded by this page and were removed from the code in M1 slice 2 (A-032).

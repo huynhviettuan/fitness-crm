@@ -24,7 +24,8 @@ export async function bookingContext(user: CurrentUser): Promise<BookingContext>
     trainerCode,
     fullName,
   }));
-  if (user.role !== "TRAINER") return { permissions, trainers: active, unlinkedTrainer: false };
+  // A user who sees only their own schedule (the PT role) books only for themselves (D-017).
+  if (user.dataScopes.schedule !== "OWN") return { permissions, trainers: active, unlinkedTrainer: false };
 
   const own = user.trainerId;
   return { permissions, trainers: active.filter((t) => t.id === own), unlinkedTrainer: own === null };

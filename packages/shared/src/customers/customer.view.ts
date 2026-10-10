@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { branchRefSchema } from "../branches/branch.schema.js";
 import { instant, pageOf } from "../validation/index.js";
 import { CUSTOMER_STATUSES } from "./customer.schema.js";
 
@@ -8,8 +9,10 @@ export const customerSchema = z
   .object({
     id: z.uuid(),
     customerCode: z.string(),
+    branch: branchRefSchema,
     fullName: z.string(),
-    phone: z.string(),
+    /** Null when the role has the phone hidden (D-017); see maskedFields. */
+    phone: z.string().nullable(),
     email: z.string().nullable(),
     /** A calendar date at UTC midnight. */
     dateOfBirth: instant.nullable(),
@@ -17,6 +20,8 @@ export const customerSchema = z
     notes: z.string().nullable(),
     createdAt: instant,
     updatedAt: instant,
+    /** Fields hidden from this user, so screens can say "hidden" rather than "not provided". */
+    maskedFields: z.array(z.enum(["phone", "email"])),
   })
   .meta({ id: "Customer" });
 

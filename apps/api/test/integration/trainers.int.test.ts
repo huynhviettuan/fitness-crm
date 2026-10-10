@@ -16,7 +16,7 @@ afterEach(async () => {
 
 describe("createTrainer", () => {
   it("creates an ACTIVE trainer with a generated code and an audit event", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
 
     const trainer = await createTrainer(manager, { fullName: "  Trần Minh  " });
 
@@ -33,14 +33,14 @@ describe("createTrainer", () => {
     expect(new Set(trainers.map((t) => t.trainerCode)).size).toBe(5);
   });
 
-  it.each(["RECEPTIONIST", "TRAINER", "ACCOUNTANT"] as const)("refuses a %s (A-016)", async (role) => {
+  it.each(["RECEPTIONIST", "PT", "ACCOUNTANT"] as const)("refuses a %s (A-016)", async (role) => {
     const { actor } = await createTestUser(role);
 
     await expect(createTrainer(actor, { fullName: "PT" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("returns field errors for invalid input", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
 
     await expect(createTrainer(manager, { fullName: " ", status: "RETIRED" })).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
@@ -51,8 +51,8 @@ describe("createTrainer", () => {
 
 describe("linking a login (A-010)", () => {
   it("links a TRAINER login, and the user resolves to that trainer", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
-    const { user } = await createTestUser("TRAINER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const { user } = await createTestUser("PT");
 
     const trainer = await createTrainer(manager, { fullName: "PT Linh", userId: user.id });
 
@@ -62,7 +62,7 @@ describe("linking a login (A-010)", () => {
   });
 
   it("refuses a login without the TRAINER role", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { user } = await createTestUser("RECEPTIONIST");
 
     await expect(createTrainer(manager, { fullName: "PT", userId: user.id })).rejects.toMatchObject({
@@ -72,8 +72,8 @@ describe("linking a login (A-010)", () => {
   });
 
   it("refuses a login already linked to another trainer, even when both links arrive at once", async () => {
-    const { actor: manager } = await createTestUser("MANAGER");
-    const { user } = await createTestUser("TRAINER");
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const { user } = await createTestUser("PT");
 
     const results = await Promise.allSettled([
       createTrainer(manager, { fullName: "PT A", userId: user.id }),
@@ -90,7 +90,7 @@ describe("linking a login (A-010)", () => {
 describe("updateTrainer", () => {
   it("audits the changed fields and can unlink the login", async () => {
     const { actor: admin } = await createTestUser("ADMIN");
-    const { user } = await createTestUser("TRAINER");
+    const { user } = await createTestUser("PT");
     const trainer = await createTrainer(admin, { fullName: "PT Linh", userId: user.id });
 
     const updated = await updateTrainer(admin, trainer.id, { fullName: "PT Linh", status: "INACTIVE", userId: "" });
@@ -104,7 +104,7 @@ describe("updateTrainer", () => {
 
   it("keeping a trainer's own login is not a conflict", async () => {
     const { actor: admin } = await createTestUser("ADMIN");
-    const { user } = await createTestUser("TRAINER");
+    const { user } = await createTestUser("PT");
     const trainer = await createTrainer(admin, { fullName: "PT Linh", userId: user.id });
 
     await expect(updateTrainer(admin, trainer.id, { fullName: "PT Linh Nguyễn", userId: user.id })).resolves.toMatchObject({

@@ -9,8 +9,8 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Area | Status | Milestone |
 |---|---|---|
 | Architecture (one Next.js app → `apps/web` + `apps/api` NestJS, T-041) | Built (M1 slice 1, 2026-10-10) | M1 |
-| Users, roles, permissions (5 fixed roles → permission tree, data scope, masking, branches, login hours, history) | Conflicts | M1 |
-| Branches (one gym → multi-branch) | New | M1 |
+| Users, roles, permissions (5 fixed roles → permission tree, data scope, masking, branches, login hours, history) | Built (M1 slice 2) for existing resources | M1 |
+| Branches (one gym → multi-branch) | Built (M1 slice 2) | M1 |
 | Approval engine and approval matrix (D-018) | New | M1 |
 | Option lists with "Khác", system parameters, status rules (D-015, D-016, T-049) | New | M1 |
 | Audit log (exists for critical actions → before/after for everything, T-048) | Partly | M1 |

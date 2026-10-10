@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { labels } from "../support/labels";
 import { AppShell } from "./app-shell";
 
-export type CustomerInput = { fullName: string; phone: string; email?: string; dateOfBirth?: string };
+export type CustomerInput = { fullName: string; phone: string; email?: string; dateOfBirth?: string; branch?: string };
 
 /** The "Add customer" / "Edit details" sheet. Every locator is scoped to the dialog. */
 export class CustomerFormSheet {
@@ -14,6 +14,11 @@ export class CustomerFormSheet {
 
   async fill(input: CustomerInput): Promise<void> {
     const fields = labels.customers.fields;
+    if (input.branch !== undefined) {
+      // Asked only of users who work in more than one branch (D-014).
+      await this.root.getByRole("combobox", { name: fields.branch, exact: true }).click();
+      await this.root.page().getByRole("option", { name: input.branch, exact: true }).click();
+    }
     await this.field(fields.fullName).fill(input.fullName);
     await this.field(fields.phone).fill(input.phone);
     if (input.email !== undefined) await this.field(fields.email).fill(input.email);

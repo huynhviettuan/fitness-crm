@@ -4,7 +4,7 @@ import { createCustomer } from "../../src/modules/customers/customer.service.js"
 import { activateContract, createContract } from "../../src/modules/contracts/contract.service.js";
 import { createTrainer } from "../../src/modules/trainers/trainer.service.js";
 import { createBooking } from "../../src/modules/bookings/booking.service.js";
-import { createTestUser } from "./factories.js";
+import { actorOf, createTestUser } from "./factories.js";
 
 /** An active contract running until 2030, so booking dates in the tests stay valid. */
 export const CONTRACT = {
@@ -19,7 +19,7 @@ export type Scenario = Awaited<ReturnType<typeof bookingScenario>>;
 
 /** A manager, a customer with an active contract, and a trainer. Cleaned up by resetDatabase(). */
 export async function bookingScenario(options: { totalSessions?: number; fullName?: string; phone?: string } = {}) {
-  const { actor: manager } = await createTestUser("MANAGER");
+  const { actor: manager } = await createTestUser("FITNESS_MANAGER");
   const customer = await createCustomer(manager, {
     fullName: options.fullName ?? "Nguyễn Văn An",
     phone: options.phone ?? "0909123456",
@@ -34,11 +34,11 @@ export async function activeContract(actor: Actor, customerId: string, overrides
   return activateContract(actor, contract.id);
 }
 
-/** A trainer login linked to a new trainer record (A-010). */
+/** A PT login linked to a new trainer record (A-010), as the API sees it after the link. */
 export async function linkedTrainer(manager: Actor, fullName = "PT Linh") {
-  const { actor } = await createTestUser("TRAINER");
-  const trainer = await createTrainer(manager, { fullName, userId: actor.id });
-  return { actor, trainer };
+  const { user } = await createTestUser("PT");
+  const trainer = await createTrainer(manager, { fullName, userId: user.id });
+  return { actor: await actorOf(user.id), trainer };
 }
 
 type Slot = { date?: string; startTime?: string; endTime?: string };

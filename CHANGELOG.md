@@ -1,5 +1,14 @@
 # Documentation Changelog
 
+## 2026-10-10 — M1 slice 2: branches and the permission tree
+
+- Branches: every customer, contract, trainer, session, receipt, and cash entry has a branch; users are granted branches (or all); other branches' records answer `404`. A migration moves existing data to "Chi nhánh chính" (A-031, A-032).
+- Configurable roles replace the five fixed roles: permission tree, data scope (*all* or *only mine*, A-029), hidden fields, clone; per-user permission overrides; allowed sign-in days and hours; login history with the refusal reason (A-033). Seven default roles plus the migrated "Kế toán".
+- API: every endpoint declares its permission (`x-permission` in OpenAPI); new `/roles`, `/branches`, and user endpoints for branches, overrides, access hours, and logins; `GET /me` returns scopes, branches, and hidden fields.
+- Web: Administration → Users (with a detail page), Roles, Branches; branch choice on new customers, trainers, and cash entries; hidden values shown as "Đã ẩn"; customers and contracts pages check their view permission.
+- Tests: unit (shared 73, web 191, API 63), integration 158, E2E and security 191.
+- Docs: 04, 07, 09, 16, 18 (T-054, A-029 to A-033; A-010 and A-014 amended), 24, 25.
+
 ## 2026-10-10 — M1 slice 1: monorepo restructure
 
 The Phases 0–4 code now runs as the planned monorepo, with the same behavior (`docs/26_TECH_PROPOSAL.md` §8).

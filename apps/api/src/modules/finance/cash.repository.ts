@@ -3,6 +3,7 @@ import type { CashTransactionType, Prisma } from "../../generated/prisma/client.
 import type { CashTransactionData } from "@flow/shared/finance";
 
 const cashInclude = {
+  branch: { select: { id: true, name: true } },
   createdBy: { select: { name: true } },
   voidedBy: { select: { name: true } },
 } as const satisfies Prisma.CashTransactionInclude;
@@ -11,13 +12,17 @@ export type CashTransactionRecord = Prisma.CashTransactionGetPayload<{ include: 
 
 export function createCashTransaction(
   db: Db,
-  data: CashTransactionData & { idempotencyKey: string; createdById: string },
+  data: Omit<CashTransactionData, "branchId"> & { branchId: string; idempotencyKey: string; createdById: string },
 ): Promise<CashTransactionRecord> {
   return db.cashTransaction.create({ data, include: cashInclude });
 }
 
-export function findCashTransaction(db: Db, id: string): Promise<CashTransactionRecord | null> {
-  return db.cashTransaction.findUnique({ where: { id }, include: cashInclude });
+export function findCashTransaction(
+  db: Db,
+  id: string,
+  visibility: Prisma.CashTransactionWhereInput = {},
+): Promise<CashTransactionRecord | null> {
+  return db.cashTransaction.findFirst({ where: { AND: [{ id }, visibility] }, include: cashInclude });
 }
 
 export function findCashTransactionByIdempotencyKey(db: Db, idempotencyKey: string): Promise<CashTransactionRecord | null> {
@@ -48,10 +53,16 @@ export async function listCashTransactions(db: Db, where: Prisma.CashTransaction
   return { items, total };
 }
 
-/** SUM of CONFIRMED transactions of one type between two days, inclusive. */
-export async function sumConfirmedCash(db: Db, type: CashTransactionType, from: Date, to: Date): Promise<number> {
+/** SUM of CONFIRMED transactions of one type between two days, inclusive, within `visibility`. */
+export async function sumConfirmedCash(
+  db: Db,
+  type: CashTransactionType,
+  from: Date,
+  to: Date,
+  visibility: Prisma.CashTransactionWhereInput,
+): Promise<number> {
   const { _sum } = await db.cashTransaction.aggregate({
-    where: { type, status: "CONFIRMED", occurredOn: { gte: from, lte: to } },
+    where: { AND: [visibility, { type, status: "CONFIRMED", occurredOn: { gte: from, lte: to } }] },
     _sum: { amount: true },
   });
   return Number(_sum.amount ?? 0);

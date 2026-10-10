@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   BanknoteIcon,
+  Building2Icon,
   CalendarDaysIcon,
   ClipboardCheckIcon,
   DumbbellIcon,
   FileTextIcon,
   IdCardIcon,
+  KeyRoundIcon,
   LayoutDashboardIcon,
   ShieldUserIcon,
   UsersIcon,
@@ -38,6 +40,8 @@ const NAV_ITEMS = {
   finance: { href: "/finance", icon: BanknoteIcon },
   trainers: { href: "/trainers", icon: IdCardIcon },
   users: { href: "/admin/users", icon: ShieldUserIcon },
+  roles: { href: "/admin/roles", icon: KeyRoundIcon },
+  branches: { href: "/admin/branches", icon: Building2Icon },
 } as const;
 
 export type NavItemKey = keyof typeof NAV_ITEMS;

@@ -4,9 +4,11 @@ import { getTranslations } from "next-intl/server";
 import { FileTextIcon, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
+import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
+import { can } from "@/lib/permissions";
 import { listContracts } from "@/lib/api/contracts";
 import { ContractsTable } from "./contracts-table";
 
@@ -20,7 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Contracts are created from a customer's page, so this list has no create button.
 export default async function ContractsPage({ searchParams }: PageProps<"/contracts">) {
-  await requirePageUser();
+  const user = await requirePageUser();
+  if (!can(user, "contract.view")) return <ForbiddenState />;
   const t = await getTranslations("contracts");
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim() : "";

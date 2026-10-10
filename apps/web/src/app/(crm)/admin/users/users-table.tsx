@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { MoreHorizontalIcon, UserPlusIcon } from "lucide-react";
@@ -13,22 +14,23 @@ import { DateTime } from "@/components/date-time";
 import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
-import type { Role } from "@flow/shared/permissions";
 import { setUserStatusAction } from "./actions";
-import { ChangeRoleDialog, CreateUserDialog, ResetPasswordDialog } from "./user-dialogs";
+import { CreateUserDialog, ResetPasswordDialog, type Option } from "./user-dialogs";
 
 export type UserRow = {
   id: string;
   name: string;
   email: string;
-  role: Role;
+  role: { id: string; name: string };
   status: "ACTIVE" | "DISABLED";
+  allBranches: boolean;
+  branches: { id: string; name: string }[];
   createdAt: Date;
 };
 
-type OpenDialog = { kind: "role" | "password" | "disable"; user: UserRow } | null;
+type OpenDialog = { kind: "password" | "disable"; user: UserRow } | null;
 
-export function CreateUserButton() {
+export function CreateUserButton({ roles, branches }: { roles: Option[]; branches: Option[] }) {
   const t = useTranslations("users");
   const [open, setOpen] = useState(false);
   return (
@@ -37,7 +39,7 @@ export function CreateUserButton() {
         <UserPlusIcon />
         {t("create")}
       </Button>
-      <CreateUserDialog open={open} onOpenChange={setOpen} />
+      <CreateUserDialog open={open} onOpenChange={setOpen} roles={roles} branches={branches} />
     </>
   );
 }
@@ -64,13 +66,22 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
       header: t("users.fields.name"),
       cell: ({ row }) => (
         <span className="flex items-center gap-2">
-          {row.original.name}
+          <Link href={`/admin/users/${row.original.id}`} className="font-medium hover:underline">
+            {row.original.name}
+          </Link>
           {row.original.id === currentUserId && <Badge variant="outline">{t("users.you")}</Badge>}
         </span>
       ),
     },
     { id: "email", header: t("users.fields.email"), cell: ({ row }) => row.original.email },
-    { id: "role", header: t("users.fields.role"), cell: ({ row }) => t(`roles.${row.original.role}`) },
+    { id: "role", header: t("users.fields.role"), cell: ({ row }) => row.original.role.name },
+    {
+      id: "branches",
+      header: t("users.fields.branches"),
+      // D-014: every branch, or the granted ones.
+      cell: ({ row }) =>
+        row.original.allBranches ? t("users.allBranches") : row.original.branches.map((branch) => branch.name).join(", "),
+    },
     {
       id: "status",
       header: t("users.fields.status"),
@@ -96,7 +107,9 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => setDialog({ kind: "role", user })}>{t("users.changeRole")}</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/users/${user.id}`}>{t("users.open")}</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setDialog({ kind: "password", user })}>
                 {t("users.resetPassword")}
               </DropdownMenuItem>
@@ -119,7 +132,6 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
   return (
     <>
       <DataTable columns={columns} data={users} label={t("users.title")} empty={null} getRowId={(row) => row.id} />
-      {dialog?.kind === "role" && <ChangeRoleDialog open onOpenChange={close} user={dialog.user} />}
       {dialog?.kind === "password" && <ResetPasswordDialog open onOpenChange={close} user={dialog.user} />}
       {dialog?.kind === "disable" && (
         <ConfirmDialog

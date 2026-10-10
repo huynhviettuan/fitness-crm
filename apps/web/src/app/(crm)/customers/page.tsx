@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { SearchIcon, UsersIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
+import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -22,6 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CustomersPage({ searchParams }: PageProps<"/customers">) {
   const user = await requirePageUser();
+  if (!can(user, "customer.view")) return <ForbiddenState />;
   const t = await getTranslations("customers");
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim() : "";
@@ -41,7 +43,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={canManage && <CreateCustomerButton />} />
+      <PageHeader title={t("title")} description={t("description")} actions={canManage && <CreateCustomerButton branches={user.branches} />} />
       <Form action="/customers" role="search" className="relative mb-4 max-w-sm">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input name="q" type="search" defaultValue={q} placeholder={t("searchPlaceholder")} aria-label={t("searchPlaceholder")} className="pl-8" />

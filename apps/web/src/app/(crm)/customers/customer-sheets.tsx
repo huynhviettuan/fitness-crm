@@ -12,6 +12,7 @@ import { CustomerForm, type CustomerFormValues } from "./customer-form";
 import { createCustomerAction, updateCustomerAction } from "./actions";
 
 const EMPTY: CustomerFormValues = {
+  branchId: "",
   fullName: "",
   phone: "",
   email: "",
@@ -21,7 +22,7 @@ const EMPTY: CustomerFormValues = {
 };
 
 /** "Add customer": a short form, so it opens in a Sheet (docs/23 §7). */
-export function CreateCustomerButton() {
+export function CreateCustomerButton({ branches }: { branches: { id: string; name: string }[] }) {
   const t = useTranslations("customers");
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -40,6 +41,7 @@ export function CreateCustomerButton() {
         <CustomerForm
           mode="create"
           defaultValues={EMPTY}
+          branches={branches}
           submit={createCustomerAction}
           onCancel={() => setOpen(false)}
           onSaved={(result) => {
@@ -57,7 +59,8 @@ export function CreateCustomerButton() {
 type EditableCustomer = {
   id: string;
   fullName: string;
-  phone: string;
+  phone: string | null;
+  maskedFields: ("phone" | "email")[];
   email: string | null;
   dateOfBirth: Date | null;
   notes: string | null;
@@ -70,8 +73,9 @@ export function EditCustomerButton({ customer }: { customer: EditableCustomer })
   const [open, setOpen] = useState(false);
 
   const defaultValues: CustomerFormValues = {
+    branchId: "",
     fullName: customer.fullName,
-    phone: customer.phone,
+    phone: customer.phone ?? "",
     email: customer.email ?? "",
     dateOfBirth: customer.dateOfBirth ? formatDateOnly(customer.dateOfBirth) : "",
     notes: customer.notes ?? "",
@@ -92,6 +96,7 @@ export function EditCustomerButton({ customer }: { customer: EditableCustomer })
         <CustomerForm
           mode="edit"
           defaultValues={defaultValues}
+          masked={customer.maskedFields}
           submit={(values) => updateCustomerAction(customer.id, values)}
           onCancel={() => setOpen(false)}
           onSaved={() => {

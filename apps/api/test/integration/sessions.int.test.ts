@@ -5,7 +5,7 @@ import { getContract } from "../../src/modules/contracts/contract.service.js";
 import { cancelBooking, markNoShow } from "../../src/modules/bookings/booking.service.js";
 import { checkIn, completeSession } from "../../src/modules/sessions/session.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestUser } from "../support/factories.js";
+import { createTestUser, DEFAULT_BRANCH_ID } from "../support/factories.js";
 import { book, bookingScenario, linkedTrainer } from "../support/bookings.js";
 
 afterEach(async () => {
@@ -56,7 +56,7 @@ describe("completeSession", () => {
 
     const result = await completeSession(scenario.manager, scenario.booking.id);
 
-    expect(result.booking).toMatchObject({ status: "COMPLETED", session: { completedBy: "MANAGER test user" } });
+    expect(result.booking).toMatchObject({ status: "COMPLETED", session: { completedBy: "FITNESS_MANAGER test user" } });
     expect(result.contract).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
     expect(await remaining(scenario)).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: scenario.booking.id, action: "booking.completed" } });
@@ -92,6 +92,7 @@ describe("completeSession", () => {
     // through the service, so it is written directly, as overbooking would allow.
     const second = await prisma.booking.create({
       data: {
+        branchId: DEFAULT_BRANCH_ID,
         customerId: scenario.customer.id,
         contractId: scenario.contract.id,
         trainerId: scenario.trainer.id,

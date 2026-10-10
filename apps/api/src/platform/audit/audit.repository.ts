@@ -1,7 +1,16 @@
 import type { Db } from "../db/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 
-export type AuditEntityType = "user" | "customer" | "contract" | "trainer" | "booking" | "payment" | "cash_transaction";
+export type AuditEntityType =
+  | "user"
+  | "role"
+  | "branch"
+  | "customer"
+  | "contract"
+  | "trainer"
+  | "booking"
+  | "payment"
+  | "cash_transaction";
 
 export type AuditEntry = {
   /** null only for system actions such as the initial seed. */

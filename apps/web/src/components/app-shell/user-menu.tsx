@@ -18,13 +18,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth/auth-client";
 import { LOCALES } from "@/i18n/config";
-import type { Role } from "@flow/shared/permissions";
 import { setLocaleAction } from "@/app/(crm)/actions";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 
 type UserMenuProps = {
-  user: { name: string; email: string; role: Role };
+  user: { name: string; email: string; roleName: string };
 };
 
 export function UserMenu({ user }: UserMenuProps) {
@@ -66,7 +65,7 @@ export function UserMenu({ user }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <p className="truncate text-sm font-medium">{user.name}</p>
           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-          <p className="text-xs text-muted-foreground">{t(`roles.${user.role}`)}</p>
+          <p className="text-xs text-muted-foreground">{user.roleName}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">{t("userMenu.language")}</DropdownMenuLabel>

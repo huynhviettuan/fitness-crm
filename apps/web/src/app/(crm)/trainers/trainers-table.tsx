@@ -24,9 +24,12 @@ export type TrainerRow = {
   id: string;
   trainerCode: string;
   fullName: string;
+  branch: { id: string; name: string };
   status: "ACTIVE" | "INACTIVE";
   user: { id: string; name: string; email: string } | null;
 };
+
+type BranchOption = { id: string; name: string };
 
 export type TrainerLoginOption = { id: string; name: string; email: string; linkedTrainerId: string | null };
 
@@ -34,15 +37,24 @@ export type TrainerLoginOption = { id: string; name: string; email: string; link
 const NO_LOGIN = "none";
 const trainerFormSchema = trainerInputSchema.extend({ userId: z.string() });
 
-type TrainerFormValues = { fullName: string; status: "ACTIVE" | "INACTIVE"; userId: string };
+type TrainerFormValues = { branchId: string; fullName: string; status: "ACTIVE" | "INACTIVE"; userId: string };
 
-export function TrainersTable({ trainers, logins }: { trainers: TrainerRow[]; logins: TrainerLoginOption[] }) {
+export function TrainersTable({
+  trainers,
+  logins,
+  branches,
+}: {
+  trainers: TrainerRow[];
+  logins: TrainerLoginOption[];
+  branches: BranchOption[];
+}) {
   const t = useTranslations("trainers");
   const [editing, setEditing] = useState<TrainerRow | null>(null);
 
   const columns: DataTableColumn<TrainerRow>[] = [
     { id: "trainerCode", header: t("fields.trainerCode"), cell: ({ row }) => <span className="font-mono text-sm">{row.original.trainerCode}</span> },
     { id: "fullName", header: t("fields.fullName"), cell: ({ row }) => row.original.fullName },
+    { id: "branch", header: t("fields.branch"), cell: ({ row }) => row.original.branch.name },
     {
       id: "login",
       header: t("fields.login"),
@@ -77,12 +89,18 @@ export function TrainersTable({ trainers, logins }: { trainers: TrainerRow[]; lo
         empty={<EmptyState icon={UserPlusIcon} title={t("emptyTitle")} description={t("emptyBody")} />}
         getRowId={(row) => row.id}
       />
-      <TrainerDialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)} trainer={editing} logins={logins} />
+      <TrainerDialog
+        open={editing !== null}
+        onOpenChange={(open) => !open && setEditing(null)}
+        trainer={editing}
+        logins={logins}
+        branches={branches}
+      />
     </>
   );
 }
 
-export function CreateTrainerButton({ logins }: { logins: TrainerLoginOption[] }) {
+export function CreateTrainerButton({ logins, branches }: { logins: TrainerLoginOption[]; branches: BranchOption[] }) {
   const t = useTranslations("trainers");
   const [open, setOpen] = useState(false);
   return (
@@ -91,7 +109,7 @@ export function CreateTrainerButton({ logins }: { logins: TrainerLoginOption[] }
         <UserPlusIcon />
         {t("create")}
       </Button>
-      <TrainerDialog open={open} onOpenChange={setOpen} trainer={null} logins={logins} />
+      <TrainerDialog open={open} onOpenChange={setOpen} trainer={null} logins={logins} branches={branches} />
     </>
   );
 }
@@ -102,9 +120,11 @@ type TrainerDialogProps = {
   /** null to create a new trainer. */
   trainer: TrainerRow | null;
   logins: TrainerLoginOption[];
+  /** The branches the user works in; asked only when there is more than one (D-014). */
+  branches: BranchOption[];
 };
 
-function TrainerDialog({ open, onOpenChange, trainer, logins }: TrainerDialogProps) {
+function TrainerDialog({ open, onOpenChange, trainer, logins, branches }: TrainerDialogProps) {
   const t = useTranslations("trainers");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,20 +133,30 @@ function TrainerDialog({ open, onOpenChange, trainer, logins }: TrainerDialogPro
           <DialogTitle>{trainer ? t("edit") : t("create")}</DialogTitle>
           <DialogDescription>{trainer ? t("editDescription") : t("createDescription")}</DialogDescription>
         </DialogHeader>
-        <TrainerForm trainer={trainer} logins={logins} onDone={() => onOpenChange(false)} />
+        <TrainerForm trainer={trainer} logins={logins} branches={branches} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function TrainerForm({ trainer, logins, onDone }: { trainer: TrainerRow | null; logins: TrainerLoginOption[]; onDone: () => void }) {
+function TrainerForm({
+  trainer,
+  logins,
+  branches,
+  onDone,
+}: Omit<TrainerDialogProps, "open" | "onOpenChange"> & { onDone: () => void }) {
   const t = useTranslations();
   const router = useRouter();
   const errorMessage = useErrorMessage();
   const [pending, startTransition] = useTransition();
   const form = useForm<TrainerFormValues>({
     resolver: zodResolver(trainerFormSchema, undefined, { raw: true }) as never,
-    defaultValues: { fullName: trainer?.fullName ?? "", status: trainer?.status ?? "ACTIVE", userId: trainer?.user?.id ?? NO_LOGIN },
+    defaultValues: {
+      branchId: trainer?.branch.id ?? "",
+      fullName: trainer?.fullName ?? "",
+      status: trainer?.status ?? "ACTIVE",
+      userId: trainer?.user?.id ?? NO_LOGIN,
+    },
   });
 
   // A login already linked to another trainer cannot be chosen (A-010).
@@ -164,6 +194,15 @@ function TrainerForm({ trainer, logins, onDone }: { trainer: TrainerRow | null; 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <FieldGroup>
+        {branches.length > 1 && (
+          <SelectField
+            control={form.control}
+            name="branchId"
+            label={t("trainers.fields.branch")}
+            placeholder={t("common.chooseBranch")}
+            options={branches.map((branch) => ({ value: branch.id, label: branch.name }))}
+          />
+        )}
         <TextField control={form.control} name="fullName" label={t("trainers.fields.fullName")} autoComplete="off" />
         {trainer && (
           <SelectField
