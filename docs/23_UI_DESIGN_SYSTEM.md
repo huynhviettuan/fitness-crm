@@ -31,27 +31,38 @@ Adding any other UI, styling, or calendar library requires updating this documen
 
 ## 3. Status colors
 
-`StatusBadge` is the only component that maps a status to a color.
+`StatusBadge` is the only component that maps a status to a color. Colors are **tokens**, never raw palette values.
 
-| Entity | Status | Color token |
+- **Configurable statuses** take their color from configuration (D-015, T-049): session statuses (`session_status_rules`), and any status admin can recolor. Admin picks a token from a fixed palette (`info`, `success`, `warning`, `destructive`, `muted`, `violet`, `red`), so contrast stays correct.
+- **Fixed statuses** map in code.
+
+Initial session colors (brief §6.2):
+
+| Session status | Token |
+|---|---|
+| Booked | `red` |
+| Đã tập | `info` (blue) |
+| Hủy lịch | `violet` |
+| Khách không đến | `warning` (yellow) |
+
+Fixed mappings:
+
+| Entity | Status | Token |
 |---|---|---|
-| Booking | `BOOKED` | info |
-| Booking | `CHECKED_IN` | warning |
-| Booking | `COMPLETED` | success |
-| Booking | `CANCELLED` | muted |
-| Booking | `NO_SHOW` | destructive |
-| Contract | `DRAFT` | muted |
-| Contract | `ACTIVE` | success |
-| Contract | `EXPIRED` (derived) | warning |
-| Contract | `CANCELLED` | muted |
-| Payment / cash transaction | `CONFIRMED` | success |
-| Payment / cash transaction | `VOIDED` | muted, amount struck through |
-| Customer | `ACTIVE` | success |
-| Customer | `INACTIVE` | muted |
-| User | `ACTIVE` | success |
-| User | `DISABLED` | muted |
+| Contract | Pending approval | `warning` |
+| Contract | Active | `success` |
+| Contract | Frozen (Tạm vô hiệu) | `destructive` |
+| Contract | On hold (Bảo lưu) | `info` |
+| Contract | Expired (derived) | `muted` |
+| Contract | Cancelled | `muted` |
+| Lead | New, Consulting, Considering, No response, Appointment booked, Show, No show, Refused, Contracted | `info`, `info`, `warning`, `muted`, `info`, `success`, `destructive`, `muted`, `success` |
+| Approval | Pending / Approved / Rejected | `warning` / `success` / `destructive` |
+| Task | New, Accepted, In progress, Done, Cancelled | `info`, `info`, `warning`, `success`, `muted` |
+| Email | Sent / Failed | `success` / `destructive` |
+| Receipt / expense voucher | Pending / Approved | `warning` / `success`; deleted vouchers appear only in the trash |
+| Customer (derived) | Training, Expiring soon, Expired, On hold, No contract | `success`, `warning`, `muted`, `info`, `muted` |
 
-A status is always shown as a translated text label plus color, never color alone.
+A status is always shown as a translated text label plus color, never color alone. The tokens `red` and `violet` are added to `globals.css` with light and dark values.
 
 ## 4. Languages
 
@@ -60,7 +71,7 @@ A status is always shown as a translated text label plus color, never color alon
 - Each user's language is stored as `user.locale`, because reception PCs are shared by several staff. The login page uses the browser language and falls back to the default.
 - The language switch is in the user menu.
 - Every user-facing string lives in `messages/vi.json` and `messages/en.json`. Components contain no hard-coded text.
-- Enums and codes stay in English in the database and API. The UI translates them with keys such as `status.booking.COMPLETED`.
+- Enums and codes stay in English in the database and API. The UI translates them with keys such as `status.contract.ACTIVE`. Admin-managed option lists carry their own Vietnamese and English labels (D-016).
 - API error codes (`07_API_SPECIFICATION.md`) map to `errors.<CODE>` message keys. `toUserMessage(code)` is the only place that does this.
 
 ## 5. Formatting
@@ -78,41 +89,27 @@ Never format money or dates anywhere else.
 
 ## 6. App shell
 
-```text
-┌──────────────┬──────────────────────────────────────────────┐
-│  Gym logo    │  Page title          [Search Ctrl+K]  [User] │
-│              ├──────────────────────────────────────────────┤
-│  Dashboard   │                                              │
-│  Customers   │                                              │
-│  Contracts   │                 page content                 │
-│  PT Calendar │                                              │
-│  Sessions    │                                              │
-│  Finance     │                                              │
-│  Reports     │                                              │
-│  Admin       │                                              │
-└──────────────┴──────────────────────────────────────────────┘
-```
-
-- Collapsible shadcn Sidebar with the navigation from `08_UI_UX_SPECIFICATION.md`. Items a role cannot use are hidden. This is UX only; the server enforces access.
-- Top bar: page title, global customer search, and the user menu.
-- Global customer search uses shadcn Command (Ctrl+K) and matches code, name, or phone (FR-CUS-002).
-- User menu: name, role, language switch, sign out.
+- Collapsible shadcn Sidebar with the navigation groups from `08_UI_UX_SPECIFICATION.md` (Dashboard, Leads and consulting, Customers, Contracts, Schedules, Workout plans, Cash book, Tasks, Reports, Administration). Items without permission are hidden; the API enforces access (D-017).
+- Top bar: page title, branch switcher, global customer search (Ctrl+K: code, name, phone), approvals inbox, notification bell, user menu (name, role, language, sign out).
+- On phones the sidebar becomes a sheet and the top bar keeps search and notifications.
 
 ## 7. Page templates
 
 | Page type | Structure |
 |---|---|
-| List | `PageHeader` (title + primary action) → filter bar → `DataTable` → `EmptyState` when there are no rows |
-| Detail | Header (code, name, `StatusBadge`, actions) → Tabs |
-| Short form (≤ 6 fields, e.g. booking, payment) | Dialog or Sheet |
-| Long form (e.g. contract) | Full page |
+| List (brief §1) | `PageHeader` (title, **Add**, **Export Excel**) → `FilterPanel` on the left + search → `DataTable` with paging and a **totals row** → `EmptyState` when there are no rows |
+| Detail | Header (code, name, `StatusBadge`, actions allowed by permission and status) → Tabs |
+| Board | Kanban by status (leads) |
+| Short form (≤ 6 fields) | Dialog or Sheet |
+| Long form (contract, workout plan) | Full page, grouped sections |
+| Phone-first (leads, PT calendar, session log) | Single column, sticky actions, large touch targets |
 | Dashboard | Grid of KPI cards, then charts and widgets |
 
-Critical actions (complete session, cancel, no-show, void, contract cancel) use `ConfirmDialog`, which states the effect before the user confirms — for example "Remaining sessions: 16 → 15". Void asks for a reason.
+Critical actions (Đã tập, delete, deactivate, approve, cancel) use `ConfirmDialog`, which states the effect before the user confirms — for example "Sessions left: 16 → 15". Deletions and rejections ask for a reason from a drop-down.
 
 ## 8. Shared components
 
-Each cross-cutting concern has exactly one owner in `src/components/`. Feature code composes these and never re-implements them.
+Each cross-cutting concern has exactly one owner in `apps/web/src/components/` (`src/components/` until the M1 restructure). Feature code composes these and never re-implements them.
 
 | Component | Owns |
 |---|---|
@@ -127,29 +124,38 @@ Each cross-cutting concern has exactly one owner in `src/components/`. Feature c
 | `DateTime` | Date/time display in the gym timezone (§5) |
 | `notify` | Toasts (wraps Sonner) |
 | Form field wrappers | Label, input, help text, and error message layout |
+| `FilterPanel` | Left-side filters of list pages; state kept in the URL |
+| `OptionSelect` | Drop-down from an option list; choosing "Khác" shows a required note (D-016) |
+| `ApprovalBadge` / `ApprovalBar` | Pending state of a record and the approve/reject actions with reason |
+| `ExportButton` | Excel export of the current filter (permission `*.export`) |
+| `Masked` | Shows "•••" for fields hidden by the user's role (D-017) |
+| `BranchSwitcher` | Current branch for users with several branches |
+| `NotificationBell` | In-app notifications |
+| `Timeline` | Ordered history (lead steps, contract history, audit) |
 
-## 9. PT booking calendar
+## 9. PT and class calendars
 
 `TrainerScheduleGrid` is a custom component built from shadcn primitives. It uses no calendar library.
 
-- One day at a time, with a date selector.
-- Trainers as columns, filterable; 30-minute rows. The visible hours come from `SCHEDULE_START_HOUR` and `SCHEDULE_END_HOUR` (default 6–22); the grid grows to show a booking outside them.
-- Only active bookings (A-005) are drawn. Cancelled and no-show bookings free the slot and are listed under Sessions.
-- A trainer sees only their own column (A-007).
-- Booking blocks use the `StatusBadge` colors and show customer and time.
-- Clicking an empty slot opens the create-booking dialog with trainer and time filled in.
-- Clicking a booking opens a detail Sheet with the actions allowed by its status (A-006).
-- No drag-and-drop in V1; rescheduling uses the dialog.
+- Day view with back, today, and forward, plus a week view (brief §6.1).
+- **One row per PT**, with the PT's session count for the day in brackets; 30-minute columns; hours from configuration (05:00–22:00 initially).
+- Cells are green when bookable (inside the PT's working schedule and in the future) and grey otherwise.
+- Session blocks use the configured status colors (§3) and show customer and time. Deleted sessions are not drawn.
+- Filters: branch, date, PT, customer.
+- Clicking a bookable cell opens the booking dialog with PT and time filled in.
+- Clicking a session opens its detail with the actions allowed by status and permission. Admin also gets a bulk "Đã tập" mode for the day.
+- On phones, a PT sees their own day as a vertical list of slots.
+- The class grid reuses the same component with classes as blocks.
 
-Why custom: FullCalendar's trainer-column (resource) view is a paid add-on, and react-big-calendar needs heavy restyling to match shadcn/ui. A one-day grid for one gym is small enough to own.
+Why custom: resource (row-per-person) views are paid add-ons in FullCalendar, and other libraries need heavy restyling to match shadcn/ui.
 
 ## 10. Devices
 
-Device targets (A-012):
+Device targets (D-043):
 
-- Desktop-first, 1280px and wider (gym PCs, latest Chrome/Edge).
-- Every screen remains usable at tablet width.
-- The trainer's day view and the check-in and complete actions work at phone width (360px and wider).
+- Desktop at 1280px and wider for office screens.
+- Every screen usable at tablet width.
+- **Phone-first** (360px and wider): leads (list, Kanban, detail, quick add), the PT calendar, and the session log, because consultants and PTs work on phones.
 
 ## 11. Accessibility and testability
 

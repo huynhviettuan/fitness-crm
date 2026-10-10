@@ -1,148 +1,121 @@
 # AGENTS.md — Instructions for AI Coding Agents
 
-This file is authoritative for any AI agent working on the Fitness CRM repository.
+This file is authoritative for any AI agent working on the Flow Fitness CRM repository.
 
 ## 1. Source of truth
 
 Before coding, read:
 
 1. `README.md`
-2. `docs/01_SCOPE_MVP.md`
-3. `docs/02_BUSINESS_FLOW.md`
-4. `docs/05_BUSINESS_RULES.md`
-5. `docs/22_TECHNICAL_ARCHITECTURE.md`
+2. `docs/source/BRIEF_V2_vi.md` — the customer's brief (cited as brief §n)
+3. `docs/18_DECISIONS_ASSUMPTIONS.md`
+4. `docs/01_SCOPE_MVP.md`, `docs/02_BUSINESS_FLOW.md`, `docs/05_BUSINESS_RULES.md`
+5. `docs/22_TECHNICAL_ARCHITECTURE.md` and `docs/26_TECH_PROPOSAL.md`
 6. `docs/23_UI_DESIGN_SYSTEM.md` for any task that touches the UI
-7. The feature-specific documentation relevant to the task
+7. `docs/25_BRIEF_V2_GAP_ANALYSIS.md` when changing code built before brief v2
+8. The feature-specific documentation relevant to the task
 
 If requirements conflict, use this priority:
 
-1. Explicit business rules
-2. Acceptance criteria
-3. Functional requirements
-4. API/UI specification
-5. Technical architecture
-6. Implementation notes
+1. The brief and the confirmed decisions in doc 18
+2. Explicit business rules (doc 05)
+3. Acceptance criteria (doc 14)
+4. Functional requirements (doc 06)
+5. API/UI specification (docs 07, 08)
+6. Technical architecture (docs 22, 26)
+7. Implementation notes
 
-Do **not** invent business rules. Add unknowns to `docs/18_DECISIONS_ASSUMPTIONS.md` and stop the affected part of implementation if the ambiguity can change financial or session-consumption behavior.
+Do **not** invent business rules. Add unknowns to `docs/18_DECISIONS_ASSUMPTIONS.md` and stop the affected part of implementation if the ambiguity can change money, session consumption, PT pay, or permissions.
 
 In `docs/18_DECISIONS_ASSUMPTIONS.md`:
 
-- confirmed decisions (D-xxx, T-xxx) are binding;
+- confirmed decisions (D-xxx, T-xxx) are binding; an entry marked *Superseded by …* is not;
 - working assumptions (A-xxx) may be implemented, and must be cited where they are used;
 - open questions (OQ-xxx) block the part named in their *Blocks* column. Build only the *Interim* behavior until the question is answered.
 
-## 2. V1 constraints
+## 2. Phase 1 constraints
 
-- Single internal gym.
-- No multi-tenant SaaS architecture.
-- No fingerprint device integration in V1.
-- Check-in is manual by an authorized user.
-- No mobile app in V1.
-- No social inbox integration in V1.
-- No automatic no-show penalty in V1.
-- V1 uses a **single full-stack Next.js application**.
-- V1 is deployed to **Vercel**.
-- Do **not** introduce NestJS, Express, Railway, a separate API application, microservices, or Redis unless explicitly approved and the documentation is updated first.
+- Multi-branch from day one: every business record belongs to a branch (D-014).
+- **Fixed flow, configurable values** (D-015): never hard-code a value the brief marks as admin-configurable (channels, sources, reasons, prices, tiers, durations, timers, thresholds, roles, permissions, approval matrix, status rules and colors, rates, Flags, Actions, expense types, email templates, code prefixes). Numbers in the brief are seed values.
+- **Drop-downs, not free text** (D-016): results, statuses, categories, and reasons come from admin option lists, each with "Khác" that requires a note.
+- Architecture (T-041): a monorepo with `apps/web` (Next.js, UI only) and `apps/api` (NestJS, all business logic and data access). Do not add other backends, microservices, Redis, or message brokers; background work uses pg-boss in PostgreSQL (T-045).
+- Hosting (T-042): web on Vercel; API, worker, and PostgreSQL on Railway or Render; staging separate from production.
+- No fingerprint devices, member app, Zalo OA, Pro Shop, lockers, loyalty, day passes, or tax accounting in phase 1 (D-013). Lead channel APIs only in milestone 10 (D-044); manual entry first.
+- Email is the only notification channel to customers (D-036).
 
 ## 3. Critical invariants
 
-- A customer has one immutable unique customer ID.
-- One customer can have many contracts.
-- Booking does **not** consume a session.
-- Manual check-in does **not** consume a session.
-- Only transition to `COMPLETED` consumes exactly one session.
-- The booking status is the only source of truth for consumption: completed sessions = the contract's bookings in `COMPLETED`.
-- Repeating `COMPLETED` on an already completed session must be idempotent and must not consume again.
-- These session rules must hold under concurrent requests, not only sequential retries. Follow the locked transaction in `docs/22_TECHNICAL_ARCHITECTURE.md` §7.
-- `CANCELLED` and `NO_SHOW` do not consume sessions in V1.
-- Contract debt is derived from contract value minus confirmed payments, minus the opening paid amount for contracts imported at go-live (D-011). Imported opening balances are never edited.
-- Financial records and completed sessions must be auditable.
+- One person, one record: a lead becomes a customer at Show with the same ID; duplicate phones warn and merge, never duplicate (D-019).
+- A contract is effective only after approval. **Approved contracts are never edited**, even by admin; changes go through change vouchers; a wrong contract is deleted (receipts first) and re-created (D-022, D-024).
+- A booking needs an approved, active contract with sessions left, not expired, not frozen; no trainer overlap and no customer overlap, also under concurrent requests (D-030, T-014).
+- Session status rules come from configuration (D-025). Initially *Đã tập*, no-show, and Burn Show consume one session and credit the PT; *Hủy lịch* and deleted sessions do not. Each session stores the flags of the rule applied when its status was set (T-050).
+- *Đã tập* is locked once set. The only correction is deleting the session from the check-in history: reason required, one session refunded, PT credit removed, trash, customer email, and a payroll adjustment when the period was already paid (D-026, D-027).
+- Sessions left and sessions used are always derived from sessions and change vouchers, never typed (T-050). Repeating a status change must not consume twice, including under concurrent requests (locked transaction, `docs/22_TECHNICAL_ARCHITECTURE.md` §7).
+- Paid amount and debt are always derived from valid receipts (approved, not deleted), plus imported opening balances (D-011, D-034).
+- Pending approvals have no effect, and nobody approves their own submission (D-018).
+- No hard delete of business data: deletions go to the trash with a mandatory reason; codes and voucher numbers are never reused (D-035, D-038).
+- Every create, update, delete, approval, and configuration or permission change is audited with before/after values (T-048).
+- Every change in a customer's session count sends one customer email (D-036).
 
 ## 4. Engineering rules
 
-- Use TypeScript strict mode.
-- Use the Next.js App Router.
-- Validate all external input at the server boundary, preferably with Zod.
-- Authenticate and authorize all protected server mutations.
-- Use database transactions for operations that change more than one business record.
-- Never trust client-calculated debt, remaining sessions, payment state, or authorization state.
-- Keep React components presentation-focused.
-- Keep Server Actions and Route Handlers thin; they must delegate business logic to application/domain services.
-- Do not access Prisma directly from client components.
-- Prefer repository/data-access modules instead of scattering Prisma queries throughout the app.
-- Use migrations; do not rely on schema push in production.
-- Every critical mutation requires tests.
-- Every critical mutation that affects sessions or money must write an audit event.
-- Design database access for Vercel/serverless execution and use a serverless-compatible PostgreSQL connection strategy.
+- TypeScript strict mode everywhere.
+- Validate all external input at the API boundary with Zod schemas shared from `packages/shared`.
+- Every endpoint declares a permission key and is checked by the API guards: effective permissions, branch access, login hours, data scope, field masking (T-046). Hiding UI is never authorization.
+- Use database transactions for operations that change more than one record; keep lock order contract → session/booking (T-013, T-036, T-040, T-050).
+- Creates of contracts, receipts, expense vouchers, and change vouchers require an idempotency key (T-015).
+- Never trust client-calculated debt, sessions left, payment state, prices, or permissions.
+- Keep controllers thin; business logic lives in services; Prisma only in repositories inside `apps/api`.
+- `apps/web` never imports Prisma or server-side services; it calls the API through the generated client (T-043).
+- Use migrations; never schema push in shared environments.
+- Every critical change requires tests: unit, integration against PostgreSQL, and E2E where users see it.
 
 Security rules (full context in `docs/24_SECURITY_TESTING.md`):
 
-- Wrap every Route Handler in `handleApi` and authenticate with `requireApiUser`; start every Server Action with `requireActionUser()`. Tests fail otherwise.
-- Authorize inside services with `assertCan` from `@/lib/permissions/assert`; never rely on hiding UI.
+- Authenticate every API request; authorize inside services and guards; log denials with `logSecurityEvent`.
 - Validate every free-text field with `hasNoControlCharacters`.
-- Never log passwords, cookies, tokens, or hashes; use `logSecurityEvent` for security-relevant events.
-- Do not weaken the CSP, the API Origin check, or the security headers without updating doc 24 and doc 18.
+- Never log passwords, cookies, tokens, hashes, ID numbers, or health data.
+- Encrypt ID-document numbers and health data at rest; serve files only through signed URLs (D-042, T-052).
+- Do not weaken the CSP, the Origin check, or the security headers without updating doc 24 and doc 18.
 - A new high/critical dependency advisory is fixed or triaged into `security/audit-allowlist.json`; never silenced.
-- Every new route or action gets its OWASP tests (access control, input errors) in the same change.
+- Every new endpoint gets its OWASP tests (access control, data scope, masking, input errors) in the same change.
 
 UI rules (full rules in `docs/23_UI_DESIGN_SYSTEM.md` §12):
 
-- Build screens only from shadcn/ui components in `src/components/ui/` and the shared components listed in doc 23 §8. Do not add another UI, styling, icon, or calendar library.
-- Use design tokens and component variants; never raw palette classes or hex colors.
-- Every user-facing string goes in both `messages/vi.json` and `messages/en.json`; never hard-code text.
+- Build screens only from shadcn/ui components in `apps/web/src/components/ui/` and the shared components listed in doc 23 §8.
+- Use the shared list template (filters on the left, search, table with paging and totals row, Add, Export Excel).
+- Use design tokens; status colors come from configuration through `StatusBadge`, never raw palette classes or hex values.
+- Every user-facing string goes in both `vi` and `en` message files; never hard-code text.
 - Format money and dates only through `Money` / `DateTime` (VND, `dd/MM/yyyy`, 24-hour, gym timezone).
-- Do not create a second toast, error, loading, pagination, or status-badge implementation.
+- Leads, the PT calendar, and the workout log must work at phone width.
 
-## 5. Preferred source structure
-
-```text
-messages/
-├── vi.json
-└── en.json
-src/
-├── app/
-│   ├── (auth)/
-│   ├── (crm)/
-│   └── api/v1/
-├── components/
-│   └── ui/          # generated shadcn/ui components
-├── i18n/
-├── modules/
-│   ├── customers/
-│   ├── contracts/
-│   ├── bookings/
-│   ├── sessions/
-│   ├── trainers/
-│   ├── finance/
-│   └── reporting/
-├── lib/
-│   ├── auth/
-│   ├── db/
-│   ├── errors/
-│   ├── permissions/
-│   └── validation/
-└── generated/
-```
-
-Within a module, prefer boundaries such as:
+## 5. Source structure
 
 ```text
-modules/sessions/
-├── session.service.ts
-├── session.repository.ts
-├── session.schema.ts
-├── session.errors.ts
-└── session.test.ts
+apps/
+├── web/                      # Next.js: routes, components, i18n messages, generated API client
+└── api/                      # NestJS
+    ├── src/platform/         # auth, permissions, branches, approvals, audit, trash, config, notifications, files, jobs
+    ├── src/modules/          # leads, consulting, customers, services, contracts, contract-changes,
+    │                         # schedule, classes, workouts, cashbook, tasks, mail, employees, reports
+    └── prisma/               # schema and migrations
+packages/
+├── shared/                   # Zod schemas, DTO types, permission keys, constants
+└── config/                   # lint and TypeScript presets
+e2e/                          # Playwright
+docs/
 ```
 
-The exact filenames may evolve, but the separation of UI/request handling, business services, and data access must remain clear.
+Inside an API module: `*.controller.ts` → `*.service.ts` → `*.repository.ts`, with `*.schema.ts` (in `packages/shared`) and tests next to the code.
+
+Until milestone M1 restructures the repository (`docs/26_TECH_PROPOSAL.md` §8), the Phases 0–4 code still lives in `src/` as a single Next.js app.
 
 ## 6. Required task workflow
 
 For each task:
 
-1. Summarize the requirement.
-2. Identify affected domain rules.
+1. Summarize the requirement and cite the brief section.
+2. Identify affected rules, decisions, and open questions.
 3. List files/modules to change.
 4. Identify ambiguity or risks.
 5. Implement the smallest complete vertical slice.
@@ -155,16 +128,18 @@ For each task:
 
 A task is done only when:
 
-- Acceptance criteria pass.
-- No critical business invariant is violated.
+- Its acceptance criteria (doc 14) pass.
+- No critical invariant is violated.
 - Tests are added and green.
 - Error paths are handled.
-- Authorization is enforced server-side.
-- Audit behavior exists where required.
-- Documentation remains consistent with implementation.
-- The implementation does not introduce an unapproved second backend/runtime.
+- Authorization, data scope, and masking are enforced in the API.
+- Audit, trash, and email behavior exist where required.
+- No configurable value is hard-coded.
+- Documentation remains consistent with the implementation.
 
 ## 8. Commands and conventions
+
+Current single-app commands (until the M1 restructure):
 
 ```text
 npm run db:up             # PostgreSQL in Docker
@@ -180,10 +155,12 @@ npm run security:audit    # dependency vulnerability gate
 npm run build
 ```
 
-- Services take an `Actor` and authorize themselves with `assertCan`; Server Actions and Route Handlers only authenticate, call the service, and map errors (`runAction`, `handleApi`).
-- Every signed-in page and layout sets `export const instant = false` (T-029).
-- Database objects Prisma cannot model (sequences, exclusion constraints) go into the migration SQL by hand; Prisma leaves them alone.
-- Every booking change locks its contract, then the booking (`lockBooking` in `booking.repository.ts`, T-036); recording or voiding a payment locks its contract too (T-040). New code that changes a contract's bookings, sessions, or money takes the same locks in the same order.
+After the restructure, the same tasks run through Turborepo (`pnpm turbo run lint typecheck test`), per app with `--filter web` or `--filter api`.
+
+- Services take an `Actor` (user, effective permissions, branches) and authorize with the permission guard and `assertCan`.
+- Every signed-in page and layout in the web app sets `export const instant = false` (T-029).
+- Database objects Prisma cannot model (sequences, exclusion constraints) go into the migration SQL by hand.
+- Every change to a contract's sessions or money locks the contract first, then the session or voucher (T-036, T-040, T-050).
 - E2E specs follow the structure in `docs/13_TEST_STRATEGY.md`.
 
 The block below is maintained by Next.js and must stay.

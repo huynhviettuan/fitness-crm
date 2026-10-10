@@ -1,5 +1,15 @@
 # Documentation Changelog
 
+## 2026-10-10 — Brief v2 adopted (Flow Fitness CRM)
+
+The customer's new brief (`docs/source/BRIEF_V2_vi.md`) replaces the first brief. The package now describes Flow Fitness's own CRM replacing GymMaster: 12 modules, multi-branch, configurable roles and approvals, leads and consulting, service price tiers, locked contracts with change vouchers, configurable session statuses (no-show now consumes and credits the PT), workout plans and logs, cash book, tasks, and customer email.
+
+- Architecture changes to a monorepo: `apps/web` (Next.js) and `apps/api` (NestJS), web on Vercel, API and PostgreSQL on Railway or Render (T-041 to T-052).
+- New docs: 25 gap analysis (what Phases 0–4 give and what is reworked), 26 technical proposal with monthly costs, 27 estimates per milestone, wireframes for leads, PT calendar, session log, and permissions.
+- Rewritten: README, AGENTS.md, docs 00–16, 19–23; updated 17 and 24.
+- Doc 18: new decisions D-013 to D-045 and T-041 to T-052; earlier entries keep their IDs with a status (superseded, amended, answered); new open questions OQ-017 to OQ-030; OQ-002, 005, 006, 007, 011, 012, 015, 016 answered.
+- Implementation plan: the brief's milestones M1–M11 replace Phases 5–6. The Phases 0–4 code is unchanged until M1.
+
 ## 2026-10-10 — Phase 5 plan
 
 - Phase 5 is split into four slices in docs/16.

@@ -1,107 +1,81 @@
-# Fitness CRM — Markdown Documentation Package
+# Flow Fitness CRM — Documentation and Code
 
-> **Baseline:** Internal CRM for a single gym, V1 without fingerprint integration.
+> **Baseline:** Flow Fitness's own CRM, replacing GymMaster: one record per person from lead to contract, sessions, cash book, and reports, for several branches. Phase 1 has 12 modules and is the first part of a larger ERP.
 >
-> **Architecture baseline:** Full-stack **Next.js + TypeScript** deployed on **Vercel**, with **PostgreSQL + Prisma**. A separate NestJS backend is intentionally excluded from V1.
+> **Architecture baseline:** a TypeScript monorepo with **`apps/web` (Next.js)** on Vercel and **`apps/api` (NestJS)** on Railway or Render, with **PostgreSQL + Prisma**.
 
-This repository-ready documentation package is the source of truth for product, engineering, QA, and AI coding agents.
+The customer's brief, `docs/source/BRIEF_V2_vi.md` (10/10/2026), is the source of truth. This package turns it into rules, specifications, and plans for developers and AI coding agents.
 
 ## Product goal
 
-Build a lightweight internal Fitness CRM around three core business flows:
+Manage the whole customer journey in one system:
 
-1. **Customer & Contract Management** — each customer has one unique ID and can own multiple contracts.
-2. **Operations** — book training sessions, manually check in customers, complete sessions, and consume contract sessions safely.
-3. **Finance, Reports & Dashboard** — record payments, debt, income/expense, completed sessions, and show business performance.
+1. **Leads and consulting:** capture leads from every channel, assign them, follow a timed consulting checklist, re-care, audit.
+2. **Customers and contracts:** one profile from lead to member; contracts priced from service tiers, approved before use, locked after approval, changed only through change vouchers.
+3. **Operations:** PT schedule and classes, session statuses that consume sessions and credit trainers, workout plans and session logs with escalation.
+4. **Money and work:** cash book of receipts and expense vouchers, PT payouts, tasks between departments, customer emails.
+5. **Reports:** dashboards for consulting, workouts, contracts, sessions, money, and tasks.
 
-## Confirmed technical baseline
+Principle: **the flows are fixed in code; every value is configured by admin on screen** (D-015).
 
-- Application: **Next.js + TypeScript** full-stack
-- Hosting: **Vercel**
-- Database: **PostgreSQL**
-- ORM: **Prisma**
-- Validation: **Zod**
-- UI: **Tailwind CSS + shadcn/ui**, Vietnamese/English via **next-intl** — see `docs/23_UI_DESIGN_SYSTEM.md`
-- Authentication: **Better Auth** (T-028)
-- Testing: **Vitest (unit + integration against PostgreSQL) + Playwright E2E**
-- CI/CD: **GitHub + Vercel deployment workflow**
-- PostgreSQL hosting: managed provider with serverless-compatible connection pooling; provider can be selected separately
+## Technical baseline
 
-## V1 architecture
+- Monorepo: pnpm workspaces + Turborepo, TypeScript strict
+- Web: Next.js App Router, shadcn/ui + Tailwind, next-intl (Vietnamese, English-ready)
+- API: NestJS, REST `/api/v1` with OpenAPI, Better Auth, pg-boss jobs
+- Database: PostgreSQL + Prisma
+- Email: transactional provider (Resend or Amazon SES); files: Cloudflare R2
+- Testing: Vitest (unit + integration against PostgreSQL), Playwright E2E, OWASP security suite
+- Hosting: Vercel (web), Railway or Render in Singapore (API, worker, PostgreSQL); staging and production
+- CI/CD: GitHub Actions in the owner's repository
 
-```text
-Browser
-   |
-   v
-Vercel
-└── Next.js
-    ├── React UI
-    ├── Server Actions
-    ├── Route Handlers (/api/v1/...)
-    ├── Application/Domain Services
-    └── Repositories
-             |
-             v
-           Prisma
-             |
-             v
-        PostgreSQL
-```
+See `docs/26_TECH_PROPOSAL.md`.
 
-Business logic must **not** live in React components, Server Actions, or Route Handlers. Those layers validate/authenticate the request and delegate to application/domain services.
+## Current state of the code
+
+Phases 0–4 of the first brief are built as a single Next.js app in `src/`: customers, contracts, PT bookings and sessions, payments, and income/expense, with tests. Brief v2 changes much of this. `docs/25_BRIEF_V2_GAP_ANALYSIS.md` lists what is reused and what is reworked, and milestone M1 restructures the code into the monorepo.
 
 ## Documentation map
 
 | File | Purpose |
 |---|---|
-| `AGENTS.md` | Rules for Codex / AI coding agents |
+| `AGENTS.md` | Rules for AI coding agents |
+| `docs/source/BRIEF_V2_vi.md` | The customer's brief (Vietnamese, verbatim) |
 | `docs/00_PROJECT_OVERVIEW.md` | Product overview and goals |
-| `docs/01_SCOPE_MVP.md` | V1 scope and exclusions |
-| `docs/02_BUSINESS_FLOW.md` | End-to-end business flows |
-| `docs/03_DOMAIN_MODEL.md` | Core domain concepts |
-| `docs/04_DATA_MODEL_ERD.md` | Data model and Mermaid ERD |
-| `docs/05_BUSINESS_RULES.md` | Hard business rules and state machines |
-| `docs/06_FUNCTIONAL_REQUIREMENTS.md` | Functional requirements |
-| `docs/07_API_SPECIFICATION.md` | Internal HTTP API contract proposal |
-| `docs/08_UI_UX_SPECIFICATION.md` | Screens and interactions |
-| `docs/09_RBAC.md` | Roles and permissions |
-| `docs/10_REPORTING_DASHBOARD.md` | Reports and dashboard metrics |
-| `docs/11_NON_FUNCTIONAL_REQUIREMENTS.md` | Performance, reliability, backup, observability |
-| `docs/12_SECURITY_AUDIT.md` | Security and audit requirements |
+| `docs/01_SCOPE_MVP.md` | Phase 1 scope and exclusions |
+| `docs/02_BUSINESS_FLOW.md` | Customer journey, consulting, contracts, sessions, money |
+| `docs/03_DOMAIN_MODEL.md` | Domain entities |
+| `docs/04_DATA_MODEL_ERD.md` | Detailed data model and database constraints |
+| `docs/05_BUSINESS_RULES.md` | Business rules |
+| `docs/06_FUNCTIONAL_REQUIREMENTS.md` | Functional requirements per module |
+| `docs/07_API_SPECIFICATION.md` | API contract |
+| `docs/08_UI_UX_SPECIFICATION.md` | Screens |
+| `docs/09_RBAC.md` | Roles, permission tree, data scope, approval matrix |
+| `docs/10_REPORTING_DASHBOARD.md` | Dashboards and reports |
+| `docs/11_NON_FUNCTIONAL_REQUIREMENTS.md` | Performance, mobile, language, personal data, backups |
+| `docs/12_SECURITY_AUDIT.md` | Security, audit log, trash |
 | `docs/13_TEST_STRATEGY.md` | Test strategy and critical scenarios |
-| `docs/14_ACCEPTANCE_CRITERIA.md` | Acceptance criteria for MVP |
-| `docs/15_DEPLOYMENT.md` | Vercel deployment and environment strategy |
-| `docs/16_IMPLEMENTATION_PLAN.md` | Phased build plan |
-| `docs/17_AI_AGENT_WORKFLOW.md` | How to give tasks to an AI agent |
-| `docs/18_DECISIONS_ASSUMPTIONS.md` | Decisions, assumptions, unresolved items |
-| `docs/19_FUTURE_ROADMAP.md` | Future integrations and expansion |
-| `docs/20_GLOSSARY.md` | Domain glossary |
-| `docs/21_TRACEABILITY_MATRIX.md` | Requirement → API → UI → test mapping |
-| `docs/22_TECHNICAL_ARCHITECTURE.md` | Full-stack Next.js architecture and coding boundaries |
-| `docs/23_UI_DESIGN_SYSTEM.md` | UI library, design tokens, shared components, languages, formatting |
-| `docs/24_SECURITY_TESTING.md` | OWASP Top 10:2025 controls, security tests, dependency gate |
-| `CHANGELOG.md` | Documentation package changes |
+| `docs/14_ACCEPTANCE_CRITERIA.md` | Acceptance criteria (brief §12) |
+| `docs/15_DEPLOYMENT.md` | Environments and deployment |
+| `docs/16_IMPLEMENTATION_PLAN.md` | Milestones M1–M11 |
+| `docs/17_AI_AGENT_WORKFLOW.md` | How to brief an AI agent |
+| `docs/18_DECISIONS_ASSUMPTIONS.md` | Decisions, assumptions, open questions |
+| `docs/19_FUTURE_ROADMAP.md` | After phase 1 |
+| `docs/20_GLOSSARY.md` | Vietnamese ↔ English terms |
+| `docs/21_TRACEABILITY_MATRIX.md` | Brief → requirement → API → screen → test |
+| `docs/22_TECHNICAL_ARCHITECTURE.md` | Layers, transactions, concurrency |
+| `docs/23_UI_DESIGN_SYSTEM.md` | UI design system |
+| `docs/24_SECURITY_TESTING.md` | OWASP testing |
+| `docs/25_BRIEF_V2_GAP_ANALYSIS.md` | What is built vs brief v2 |
+| `docs/26_TECH_PROPOSAL.md` | Technology, architecture, hosting, costs |
+| `docs/27_ESTIMATES.md` | Effort and cost per milestone |
+| `docs/wireframes/flow-fitness-wireframes.html` | Wireframes: leads, PT calendar, workout log, permissions |
 
-## Run it locally
+## Recommended reading order
 
-Requirements: Node.js 22+, Docker Desktop.
-
-```text
-npm install
-cp .env.example .env          # local values; set a real BETTER_AUTH_SECRET
-npm run db:up                 # PostgreSQL 17 in Docker (dev, test, and e2e databases)
-npm run db:migrate            # apply migrations to the dev database
-npm run db:seed               # first admin, from SEED_ADMIN_* in .env
-npm run dev                   # http://localhost:3000
-```
-
-Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:integration`, `npm run test:e2e`, `npm run build`, `npm run security:audit`, `npm run test:security`.
-
-## Start here
-
-1. Read `AGENTS.md`.
-2. Read `docs/00_PROJECT_OVERVIEW.md` through `docs/05_BUSINESS_RULES.md`.
-3. Read `docs/22_TECHNICAL_ARCHITECTURE.md` before implementing infrastructure or modules.
-4. Confirm unresolved items in `docs/18_DECISIONS_ASSUMPTIONS.md`.
-5. Implement in the order defined in `docs/16_IMPLEMENTATION_PLAN.md`.
-6. Do not implement out-of-scope features unless the source-of-truth documents are updated first.
+1. `docs/source/BRIEF_V2_vi.md`
+2. `docs/18_DECISIONS_ASSUMPTIONS.md`
+3. `docs/01_SCOPE_MVP.md`, `docs/02_BUSINESS_FLOW.md`, `docs/05_BUSINESS_RULES.md`
+4. `docs/26_TECH_PROPOSAL.md`, `docs/22_TECHNICAL_ARCHITECTURE.md`
+5. `docs/16_IMPLEMENTATION_PLAN.md`, `docs/25_BRIEF_V2_GAP_ANALYSIS.md`
+6. `AGENTS.md`

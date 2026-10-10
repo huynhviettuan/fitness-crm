@@ -1,49 +1,39 @@
 # 00 — Project Overview
 
-## 1. Purpose
+## Product
 
-Fitness CRM is an internal management system for one gym. It replaces fragmented manual tracking with one workflow for customer information, contracts, PT/session operations, payments, debt, reporting, and management dashboards.
+**Flow Fitness CRM** is Flow Fitness's own system to replace GymMaster (D-013). It covers the customer journey from lead to contract, sessions, the cash book, and reports, for several branches (D-014). It is the first part of a larger ERP, so modules and data are designed to be extended (brief §1).
 
-## 2. Primary users
+## Why build it
 
-- Admin
-- Manager
-- Receptionist
-- Trainer / PT
-- Accountant
+- Own the customer data.
+- Control long-term cost and avoid dependence on a vendor's policies.
+- Add what GymMaster lacks: consulting management with timed steps and audit, and workout plans whose results are tracked in each customer's profile.
 
-## 3. Core business outcome
+## Users
 
-The system must answer these questions reliably:
+| Role (initial) | Main work |
+|---|---|
+| Admin | Configuration, check-in ("Đã tập"), deletions, trash, every report |
+| Fitness Manager | New leads and escalations, lead reassignment, consulting audit, contract and exception-price approval |
+| Master (head coach) | Reviews every PT's workout plans, handles escalations, workout dashboard |
+| Consulting | Works assigned leads through the consulting journey, creates contracts for approval |
+| PT | Books sessions, writes workout plans, logs sessions, sees own session report |
+| Receptionist | Walk-in leads, Show / No show, booking support, completes customer details |
+| Marketing | Lead reports by channel and source, without phone numbers or ID documents |
 
-- Who is the customer?
-- Which contracts belong to that customer?
-- How many sessions were purchased, completed, and remaining?
-- What is booked today and with which PT?
-- Which sessions were actually completed?
-- How much has each contract paid and still owes?
-- What is the gym's operational and financial performance?
+Roles and their permissions are configured by admin (D-017, `09_RBAC.md`).
 
-## 4. End-to-end CRM flow
+## Core principles
 
-```mermaid
-flowchart LR
-    C[Customer] --> CT[Contract]
-    CT --> B[Booking]
-    B --> CI[Manual Check-in]
-    CI --> S[Session Completion]
-    S --> U[Consume 1 Session]
-    CT --> P[Payments]
-    P --> D[Debt Calculation]
-    U --> R[Reports]
-    D --> R
-    R --> DB[Dashboard]
-```
+- **One record per person**, from lead to customer (D-019).
+- **Fixed flows, configurable values** (D-015), entered through drop-downs (D-016).
+- **Approval by a superior** for configured actions; approved contracts are locked (D-018, D-022).
+- **Everything derived:** sessions left from sessions and change vouchers; paid and debt from valid receipts (T-050, D-034).
+- **Nothing is hard-deleted:** deletions go to a permanent trash with a reason (D-035).
+- **Every change is audited** with before/after values (T-048).
+- Customers are notified by **email** whenever their session count changes (D-036).
 
-## 5. Product philosophy
+## Documents
 
-- Keep V1 small and operationally useful.
-- Prefer data integrity over feature breadth.
-- Treat money and session consumption as critical domains.
-- Avoid premature SaaS/multi-branch complexity.
-- Add integrations only after core data and workflows are stable.
+The brief is `docs/source/BRIEF_V2_vi.md`. Start with `README.md` for the documentation map.

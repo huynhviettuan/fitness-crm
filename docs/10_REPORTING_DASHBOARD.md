@@ -1,92 +1,45 @@
-# 10 — Reporting & Dashboard
+# 10 — Dashboards & Reports
 
-## Dashboard KPIs
+From brief §9 (D-041). Every report filters by **branch, period, and staff**, exports to **Excel**, and is its own permission (D-017). Data scope and field masks apply to reports and exports.
 
-### Operational — Today
+| Report | Content | Milestone |
+|---|---|---|
+| Overview dashboard | New leads; conversion rate; members training; active PTs; contracts ending soon (expiring within 14 days or 3 sessions or fewer left, A-023, A-025); PT sessions per hour of the day; revenue by month and year | M9 (first version M5) |
+| Consulting dashboard | Per consultant and team: leads received; funnel Lead → Consulted → Appointment booked → Show → Contracted; show rate; on-time step compliance; time to first response; re-care results; audit score | M3 |
+| Lead analysis | By channel, source, Organic/Paid, need group, nationality group, refusal reason; "Khác" entries per list | M3 |
+| Weekly workout dashboard | Across all customers: % of each Flag and each Action over all sets logged; customers with at least one non-Normal Flag; comparison with last week; open escalations; drill down to customers and sessions | M7 |
+| Contract report | Revenue, debt, new and renewed contracts, expiring or running out; grouped by service and session-tier band | M4 |
+| Exception-price report | Share of contracts with exception prices and total difference vs tier price, by creator and approver | M4 |
+| Booking report | Customer, phone (masked if hidden), check-in time, check-out time, status, staff, created date; filters by booking type and status | M5 |
+| PT revenue allocation | Columns below; totals per PT; Excel in GymMaster's column order | M5 |
+| Cash book | Cash book per period (opening, in, out, closing) per method and branch; income and expense; member debt | M4 |
+| Tasks | Assigned, done on time, late, per person and department | M1 |
 
-- total bookings
-- checked-in sessions
-- completed sessions
-- upcoming sessions
-- cancelled bookings
-- no-shows
+## PT revenue allocation (brief §6.5, D-032)
 
-### Contracts
+One row per PT–contract pair in the period, matching GymMaster's "employee_pt_training" export:
 
-- active contracts
-- contracts ending soon: few remaining sessions, not a near end date (D-012, A-023)
-- total remaining PT sessions
+| Column | Calculation |
+|---|---|
+| Employee code and name; member code and name; phone; branch | From profiles |
+| Contract code, service, contract value | From the contract |
+| Allocation value | Part of the contract value divided across sessions (A-026: value after discounts, excluding VAT) |
+| Sessions | Sessions bought + bonus sessions |
+| Allocation per session | Allocation value ÷ sessions |
+| Credited sessions ("Show dạy") | Sessions of that PT on that contract in the period with `credits_pt` (Đã tập, no-show, Burn Show) |
+| Commission rate, timesheet rate | Configuration (100% initially; level per OQ-022) |
+| PT allocation | Credited × per-session allocation × commission rate × timesheet rate |
+| Total credited | All credited sessions of the PT in the period |
+| Adjustments | Negative lines from deleted sessions of paid periods (D-027) |
+| Trial to contract, note | Trial session that led to the contract; note |
 
-### Finance — Current month
-
-- contract value created
-- confirmed amount collected
-- outstanding debt
-- income
-- expense
-- net cash flow
-
-### Trainer performance
-
-- bookings per trainer
-- completed sessions per trainer
-- no-show/cancel counts
-
-## Report 1 — Session Report
-
-Columns:
-
-- date
-- customer code
-- customer name
-- contract code
-- PT
-- scheduled start/end
-- check-in time
-- completed time
-- final status
-
-## Report 2 — Trainer Report
-
-Columns:
-
-- trainer
-- booked sessions
-- completed sessions
-- cancelled
-- no-show
-
-## Report 3 — Contract / Debt Report
-
-Columns:
-
-- customer
-- contract
-- contract value
-- confirmed paid amount
-- debt
-- total sessions
-- completed
-- remaining
-- start/end date
-
-## Report 4 — Finance Report
-
-Columns:
-
-- date
-- transaction type
-- category
-- reference
-- income
-- expense
-- created by
+The report is the basis of PT payout vouchers (D-032, `06_FUNCTIONAL_REQUIREMENTS.md` FR-CASH-003).
 
 ## Data consistency
 
-Dashboard values must use the same source-of-truth queries as report values. Avoid duplicating business formulas in the frontend.
-
-- "Today" and "current month" are calculated in the gym timezone (A-001).
-- "Active contracts" excludes contracts that are derived as `EXPIRED` (T-018).
-- Completed-session counts come from booking status (T-012).
-- Whether contract payments are counted as income is open (OQ-007). Until it is answered, report confirmed payments and cash income as separate lines.
+- Dashboards and reports use the same queries as the screens; formulas are never repeated in the web app.
+- Days and months are in the gym timezone (A-001).
+- Revenue counts valid receipts; opening amounts of imported contracts are excluded from period revenue (D-011).
+- Deleted records are excluded everywhere except the trash (D-035).
+- Pending records (contracts, receipts, vouchers) are excluded from figures until approved (D-018).
+- Session counts use the consume and credit flags stored on each session (T-050).

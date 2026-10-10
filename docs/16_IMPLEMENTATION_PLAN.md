@@ -1,178 +1,51 @@
 # 16 — Implementation Plan
 
-## Phase 0 — Foundation
+Phase 1 follows the brief's delivery order (brief §12). Each milestone ends as a working version on **staging** for the owner to try; the owner can cut or postpone milestones. Effort and cost per milestone: `27_ESTIMATES.md`. What is reused from the code built so far and what is reworked: `25_BRIEF_V2_GAP_ANALYSIS.md`.
 
-**Status: built 2026-10-09.** Open items: CI has not run yet (no Git/GitHub repository), and the Vercel project and preview deployment are not set up.
+Work inside a milestone in **vertical slices**: schema and migration → API service with rules, permissions, audit → endpoint with OpenAPI → screen → unit, integration, E2E, and security tests → docs. Stopping between slices leaves nothing half done.
 
-Deliverables:
+## Milestones
 
-- single Next.js full-stack application
-- TypeScript strict mode
-- Tailwind CSS + shadcn/ui baseline with the design tokens from `23_UI_DESIGN_SYSTEM.md` (T-025)
-- Inter font with the Vietnamese subset
-- `next-intl` with `vi` and `en` message files (T-027)
-- app shell: sidebar, top bar, global search placeholder, user menu with language switch
-- `Money` and `DateTime` formatters; the other shared components from `23_UI_DESIGN_SYSTEM.md` §8 are built by the first feature that needs them, as the one shared version
-- PostgreSQL + Prisma
-- centralized Prisma/database module
-- environment handling, including `GYM_TIMEZONE` (A-001)
-- Zod validation baseline
-- lint/type-check setup
-- Vitest unit tests, and integration tests against a real PostgreSQL database locally and in CI (T-021)
-- Playwright setup: one composition root (`e2e/fixtures.ts`), page objects, one saved session per role, test data removed in fixture teardown
-- authentication skeleton
-- Vercel project configuration
+| # | Milestone | Scope | Reuses from Phases 0–4 | Acceptance |
+|---|---|---|---|---|
+| M1 | Foundation | Monorepo restructure (`26_TECH_PROPOSAL.md` §8); sign-in, users, roles and permission tree, overrides, data scope, masks, access hours, login history; branches; employees and PT schedules; option lists with "Khác"; system parameters; approval engine and matrix; audit log with before/after; trash; in-app notifications; Tasks module | Better Auth, user management, audit writer, security layer, design system, test setup | AC-01–AC-05, AC-13 |
+| M2 | Leads and consulting | Manual intake, round-robin assignment, timed checklist and reminders, "Today's tasks", re-care, script library, Kanban, duplicate merge, convert to customer | Customer module (becomes the person record), search | AC-03, AC-06, AC-07, AC-09, AC-23 |
+| M3 | Audit and consulting dashboard | Rule-based audit, manager audit, consulting dashboard, lead analysis | — | AC-08 |
+| M4 | Contracts and cash book | Services and price tiers, promotions, contract form with approval and exception price, locked contracts, deletion with trash, deactivation; receipts, expense vouchers, cash book, debt; contract and exception-price reports | Contract module (idempotency, locks, derived figures), payments (becomes receipts), cash (becomes vouchers) | AC-02, AC-05, AC-09–AC-14, AC-19 |
+| M5 | PT schedule, classes, sessions | PT grid (rows per PT, week view, working schedules), configurable session statuses with snapshots, customer overlap, admin "Đã tập" in bulk, delete from history, Burn Show, classes and attendance, PT revenue allocation, PT payouts and adjustments, booking report | PT calendar, booking and session services, locked transactions, overlap constraint | AC-02, AC-09, AC-11, AC-15, AC-16, AC-18, AC-23 |
+| M6 | Customer email | Provider, outbox, templates in VI/EN, session credited and refunded emails, optional events, failure tasks | — | AC-17 |
+| M7 | Workout plans and logs | Catalogs, templates, customer plans, three-part session log, Flags and Actions, escalation, progress tab, weekly workout dashboard | — | AC-20, AC-21, AC-23 |
+| M8 | Contract change vouchers | Renewal, upgrade, hold, transfer, branch transfer, conversion, cancellation with refund | Contract cancellation cascade (D-010) | (D-024) |
+| M9 | Remaining reports and import | Overview dashboard, remaining reports and exports; GymMaster import with cleanup list and reconciliation; consulting Excel import; staging trial and parallel run | Opening balances (D-011) | AC-22 |
+| M10 | Lead channel APIs | Channels in order of feasibility after the survey (TS-007) | — | (D-044) |
+| M11 | AI-assisted audit | After chats are in the system and OQ-025 is answered (TS-008) | — | (D-045) |
 
-Exit criteria:
+## Open questions per milestone
 
-- app runs locally
-- production build succeeds
-- initial DB migration works
-- protected server route/action works
-- CI validation passes
-- preview deployment can be created without accessing production DB
+Build the interim behavior from `18_DECISIONS_ASSUMPTIONS.md` and leave the blocked part until answered.
 
-## Phase 1 — Identity & Customer
-
-**Status: built 2026-10-09.**
-
-Deliverables:
-
-- users with one fixed role and an `ACTIVE`/`DISABLED` status (T-020)
-- login/logout/current-user flow
-- server-side authorization helpers that reload the user on every request (T-017), covered by INT-006
-- permission matrix in `src/lib/permissions/`, with undefined "limited" cells denied (T-024)
-- audit writer, used from the first audited change (T-022)
-- user management screen: create user, change role, reset password, disable/enable (FR-ADM-001)
-- customer CRUD/search, with sequence-generated customer codes (T-019) and accent-insensitive name search
-- customer detail shell
-- E2E: login, E2E-001 part 1 (create and find a customer), E2E-009 part 1 (trainer cannot manage users)
-
-## Phase 2 — Contract
-
-**Status: built 2026-10-10.** Completed sessions and payments show 0 until Phases 3 and 4 add bookings and payments. Open: OQ-013, OQ-014, OQ-015.
-
-Deliverables:
-
-- contract creation/detail
-- total/completed/remaining session calculation
-- contract value
-- basic status lifecycle, with `EXPIRED` derived (T-018), covered by INT-008
-- idempotency key on contract create (T-015)
-- opening balance columns, counted in remaining sessions and paid amount (D-011); the import tool waits for OQ-014
-- contract cancellation; the cascade to bookings (D-010) was added in Phase 3 (A-018)
-- contract history/audit behavior required by V1
-
-## Phase 3 — Booking & Session
-
-**Status: built 2026-10-10.** The interim rules of OQ-001, OQ-002, OQ-005, OQ-008, OQ-010, and OQ-012 are in place. New decisions T-036 to T-038 and assumptions A-016 to A-019.
-
-Deliverables:
-
-- trainer management, including the trainer ↔ user link (A-010)
-- booking calendar/list
-- trainer overlap validation, backed by the database exclusion constraint (T-014)
-- manual check-in
-- complete session, using the locked transaction in `22_TECHNICAL_ARCHITECTURE.md` §7
-- no-show/cancel
-- idempotent session consumption
-- concurrency integration tests INT-001 to INT-003 and INT-007
-
-This is the most business-critical phase.
-
-## Phase 4 — Finance
-
-**Status: built 2026-10-10.** The interim rules of OQ-003 and OQ-007 are in place, and OQ-013's interim now also refuses payments on cancelled contracts. New decisions T-039 and T-040, assumptions A-020 to A-022, open question OQ-016.
-
-Deliverables:
-
-- contract payments, with idempotency keys (T-015)
-- payment void with reason (A-008)
-- paid/debt calculation
-- cash income/expense, with void-and-re-record correction (A-009)
-- financial authorization
-- audit events
-- duplicate-submission integration tests INT-004 and INT-005
-
-## Phase 5 — Dashboard & Reports
-
-Deliverables:
-
-- dashboard KPIs
-- session report
-- trainer report
-- contract/debt report
-- finance report
-- audit log viewer (FR-AUD-001)
-
-Build it in four slices. Each slice ships its service, page, permissions, tests (unit, integration, E2E, security), and docs, so stopping between slices leaves nothing half done.
-
-| Slice | Scope | Notes |
-|---|---|---|
-| 1. Dashboard KPIs | FR-DASH-001 to FR-DASH-004; the KPI list in `10_REPORTING_DASHBOARD.md` | Start `src/modules/reporting/` with one query per figure; the reports in slices 2–3 reuse them (doc 10 "Data consistency"). Net cash flow waits for OQ-007. "Contracts ending soon" goes by remaining sessions (D-012, A-023). |
-| 2. Session and trainer reports | Reports 1 and 2 | Date range in gym days (A-001), trainer filter. A trainer sees only their own (A-007). |
-| 3. Contract/debt and finance reports | Reports 3 and 4 | Period figures exclude opening balances (D-011). Payments and cash income stay separate lines (OQ-007 interim). |
-| 4. Audit log viewer | FR-AUD-001 | Admin and Manager; the Accountant's "limited" access is denied until OQ-011 (T-024). Filters: entity, actor, day range. |
-
-Report access follows `09_RBAC.md` "View reports": the Receptionist's "limited" cell is denied until OQ-011 is answered.
-
-## Phase 6 — Hardening & Release
-
-Deliverables:
-
-- RBAC review
-- full E2E suite run against a production-like environment (each phase ships its own E2E tests)
-- security testing layer 2 (OWASP ZAP scan) and layer 3 (manual ASVS pentest), see `24_SECURITY_TESTING.md`; layer 1 runs in CI from Phase 1 onward and every phase extends it for its own routes
-- decisions TS-004 (admin MFA) and TS-005 (account lockout), and security log alerting
-- duplicate-submit/concurrency review
-- error handling
-- audit review
-- Vercel production deployment
-- PostgreSQL backup/restore verification
-- UAT
-
-## Open questions gating each phase
-
-Build the interim behavior from `18_DECISIONS_ASSUMPTIONS.md` and leave the blocked part unbuilt until the question is answered.
-
-| Phase | Open questions |
+| Milestone | Open questions |
 |---|---|
-| Phase 1 — Identity & Customer | OQ-006, OQ-011 |
-| Phase 2 — Contract | OQ-013 (OQ-004 answered: D-010) |
-| Phase 3 — Booking & Session | OQ-001, OQ-002, OQ-005, OQ-008, OQ-010, OQ-012 |
-| Phase 4 — Finance | OQ-003, OQ-007 |
-| Phase 5 — Dashboard & Reports | OQ-007, OQ-011 |
-| Phase 6 — Hardening & Release | OQ-014 (import details, before any production data is loaded; OQ-009 answered: D-011) |
+| M1 | OQ-024 (departments), OQ-026 (staff email), OQ-028 (sizing), OQ-029 (approval of daily operations), TS-004, TS-005 |
+| M2 | OQ-017 (assignment rule), OQ-018 (15 or 16 days), OQ-019 (reclaim), OQ-020 (Master per branch) |
+| M4 | OQ-003 (overpayment), OQ-010 (group packages), OQ-013 (cancellation settlement), OQ-015 answered |
+| M5 | OQ-001 (dates), OQ-008 (overbooking), OQ-021 (class revenue), OQ-022 (rates), OQ-027 (devices) |
+| M8 | OQ-023 (fees, approvals, hold limit), OQ-030 (cancellation cascade) |
+| M9 | OQ-014 (go-live, volume, cleanup sign-off) |
+| M11 | OQ-025 (AI consent and criteria) |
 
-## Suggested AI-agent work units
+## Before starting M1
 
-Do not ask the agent to build a whole phase at once. Split by vertical slice, for example:
+The brief asks the developer to send, before starting (brief §12):
 
-```text
-Task: Complete Session
-- Zod input contract
-- Route Handler or Server Action boundary
-- authorization
-- SessionService transaction with contract row lock (T-013)
-- SessionRepository/database changes
-- remaining-session validation inside the locked transaction
-- idempotency, including concurrent requests
-- audit event
-- unit/integration test, including INT-001 and INT-002
-- UI action
-- E2E happy path + retry path
-```
+| Item | Where |
+|---|---|
+| Technology proposal and architecture diagram | `26_TECH_PROPOSAL.md` |
+| Detailed database schema | `04_DATA_MODEL_ERD.md` |
+| Wireframes for Leads, PT calendar, session log, and permissions | `docs/wireframes/flow-fitness-wireframes.html` |
+| Time and cost per milestone, monthly infrastructure cost including email | `27_ESTIMATES.md` |
+| Lead channel survey and AI audit options | TS-007, TS-008 (before M10 and M11) |
 
-## Architectural rule for all phases
+## History: Phases 0–4 (first brief)
 
-New features should follow:
-
-```text
-UI
-  -> Server Action / Route Handler
-      -> Application/Domain Service
-          -> Repository
-              -> Prisma/PostgreSQL
-```
-
-Do not bypass the service layer for business-critical writes.
+Built 2026-10-09 to 2026-10-10 from the first brief, as one Next.js app: foundation, identity and customers, contracts, PT bookings and sessions, finance. The Phase 5 plan (dashboard and reports in four slices) is replaced by M3, M5, M7, and M9. Details are in `CHANGELOG.md` and in the gap analysis.

@@ -2,132 +2,211 @@
 
 How to use this file:
 
-- **Confirmed decisions** are binding.
-- **Working assumptions** are proposed defaults that may be implemented now. None of them changes how money or sessions are counted. Each must be confirmed with the business; if one is rejected, update the affected documents before changing code.
-- **Open questions** must be answered by the business. The *Blocks* column names the part of the implementation that must not be built until the question is answered. The *Interim* column states the fail-closed behavior that may be built meanwhile.
+- **Confirmed decisions** (D-xxx business, T-xxx technical) are binding.
+- **Working assumptions** (A-xxx) are proposed defaults that may be implemented now and must be cited where used. If the business rejects one, update the affected documents before changing code.
+- **Open questions** (OQ-xxx) must be answered by the business. The *Blocks* column names what must not be built until it is answered; the *Interim* column states the fail-closed behavior that may be built meanwhile.
+- Entries are never deleted. When one is replaced, its *Status* says **Superseded by …**, **Amended by …**, or **Answered by …**, and the replacement is binding.
 
-## Confirmed business decisions
+The source of truth for the product is the customer's brief v2, `docs/source/BRIEF_V2_vi.md` (10/10/2026), cited as **brief §n**. It replaces the earlier brief. Values the brief marks as admin-configurable are **initial values**, never constants in code (D-015).
+
+## Brief v2 business decisions (2026-10-10)
+
+| ID | Decision | Source |
+|---|---|---|
+| D-013 | Flow Fitness builds its own CRM to replace GymMaster, as the first part of a larger ERP. Phase 1 has 12 modules: platform and permissions, leads and consulting, customers, services and price tiers, contracts, PT schedule, class schedule, workout plans and logs, cash book, tasks, customer email, dashboards and reports. Out of phase 1: Pro Shop, lockers, towels, loyalty contracts and points, day passes, fingerprint integration, member app, Zalo OA, tax accounting and e-invoices, other ERP modules (retail, inventory, HR/payroll). Data is designed per module so these can be added without rewrites. | brief §1 |
+| D-014 | The system is **multi-branch from day one**. Every business record belongs to a branch; each user account is granted a set of branches. | brief §2, §10 |
+| D-015 | **Fixed flow, configurable values.** Code fixes only the flows (lead → appointment → show → customer → contract → session; approval before activation; delete receipts before contracts; one consumption/pay rule per session status; consulting steps create audited tasks; PT revenue = credited sessions × allocation per session × rates; every session-count change notifies the customer). Every value — channels, sources, needs, reasons, services, tiers, prices, durations, promotions, roles, permissions, thresholds, which actions need approval, status rules and colors, calendar hours, timers, scripts, scoring criteria, rates, Flags, Actions, expense types, email templates — lives in the database with an admin screen. Numbers in the brief are initial values. | brief §1 |
+| D-016 | **Drop-downs, not free text.** Every result, status, category, and reason (consulting step results, checklist items, refusal, deletion, deactivation and exception-price reasons, Flag, Action, session summary, expense type, need details) is chosen from an admin-managed option list. Admin adds, edits, reorders, and deactivates options; a deactivated option stays on old data. Every list has **"Khác" (Other)**, which requires a written note before saving. Free-text notes are optional additions, never a replacement. Admin sees statistics of "Other" entries to promote them to real options. Need details are a coded catalog. | brief §1 |
+| D-017 | **Configurable roles and permission tree.** A role is a named set of permissions that admin creates, edits, and clones. Permissions are a tree per module with actions (view, create, edit, delete, approve, export). Data scope is separate from function: *all* or *only what I am responsible for*, for leads, members, contracts, PT schedule, vouchers, staff, history; plus view staff of all branches, view contract totals, view member debt. Sensitive fields (member phone, email, address, ID documents; receipt list totals) can be hidden per role, everywhere including exports. Sensitive actions are separate permissions ("Đã tập", Burn Show, delete session, delete contract, delete receipt, edit receipt date, deactivate/reactivate contract, approve exception price, view trash, export Excel). Each report and dashboard is its own permission. A user inherits the role's permissions and can have individual permissions switched on or off. Users have branch access, allowed login hours and days, and a login history (time, device, IP). Seven default roles — Admin, Fitness Manager, Master, Consulting, PT, Receptionist, Marketing — are initial configuration (`09_RBAC.md`). Hidden menus are UX only; the API checks every request. | brief §2 |
+| D-018 | **Approval by a superior (maker-checker).** Fixed flow: a staff member submits → the record is *Pending* and has no effect → the approver gets a task → *Approve* or *Reject* with a reason from a drop-down → logged. Admin configures an approval matrix per action type: approval on/off, approver role, and an escalation threshold to a higher level. Nobody approves their own submission, even with approval rights. A contract can be edited only while pending (D-022). Approvals pending longer than an admin-set time remind the approver and notify their superior. Initial matrix in `09_RBAC.md`. | brief §2 |
+| D-019 | **One person, one record.** A lead becomes a customer at *Show*: the Lead ID becomes the Customer ID, no new record. A customer who showed but has no contract stays a customer and is followed up. A duplicate phone number warns and offers a merge; it never creates a second record. | brief §3 |
+| D-020 | **Lead journey.** Statuses: New, Consulting, Considering, No response, Appointment booked, Show, No show, Refused (reason required), Contracted. *No response*, *Refused*, and *No show* are never closed: they go to a re-care queue with a contact-again date and can return to Consulting or Appointment booked. Every status change and consulting step stores who and when. A consulting checklist (initially 10 steps with timers 60 min, 24 h, 3 h before, 60 min before, 15 days) creates tasks with deadlines; each step result is a drop-down; admin can add, remove, rename, reorder steps, set timers, results, and required steps — changes apply to new leads only. "Báo Studio" steps create tasks for the coach manager. Channel (where the lead wrote from) and source (how they heard of Flow, plus Organic/Paid and detail) are separate. Leads are auto-assigned round-robin to active consultants of the branch; managers reassign. | brief §3, §4.1 |
+| D-021 | **Pricing from services and price tiers.** A service (PT, class, member type; e.g. Hybrid Training, Hybrid Family, NKT, Group Training) has tiers by session-count range with a unit price per session and a validity in months and days. Tiers are admin-only, versioned with an effective date; contracts keep the price at signing. Staff enter any session count; the system looks up the tier and computes unit price, total, and end date (start + tier validity); nobody types a unit price. Quick-pick packages only prefill the count. The display name is generated from the service and the real count ("Hybrid Training 30 buổi"). A negotiated price or a manual discount outside promotions is an **exception price**: requires a reason and approval, and stores both the tier price and the approved price. Promotions and vouchers (percent or amount, with dates) apply to the tier price and are not exceptions. Bonus sessions, months, and days are separate fields. Services can be group packages with a maximum number of members. | brief §5.1 |
+| D-022 | **Contracts.** A consultant creates a contract for a Customer ID; it starts *Pending approval*. Only an approved contract can be activated and booked. Types: New, Renew. Statuses: Pending approval, Active, Frozen (Tạm vô hiệu), On hold (Bảo lưu), Expired, Cancelled. **Approved contracts are locked**, even for admin: changes go through change vouchers (D-024); a wrong contract is deleted with a reason and re-created. A contract cannot be deleted while it has receipts (the system lists them to delete first), recorded sessions, or change vouchers. Not built: GymMaster's "Update" (edit an approved contract), "Update sessions used" (typing a count), "Deposit payout", and "Free package". | brief §5.2–§5.4 |
+| D-023 | **Deactivation (Tạm vô hiệu).** A temporary lock for review (suspected fraud, dispute). Reason required to deactivate and to reactivate. While frozen: no new bookings, no check-in, no Burn Show; future bookings are highlighted for admin; the contract does not expire. On reactivation the system proposes extending the end date by the frozen days; admin accepts, edits the days, or declines, with a reason. Each freeze is its own record and extends at most once. A contract frozen for more than 10 days creates a reminder task for the manager. | brief §5.5 |
+| D-024 | **Contract change vouchers** (phiếu biến động), each linked to the original contract, approval per matrix: Renewal (add months, days, or sessions), Upgrade (to a higher package), Hold (Bảo lưu: pause at the customer's request, pushes the end date), Transfer (remaining days and sessions to another customer), Branch transfer (value, fee), Conversion (to another service or type), Cancellation (paid, value used, cancellation fee, refund through an expense voucher). Fee formulas and hold limits are OQ-023. | brief §5.6 |
+| D-025 | **Session statuses and rules** (initial configuration; admin can change each rule and color): *Booked* — consumes no, PT credit no, red; *Đã tập* (trained) — consumes yes, credit yes, blue; *Hủy lịch* (cancelled by the customer in advance) — no, no, purple; *Khách không đến* (no-show) — **yes, yes**, yellow; *Xóa* (booked by mistake) — leaves the grid into the trash, no, no. Booking itself never consumes. | brief §6.2 |
+| D-026 | **Check-in in phase 1.** "Đã tập" is a separate permission, granted to admin by default; there is no separate check-in step before it. Admin needs a fast way to confirm many sessions of a day; the flow must later accept automatic check-ins from a device without changing. A session in *Đã tập* is locked. The only correction is **deleting the session from the contract's check-in history**: reason required; the customer gets 1 session back; the PT loses the credit; reports recompute; the session goes to the trash; the customer receives an email with the reason. | brief §6.2, §6.3 |
+| D-027 | A session in a period already paid to the PT can still be deleted: the payout voucher stays, and an adjustment reduces the PT's next period ("minus 1 session, deleted session of 20/10"). | brief §6.3 |
+| D-028 | **Burn Show.** Admin adds a session by hand to the check-in history (to restore a session deleted by mistake, or one that happened without a booking): branch, date, check-in and check-out time, member, PT, mandatory reason. It consumes and credits like *Đã tập* and is marked "added by hand". | brief §6.3 |
+| D-029 | Cancelling a booking (*Hủy lịch*) has no time limit for now. A parameter "cancel at least N hours before" exists and is **off** by default. | brief §6.2 |
+| D-030 | **Booking rules.** The PT grid shows one day (and a week view), one row per PT, 30-minute cells, 05:00–22:00 initially. Bookable cells come from each PT's working schedule (shifts, days off); past time and non-working time are grey. Booking picks customer, a contract with sessions left, start time, and duration. It is refused for a trainer overlap, a **customer overlap**, or a contract that is pending, out of sessions, expired, or frozen. PTs work mainly on phones. | brief §6.1 |
+| D-031 | **Class schedule.** Classes have a name, coach, branch, time slot, capacity, and weekly recurrence (Group Training: Monday–Saturday, 12:15–13:15 and 19:00–20:00). Reception or the coach enrolls customers; enrollment is refused when the class is full or the group-class contract is out of sessions or expired; drop-ins are supported. Attendance marks present or absent; *present* consumes 1 session of that customer's group-class contract. Each class taught counts as one teaching session for the coach. | brief §6.4 |
+| D-032 | **PT revenue allocation.** One row per PT–contract pair in the period: allocation value; sessions = purchased + bonus; allocation per session = allocation value ÷ sessions; credited sessions ("show dạy") = Đã tập + no-show + Burn Show of that PT on that contract; PT allocation = credited × per-session allocation × commission rate × timesheet rate (both 100% initially); adjustments from deleted sessions in paid periods. A contract taught by several PTs splits by sessions actually taught. Columns and Excel export follow GymMaster's "employee_pt_training". It is the basis of PT payout vouchers, which store the period and sessions paid so nothing is paid twice. | brief §6.5, §8.1 |
+| D-033 | **Workout plans and logs.** Catalogs (equipment, body area tree, exercises with type Strength or Cardio, stages, plan templates); customer plans by week and session from a template or from scratch; set-level targets (Strength: weight, reps, rest, RIR, tempo, technique, notes, video; Cardio: time, speed, heart rate). The session log has three parts entered by the coach: pre-session (stress, energy 1–10 with notes; impact), in-session (plan read-only and actual on the **same row per set**, Flag, Action, notes), post-session (sRPE, energy after, summary, coach notes). No "Match" column, no separate cardio block. On phones, actuals default to the plan, Flag to Normal, Action to None. Action "Stop + Escalation" notifies the manager and Master at once and creates a task that stays open until one of them marks it reviewed with a handling note. Plans and every log are visible in the customer's profile, with progress over time. | brief §7 |
+| D-034 | **Cash book.** Every money movement is a voucher: a **receipt** (phiếu thu) or an **expense voucher** (phiếu chi). Collecting money on a contract always creates a receipt; a contract's paid amount, debt, and payment status are computed only from its **valid receipts** (approved and not deleted). Contract receipts are cash-book income. Expense types are an admin list; a refund on cancellation is an expense voucher linked to the contract; PT payouts are expense vouchers from the revenue-allocation report. Editing a receipt's date is a separate permission and always logged. Deleting a voucher needs a reason, goes to the trash, never reuses its number, and recomputes the contract's debt. Reports: cash book by day and period (opening balance, in, out, closing balance) per method and branch; income and expense; member debt. It is an internal book, not tax accounting; Excel export for reconciliation. | brief §8.1 |
+| D-035 | **Trash, no hard delete.** Deleted business records (contracts, receipts, expense vouchers, sessions, bookings, …) leave lists, reports, and revenue and can no longer be changed, and are kept **forever** in the trash with who deleted, when, and a mandatory reason. Only management (admin by default) can view the trash; nobody can purge it. Deleted contract codes and voucher numbers are never reused. | brief §5.4, §8.5 |
+| D-036 | **Customer email** is the only notification channel for all customers (no Zalo OA). Mandatory events: a session credited (Đã tập, no-show, Burn Show) with sessions used and left; a session refunded by deletion with the reason and new balance. Admin toggles other events: appointment confirmation, contract activated, receipt, contract expiring or running out of sessions. Templates are written by admin in Vietnamese and English; the language follows the customer's nationality group. Email is required when converting a lead to a customer; customers without email are highlighted for reception. Every email sent is stored on the customer with status sent or failed; a failure creates a task for reception. Emails are sent through a transactional email service from Flow's authenticated domain. | brief §8.3 |
+| D-037 | **Tasks.** Departments and staff assign and receive work: title, description, assigner, assignee (person or department), deadline, priority, status (New, Accepted, In progress, Done, Cancelled; the assignee must acknowledge), comments with mentions, and a link to a lead, customer, contract, or session. System-generated tasks: "Báo Studio", workout escalations, approvals, contracts frozen > 10 days, failed emails. Views: my tasks, tasks I assigned, by department; overdue tasks are highlighted and reported to the assigner. In-app notifications on assignment, approaching deadline, overdue, and new comment. | brief §8.2 |
+| D-038 | **Codes.** Lead, customer, contract, and voucher codes are generated with **configurable prefixes**, and legacy GymMaster codes (e.g. HV0013, HP260207) are kept when imported. Codes are never reused. | brief §10 |
+| D-039 | **Migration from GymMaster.** Import Excel exports (customers, active contracts, sessions used, receipts, staff, booking history) and leads from the consulting Excel. The import tool attaches each contract to the right service and renames it by its real session count, and lists contracts whose sessions differ from the package name or whose price differs from the tier for the owner to confirm (known cases: 24 sessions recorded as 30; 110 recorded as 217). Trial on staging and reconcile customer count, contract value, paid, and sessions left before the real cut-over, then run both systems in parallel briefly. Opening balances (D-011) carry sessions used and amounts paid before go-live. | brief §11 |
+| D-040 | Customer status is **derived from contracts**: training, expiring soon, expired, on hold, no contract. | brief §4.2 |
+| D-041 | **Reports** (brief §9): overview dashboard, consulting dashboard, lead analysis, weekly workout dashboard, contract report, exception-price report, booking report, PT revenue allocation, cash book, tasks. Every report filters by branch, period, and staff, exports to Excel, and is its own permission. | brief §9 |
+| D-042 | **Personal data.** ID documents and health information are sensitive personal data under Vietnamese data-protection rules: encrypted at rest, visible only to permitted roles, with the customer's consent recorded. The owner confirms the exact requirements with legal counsel. Sending chat content to an external AI service needs the owner's consent and de-identification. | brief §11 |
+| D-043 | **Platform.** A web app that works well on phones (leads, PT calendar, workout log are used on phones); a member mobile app is later. Vietnamese UI, ready for English. Server-side authorization, hashed passwords, HTTPS, automatic daily backups with restore tests, a staging environment separate from production. The owner owns the source code (in the owner's Git), database, domain, and infrastructure accounts. Popular, low-cost technology that is easy to hand over. | brief §11 |
+| D-044 | **Lead intake.** A quick manual form works from the first release; channel APIs (WhatsApp, Messenger, Instagram, Zalo for intake only, TikTok, Threads, Gmail, website forms) are enabled one by one after a feasibility and cost report, without slowing the core. Google Maps, Google Ads, ChatGPT, and referrals are sources, not channels. | brief §4.1, §11 |
+| D-045 | **Consulting audit.** Rule-based audit marks each step on time, late, or skipped, scores compliance per lead and per consultant, and flags leads missing required fields (need, phone, refusal reason). A manager can open a lead's full timeline, grade it pass/fail, and comment. AI-assisted audit (reading notes and chats against the scripts to suggest scores and common mistakes) is the last milestone and needs D-042 consent. A consulting script library (situations, Vietnamese and English answers, copy button) replaces the "Framework tư vấn chung" sheet. | brief §4.1 |
+
+## Brief v2 technical decisions (2026-10-10)
 
 | ID | Decision |
 |---|---|
-| D-001 | V1 is internal for one gym. |
-| D-002 | V1 does not integrate fingerprint hardware. |
-| D-003 | Check-in is manual. |
-| D-004 | Booking does not consume a session. |
-| D-005 | Check-in does not consume a session. |
-| D-006 | Only completed session consumes one session. |
-| D-007 | Cancelled and no-show do not consume in V1. |
-| D-008 | One customer may have multiple contracts. |
-| D-009 | Debt is derived from contract value and confirmed payments. |
-| D-010 | Answers OQ-004 (2026-10-09). Cancelling a contract also cancels its future `BOOKED` bookings in the same transaction, each audited. Cancellation is refused while any booking of the contract is `CHECKED_IN`. The confirmation dialog lists the bookings that will be cancelled. |
-| D-011 | Answers OQ-009 (2026-10-09). Contracts in progress at go-live are imported with **opening balances**: sessions used before go-live and amount paid before go-live. Both are set once at import, audited, and never edited. `remaining = total_sessions − opening_sessions_used − completed`; `paid = opening_paid_amount + confirmed payments`. Period reports exclude opening amounts, so imported contracts do not count as new sales in the go-live month. |
-| D-012 | Decided 2026-10-10. A contract is "ending soon" (dashboard KPI and widget) because of its remaining sessions, not its end date. The threshold is A-023. |
+| T-041 | **Monorepo with a separate API.** `apps/api` (NestJS) holds all business logic, data access, jobs, and the documented API; `apps/web` (Next.js App Router) holds the UI only and calls the API. Shared code lives in `packages/` (Zod schemas, types, permission keys, constants, i18n messages). pnpm workspaces + Turborepo, Node 22, TypeScript strict. See `26_TECH_PROPOSAL.md`. |
+| T-042 | **Hosting.** Web on Vercel. API, worker, and PostgreSQL on Railway or Render in the Singapore region, as Docker images so the stack stays portable. Separate staging and production, each with its own database. Migrations run as a release step of the API deployment. |
+| T-043 | **API contract.** REST under `/api/v1`, described by OpenAPI generated from the NestJS controllers. The web app uses a typed client generated from it; the future member app, ERP modules, and check-in devices use the same API. |
+| T-044 | **Authentication in the API.** Better Auth runs inside `apps/api` (keeping the existing `auth_*` tables and password hashes). The web app uses an httpOnly, SameSite cookie session shared on the parent domain; devices and the future mobile app use tokens or API keys. State-changing requests keep the Origin check (T-033) and JSON-only bodies. |
+| T-045 | **Background work.** A PostgreSQL-backed job queue (pg-boss) in a separate worker process runs timers and reminders (consulting steps, re-care, approvals, freezes, task deadlines), the email outbox, and notifications. No Redis. |
+| T-046 | **Authorization in the API.** Every endpoint declares a permission key; NestJS guards check it against the user's effective permissions (role + overrides), branch access, login hours, and data scope; a response serializer masks hidden fields, including in exports. The web app reads the same effective permissions to hide menus and buttons. |
+| T-047 | **Soft delete and trash.** Business tables carry `deleted_at`, `deleted_by`, and `delete_reason`; a trash entry keeps a snapshot. Default queries exclude deleted rows (Prisma client extension). There is no hard-delete path for business data. |
+| T-048 | **Audit log.** Every create, update, delete, approval, and every change of roles, permissions, thresholds, or configuration writes who, when, entity, and before/after values, in the same transaction as the change (extends T-022). |
+| T-049 | **Configuration in the database**: option lists (D-016), system parameters (timers, thresholds, calendar hours, cut-offs), session status rules and colors, approval matrix, code prefixes, email templates, service tiers. Admin screens edit them; changes take effect immediately. |
+| T-050 | **Consumption is derived, rules are snapshotted.** A contract's sessions left = purchased + bonus + change-voucher adjustments − opening sessions used (D-011) − sessions whose status consumes. When a session's status is set, the consume and PT-credit flags of the current rule are stored on the session, so changing a rule later never rewrites history. The locked transaction of T-013 (contract → session lock order) still guards every change. |
+| T-051 | **Email** goes through a transactional provider (Resend recommended, Amazon SES as the low-cost alternative) via an outbox table with retries; Flow's domain is authenticated with SPF, DKIM, and DMARC. |
+| T-052 | **Files and sensitive fields.** Transfer receipts and ID scans are stored in private S3-compatible storage (Cloudflare R2) behind signed URLs. ID numbers and health data are encrypted at the application level (AES-256-GCM, key from the environment or a key manager). |
 
-## Confirmed technical decisions
+## Earlier decisions (brief v1) and their status
 
-| ID | Decision |
-|---|---|
-| T-001 | V1 uses Next.js + TypeScript as a single full-stack application. |
-| T-002 | V1 uses the Next.js App Router. |
-| T-003 | V1 is deployed to Vercel. |
-| T-004 | PostgreSQL is the primary database. |
-| T-005 | Prisma is the ORM/data-access foundation. |
-| T-006 | Zod is the preferred server-boundary validation library. |
-| T-007 | Playwright is used for critical E2E coverage. |
-| T-008 | A separate NestJS/Express backend is not used in V1. |
-| T-009 | Railway/Render are not part of the V1 deployment baseline. |
-| T-010 | Business logic lives in services/modules, not directly in React components, Server Actions, or Route Handlers. |
-| T-011 | The **booking** owns the single lifecycle status: `BOOKED`, `CHECKED_IN`, `COMPLETED`, `CANCELLED`, `NO_SHOW`. The **session** record has no status of its own. It stores fulfillment facts (who checked in and completed, and when), is created at check-in, and is unique per booking. |
-| T-012 | A contract's completed-session count is `COUNT(bookings of the contract WHERE status = COMPLETED)`. There is no separate consumption table and no stored counter. |
-| T-013 | Session completion runs in one transaction that locks the contract row before re-checking booking status and remaining sessions, then applies a conditional status update. Lock order is always contract → booking. See `22_TECHNICAL_ARCHITECTURE.md` §7. |
-| T-014 | Trainer overlap (BR-010) is guaranteed by a PostgreSQL exclusion constraint (`btree_gist`) on bookings, added through a customized Prisma migration. The service also pre-checks so it can return a clear error. A constraint violation (SQLSTATE `23P01`) maps to `BOOKING_TRAINER_OVERLAP`. See `04_DATA_MODEL_ERD.md`. |
-| T-015 | Creating a contract, payment, or cash transaction requires a client-generated idempotency key, stored in a unique column. A replay with the same key and payload returns the original record. The same key with a different payload is rejected with `IDEMPOTENCY_KEY_REUSED`. |
-| T-016 | Login, logout, and session routes belong to the authentication library and live outside `/api/v1`. `/api/v1` exposes only `GET /auth/me`. There is no custom refresh-token endpoint. |
-| T-017 | Every protected request loads the current user from the database and rejects `DISABLED` accounts. A signed session token alone is not trusted for account status or role. |
-| T-018 | `EXPIRED` is a derived contract status: stored status `ACTIVE` and `end_date` before today in the gym timezone. Stored statuses are `DRAFT`, `ACTIVE`, and `CANCELLED`. No scheduled job updates contract status. |
-| T-019 | Customer, contract, and trainer codes are generated by the server from PostgreSQL sequences. They are globally unique (unique index) and never change. |
-| T-020 | Roles are a fixed enum and each user has exactly one role (BR-016). The permission matrix in `09_RBAC.md` is implemented in code under `src/lib/permissions/`. "Manage roles" means assigning a role to a user. |
-| T-021 | Vitest is the unit and integration test runner. |
-| T-022 | An audit event is written in the same database transaction as the change it describes. The application has no update or delete path for audit events. |
-| T-023 | Money uses PostgreSQL `NUMERIC` (Prisma `Decimal`), never floating point. |
-| T-024 | A "limited" permission in `09_RBAC.md` that has not been defined is implemented as **denied** until it is defined. |
-| T-025 | shadcn/ui on Tailwind CSS is the only UI component library. Its components are generated into `src/components/ui/`. See `23_UI_DESIGN_SYSTEM.md`. |
-| T-026 | UI companion libraries: `lucide-react` (icons), `react-hook-form` + Zod resolver (forms), TanStack Table (tables), Sonner (toasts), shadcn Chart/Recharts (charts), `date-fns` + `@date-fns/tz` (dates), Inter with the Vietnamese subset (font). The PT calendar is a custom component, not a calendar library. |
-| T-027 | The UI supports Vietnamese (`vi`) and English (`en`) through `next-intl`, without a locale prefix in URLs. Each user's language is stored on the user record. Dates (`dd/MM/yyyy`, 24-hour time, gym timezone) and money (VND, 0 decimals) use the same format rules in both languages. |
-| T-028 | Authentication uses **Better Auth** (formerly open item TS-002): email + password, sessions stored in the database, routes at `/api/auth/*`. Its tables are named `auth_*`. Self sign-up and self-service profile/email changes are disabled; an admin creates users through the audited user service. Sessions expire after 12 hours without activity. Sign-in is rate-limited to 20 attempts per minute per IP, high enough for a whole shift behind the gym's single public IP. |
-| T-029 | Next.js Cache Components stays enabled (the 16.4 default, mandatory in the next major version). Every signed-in layout and page sets `export const instant = false`, so it renders per request, and the CRM shell has a `loading.tsx` Suspense boundary for instant navigation feedback. |
-| T-030 | `next-intl` is wired with a Turbopack `resolveAlias` for `next-intl/config` instead of `next-intl/plugin`. The plugin loads `@swc/core`'s native binary, which refuses to start when its cache folder is writable by other accounts — the default on non-system Windows drives. |
-| T-031 | The package is ESM (`"type": "module"`): the Prisma 7 client is ESM, and Playwright loads TypeScript as ESM only in an ESM package. |
-| T-032 | Every page gets a nonce-based Content Security Policy from `src/proxy.ts` (scripts: nonce + `'strict-dynamic'`; inline styles allowed for Radix and Sonner). All responses get `nosniff`, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy, and HSTS in production. `X-Powered-By` is off. See `24_SECURITY_TESTING.md`. |
-| T-033 | State-changing `/api/v1` requests must carry the app's own `Origin` header (from `BETTER_AUTH_URL`) and a JSON body; anything else is refused with 403 or 415. |
-| T-034 | Free-text input rejects ASCII control characters other than tab and line breaks (`invalidCharacters`). |
-| T-035 | A dependency gate (`npm run security:audit`) fails CI on any high/critical advisory not triaged in `security/audit-allowlist.json`; each accepted advisory needs a reason and a review date. |
-| T-036 | Every change to a booking (create, reschedule, cancel, no-show, check-in, complete) and every contract cancellation locks the contract row first, then the booking (`lockContract`, `lockBooking`). Creating a booking needs the lock so two bookings cannot both take a contract's last free session (OQ-008 interim); check-in needs it so it cannot slip in while the contract is being cancelled (D-010). Extends T-013. |
-| T-037 | Creating a booking takes no idempotency key (T-015 covers contracts, payments, and cash). A repeated create for the same trainer and time is refused by the overlap constraint (`BOOKING_TRAINER_OVERLAP`), and the form disables its button while saving. |
-| T-038 | Booking times are entered as a day plus start and end times in the gym timezone (`dd/MM/yyyy`, `HH:mm`), in the form and in the API, and stored as `timestamptz` instants. The PT calendar shows `SCHEDULE_START_HOUR` to `SCHEDULE_END_HOUR` (default 6–22) and grows to show any booking outside them. |
-| T-039 | A payment's date (`paid_on`) and a cash transaction's date (`occurred_on`) are calendar days in the gym timezone (SQL `DATE`), entered as `dd/MM/yyyy` and never later than today; `created_at` keeps the exact moment it was recorded. Period totals and reports use these days. |
-| T-040 | Recording or voiding a payment locks its contract (as T-036), so two payments cannot together exceed the contract value (OQ-003 interim). Under the lock the idempotency key is checked again, so a double submit is always a replay and never an overpayment error. |
+| ID | Decision (short) | Status |
+|---|---|---|
+| D-001 | V1 is internal for one gym. | Superseded by D-014 (multi-branch). |
+| D-002 | No fingerprint hardware in V1. | Active (D-013; device check-in designed for later, D-026). |
+| D-003 | Check-in is manual. | Amended by D-026 (admin confirms "Đã tập"). |
+| D-004 | Booking does not consume a session. | Active (D-025). |
+| D-005 | Check-in does not consume a session. | Superseded by D-025/D-026 (no separate check-in; "Đã tập" consumes). |
+| D-006 | Only a completed session consumes one session. | Superseded by D-025 (Đã tập, no-show, and Burn Show consume). |
+| D-007 | Cancelled and no-show do not consume. | Superseded by D-025 (no-show consumes; cancel does not). |
+| D-008 | One customer may have multiple contracts. | Active. |
+| D-009 | Debt is derived from contract value and confirmed payments. | Amended by D-034 (valid receipts). |
+| D-010 | Cancelling a contract cancels its booked sessions; refused while one is checked in. | Amended by D-024 (cancellation is a change voucher); cascade kept as interim of OQ-030. |
+| D-011 | Imported contracts carry immutable opening balances. | Active; used by D-039. |
+| D-012 | "Ending soon" goes by remaining sessions. | Amended by D-041 and A-025 (expiring soon **or** running out of sessions). |
+| T-001 | One full-stack Next.js app. | Superseded by T-041. |
+| T-002 | Next.js App Router. | Active for `apps/web`. |
+| T-003 | Deployed to Vercel. | Amended by T-042 (web only). |
+| T-004 | PostgreSQL is the primary database. | Active. |
+| T-005 | Prisma is the ORM and data-access foundation. | Active (in `apps/api`). |
+| T-006 | Zod validates input at the server boundary. | Active (schemas shared in `packages/shared`). |
+| T-007 | Playwright covers critical E2E journeys. | Active. |
+| T-008 | No separate NestJS/Express backend. | Superseded by T-041. |
+| T-009 | Railway/Render not used. | Superseded by T-042. |
+| T-010 | Business logic in services, not UI or route handlers. | Active (services in `apps/api`). |
+| T-011 | Booking owns the lifecycle status (BOOKED, CHECKED_IN, COMPLETED, CANCELLED, NO_SHOW). | Superseded by D-025/T-050 (statuses and rules from configuration). |
+| T-012 | Completed count = bookings in COMPLETED. | Superseded by T-050. |
+| T-013 | Locked transaction for completion, lock order contract → booking. | Active (applies to every status that consumes, T-050). |
+| T-014 | Trainer overlap enforced by an exclusion constraint. | Active; extended to customer overlap (D-030). |
+| T-015 | Idempotency keys on creating contracts, payments, cash. | Active (contracts, receipts, expense vouchers, change vouchers). |
+| T-016 | Auth routes outside `/api/v1`. | Amended by T-044. |
+| T-017 | Every request reloads the user; disabled accounts rejected. | Active (plus login hours, T-046). |
+| T-018 | EXPIRED is derived; stored statuses DRAFT, ACTIVE, CANCELLED. | Amended by D-022/D-023 (new statuses; Expired stays derived and is suspended while frozen). |
+| T-019 | Codes from sequences, unique, never change. | Amended by D-038 (configurable prefixes, legacy codes). |
+| T-020 | Fixed role enum, one role per user. | Superseded by D-017/T-046. |
+| T-021 | Vitest runs unit and integration tests; integration tests use a real PostgreSQL database. | Active. |
+| T-022 | An audit event is written in the same transaction as the change; the application has no update or delete path for audit events. | Active; extended by T-048. |
+| T-023 | Money uses PostgreSQL `NUMERIC` (Prisma `Decimal`), never floating point. | Active. |
+| T-024 | Undefined "limited" cells are denied. | Superseded by D-017 (every permission is explicit). |
+| T-025 | shadcn/ui on Tailwind CSS is the only UI component library; components are generated into the web app. | Active for `apps/web`. |
+| T-026 | UI companion libraries: lucide-react, react-hook-form + Zod resolver, TanStack Table, Sonner, shadcn Chart/Recharts, date-fns + @date-fns/tz, Inter with the Vietnamese subset; the PT calendar is a custom component. | Active for `apps/web`. |
+| T-027 | next-intl with `vi` and `en`, no locale prefix in URLs, language stored per user, the same date and money formats in both languages. | Active for `apps/web`. |
+| T-028 | Better Auth. | Active, moved into the API (T-044). |
+| T-029 | Next.js Cache Components stays on; signed-in layouts and pages set `export const instant = false`; the shell has a `loading.tsx` boundary. | Active for `apps/web`. |
+| T-030 | next-intl is wired with a Turbopack `resolveAlias` instead of its plugin (the plugin's native SWC binary refuses to start on Windows non-system drives). | Active for `apps/web`. |
+| T-031 | Packages are ESM (`"type": "module"`). | Active. |
+| T-032 | Every page gets a nonce-based Content Security Policy (scripts: nonce + `'strict-dynamic'`); responses carry `nosniff`, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy, and HSTS in production; no `X-Powered-By`. | Active for `apps/web`; the API sends the same headers where they apply. |
+| T-033 | Origin check and JSON bodies on state changes. | Active in the API (T-044). |
+| T-034 | Free-text input rejects ASCII control characters other than tab and line breaks. | Active. |
+| T-035 | A dependency gate fails CI on any high or critical advisory not triaged in `security/audit-allowlist.json` with a reason and review date. | Active. |
+| T-036 | Booking changes lock contract, then booking. | Active (T-050). |
+| T-037 | No idempotency key on booking create. | Active. |
+| T-038 | Booking time entry; calendar hours from environment. | Amended by D-030/T-049 (duration; hours from configuration). |
+| T-039 | Payment and cash dates are gym days. | Active for receipts and expense vouchers. |
+| T-040 | Payments lock the contract; replay re-checked under the lock. | Active for receipts. |
 
 ## Working assumptions
 
-| ID | Assumption | Basis |
-|---|---|---|
-| A-001 | The gym timezone is `Asia/Ho_Chi_Minh` (UTC+7), set by the `GYM_TIMEZONE` environment variable. "Today", dashboard periods, report date ranges, and contract expiry use this timezone. Timestamps are stored in UTC. | Examples use `+07:00`. |
-| A-002 | Single currency: VND, in whole đồng. Money columns are `NUMERIC(14,0)`; input with a fractional part is rejected. | Example amounts are VND. Widening the scale later is a lossless migration. |
-| A-003 | Code formats: customer `KH` + 6 digits (`KH000123`), contract `HD` + 6 digits (`HD000001`), trainer `PT` + 3 digits (`PT001`). | Prefixes come from examples in `02_BUSINESS_FLOW.md`; widths and the trainer prefix are proposed. |
-| A-004 | Booking time ranges are half-open `[start, end)`: 18:00–19:00 and 19:00–20:00 do not overlap. | — |
-| A-005 | For BR-010, a booking is *active* when its status is `BOOKED`, `CHECKED_IN`, or `COMPLETED`. `CANCELLED` and `NO_SHOW` free the trainer's time slot. | — |
-| A-006 | Booking actions are allowed only from these statuses: check-in — `BOOKED`; reschedule — `BOOKED`; cancel — `BOOKED`, or `CHECKED_IN` as an exceptional cancel; no-show — `BOOKED`. Time-based limits are open (OQ-012). | State machine in `02_BUSINESS_FLOW.md`. |
-| A-007 | A Trainer acts only on bookings assigned to their own trainer record. A Trainer's "own" reports cover only those bookings. | Note in `09_RBAC.md`. |
-| A-008 | A payment is created as `CONFIRMED`; its only other status is `VOIDED`. Voiding requires a reason. A voided payment is not reinstated; a new payment is recorded instead. | `03_DOMAIN_MODEL.md` (Payment). |
-| A-009 | A cash transaction is corrected by voiding it and recording a new one. It is never edited or deleted. | Append/void guidance in `12_SECURITY_AUDIT.md`. |
-| A-010 | A trainer record may exist without a login. A user with role `TRAINER` must be linked to exactly one trainer record before acting on bookings. | — |
-| A-011 | The default UI language is Vietnamese (`vi`). | Gym in Vietnam (A-001). |
-| A-012 | Device targets: desktop-first at 1280px and wider; every screen usable at tablet width; the trainer's day view and check-in/complete actions usable at phone width (360px and wider). | Gym PCs (`11_NON_FUNCTIONAL_REQUIREMENTS.md`); no mobile app in V1, so trainers use the web app. |
-| A-013 | Customer status is `ACTIVE` or `INACTIVE`, set by staff. It has no effect on contracts, bookings, or money in V1. | The data model has a customer `status` with no defined values. |
-| A-015 | Contract permissions not in the matrix: editing drafts and activating use the create roles (Admin, Manager, Receptionist); cancelling is Admin and Manager only, because it cascades to bookings (D-010). | `09_RBAC.md` lists only create and view. |
-| A-014 | An admin cannot change their own role or disable their own account, so the last admin cannot lock everyone out. | — |
-| A-016 | Booking and trainer permissions not in the matrix: cancelling a booking (including the exceptional cancel of a checked-in one) and marking a no-show use the create/reschedule roles (Admin, Manager, Receptionist, and a Trainer for their own bookings). Every role can view bookings; the Accountant only reads them, as a contract's session history. Creating and editing trainer records, including the login link, is Admin and Manager. | `09_RBAC.md` lists only create/reschedule, check-in, and complete. |
-| A-017 | For the OQ-001 interim rule, the day that counts is the session's own day: the booking's scheduled start in the gym timezone. It is checked when booking, rescheduling, and completing, so a session held on the contract's last day can still be completed the next morning. Check-in has no date check. | BR-012 speaks of the booking date. |
-| A-018 | Cancelling a contract (D-010) cancels every `BOOKED` booking of the contract, including past ones never checked in, so none of them can be checked in or completed later on a cancelled contract. | BR-017 says "all of its BOOKED bookings"; D-010 says "future". |
-| A-019 | A booking starts and ends on the same day in the gym timezone; sessions across midnight are not supported. | PT sessions last about an hour, within opening hours. |
-| A-020 | Payment methods are cash, bank transfer, card, and e-wallet (`CASH`, `BANK_TRANSFER`, `CARD`, `E_WALLET`). | The data model has a `method` with no values. |
-| A-021 | Finance permissions not in the matrix: viewing payments and the debt list uses the roles that record payments (Admin, Manager, Receptionist, Accountant); viewing and voiding income/expense uses the roles that record it (Admin, Manager, Accountant). Trainers have no finance screens. | `09_RBAC.md` lists only record and void payment and record income/expense. |
-| A-023 | For D-012, an ACTIVE contract (not expired) is ending soon when it has 3 or fewer remaining sessions, including none left, so staff can offer a renewal. | Threshold proposed; the business may change the number. |
-| A-022 | The debt list leaves out `DRAFT` contracts, which have not taken effect; cancelled contracts stay on it (OQ-013 interim). | — |
+| ID | Assumption | Basis | Status |
+|---|---|---|---|
+| A-001 | Timezone `Asia/Ho_Chi_Minh` for every branch; timestamps stored in UTC. | All branches in Vietnam. | Active |
+| A-002 | Single currency VND in whole đồng; money columns `NUMERIC(14,0)`. VAT amounts are rounded to whole đồng. | Brief amounts are VND. | Active |
+| A-003 | Code formats KH/HD/PT. | — | Superseded by D-038 (initial prefixes, all configurable: LD lead, KH customer, HD contract, PTH receipt, PC expense voucher, NV employee). |
+| A-004 | Time ranges are half-open `[start, end)`. | — | Active |
+| A-005 | BOOKED, CHECKED_IN, COMPLETED hold the trainer's slot. | — | Superseded by A-024. |
+| A-006 | Booking actions per status (check-in, reschedule, cancel, no-show). | — | Superseded by D-025/D-026. |
+| A-007 | A trainer acts only on their own bookings. | — | Superseded by D-017 (PT data scope: own customers and schedule). |
+| A-008 | Payments are CONFIRMED or VOIDED. | — | Superseded by D-034/D-035 (receipts deleted to trash). |
+| A-009 | Cash transactions are voided and re-recorded. | — | Superseded by D-034/D-035. |
+| A-010 | A trainer record may exist without a login. | — | Superseded by brief §8.4 (every employee has an account; PTs are employees). |
+| A-011 | Default UI language Vietnamese. | brief §11 | Active |
+| A-012 | Device targets. | — | Amended by D-043 (leads, PT calendar, workout log at phone width). |
+| A-013 | Customer status ACTIVE/INACTIVE set by staff. | — | Superseded by D-040. |
+| A-014 | An admin cannot change their own role or disable their own account. | — | Active |
+| A-015 | Contract permissions. | — | Superseded by D-017/D-018. |
+| A-016 | Booking and trainer permissions. | — | Superseded by D-017. |
+| A-017 | The session's own day is checked against the contract dates. | BR-012 | Active (with OQ-001). |
+| A-018 | Contract cancellation cancels every booked session, past ones too. | — | Active as interim of OQ-030. |
+| A-019 | A booking starts and ends on the same day. | — | Active |
+| A-020 | Payment methods cash, transfer, card, e-wallet. | — | Superseded by D-016/D-034 (methods are an admin list; initial: cash, bank transfer, card). |
+| A-021 | Finance permissions. | — | Superseded by D-017. |
+| A-022 | The debt list leaves out drafts. | — | Amended: leaves out contracts pending approval. |
+| A-023 | "Running out of sessions" = 3 or fewer left. | D-012 | Active (initial value of a parameter). |
+| A-024 | A session holds the trainer's and customer's time slot when its status is Booked, Đã tập, or no-show; Hủy lịch and deleted sessions free it. | D-025 | Active |
+| A-025 | "Expiring soon" = end date within 14 days; together with A-023 it defines "ending soon" (D-041). Both are parameters. | — | Active |
+| A-026 | The PT allocation value of a contract is its value after discounts, excluding VAT, until OQ-022 says otherwise. | brief §6.5 | Active |
+| A-027 | Email language: Vietnamese for nationality group "Việt Nam", English otherwise. | brief §8.3 | Active |
+| A-028 | Sizing for the first 12 months: up to 5 branches, 100 staff accounts, 5,000 customers, 50,000 sessions per year. Used for hosting and cost estimates only. | OQ-028 open | Active |
 
 ## Technical items still to select
 
-| ID | Item | Notes |
+| ID | Item | Status / notes |
 |---|---|---|
-| TS-001 | Managed PostgreSQL provider | Must offer serverless-compatible pooling and the `btree_gist` extension (T-014), e.g. Neon/Supabase/approved alternative. |
-| TS-003 | Production migration execution mechanism | Must prevent race conditions and be explicit in release flow. |
-| TS-004 | MFA for admin accounts | Admins can create users and reset passwords. Better Auth offers a two-factor plugin. Recommended before go-live. |
-| TS-005 | Per-account lockout | Sign-in is rate-limited per IP only. Locking an account after repeated failures stops slow guessing but lets anyone lock out a known email; a delay or CAPTCHA after failures is an alternative. |
+| TS-001 | Managed PostgreSQL provider | Resolved by T-042 (Railway or Render Postgres; needs `btree_gist`). |
+| TS-003 | Production migration mechanism | Resolved by T-042 (release step of the API deployment, one at a time). |
+| TS-004 | MFA for admin accounts | Open; recommended before go-live (Better Auth two-factor plugin). |
+| TS-005 | Per-account lockout | Open; login hours (D-017) and per-IP rate limits exist. |
+| TS-006 | Email provider: Resend vs Amazon SES | Recommendation in `26_TECH_PROPOSAL.md`; owner chooses with cost. |
+| TS-007 | Lead channel APIs: feasibility, approval process, cost per channel | Survey before milestone 10 (D-044). |
+| TS-008 | AI audit: provider, de-identification, cost | Proposal before milestone 11 (D-045, OQ-025). |
 
 ## Open business questions
 
 | ID | Question | Blocks until answered | Interim |
 |---|---|---|---|
-| OQ-001 | Can staff book, or complete, a session outside the contract's effective dates (before `start_date`, or after `end_date` while sessions remain)? | Allowing bookings or completions outside the effective dates (BR-012). | Reject outside the effective dates. |
-| OQ-002 | Must a session be checked in before it can be completed, or can Manager/Admin complete directly from `BOOKED`? | Completion from `BOOKED`. | Completion only from `CHECKED_IN`. |
-| OQ-003 | Can confirmed payments exceed contract value? | Overpayment handling. | Reject a payment that would make the confirmed paid amount exceed contract value. |
-| OQ-004 | Answered → D-010. | — | — |
-| OQ-005 | Who can reverse an incorrectly completed session, and how should that affect remaining sessions? | Completion correction. | No correction path; `COMPLETED` is final. |
-| OQ-006 | Can PTs see all customers or only customers/bookings assigned to them? | Trainer read scope for customers and contracts. | Only customers with a booking assigned to the trainer. |
-| OQ-007 | Should contract payments automatically create cash-income entries, or should finance reporting treat payments directly as income? | Income totals in the finance report and dashboard net cash flow. | Report payments and cash income as separate lines; no automatic cash entries. |
-| OQ-008 | Can a contract have more open bookings (`BOOKED` + `CHECKED_IN`) than it has remaining sessions? | Allowing overbooking (BR-003). | Reject a booking when the contract's open bookings ≥ its remaining sessions. Completion stays protected by BR-009 either way. |
-| OQ-009 | Answered → D-011. Import details are OQ-014. | — | — |
-| OQ-010 | Can a booking use a contract owned by a different customer (e.g. a shared couple/family package)? | Shared-contract bookings. | The booking's customer must own the contract. |
-| OQ-011 | What do the remaining "limited" cells in `09_RBAC.md` allow: Receptionist *complete session*, Receptionist *view reports*, Accountant *view audit logs*? | Those three permissions. | Denied (T-024). |
-| OQ-012 | Are there time limits on booking actions — a cancellation cut-off, no-show only after the scheduled start, check-in or completion only on the scheduled day? | Time-based validation of booking actions. | No time limits beyond A-006. |
-| OQ-013 | Does a cancelled contract still owe its unpaid amount, or is it written off or refunded? | Debt shown for cancelled contracts; refunds; payments on cancelled contracts. | Debt formula unchanged: a cancelled contract keeps showing its debt. No write-off or refund feature, and no new payment on a cancelled contract (`PAYMENT_CONTRACT_CANCELLED`). |
-| OQ-015 | Can an active contract's package, value, sessions, or dates be changed (e.g. a price correction or an extension), and by whom? | Editing active contracts. | Only drafts are editable (`CONTRACT_NOT_EDITABLE`). |
-| OQ-016 | Which income and expense categories does the gym use? | A fixed category list, and totals per category. | Category is free text (up to 100 characters). |
-| OQ-014 | Import details for D-011: which system and export format (Excel/CSV?), how many active members and contracts, and are the old customer codes kept? If kept, new `KH` codes start above the highest old number; if not, the old code is stored as a searchable field. | The import tool; customer codes for imported customers. | Nothing imported. |
+| OQ-001 | Can a session be booked or credited outside the contract's dates? | Bookings outside the dates. | Reject outside the dates (A-017). |
+| OQ-002 | — | — | Answered by D-026 (no separate check-in step). |
+| OQ-003 | Can valid receipts exceed the contract value? | Overpayment handling. | Reject a receipt that would make the paid amount exceed the contract value. |
+| OQ-004 | — | — | Answered by D-010. |
+| OQ-005 | — | — | Answered by D-026 (delete with refund, email, payroll adjustment). |
+| OQ-006 | — | — | Answered by D-017 (data scope per role). |
+| OQ-007 | — | — | Answered by D-034 (contract receipts are cash-book income). |
+| OQ-008 | Can a contract have more booked sessions than sessions left? | Overbooking. | Reject a booking when booked sessions ≥ sessions left. |
+| OQ-009 | — | — | Answered by D-011. |
+| OQ-010 | For group packages (D-021, e.g. Hybrid Family), which members may book on the contract, and does each member's session consume one session of the shared contract? | Bookings by members other than the owner. | Only members listed on the contract ("người đi cùng") may book; each of their sessions consumes one session of that contract. |
+| OQ-011 | — | — | Answered by D-017 (each permission and report is configured). |
+| OQ-012 | — | — | Answered by D-029. |
+| OQ-013 | How is a cancellation settled: value used, fee, refund, and what debt remains? | The cancellation voucher's amounts. | Creator enters value used, fee, and refund with a reason; approval required; after approval the contract's debt is zero and the refund is an expense voucher. |
+| OQ-014 | Go-live date, data volume, and who confirms the cleanup list of D-039? | The real cut-over. | Nothing imported into production. |
+| OQ-015 | — | — | Answered by D-022 (approved contracts are locked). |
+| OQ-016 | — | — | Answered by D-016/D-034 (expense types are an admin list). |
+| OQ-017 | Lead assignment: even round-robin, or by channel, shift, or customer language? | Assignment rules other than round-robin. | Round-robin among active consultants of the branch; managers reassign by hand. |
+| OQ-018 | Re-care after 15 or 16 days? (The Excel header says 15; its formula adds 16.) | — | 15 days (parameter). |
+| OQ-019 | After how long is an untouched lead taken back and reassigned? | Automatic reclaim. | No automatic reclaim; overdue steps show in "Today's tasks" and the audit. |
+| OQ-020 | Who is the Master at each branch? | — | Admin assigns the Master role per branch. |
+| OQ-021 | Class revenue for coaches: per attendee present or fixed per class? Class capacity and seat-cancellation rules? | Class revenue allocation. | Classes count as teaching sessions; no revenue allocated to coaches for classes; capacity set per class; no cancellation cut-off. |
+| OQ-022 | Are commission and timesheet rates per PT, per service, or per contract? Can the allocation value differ from the contract value? Is there a sales commission? | Rate levels other than per service; sales commission. | Rates per service (100%); allocation value per A-026; no sales commission. |
+| OQ-023 | Which change vouchers need approval; formulas for cancellation, transfer, and branch-transfer fees; maximum hold days? | Automatic fee calculation; hold limits. | All change vouchers need Fitness Manager approval; fees are entered with a reason; no hold limit. |
+| OQ-024 | Which departments exist, and who may assign tasks to whom? | Assignment restrictions. | Departments are an admin list; anyone with the task permission may assign within their branches. |
+| OQ-025 | May customer chats be sent to an external AI service, and by which criteria are they scored? | AI audit (milestone 11). | Not built. |
+| OQ-026 | Do staff need email as well as in-app notifications for escalations and overdue tasks? | Staff email notifications. | In-app notifications only. |
+| OQ-027 | When will fingerprint devices replace admin check-in? | Device integration. | Admin confirms "Đã tập" (D-026); the API is device-ready. |
+| OQ-028 | How many branches and users are expected in the next 12 months? | Capacity planning beyond A-028. | Size for A-028. |
+| OQ-029 | Do daily operations (lead entry, consulting step ticks, booking and cancelling, workout logs, tasks) need per-action approval, or is control by audit, admin check-in, and logs enough? | Approval for those actions. | No approval; admin can switch it on per action at any time (D-018). |
+| OQ-030 | When a cancellation voucher is approved, are the contract's booked sessions cancelled automatically? | — | Yes (D-010, A-018): booked sessions are cancelled with the approval, each audited. |
+
+### Configuration to collect before go-live (not blocking development)
+
+Price tiers of each service; maximum discount each role may approve; minimum sessions per contract; calendar start (05:00 or 05:30); email templates; option lists (channels, sources, needs, reasons, Flags, Actions, expense types); approval matrix; status colors.
 
 ### Note on D-011
 
-Without opening balances, an imported contract with 8 sessions already used and 5,000,000 already paid would show 0 used and 0 paid. Opening balances fix that without importing the old system's full session and payment history. They are the only exception to "everything is derived from records in this system" (T-012, BR-013), and they are immutable after import.
+Without opening balances, an imported contract with 8 sessions already used and 5,000,000 already paid would show 0 used and 0 paid. Opening balances fix that without importing GymMaster's full history. They are the only exception to "everything is derived from records in this system" (T-050, D-034), and they are immutable after import.
 
-These questions should be resolved explicitly instead of allowing an AI agent to choose silently.
+These questions must be resolved explicitly instead of letting an AI agent choose silently.

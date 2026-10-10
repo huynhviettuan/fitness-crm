@@ -1,341 +1,112 @@
 # 22 — Technical Architecture
 
-## 1. Architecture decision
+Decisions T-041 to T-052; technology, hosting, and costs in `26_TECH_PROPOSAL.md`.
 
-Fitness CRM V1 uses a **single full-stack Next.js application** deployed to **Vercel**.
+## 1. Shape
 
 ```text
-Users
-  |
-  v
-Vercel
-└── Next.js App Router
-    ├── Client Components
-    ├── Server Components
-    ├── Server Actions
-    ├── Route Handlers (/api/v1)
-    ├── Application / Domain Services
-    ├── Repositories
-    └── Prisma Client
-             |
-             v
-        PostgreSQL
+Browser (desktop, phone)
+   │
+   ▼
+apps/web — Next.js on Vercel (UI only)
+   │  typed client generated from OpenAPI, cookie session
+   ▼
+apps/api — NestJS on Railway/Render (Singapore)
+   ├── HTTP: controllers → services → repositories → Prisma
+   └── worker: pg-boss jobs (timers, reminders, email outbox, notifications, backups)
+   │
+   ▼
+PostgreSQL          Cloudflare R2 (files)          Email provider
 ```
 
-No NestJS, Express, Railway, Render, microservice, Redis, or queue infrastructure is part of the V1 baseline.
+Future clients (member app, check-in devices, ERP modules) call the same `/api/v1` (T-043). No other backend, Redis, or broker (AGENTS.md §2).
 
-## 2. Why a single application
+## 2. Layers
 
-The product is an internal CRM for one gym. Its current critical flows are transactional CRUD/business workflows rather than high-volume distributed workloads.
+| Layer | Where | Responsibilities | Must not |
+|---|---|---|---|
+| Presentation | `apps/web` | Screens, forms, client validation with shared Zod schemas, hide what the user lacks permission for | Hold business rules, touch the database, compute authoritative figures |
+| Controller | `apps/api/src/**/*.controller.ts` | Route, permission key, input parsing, mapping errors to the error contract, OpenAPI | Contain business logic |
+| Service | `*.service.ts` | Rules, state transitions, approvals, transactions and locks, idempotency, audit, trash, outbox events | Build SQL directly |
+| Repository | `*.repository.ts` | Prisma queries, row locks with `$queryRaw`, scope filters | Decide business outcomes |
+| Platform | `src/platform/*` | Auth, permission guard and scope, branches, approvals, audit, trash, configuration, notifications, files, jobs | Know module specifics |
+| Database | PostgreSQL | Source of truth; constraints that must hold under concurrency (exclusions, unique keys, checks) | — |
 
-A single deployment provides:
+## 3. Request lifecycle
 
-- simpler development
-- one authentication boundary
-- no browser-to-separate-API CORS problem
-- fewer deployment/configuration surfaces
-- easier preview deployments
-- faster AI-agent iteration
+1. Authentication: session cookie or token → user, account status, and login window (T-017, D-017).
+2. Authorization guard: permission key of the endpoint; effective permissions = role + overrides (T-046).
+3. Scope: branch access and data scope become filters passed to repositories; out-of-scope records are `404`.
+4. Validation with Zod from `packages/shared`.
+5. Service: if the action is under the approval matrix, store it as pending and create an approval request (D-018); otherwise apply it in a transaction with audit (T-048).
+6. Response serializer removes masked fields; exports use the same serializer.
 
-The system must still be structured as modular application code so the backend can be extracted later if required.
+## 4. Configuration
 
-## 3. Logical layers
+Option lists, parameters, status rules and colors, approval matrix, code prefixes, email templates, service tiers, and timers are tables (T-049), read through a configuration service with a short per-request cache. Business code never contains these values; seeds load the brief's initial values.
 
-### Presentation layer
+## 5. Approvals
 
-Includes:
+A pending record is stored with `approval_status = PENDING` and does not count anywhere (sessions, money, reports, bookings) until approved. `approval_requests` holds the payload of edits to existing records. Deciding locks the request row, rejects the submitter, applies the change and audit in the same transaction, and closes the approver's task. Overdue requests are a scheduled job.
 
-- pages/layouts
-- React components
-- forms/tables/calendar/dashboard UI
+## 6. Soft delete and trash
 
-Responsibilities:
+A Prisma client extension adds `deleted_at IS NULL` to every query on business models and turns `delete` into a refused operation; deletion goes through the trash service, which checks dependents (e.g. receipts before contracts), sets the soft-delete columns, writes the snapshot to `trash_entries`, and audits — in one transaction (T-047, D-035).
 
-- render data
-- collect user input
-- show validation/business errors
-- invoke server boundaries
+## 7. Transactions, concurrency, idempotency
 
-It must not own core business rules.
+Sessions and money must be correct when requests arrive at the same time.
 
-### Server boundary layer
-
-Includes:
-
-- Server Actions
-- Route Handlers under `/api/v1`
-
-Responsibilities:
-
-- authenticate user
-- enforce coarse authorization
-- parse and validate input
-- call application/domain service
-- convert domain errors into UI/API responses
-
-Keep this layer thin.
-
-### Application/domain service layer
-
-Examples:
+### Setting a session status (T-013, T-050)
 
 ```text
-CustomerService
-ContractService
-BookingService
-SessionService
-PaymentService
-ReportingService
-```
-
-Responsibilities:
-
-- business rules
-- state transitions
-- transaction orchestration
-- idempotency rules
-- authorization rules that depend on domain context
-- audit-event orchestration
-
-This is the most important layer for correctness.
-
-### Repository/data-access layer
-
-Responsibilities:
-
-- Prisma queries
-- persistence concerns
-- transaction-aware data access
-- query composition
-
-Business decisions must not be hidden in repository queries.
-
-### Database
-
-PostgreSQL is the source of truth for operational and financial data.
-
-Prisma is used for schema/migrations and data access.
-
-## 4. Suggested repository structure
-
-```text
-fitness-crm/
-├── messages/
-│   ├── vi.json
-│   └── en.json
-├── src/
-│   ├── app/
-│   │   ├── (auth)/
-│   │   ├── (crm)/
-│   │   │   ├── dashboard/
-│   │   │   ├── customers/
-│   │   │   ├── contracts/
-│   │   │   ├── bookings/
-│   │   │   ├── finance/
-│   │   │   └── reports/
-│   │   └── api/
-│   │       └── v1/
-│   ├── components/
-│   │   └── ui/          # generated shadcn/ui components
-│   ├── i18n/
-│   ├── modules/
-│   │   ├── customers/
-│   │   ├── contracts/
-│   │   ├── bookings/
-│   │   ├── sessions/
-│   │   ├── trainers/
-│   │   ├── finance/
-│   │   └── reporting/
-│   ├── lib/
-│   │   ├── auth/
-│   │   ├── db/
-│   │   ├── errors/
-│   │   ├── permissions/
-│   │   └── validation/
-│   └── generated/
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-├── tests/
-├── e2e/
-├── docs/
-├── AGENTS.md
-├── README.md
-└── package.json
-```
-
-Exact paths may change, but the dependency direction must remain clear.
-
-## 5. Dependency direction
-
-Preferred:
-
-```text
-UI
-  -> Server Boundary
-      -> Service
-          -> Repository
-              -> Prisma/PostgreSQL
-```
-
-Avoid:
-
-```text
-React Component -> Prisma
-Route Handler -> 200 lines of business logic
-Repository -> decides business state transition
-Client -> calculates authoritative debt/session balance
-```
-
-## 6. Server Actions vs Route Handlers
-
-Use **Server Actions** when the action is tightly coupled to this web UI and does not need to be an external/stable HTTP contract.
-
-Use **Route Handlers** when:
-
-- the operation belongs to the documented `/api/v1` contract
-- Playwright/API integration tests benefit from direct HTTP access
-- a future mobile/integration client may need the endpoint
-- webhooks/integrations need a URL
-
-Both must call the same service layer. Do not duplicate business logic between them.
-
-## 7. Transactions, concurrency, and idempotency
-
-Money and session consumption changes must be atomic **and** correct when two requests arrive at the same time. A check made before the transaction starts, or without a lock, is not enough: two concurrent requests can both pass it.
-
-### Complete session (T-013)
-
-```text
-Request: complete booking B
-  -> authenticate; validate input; coarse authorization
-  -> read B.contract_id (no lock)
+Request: set session S to status X (e.g. Đã tập, no-show)
+  -> authenticate; permission for X; validate
+  -> read S.contract_id (no lock)
   -> BEGIN
-       SELECT contract ... FOR UPDATE        -- serializes all completions on this contract
-       SELECT booking B ... FOR UPDATE
-       if B.contract_id changed: ROLLBACK and retry
-       if B.status = COMPLETED:
-            COMMIT; return existing state    -- idempotent replay: no consumption, no new audit event
-       if B.status != CHECKED_IN: reject INVALID_STATUS_TRANSITION   (OQ-002)
-       domain authorization (e.g. trainer owns B)
-       if total_sessions - opening_sessions_used
-            - COUNT(COMPLETED bookings of contract) <= 0:     -- D-011
-            reject CONTRACT_NO_REMAINING_SESSIONS
-       UPDATE booking SET status = 'COMPLETED'
-         WHERE id = B AND status = 'CHECKED_IN'   -- must affect exactly 1 row
-       set session.completed_at / completed_by
-       insert audit event
+       SELECT contract ... FOR UPDATE          -- serializes every change on this contract
+       SELECT session S ... FOR UPDATE
+       if S.status = X: COMMIT; return S       -- idempotent repeat, nothing consumed again
+       if S is locked (Đã tập): reject SESSION_LOCKED
+       if X not allowed from S.status: reject INVALID_STATUS_TRANSITION
+       if contract frozen / not approved: reject
+       rule = status rule of X (consumes, credits_pt, holds_slot)
+       if rule.consumes and sessions_left(contract) <= 0: reject CONTRACT_NO_REMAINING_SESSIONS
+       UPDATE session SET status = X, consumes, credits_pt, holds_slot (snapshot)
+         WHERE id = S AND status = old_status    -- exactly one row
+       insert audit event; enqueue customer email (outbox) if the session count changed
      COMMIT
-  -> return booking + contract summary (new remaining count)
 ```
 
-Why each step matters:
-
-- **The contract lock** prevents two completions of *different* bookings from both taking the last remaining session (BR-009). The default READ COMMITTED isolation is sufficient: every statement after the lock sees rows committed by the previous lock holder.
-- **The booking lock and conditional update** prevent the *same* booking from being completed twice (BR-007).
-- **Lock order** is always contract → booking. Every operation that locks both must use this order to avoid deadlocks. Any operation that changes a contract's completed count or `total_sessions` must take the same contract lock.
+- `sessions_left` is derived inside the lock: bought + bonus + change-voucher adjustments − opening used − consuming sessions and attendance (T-050).
+- Lock order is always contract → session (or voucher). Every operation that changes a contract's sessions or money takes the contract lock first: bookings, status changes, deleting from check-in history, Burn Show, attendance, receipts, expense refunds, change vouchers, freeze and reactivation (T-036, T-040).
 
 ### Other critical writes
 
 | Operation | Safety mechanism |
 |---|---|
-| Check-in | Conditional update `BOOKED → CHECKED_IN`; unique `session.booking_id`. A repeat returns the existing state. |
-| Create / reschedule booking | Service pre-check plus the database exclusion constraint (T-014). Map SQLSTATE `23P01` to `BOOKING_TRAINER_OVERLAP`. |
-| Create contract, payment, cash transaction | Required idempotency key with a unique constraint (T-015). |
-| Cancel, no-show, void | Conditional status update. A repeat returns the existing state. |
+| Book a session | Contract lock; pre-checks; exclusion constraints per PT and per customer map SQLSTATE `23P01` to `TRAINER_OVERLAP` / `CUSTOMER_OVERLAP` (T-014) |
+| Create contract, receipt, expense voucher, change voucher | Idempotency key with unique index; replay re-checked under the contract lock (T-015, T-040) |
+| Approve / reject | Lock the approval request; conditional status update; submitter ≠ approver |
+| Reactivate a frozen contract | Lock contract and the open freeze; extension applied once (D-023) |
+| PT payout | Unique payout line per session, so concurrent payouts cannot pay a session twice (D-032) |
+| Codes | Sequences per prefix, never reused (D-038) |
 
-Every one of these writes its audit event in the same transaction (T-022).
-
-Every booking change in the table also takes the contract lock first, then the booking lock, and so does cancelling a contract (T-036). Recording or voiding a payment takes the contract lock too, and checks the idempotency key again under it, so a double submit is a replay rather than an overpayment (T-040). Creating a booking needs the contract lock for the OQ-008 interim count; check-in needs it so it cannot slip in while the contract is being cancelled (D-010).
+Every one of these writes its audit event in the same transaction (T-048).
 
 ### Prisma notes
 
-- Prisma has no `FOR UPDATE` API. Repositories take row locks with `$queryRaw` inside an interactive `$transaction(async (tx) => ...)`.
-- Keep interactive transactions short and set an explicit `timeout`. Do no network calls or slow work inside them.
-- Pooled connections (PgBouncer transaction mode) keep a whole transaction on one server connection, so row locks behave correctly.
-- Prisma reports an exclusion-constraint violation as `P2039`, with the SQLSTATE `23P01` in `meta.driverAdapterError.cause.code`. `isExclusionViolation` in `src/lib/db/errors.ts` recognizes it.
+- Row locks via `$queryRaw` inside interactive `$transaction` with explicit timeouts; no network calls inside.
+- Exclusion violations arrive as `P2039` with SQLSTATE `23P01` in `meta.driverAdapterError.cause.code` (`isExclusionViolation`).
 
-## 8. Derived values
+## 8. Jobs and outbox (T-045)
 
-Do not trust mutable client values for:
+pg-boss queues in PostgreSQL, processed by the worker: consulting step timers and reminders, re-care dates, approval and task overdue checks, freeze reminders (> 10 days), email outbox sending and retries, notification fan-out, nightly backup copy. Jobs are idempotent and keyed by the entity and step, so a retry never duplicates a reminder or an email.
 
-- remaining sessions
-- completed sessions
-- confirmed paid amount
-- debt
+## 9. Derived values
 
-Compute/derive these from authoritative records according to the business rules:
+Never trust client values for sessions left, paid, debt, prices, payment status, PT credits, or permissions. They are computed by the API from records (T-050, D-034, D-032). Cached figures are allowed later only with a designed invalidation.
 
-- completed sessions come from booking status (T-012);
-- `EXPIRED` contract status is derived from `end_date` and the gym timezone (T-018).
+## 10. Extraction and growth
 
-Caching derived values is allowed later only if correctness and invalidation are explicitly designed.
-
-## 9. Authentication and authorization
-
-Authentication runs server-side.
-
-Authorization must be enforced at the server mutation/query boundary and/or service layer. Hiding a UI button is not authorization.
-
-Every protected request loads the current user from the database and rejects `DISABLED` accounts. Role and account status are not trusted from the session token alone (T-017).
-
-Login, logout, and session routes belong to the authentication library, outside `/api/v1` (T-016).
-
-Roles are defined in `09_RBAC.md`; the permission matrix lives in `src/lib/permissions/` (T-020).
-
-## 10. Vercel and database considerations
-
-- centralize Prisma client creation
-- use a managed PostgreSQL connection strategy suitable for serverless/elastic execution
-- avoid unbounded connection creation
-- keep request handlers short
-- do not rely on in-memory process state across requests
-- do not assume one Vercel instance handles consecutive requests
-
-Business state must live in PostgreSQL, not process memory.
-
-## 11. Background jobs
-
-V1 should avoid unnecessary queue/worker infrastructure.
-
-If a future feature needs durable asynchronous work, evaluate the workload first. Do not emulate a durable queue with in-memory state or fragile request-time loops.
-
-## 12. API compatibility
-
-The internal API proposal remains under:
-
-```text
-/api/v1
-```
-
-This gives the project a stable seam for future mobile apps, messaging integrations, or backend extraction.
-
-## 13. Extraction path if the system grows
-
-Future architecture may become:
-
-```text
-Next.js / Vercel
-       |
-       v
-Dedicated API / Worker Runtime
-       |
-       v
-PostgreSQL
-```
-
-The service/repository boundaries in V1 are intended to make that extraction incremental rather than a rewrite.
-
-## 14. Architecture definition of done
-
-A feature conforms to the V1 architecture when:
-
-- it does not add an unapproved runtime/service
-- client components contain no authoritative business logic
-- server input is validated
-- server authorization exists
-- business rules live in services
-- Prisma access is centralized through approved data-access boundaries
-- critical multi-record mutations use transactions
-- critical money/session mutations are safe under concurrent and repeated requests (§7)
-- critical money/session mutations have tests and audit behavior
+Modules map one-to-one to NestJS modules with their own tables, so ERP modules can be added as new modules, and a module can later move to its own service behind the same API contract if load requires it.

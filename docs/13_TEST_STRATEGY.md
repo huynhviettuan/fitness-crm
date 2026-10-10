@@ -2,170 +2,64 @@
 
 ## Test pyramid
 
-Unit and integration tests use Vitest (T-021).
+| Level | Tool | Focus |
+|---|---|---|
+| Unit | Vitest | Pure rules: price tier lookup and totals, end-date and extension calculations, status-rule application, derived figures (sessions left, paid, debt, PT allocation), permission evaluation (role + overrides + scope + masks), option validation ("Khác" note), timers, `vi`/`en` message keys identical |
+| Integration | Vitest against real PostgreSQL | API services with transactions: approvals (no self-approval, no effect while pending), locked contracts, deletion order and trash, consumption under concurrency, overlaps (trainer and customer), idempotency, receipts and debt, payouts without double pay, audit before/after, data scope and masking |
+| API contract | Vitest + generated OpenAPI | Every endpoint declares a permission; responses match the schema; masked fields absent |
+| E2E | Playwright against web + API | Critical journeys and acceptance criteria (doc 14), desktop and phone viewports |
+| Security | Playwright + Vitest | OWASP Top 10 suite (`24_SECURITY_TESTING.md`) for every endpoint |
 
-### Unit tests
-Focus on pure business rules:
+Integration tests run against a real PostgreSQL database because row locks, exclusion constraints, and unique indexes are PostgreSQL behavior.
 
-- session consumption
-- debt calculation
-- trainer time overlap
-- valid state transitions
-- `vi.json` and `en.json` contain exactly the same message keys
-- `formatMoney` / date formatting (VND, `dd/MM/yyyy`, 24-hour, gym timezone)
+## E2E structure
 
-### API / integration tests
-Focus on:
-
-- authentication/authorization
-- database transactions
-- booking validation
-- payment persistence
-- completion idempotency
-- concurrency and duplicate submission
-
-Integration tests run against a real PostgreSQL database. Row locks, the trainer-overlap exclusion constraint, and unique constraints are PostgreSQL behavior; mocks or SQLite cannot verify them.
-
-### E2E tests — Playwright
-Focus on critical user journeys, not every UI detail.
-
-Structure (`e2e/`):
-
-- Specs import `test` and `expect` only from `e2e/fixtures.ts`, the composition root. They never import `@playwright/test` or construct page objects themselves.
-- Page objects in `e2e/pages/` hold every locator, scoped to the region that owns it.
-- `auth.setup.ts` signs in once per role through the API and saves the session to `e2e/.auth/`. Specs start signed in with `test.use(signedInAs("ROLE"))`; only the login spec uses the login form.
-- The `testTag` fixture gives each test a unique marker for the names it creates. Fixture teardown deletes that data even when the test fails.
-- The E2E database is reset and seeded with one account per role in `e2e/support/global-setup.ts`.
-- Cache Components keeps recently visited pages mounted but hidden. Role-based locators ignore hidden elements, which is one more reason never to use page-global CSS lookups.
-- An open dialog or sheet hides the rest of the page from the accessibility tree, so `getByRole("main")` finds nothing until it closes. Close it with its own Close or Cancel button (not Escape, which can reach a confirmation that is still closing) before asserting on the page.
-
-Running the suites:
-
-```text
-npm run db:up             # PostgreSQL in Docker
-npm test                  # unit
-npm run test:integration  # integration, against TEST_DATABASE_URL
-npm run test:e2e          # builds, then Playwright against E2E_DATABASE_URL on port 3100
-npm run test:security     # builds, then only the OWASP security suite (e2e/security)
-```
-
-E2E tests run against a production build (`next start`). This matches the deployed app (CSP, rate limiting) and does not collide with a developer's own `next dev`, since Next.js allows only one dev server per folder.
-
-### Security tests
-
-The OWASP Top 10:2025 suite lives in `e2e/security/`, `tests/integration/security.int.test.ts`, and `src/lib/security/`. Its mapping, the findings it caught, and the dependency gate are described in `24_SECURITY_TESTING.md`.
-
-Locator rules (`23_UI_DESIGN_SYSTEM.md` §11):
-
-- Locate with `getByRole` / `getByLabel`, scoped to the owning region (dialog, table row, page section). Never use a page-global lookup.
-- Use `data-testid` only where role and name are ambiguous, such as calendar booking blocks.
-- Run with the locale pinned to `vi` and read labels from the message catalog, never from hard-coded text.
+- Specs import `test` and `expect` only from the composition root `e2e/fixtures.ts`; page objects in `e2e/pages/` hold every locator, scoped to the region that owns it.
+- One saved session per seeded role; the role and permission seed mirrors `09_RBAC.md`.
+- Every test tags the data it creates; fixture teardown removes it, even on failure. Teardown deletes test data directly in the E2E database, outside the trash rules.
+- Labels come from the message catalog with the locale pinned to `vi`.
+- An open dialog hides the page from the accessibility tree; close it with its own button before asserting on the page.
+- E2E runs against production builds of web and API.
 
 ## Critical scenarios
 
-### E2E-001 — Customer → Contract
-1. Create customer.
-2. Create a 24-session contract.
-3. Verify customer detail shows the contract.
+| ID | Scenario | Criterion |
+|---|---|---|
+| E2E-101 | Lead from the quick form → assigned round-robin → checklist steps → appointment → Show → converted with the same ID | AC-06, AC-09 |
+| E2E-102 | Duplicate phone → warning → merge, one record | BR-202 |
+| E2E-103 | "Khác" without note refused; option deactivated stays on old record | AC-03, AC-04 |
+| E2E-104 | Contract with any session count → tier price, end date, name; exception price stays pending; booking refused until approved | AC-10, AC-11 |
+| E2E-105 | Approved contract cannot be edited by admin | AC-11 |
+| E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash | AC-12, AC-13 |
+| E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |
+| E2E-108 | Đã tập and no-show consume 1 and credit PT; Hủy lịch and delete do not; colors | AC-15 |
+| E2E-109 | Đã tập locked; delete from history → refund 1, credit −1, email sent, adjustment in next period | AC-16, AC-17 |
+| E2E-110 | Two receipts → paid and debt; cash book balance | AC-19 |
+| E2E-111 | Session log on phone: plan and actual per row; cardio fields; escalation reaches manager and Master | AC-20, AC-21, AC-23 |
+| E2E-112 | Role without a module: menu hidden and direct URL refused; masked phone absent from screen and export | AC-01 |
+| E2E-113 | Submitter cannot approve own request; approval matrix change takes effect immediately | AC-05 |
 
-### E2E-001 part 2 — Contract (built in Phase 2)
-1. Open a customer, add a 24-session contract from the Contracts tab.
-2. Verify it is a draft with 24 remaining and the full value as debt; activate it.
-3. Verify the customer's Contracts tab shows it as active.
+## Concurrency scenarios (integration)
 
-E2E-002 to E2E-007 are built in Phase 3 (`e2e/bookings.spec.ts`).
+| ID | Scenario |
+|---|---|
+| INT-001 | 10 parallel "Đã tập" on one session consume once and audit once. |
+| INT-002 | Two sessions racing for a contract's last session: exactly one consumes. |
+| INT-003 | Two overlapping bookings for one PT at once: one succeeds. |
+| INT-004 | The same receipt submitted twice with one key records once. |
+| INT-005 | The same key with another amount is refused. |
+| INT-006 | A disabled account, or a sign-in outside allowed hours, loses access on the next request. |
+| INT-007 | Exclusion constraints for PT and customer overlap exist in the migrated database. |
+| INT-008 | Contract expiry at the timezone boundary; no expiry while frozen. |
+| INT-009 | Two overlapping bookings for one customer with two PTs at once: one succeeds. |
+| INT-010 | Approve and delete of the same pending record at once: one wins, the other gets a clear error. |
+| INT-011 | Two payouts for the same period and PT at once: no session paid twice. |
+| INT-012 | Reactivating a frozen contract twice at once extends the end date once. |
 
-### E2E-002 — Booking does not consume
-1. Contract has 24 total, 0 completed.
-2. Create booking.
-3. Verify remaining is still 24.
+## Reused from Phases 0–4
 
-### E2E-003 — Check-in does not consume
-1. Check in booking.
-2. Verify remaining is unchanged.
-
-### E2E-004 — Complete consumes exactly one
-1. Complete checked-in session.
-2. Verify completed = 1 and remaining = 23.
-
-### E2E-005 — Repeated completion is safe
-1. Retry the complete action/request.
-2. Verify remaining is still 23.
-
-### E2E-006 — No remaining sessions
-1. Use a contract with 0 remaining.
-2. Attempt to complete another session.
-3. Verify operation is rejected.
-
-Under the OQ-008 interim, a contract with 0 remaining cannot even be booked, so the E2E test checks that the booking is refused. The completion race is INT-002.
-
-### E2E-007 — Trainer overlap
-1. Create PT booking 18:00–19:00.
-2. Attempt second active booking for same PT 18:30–19:30.
-3. Verify rejection.
-
-### E2E-008 — Debt (built in Phase 4, `e2e/finance.spec.ts`)
-1. Contract value = 12,000,000.
-2. Add confirmed payment 5,000,000.
-3. Add confirmed payment 3,000,000.
-4. Verify paid = 8,000,000 and debt = 4,000,000.
-
-### E2E-009 — RBAC
-Verify trainer cannot void payments or manage users.
-
-## Concurrency and duplicate-submission scenarios (integration)
-
-Concurrent requests must truly overlap: send them in parallel over separate connections (e.g. through the HTTP API or separate database clients), not one after another.
-
-INT-001 to INT-003 and INT-007 are in `tests/integration/sessions.int.test.ts` and `bookings.int.test.ts`; INT-001 and INT-003 also run over HTTP in `e2e/security/bookings.spec.ts`.
-
-### INT-001 — Parallel completion of the same booking
-1. Checked-in booking on a contract with 24 total, 0 completed.
-2. Send 10 completion requests for that booking at the same time.
-3. Verify all return the completed state, completed = 1, remaining = 23, and exactly one completion audit event exists.
-
-### INT-002 — Last-session race
-1. Contract with 1 remaining session and two checked-in bookings.
-2. Complete both bookings at the same time.
-3. Verify exactly one succeeds, the other returns `CONTRACT_NO_REMAINING_SESSIONS`, and remaining = 0.
-
-### INT-003 — Concurrent trainer overlap
-1. Send two overlapping booking creates for the same trainer at the same time.
-2. Verify exactly one is created and the other returns `BOOKING_TRAINER_OVERLAP`.
-
-INT-004 and INT-005 are in `tests/integration/payments.int.test.ts`, and run over HTTP in `e2e/security/finance.spec.ts`.
-
-### INT-004 — Duplicate payment submission
-1. Submit the same payment twice with the same idempotency key.
-2. Verify one payment exists and paid amount counts it once.
-
-### INT-005 — Idempotency key reuse
-1. Submit a payment, then submit a different amount with the same key.
-2. Verify the second request returns `IDEMPOTENCY_KEY_REUSED` and nothing new is recorded.
-
-### INT-006 — Disabled user
-1. Sign in as a user, then disable the account.
-2. Verify the next request with the existing session is rejected.
-
-### INT-007 — Overlap constraint exists
-Verify the migrated database contains the trainer-overlap exclusion constraint, so it cannot silently disappear from a migration.
-
-### INT-008 — Contract expiry at the timezone boundary
-1. Active contract whose `end_date` is today in the gym timezone.
-2. Verify it is not expired at 23:59 gym time and is expired at 00:00 the next day, without any job running.
+The Phases 0–4 suites (unit, integration, E2E, security) remain green until milestone M1 restructures the code; scenarios for superseded rules (check-in step, no-show without consumption) are rewritten in M5 together with the code (`25_BRIEF_V2_GAP_ANALYSIS.md`).
 
 ## Quality gates
 
-Before merge:
-
-- lint
-- type-check
-- unit tests
-- API/integration tests against PostgreSQL, including INT-001 to INT-008
-
-Before release:
-
-- migration validation
-- critical Playwright suite
-- backup/restore readiness
-- smoke test in production-like environment
+Before merge: lint, type-check, unit, integration (including INT-001 to INT-012 as their features land), API contract tests. Before a milestone is delivered to staging: the full E2E and security suites, migration on a copy of production data, and the milestone's acceptance criteria.

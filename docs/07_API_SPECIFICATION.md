@@ -1,248 +1,78 @@
 # 07 — API Specification
 
-Base path proposal: `/api/v1`
+The API is the NestJS app `apps/api`, under `/api/v1`, described by **OpenAPI** generated from the controllers (T-041, T-043). The OpenAPI document is the contract: the web app's client is generated from it, and the future member app, ERP modules, and check-in devices use it too. This page states the conventions and the resource map; field-level detail lives in the OpenAPI document.
 
-## Authentication
+## Conventions
 
-Login, logout, and session cookies are handled by the authentication library (Better Auth, T-028: `/api/auth/*`), outside `/api/v1` (T-016).
-
-```http
-GET  /auth/me
-```
-
-Returns the current user: id, name, role, and linked trainer id (if any). Every protected endpoint rejects a disabled account (T-017).
-
-## Request requirements
-
-State-changing requests (POST, PATCH, PUT, DELETE) must:
-
-- carry an `Origin` header equal to the app's own origin, as browsers do automatically. Other origins, or a missing `Origin`, get `403 FORBIDDEN` (T-033).
-- send a JSON body with `Content-Type: application/json`. Anything else gets `415 UNSUPPORTED_MEDIA_TYPE`.
-
-A future mobile or integration client will need its own authentication (e.g. tokens) rather than browser cookies; revisit this rule when one is added.
-
-## Idempotency
-
-These requests must include an `Idempotency-Key` header containing a client-generated UUID (T-015):
-
-```http
-POST /customers/:customerId/contracts
-POST /contracts/:contractId/payments
-POST /cash-transactions
-```
-
-- First request → `201` with the created record.
-- Same key, same payload → `200` with the original record; nothing new is created.
-- Same key, different payload → `409 IDEMPOTENCY_KEY_REUSED`.
-- Missing key → `400 IDEMPOTENCY_KEY_REQUIRED`.
-
-Server Actions pass the same key as a hidden form field generated when the form is rendered, so a double-click or retry reuses it.
-
-Status-transition endpoints (check-in, complete, cancel, no-show, void) need no key. They are idempotent by state: repeating a transition that already happened returns `200` with the current state.
-
-## Customers
-
-```http
-GET    /customers
-POST   /customers
-GET    /customers/:id
-PATCH  /customers/:id
-```
-
-Query examples:
-
-```text
-GET /customers?search=0909&page=1&pageSize=20
-```
-
-## Contracts
-
-```http
-GET    /customers/:customerId/contracts
-POST   /customers/:customerId/contracts
-GET    /contracts/:id
-PATCH  /contracts/:id
-POST   /contracts/:id/activate
-POST   /contracts/:id/cancel
-```
-
-Contract response should include derived summary:
-
-```json
-{
-  "status": "ACTIVE",
-  "totalSessions": 24,
-  "completedSessions": 9,
-  "remainingSessions": 15,
-  "contractValue": 12000000,
-  "confirmedPaidAmount": 8000000,
-  "debt": 4000000
-}
-```
-
-`status` is the effective status, so it is `EXPIRED` when an `ACTIVE` contract is past its end date (T-018). The response also carries `openingSessionsUsed`, `openingPaidAmount` (D-011), and `paidAmount` (opening plus confirmed payments).
-
-Request body for create and `PATCH` (all fields, as typed in the form): `packageName`, `contractValue` (whole VND, e.g. `"12.000.000"` or `12000000`), `totalSessions` (1–1000), `startDate`, `endDate` (`dd/MM/yyyy`, end on or after start). Code, status, and opening balances are never accepted.
-
-- New contracts start as `DRAFT`. `PATCH` works on drafts only (OQ-015 interim, `CONTRACT_NOT_EDITABLE`).
-- `activate`: `DRAFT` → `ACTIVE`. `cancel`: `DRAFT` or `ACTIVE` → `CANCELLED`; an expired contract cannot be cancelled. Repeating a transition returns the current state.
-- `cancel` also cancels every `BOOKED` booking of the contract (D-010, A-018), and is refused with `CONTRACT_HAS_CHECKED_IN_BOOKING` while one of its bookings is checked in.
-- Who may do what: A-015.
-
-## Trainers
-
-```http
-GET   /trainers              # ?activeOnly=true: only trainers taking bookings
-POST  /trainers
-PATCH /trainers/:id
-```
-
-Request body for create and `PATCH` (all fields): `fullName`, `status` (`ACTIVE` or `INACTIVE`, default `ACTIVE`), `userId` (a login with the `TRAINER` role, or `""` for none; A-010). The trainer code (`PT` + 3 digits) is generated and never accepted. Creating and editing trainers is Admin and Manager (A-016).
-
-## Bookings
-
-```http
-GET    /bookings
-POST   /bookings
-GET    /bookings/:id
-PATCH  /bookings/:id
-POST   /bookings/:id/cancel
-POST   /bookings/:id/no-show
-```
-
-Create payload, as typed in the form (T-038):
-
-```json
-{
-  "customerId": "uuid",
-  "contractId": "uuid",
-  "trainerId": "uuid",
-  "date": "10/10/2026",
-  "startTime": "18:00",
-  "endTime": "19:00"
-}
-```
-
-- `date` is `dd/MM/yyyy`; the times are `HH:mm` on that day in the gym timezone (A-001, A-019). The end must be after the start (BR-011).
-- Status and session facts are never accepted. There is no `Idempotency-Key` (T-037).
-- `PATCH /bookings/:id` (reschedule) takes `trainerId`, `date`, `startTime`, `endTime`; the customer and contract never change.
-- `GET /bookings` filters: `from`, `to` (gym days, inclusive, `dd/MM/yyyy`), `status`, `trainerId`, `customerId`, `contractId`, `order` (`asc` or `desc` by start), `page`, `pageSize`.
-- A booking response has `scheduledStart` and `scheduledEnd` as UTC instants, the customer, the contract (with `remainingSessions`), the trainer, the status, and the session facts (`checkedInAt`, `checkedInBy`, `completedAt`, `completedBy`) once checked in.
-- A Trainer sees and changes only bookings of their own trainer record (A-007); other bookings are `404`.
-
-Allowed from these booking statuses (A-006):
-
-| Action | From status |
+| Topic | Rule |
 |---|---|
-| `PATCH /bookings/:id` (reschedule) | `BOOKED` |
-| `POST /bookings/:id/cancel` | `BOOKED`, `CHECKED_IN` |
-| `POST /bookings/:id/no-show` | `BOOKED` |
+| Authentication | The web app uses a Better Auth cookie session (httpOnly, SameSite). Devices and the member app use tokens or API keys later (T-044). `GET /me` returns the user, branches, effective permissions, and masks. |
+| Authorization | Each endpoint declares a permission key, checked with branch access, login hours, and data scope; masked fields are removed from responses and exports (T-046). Unknown or out-of-scope records are `404`. |
+| Request requirements | State-changing requests need the app's `Origin` and a JSON body (`403`, `415` otherwise) (T-033). |
+| Validation | Zod schemas from `packages/shared`; errors return field keys that map to translated messages. |
+| Idempotency | `Idempotency-Key` header (UUID) on creating contracts, receipts, expense vouchers, and change vouchers: first `201`, replay `200`, same key with other content `409 IDEMPOTENCY_KEY_REUSED`, missing `400` (T-015). |
+| Status changes | Idempotent by state: repeating a transition that already happened returns `200` with the current state. |
+| Approvals | Actions under the approval matrix return `202` with the pending record and its approval request; `POST /approvals/:id/approve` and `/reject` (reason) decide. |
+| Deletion | `DELETE` takes a body `{ "reasonOptionId", "reasonNote" }` and moves the record to the trash (D-035). |
+| Lists | `page`, `pageSize`, `sort`, filters per resource; responses carry `items`, `total`, and `totals` (for the totals row). `GET …/export` returns the same filter as an Excel file. |
+| Dates and money | Calendar days `dd/MM/yyyy` in the gym timezone; times `HH:mm`; instants ISO 8601 UTC; money whole VND. |
 
-Create and reschedule re-validate trainer overlap (BR-010), time validity (BR-011), and contract validity (BR-003, BR-012). Create also refuses a contract whose open bookings already cover its remaining sessions (OQ-008 interim).
+## Resources
 
-## Sessions
-
-```http
-POST /bookings/:bookingId/check-in
-POST /bookings/:bookingId/complete
-```
-
-Check-in moves the booking from `BOOKED` to `CHECKED_IN` and creates its session record. A repeat returns the current state.
-
-Completion must be idempotent, including under concurrent requests (see `22_TECHNICAL_ARCHITECTURE.md` §7).
-
-Recommended behavior:
-
-- First valid completion → `200`, booking becomes COMPLETED, one session consumed.
-- Repeated completion → `200` returning the same completed state, no additional consumption.
-- The response is `{ "booking": …, "contract": … }`: the completed booking and the contract with its new remaining-session count.
-
-## Payments
-
-```http
-GET   /contracts/:contractId/payments
-POST  /contracts/:contractId/payments
-POST  /payments/:id/void
-```
-
-Request body for record: `amount` (whole VND greater than 0, e.g. `"5.000.000"`), `method` (`CASH`, `BANK_TRANSFER`, `CARD`, `E_WALLET`; A-020), `paidOn` (`dd/MM/yyyy`, not later than today; T-039). Status, contract, and who recorded it are never accepted.
-
-- A payment that would take the paid amount (opening balance plus confirmed payments) above the contract value is refused with `PAYMENT_EXCEEDS_CONTRACT_VALUE` (OQ-003 interim).
-- A cancelled contract takes no payment: `PAYMENT_CONTRACT_CANCELLED` (OQ-013 interim). Draft and expired contracts do.
-- `GET /contracts/:contractId/payments` lists the contract's payments, voided ones included.
-- Who may: `09_RBAC.md` and A-021.
-
-Void requires a reason:
-
-```json
-{ "reason": "Entered against the wrong contract" }
-```
-
-A voided payment stops counting toward the paid amount, stays on record, and is never reinstated (A-008). Repeating a void returns the voided payment.
-
-## Cash transactions
-
-```http
-GET  /cash-transactions
-POST /cash-transactions
-POST /cash-transactions/:id/void
-```
-
-Request body for record: `type` (`INCOME` or `EXPENSE`), `category` (free text, OQ-016), `amount` (whole VND greater than 0), `occurredOn` (`dd/MM/yyyy`, not later than today), and optional `reference` and `description`. `GET /cash-transactions` filters: `from`, `to` (gym days, inclusive), `type`, `status`, `page`, `pageSize`.
-
-Void requires a reason. To correct an entry, void it and record a new one (A-009).
-
-## Dashboard / reports
-
-```http
-GET /dashboard/summary?from=...&to=...
-GET /reports/sessions?from=...&to=...
-GET /reports/trainers?from=...&to=...
-GET /reports/contracts?from=...&to=...
-GET /reports/finance?from=...&to=...
-```
-
-Date-only `from`/`to` values are interpreted in the gym timezone (A-001).
+| Area | Endpoints |
+|---|---|
+| Me and auth | `/api/auth/*` (Better Auth), `GET /me`, `PATCH /me/locale` |
+| Platform | `/users`, `/roles` (clone), `/permissions` (tree), `/users/:id/overrides`, `/branches`, `/option-lists/:key/options`, `/parameters`, `/session-status-rules`, `/approval-rules`, `/approvals` (inbox, approve, reject), `/audit-events`, `/trash`, `/notifications`, `/files` (signed upload and download) |
+| Employees | `/employees`, `/employees/:id/schedules` |
+| Leads | `/leads` (create, list, kanban counts), `/leads/:id`, `/leads/:id/assign`, `/leads/:id/status`, `/leads/:id/steps/:stepId` (complete with result), `/leads/:id/appointments`, `/leads/:id/show`, `/leads/:id/convert`, `/leads/duplicates?phone=`, `/leads/:id/merge`, `/recare`, `/my-day`, `/consulting-scripts`, `/leads/:id/audit` |
+| Customers | `/customers`, `/customers/:id` and its tabs (`/contracts`, `/receipts`, `/plans`, `/session-logs`, `/progress`, `/consulting-history`, `/emails`) |
+| Services | `/services`, `/services/:id/tiers` (versions), `/services/:id/quick-packages`, `/promotions`, `/price-quote` (service + sessions → unit price, total, end date, name) |
+| Contracts | `/customers/:id/contracts` (create pending), `/contracts`, `/contracts/:id` (`PATCH` only while pending), `/contracts/:id/check-ins`, `/contracts/:id/history`, `/contracts/:id/deactivate`, `/contracts/:id/reactivate` (returns the proposed extension; confirm with chosen days), `/contracts/:id/unapprove`, `DELETE /contracts/:id` |
+| Change vouchers | `/contracts/:id/changes` (kind-specific bodies), `/changes/:id` |
+| PT schedule | `/schedule?date=&branch=&pt=&customer=&view=day|week`, `/sessions` (book), `/sessions/:id`, `/sessions/:id/trained`, `/sessions/trained` (bulk), `/sessions/:id/cancel`, `/sessions/:id/no-show`, `DELETE /sessions/:id` (wrong booking or check-in history deletion), `/sessions/burn` (Burn Show) |
+| Classes | `/classes`, `/class-sessions?from=&to=`, `/class-sessions/:id/enrollments`, `/class-sessions/:id/attendance` |
+| Workouts | `/catalog/equipment`, `/catalog/areas`, `/catalog/exercises`, `/catalog/stages`, `/plan-templates`, `/customers/:id/plans`, `/plans/:id`, `/sessions/:id/log`, `/escalations` (review) |
+| Cash book | `/receipts`, `/expense-vouchers`, `/payouts` (from an allocation period), `/receipts/:id/date` (date edit permission), `/cashbook?from=&to=&branch=&method=` |
+| Tasks | `/tasks` (mine, assigned by me, department), `/tasks/:id/accept`, `/tasks/:id/status`, `/tasks/:id/comments` |
+| Email | `/email-templates`, `/customers/:id/emails` |
+| Reports | `/reports/overview`, `/reports/consulting`, `/reports/leads`, `/reports/workouts-weekly`, `/reports/contracts`, `/reports/exception-prices`, `/reports/bookings`, `/reports/pt-revenue`, `/reports/cashbook`, `/reports/tasks` — each with `/export` |
+| Import | `/imports` (upload, dry run on staging, cleanup list, apply) |
 
 ## Error contract
 
 ```json
-{
-  "code": "CONTRACT_NO_REMAINING_SESSIONS",
-  "message": "The contract has no remaining sessions",
-  "details": {}
-}
+{ "code": "CONTRACT_LOCKED", "message": "Approved contracts cannot be edited", "details": {} }
 ```
-
-Use stable machine-readable error codes.
 
 | Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_FAILED` | 400 | Input fails schema validation |
-| `IDEMPOTENCY_KEY_REQUIRED` | 400 | A create that requires a key has none |
-| `UNAUTHENTICATED` | 401 | No valid session, or the account is disabled |
-| `FORBIDDEN` | 403 | Role or ownership does not allow the action |
-| `NOT_FOUND` | 404 | Entity does not exist or is not visible to the user |
+| `VALIDATION_FAILED` | 400 | Input fails validation, including "Khác" without a note |
+| `IDEMPOTENCY_KEY_REQUIRED` | 400 | Create without a key |
+| `UNAUTHENTICATED` | 401 | No valid session, disabled account, or outside allowed hours |
+| `FORBIDDEN` | 403 | Permission, branch, or data scope denies the action |
+| `NOT_FOUND` | 404 | Missing, deleted, or out of scope |
 | `INVALID_STATUS_TRANSITION` | 409 | Action not allowed from the current status |
-| `CONTRACT_NOT_ACTIVE` | 409 | Contract is draft, cancelled, or expired |
-| `CONTRACT_NO_REMAINING_SESSIONS` | 409 | Completion (or booking, under OQ-008 interim) with no sessions left |
-| `BOOKING_TRAINER_OVERLAP` | 409 | Trainer already has an active booking in that time range |
-| `IDEMPOTENCY_KEY_REUSED` | 409 | Same key sent with a different payload |
-| `EMAIL_ALREADY_USED` | 409 | A user with this email already exists |
-| `CONTRACT_NOT_EDITABLE` | 409 | Editing a contract that is no longer a draft (OQ-015) |
-| `CONTRACT_HAS_CHECKED_IN_BOOKING` | 409 | Cancelling a contract while one of its bookings is checked in (D-010) |
-| `PAYMENT_CONTRACT_CANCELLED` | 409 | Recording a payment on a cancelled contract (OQ-013 interim) |
-| `CANNOT_CHANGE_OWN_ACCESS` | 409 | An admin tried to change their own role or status (A-014) |
-| `UNSUPPORTED_MEDIA_TYPE` | 415 | A request body that is not `application/json` |
-| `BOOKING_CUSTOMER_CONTRACT_MISMATCH` | 422 | Booking customer does not own the contract (OQ-010) |
-| `BOOKING_OUTSIDE_CONTRACT_PERIOD` | 422 | Booking or completion outside the contract dates (OQ-001) |
-| `PAYMENT_EXCEEDS_CONTRACT_VALUE` | 422 | Payment would exceed contract value (OQ-003 interim) |
-| `INTERNAL_ERROR` | 500 | Unexpected failure; details are logged on the server, never returned |
+| `CONTRACT_NOT_APPROVED` | 409 | Booking or check-in on a pending contract |
+| `CONTRACT_LOCKED` | 409 | Editing an approved contract (D-022) |
+| `CONTRACT_FROZEN` | 409 | Booking, check-in, or Burn Show on a frozen contract |
+| `CONTRACT_EXPIRED` | 409 | Booking on an expired contract |
+| `CONTRACT_NO_REMAINING_SESSIONS` | 409 | No session left to book or consume |
+| `CONTRACT_HAS_DEPENDENTS` | 409 | Deleting a contract with receipts, sessions, or change vouchers; `details` lists them |
+| `SESSION_LOCKED` | 409 | Changing a session in *Đã tập* (D-026) |
+| `TRAINER_OVERLAP` | 409 | PT already has a session at that time |
+| `CUSTOMER_OVERLAP` | 409 | Customer already has a session at that time |
+| `OUTSIDE_WORKING_SCHEDULE` | 409 | Cell not bookable for that PT |
+| `CLASS_FULL` | 409 | Enrollment beyond capacity |
+| `APPROVAL_SELF_DECISION` | 409 | Approving one's own submission |
+| `DUPLICATE_PHONE` | 409 | Phone already used; `details` has the existing person for merging |
+| `IDEMPOTENCY_KEY_REUSED` | 409 | Same key, different content |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | Body not JSON |
+| `PAYMENT_EXCEEDS_CONTRACT_VALUE` | 422 | Receipt above the remaining value (OQ-003 interim) |
+| `BOOKING_OUTSIDE_CONTRACT_PERIOD` | 422 | Session day outside the contract dates (OQ-001) |
+| `INTERNAL_ERROR` | 500 | Unexpected; details only in server logs |
 
-Codes are added to `src/lib/errors/app-error.ts`, this table, and the `errors` section of `messages/*.json` together.
+Codes from Phases 0–4 that map to these: `BOOKING_TRAINER_OVERLAP` → `TRAINER_OVERLAP`, `CONTRACT_NOT_ACTIVE` → `CONTRACT_NOT_APPROVED` / `CONTRACT_EXPIRED` / `CONTRACT_FROZEN`, `CONTRACT_NOT_EDITABLE` → `CONTRACT_LOCKED`, `PAYMENT_CONTRACT_CANCELLED` (kept), `CONTRACT_HAS_CHECKED_IN_BOOKING` (retired with check-in, D-026), `EMAIL_ALREADY_USED`, `CANNOT_CHANGE_OWN_ACCESS` (kept).
 
-## V1 implementation note
+## Current state
 
-The `/api/v1` contract is implemented using **Next.js Route Handlers** inside the same Vercel-deployed application. It is a logical API boundary, not a separate NestJS service.
-
-UI-specific mutations may also use Server Actions, but Server Actions and Route Handlers must reuse the same application/domain services so business rules are not duplicated.
+Phases 0–4 expose a smaller `/api/v1` from Next.js Route Handlers (customers, contracts, trainers, bookings, payments, cash transactions). Milestone M1 moves them into NestJS with the same paths where they still fit (`26_TECH_PROPOSAL.md` §8).

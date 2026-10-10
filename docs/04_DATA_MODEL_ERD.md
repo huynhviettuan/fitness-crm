@@ -1,218 +1,179 @@
 # 04 — Data Model & ERD
 
-## Proposed ERD
+Detailed schema for phase 1, based on brief §10. It is the target for `apps/api/prisma/schema.prisma`; the tables built in Phases 0–4 migrate into it (`25_BRIEF_V2_GAP_ANALYSIS.md`).
+
+**Conventions** (apply to every business table unless noted):
+
+| Convention | Rule |
+|---|---|
+| Keys | `id uuid` primary key. |
+| Branch | `branch_id` (D-014). |
+| Who and when | `created_by`, `created_at`, `updated_by`, `updated_at`; datetimes are `timestamptz` in UTC; calendar days are `date` in the gym timezone. |
+| Soft delete | `deleted_at`, `deleted_by`, `delete_reason_option_id`, `delete_reason_note`; a row in `trash_entries` keeps a snapshot (D-035, T-047). |
+| Money | `numeric(14,0)` VND (A-002). |
+| Option references | Drop-down values reference `options.id` plus an optional `*_note`, which is required when the option is "Khác" (D-016). |
+| Approval | Records that can need approval carry `approval_status` (`PENDING`, `APPROVED`, `REJECTED`, `NOT_REQUIRED`) and `approval_request_id` (D-018). |
+
+## Core axis
 
 ```mermaid
 erDiagram
-    CUSTOMER ||--o{ CONTRACT : owns
-    CUSTOMER ||--o{ BOOKING : attends
-    TRAINER ||--o{ BOOKING : serves
-    CONTRACT ||--o{ BOOKING : funds
-    BOOKING ||--o| SESSION : "fulfilled by"
-    CONTRACT ||--o{ PAYMENT : receives
-    USER |o--o| TRAINER : "signs in as"
-    USER ||--o{ CONTRACT : creates
-    USER ||--o{ PAYMENT : records
-    USER ||--o{ CASH_TRANSACTION : records
-    USER ||--o{ AUDIT_EVENT : performs
-
-    USER {
-      uuid id PK
-      string email UK
-      string name
-      boolean email_verified
-      string role "ADMIN, MANAGER, RECEPTIONIST, TRAINER, ACCOUNTANT"
-      string status "ACTIVE, DISABLED"
-      string locale "vi, en (T-027)"
-      datetime created_at
-      datetime updated_at
-    }
-
-    CUSTOMER {
-      uuid id PK
-      string customer_code UK "generated, immutable"
-      string full_name
-      string search_name "full_name without accents, for search"
-      string phone
-      string email
-      date date_of_birth
-      string status
-      text notes
-      datetime created_at
-      datetime updated_at
-    }
-
-    CONTRACT {
-      uuid id PK
-      string contract_code UK "generated, immutable"
-      uuid customer_id FK
-      string package_name
-      decimal contract_value "NUMERIC(14,0)"
-      int total_sessions
-      int opening_sessions_used "D-011, imported contracts, else 0"
-      decimal opening_paid_amount "D-011, NUMERIC(14,0), else 0"
-      date start_date
-      date end_date
-      string status "DRAFT, ACTIVE, CANCELLED"
-      string idempotency_key UK
-      uuid created_by FK
-      datetime created_at
-      datetime updated_at
-    }
-
-    TRAINER {
-      uuid id PK
-      string trainer_code UK "generated, immutable"
-      string full_name
-      string status "ACTIVE, INACTIVE"
-      uuid user_id FK, UK "nullable"
-    }
-
-    BOOKING {
-      uuid id PK
-      uuid customer_id FK
-      uuid contract_id FK
-      uuid trainer_id FK
-      datetime scheduled_start "timestamptz"
-      datetime scheduled_end "timestamptz"
-      string status "BOOKED, CHECKED_IN, COMPLETED, CANCELLED, NO_SHOW"
-      datetime created_at
-      datetime updated_at
-    }
-
-    SESSION {
-      uuid id PK
-      uuid booking_id FK, UK
-      datetime checked_in_at
-      uuid checked_in_by FK
-      datetime completed_at "null until completed"
-      uuid completed_by FK
-      datetime created_at
-      datetime updated_at
-    }
-
-    PAYMENT {
-      uuid id PK
-      uuid contract_id FK
-      decimal amount "NUMERIC(14,0)"
-      string method "CASH, BANK_TRANSFER, CARD, E_WALLET (A-020)"
-      string status "CONFIRMED, VOIDED"
-      date paid_on "gym day (T-039)"
-      string idempotency_key UK
-      uuid created_by FK
-      datetime created_at
-      datetime voided_at
-      uuid voided_by FK
-      string void_reason
-    }
-
-    CASH_TRANSACTION {
-      uuid id PK
-      string type "INCOME, EXPENSE"
-      string category
-      decimal amount "NUMERIC(14,0)"
-      string description
-      string reference
-      date occurred_on "gym day (T-039)"
-      string status "CONFIRMED, VOIDED"
-      string idempotency_key UK
-      uuid created_by FK
-      datetime created_at
-      datetime voided_at
-      uuid voided_by FK
-      string void_reason
-    }
-
-    AUDIT_EVENT {
-      uuid id PK
-      uuid actor_user_id FK
-      string entity_type
-      uuid entity_id
-      string action
-      json metadata
-      datetime created_at
-    }
+    BRANCH ||--o{ PERSON : has
+    PERSON ||--o{ CONTRACT : signs
+    SERVICE ||--o{ PRICE_TIER : priced_by
+    SERVICE ||--o{ CONTRACT : sold_as
+    CONTRACT ||--o{ CONTRACT_STAFF : "PT and Sale splits"
+    CONTRACT ||--o{ FREEZE : frozen_by
+    CONTRACT ||--o{ CHANGE_VOUCHER : changed_by
+    CONTRACT ||--o{ SESSION : consumes
+    CONTRACT ||--o{ RECEIPT : paid_by
+    CONTRACT ||--o{ EXPENSE_VOUCHER : refunded_by
+    EMPLOYEE ||--o{ SESSION : teaches
+    EMPLOYEE ||--o{ PT_SCHEDULE : works
+    SESSION ||--o| SESSION_LOG : logged_in
+    PERSON ||--o{ CUSTOMER_PLAN : follows
+    CUSTOMER_PLAN ||--o{ PLAN_LINE : contains
+    SESSION_LOG ||--o{ SET_RESULT : records
+    PERSON ||--o{ CONSULTING_STEP : worked_through
+    PERSON ||--o{ APPOINTMENT : books
+    CLASS ||--o{ CLASS_SESSION : occurs
+    CLASS_SESSION ||--o{ ATTENDANCE : records
+    ATTENDANCE }o--|| CONTRACT : consumes
+    EMPLOYEE ||--|| USER_ACCOUNT : signs_in_as
+    USER_ACCOUNT }o--|| ROLE : has
 ```
 
-Better Auth (T-028) also owns `auth_sessions`, `auth_accounts` (which holds the password hash), `auth_verifications`, and `auth_rate_limits`. They are omitted from the diagram; `prisma/schema.prisma` is the full definition.
+## Tables
 
-## Source-of-truth rules
+### Platform (brief §2, §8.4, §8.5)
 
-### Booking status and sessions
+| Table | Key fields |
+|---|---|
+| `branches` | name, address, active |
+| `employees` | code (prefix NV), full_name, birth_date, gender, phone, email, id_document (encrypted), department_option_id, team, title, branch_id, work_status |
+| `pt_schedules` | employee_id, weekday or date, start_time, end_time, kind (shift, day off) |
+| `user_accounts` | username, email, employee_id (unique), role_id, active; Better Auth `auth_*` tables keep sessions and password hashes |
+| `user_branches` | user_id, branch_id |
+| `user_access_windows` | user_id, weekdays, from_time, to_time |
+| `login_history` | user_id, at, device, ip, success |
+| `roles` | name, description, cloned_from |
+| `permissions` | key (e.g. `contracts.approve`), module, action, label — seeded from code |
+| `role_permissions` | role_id, permission_key |
+| `user_permission_overrides` | user_id, permission_key, granted (on/off) |
+| `role_data_scopes` | role_id, resource (leads, members, contracts, schedule, vouchers, staff, history), scope (ALL, OWN) |
+| `role_field_masks` | role_id, field (member phone, email, address, documents; receipt totals) |
+| `approval_rules` | action_type, required, approver_role_id, escalation_threshold, escalation_role_id, overdue_hours |
+| `approval_requests` | action_type, entity_type, entity_id, payload (json), submitted_by, status, decided_by, decided_at, reason_option_id, reason_note; check: decided_by ≠ submitted_by |
+| `option_lists` / `options` | list key (channels, sources, needs, refusal reasons, delete reasons, freeze reasons, exception reasons, step results, flags, actions, session summaries, expense types, payment methods, departments, …); option: code, label_vi, label_en, order, active, is_other |
+| `system_parameters` | key, value (json), description — timers, thresholds, calendar hours, cancel cut-off, freeze reminder days, re-care days |
+| `session_status_rules` | status key, label, consumes, credits_pt, color token, active |
+| `code_sequences` | entity, prefix, next_value — codes never reused (D-038) |
+| `audit_events` | actor_user_id, entity_type, entity_id, action, before (json), after (json), at (T-048) |
+| `trash_entries` | entity_type, entity_id, snapshot (json), deleted_by, deleted_at, reason_option_id, reason_note — no update or delete path |
+| `notifications` | user_id, kind, title, link, read_at |
+| `files` | storage_key, mime, size, owner entity, uploaded_by |
 
-The booking's `status` is the only lifecycle status (T-011). A session record is created at check-in and stores who checked in and completed, and when. It has no status of its own.
+### Leads, consulting, customers (brief §3, §4)
 
-### Remaining sessions
+| Table | Key fields |
+|---|---|
+| `people` | lead_code, customer_code (set at Show), stage (LEAD, CUSTOMER), status (lead statuses, D-020), pic_employee_id, full_name, gender, birth_date, phone (unique per active person), email, nationality_group, nationality, id_document (encrypted), address, health_basic (encrypted), customer_group_option_id, channel_option_id, source_option_id, source_type (ORGANIC, PAID), source_detail, need_group_option_id, need_detail_option_id, need_note, pain_status_option_id, assessment_type_option_id, emergency_contact, consent_at, notes |
+| `person_merges` | kept_person_id, merged_person_id, by, at |
+| `lead_status_history` | person_id, from_status, to_status, reason_option_id, reason_note, by, at |
+| `consulting_checklists` / `consulting_step_templates` | versioned checklist; step key, order, label, trigger, delay, required, result list |
+| `consulting_steps` | person_id, template_step_id, due_at, done_at, done_by, result_option_id, note, timing (ON_TIME, LATE, SKIPPED) |
+| `appointments` | person_id, at, assessment_type_option_id, confirmation_1, confirmation_2, outcome (SHOW, NO_SHOW) |
+| `recare_queue` | person_id, contact_on, reason, resolved_at |
+| `consulting_audits` | person_id, auto_score, compliance_pct, manager_result (PASS, FAIL), manager_note, ai_suggestion (json), audited_by |
+| `consulting_scripts` | situation_option_id, text_vi, text_en, active |
 
-```text
-completed_sessions = COUNT(booking WHERE booking.contract_id = contract.id AND booking.status = 'COMPLETED')
-remaining_sessions = contract.total_sessions - contract.opening_sessions_used - completed_sessions
-```
+### Services and contracts (brief §5)
 
-`opening_sessions_used` and `opening_paid_amount` are 0 for contracts created in this system. For contracts imported at go-live they hold what happened before go-live (D-011); they are set once, audited, and never edited.
+| Table | Key fields |
+|---|---|
+| `services` | name, image, kind (PT, CLASS, MEMBER), branches, allowed_hours, commission_rate, is_group, max_members, max_per_week, max_per_day, active_from, active_to, notes |
+| `price_tiers` | service_id, version, effective_from, min_sessions, max_sessions, unit_price, validity_months, validity_days; contracts reference the version they used |
+| `quick_packages` | service_id, sessions, label |
+| `promotions` | name, kind (PERCENT, AMOUNT), value, from, to, voucher_code |
+| `contracts` | code, person_id, service_id, price_tier_id, contract_type (NEW, RENEW), contract_date, sessions_bought, bonus_sessions, bonus_months, bonus_days, display_name (generated), tier_unit_price, approved_unit_price, is_exception_price, exception_reason_option_id, exception_note, promotion_id, discount_pct, discount_amount, total_discount, vat_pct, vat_amount, value, activation_deadline, planned_start, start_date, end_date, previous_contract_id, signed, signed_on, signed_by, status (PENDING_APPROVAL, ACTIVE, FROZEN, ON_HOLD, CANCELLED; EXPIRED derived), approval_status, approved_by, payment_due_on, opening_sessions_used, opening_paid_amount (D-011), legacy_code |
+| `contract_members` | contract_id, person_id (companions on group packages, OQ-010) |
+| `contract_staff` | contract_id, employee_id, role (PT, SALE), share_pct; check: shares per role sum to 100 |
+| `freezes` | contract_id, from, to, freeze_reason, unfreeze_reason, proposed_days, granted_days, decided_by; at most one open freeze per contract |
+| `change_vouchers` | code, contract_id, kind (RENEWAL, UPGRADE, HOLD, TRANSFER, BRANCH_TRANSFER, CONVERSION, CANCELLATION), fields per kind (json validated per kind: dates, months, days, sessions, amounts, target person, target branch, new service, paid, used value, fee, refund), approval_status |
 
-Only the booking status is counted (T-012). `session.completed_at` records when and by whom, but is not a second source of truth.
+### Schedule and classes (brief §6)
 
-Do not let the frontend submit a trusted remaining-session number.
+| Table | Key fields |
+|---|---|
+| `sessions` | contract_id, person_id, employee_id (PT), start_at, end_at, status_key, consumes, credits_pt (snapshot, T-050), confirmation (ADMIN_CLICK, MANUAL_ADD, DEVICE), added_by_hand, burn_reason, note, status_set_by, status_set_at; exclusion constraints: no overlap per PT and per person while the status holds the slot (A-024) |
+| `pt_payroll_adjustments` | employee_id, session_id, applies_to_period, sessions_delta, amount |
+| `classes` | name, coach_employee_id, branch_id, weekdays, start_time, end_time, capacity, active |
+| `class_sessions` | class_id, date, coach_employee_id, status |
+| `class_enrollments` / `attendance` | class_session_id, person_id, contract_id (nullable for drop-in), status (ENROLLED, PRESENT, ABSENT), consumes (snapshot) |
 
-### Debt
+### Workouts (brief §7)
 
-```text
-paid_amount = contract.opening_paid_amount + SUM(payment.amount WHERE payment.status = CONFIRMED)
-debt = contract.contract_value - paid_amount
-```
+| Table | Key fields |
+|---|---|
+| `equipment`, `body_areas` (parent_id), `exercises` (area, equipment, kind STRENGTH/CARDIO, description, video_url), `stages` | catalogs with active flags |
+| `plan_templates`, `plan_template_stages`, `plan_template_exercises` | template by stage and exercise |
+| `customer_plans` | person_id, contract_id, employee_id, branch_id, date, phase, goal, pt_review, master_review, notes, approval_status |
+| `plan_lines` | customer_plan_id, week, session_no, stage_id, exercise_id, set_no, weight, reps, rest, rir, tempo, technique, notes, video; cardio: duration, speed, heart_rate |
+| `session_logs` | session_id (unique), stress, stress_note, energy, energy_note, impact_option_id, srpe, srpe_note, energy_after, energy_after_note, summary_option_id, coach_notes |
+| `set_results` | session_log_id, plan_line_id, weight, reps, rir; cardio: duration, speed, heart_rate; flag_option_id, action_option_id, note |
+| `escalations` | set_result_id, task_id, reviewed_by, reviewed_at, handling_note |
 
-### Contract status
+### Money (brief §8.1)
 
-The stored status is `DRAFT`, `ACTIVE`, or `CANCELLED`. A contract is reported as `EXPIRED` when its stored status is `ACTIVE` and `end_date` is before today in the gym timezone (T-018, A-001).
+| Table | Key fields |
+|---|---|
+| `receipts` | number, received_on, person_id, contract_id or change_voucher_id, amount, method_option_id, received_by, sales_employee_id, branch_id, note, proof_file_id, approval_status, idempotency_key; check amount > 0 |
+| `expense_vouchers` | number, paid_on, expense_type_option_id, payee, amount, method_option_id, paid_by, branch_id, note, contract_id (refunds), payout_period, payout_employee_id, approval_status, idempotency_key; check amount > 0 |
+| `payout_lines` | expense_voucher_id, employee_id, contract_id, period, sessions, amount — unique per session paid, so nothing is paid twice |
+| `cash_opening_balances` | branch_id, method_option_id, period_start, amount |
 
-### Booking references
+### Tasks and email (brief §8.2, §8.3)
 
-A booking's `customer_id` must equal its contract's `customer_id` until OQ-010 is answered. The service validates this.
-
-### Booking / session uniqueness
-
-A booking produces at most one session record, enforced by the unique `session.booking_id`.
-
-### Numeric precision
-
-Use fixed decimal types for money. Do not use floating point for currency (T-023). Money columns are `NUMERIC(14,0)` under A-002.
-
-### Time
-
-All datetime columns are `timestamptz` (Prisma `@db.Timestamptz(3)`) and store UTC. Display uses the gym timezone (A-001).
+| Table | Key fields |
+|---|---|
+| `tasks` | title, description, assigner_id, assignee_user_id or assignee_department_option_id, due_at, priority, status (NEW, ACCEPTED, IN_PROGRESS, DONE, CANCELLED), accepted_at, source (MANUAL, STUDIO_NOTICE, ESCALATION, APPROVAL, FREEZE, EMAIL_FAILURE, …), entity_type, entity_id |
+| `task_comments` | task_id, author_id, body, mentions |
+| `email_templates` | event_key, enabled, subject_vi, body_vi, subject_en, body_en |
+| `email_outbox` | person_id, event_key, language, to, subject, body, status (QUEUED, SENT, FAILED), attempts, provider_id, sent_at, error |
 
 ## Database-enforced constraints
 
-These constraints must exist in the database, not only in service code, because concurrent requests can pass a service-level check at the same time.
-
 | Constraint | Rule |
 |---|---|
-| Unique `customer.customer_code`, `contract.contract_code`, `trainer.trainer_code` | BR-001, T-019. Codes come from the `customer_code_seq`, `contract_code_seq`, and `trainer_code_seq` sequences (customized migrations) |
-| Unique `user.email`, `trainer.user_id` | A-010 |
-| Unique `session.booking_id` | one session per booking |
-| Unique `contract.idempotency_key`, `payment.idempotency_key`, `cash_transaction.idempotency_key` | T-015 |
-| Check `contract.total_sessions > 0`, `0 <= opening_sessions_used <= total_sessions`, money not negative, `end_date >= start_date` | Contract sanity; contract codes come from `contract_code_seq` |
-| Check `booking.scheduled_end > booking.scheduled_start` | BR-011 |
-| Check `session.completed_at` and `session.completed_by` are set together | Completion facts are recorded together |
-| Check `payment.amount > 0` | BR-014 |
-| Check `cash_transaction.amount > 0` (`type` carries the direction) | — |
-| Check a `VOIDED` payment or cash transaction has `voided_at`, `voided_by`, and `void_reason`, and a `CONFIRMED` one has none | A-008, A-009 |
-| Exclusion: no overlapping active bookings per trainer | BR-010, T-014 |
+| Unique codes per entity, never reused | D-038; `code_sequences` and unique indexes |
+| Unique idempotency keys | contracts, receipts, expense vouchers, change vouchers (T-015) |
+| Exclusion: no overlapping sessions per PT and per person while the status holds the slot | D-030, T-014, A-024 |
+| `end_at > start_at` on sessions | BR-011 |
+| Amount > 0 on receipts and expense vouchers | — |
+| PT and Sale shares sum to 100 per contract | D-022 (deferred trigger) |
+| One open freeze per contract | D-023 |
+| Approval decided by someone other than the submitter | D-018 |
+| `sessions_bought > 0`, money not negative, `end_date ≥ start_date` on contracts | carried over |
+| Trash entries and audit events are insert-only (no `UPDATE`/`DELETE` grants for the app role) | D-035, T-048 |
 
-Trainer overlap exclusion constraint, as in migration `20261010013008_bookings`:
+Overlap constraint pattern (as in migration `20261010013008_bookings`, applied per PT and per person):
 
 ```sql
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-
-ALTER TABLE "bookings" ADD CONSTRAINT "booking_trainer_no_overlap"
-  EXCLUDE USING gist (
-    "trainer_id" WITH =,
-    tstzrange("scheduled_start", "scheduled_end", '[)') WITH &&
-  )
-  WHERE ("status" IN ('BOOKED', 'CHECKED_IN', 'COMPLETED'));
+ALTER TABLE "sessions" ADD CONSTRAINT "session_pt_no_overlap"
+  EXCLUDE USING gist ("employee_id" WITH =, tstzrange("start_at", "end_at", '[)') WITH &&)
+  WHERE ("holds_slot" AND "deleted_at" IS NULL);
 ```
 
-- `[)` makes back-to-back bookings legal (A-004). The `WHERE` clause applies the A-005 definition of active.
-- `scheduled_start` and `scheduled_end` must be `timestamptz`. `tstzrange` over plain `timestamp` columns is not immutable and PostgreSQL rejects the constraint.
-- Prisma does not model exclusion constraints. Add it by editing the SQL of a migration created with `prisma migrate dev --create-only`. An integration test must assert that the constraint exists (see `13_TEST_STRATEGY.md`).
+`holds_slot` is stored with the status snapshot (A-024), because the exclusion predicate must be immutable.
+
+## Derived values
+
+| Value | Formula |
+|---|---|
+| Sessions total | sessions bought + bonus sessions + change-voucher adjustments (renewal, upgrade, transfer) |
+| Sessions used | opening sessions used (D-011) + COUNT(sessions with `consumes`) + COUNT(attendance with `consumes`) |
+| Sessions left | total − used |
+| Paid | opening paid amount + SUM(valid receipts) — valid means approved and not deleted |
+| Debt | contract value (after discounts and VAT) − paid |
+| Contract *Expired* | status ACTIVE and end date (plus granted freeze and hold days) before today |
+| PT credited sessions | COUNT(sessions with `credits_pt`) per PT, contract, and period, plus adjustments |

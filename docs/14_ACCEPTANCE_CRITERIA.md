@@ -1,60 +1,36 @@
-# 14 — MVP Acceptance Criteria
+# 14 — Acceptance Criteria
 
-## Customer
+The customer's acceptance criteria (brief §12), translated. Each one is tested before the milestone that delivers it is accepted on staging. Traceability: `21_TRACEABILITY_MATRIX.md`.
 
-- [ ] Staff can create a customer.
-- [ ] Customer receives a unique customer code.
-- [ ] Duplicate customer code is rejected.
-- [ ] Staff can search by code/name/phone.
-- [ ] Customer detail shows all contracts.
+| ID | Criterion | Milestone |
+|---|---|---|
+| AC-01 | An account without permission for a module does not see its menu and cannot reach it by direct URL; a role with phone numbers hidden never sees them on any screen or export. | M1 |
+| AC-02 | Admin changes permissions, approval thresholds, price tiers, timers, and session status rules on screen; changes take effect immediately, with no developer. | M1, M4, M5 |
+| AC-03 | Every consulting step result, checklist item, and reason is a drop-down; admin adds or deactivates an option on screen, the change shows immediately, and old data is unchanged. | M1, M2 |
+| AC-04 | Choosing "Khác" in any drop-down cannot be saved without a note. | M1 |
+| AC-05 | Actions in approval groups have no effect until approved; the submitter cannot approve them; admin switches approval on or off and changes approvers per action type on screen. | M1, M4 |
+| AC-06 | A lead created from the form gets the right channel and source, is assigned in the right round-robin order, and the manager is notified. | M2 |
+| AC-07 | Reminder steps at 60 minutes, 24 hours, 3 hours and 60 minutes before the visit, and 15 days are created at the right time; overdue steps appear in "Today's tasks" and count as late in the audit; the "Báo Studio" step creates a task for the coach manager. | M2 |
+| AC-08 | The consulting dashboard gives the right lead counts, booking rate, and show rate per consultant when compared with the Excel files of September and October 2026. | M3 |
+| AC-09 | One person goes through lead → appointment → show → contract → session with a single record. | M2, M4, M5 |
+| AC-10 | Entering any session count gives the right tier unit price, end date, and display name; a price different from the tier flags the contract "Exception price" and it cannot be activated until approved. | M4 |
+| AC-11 | An approved contract cannot be edited, even by admin; a contract not yet approved cannot be booked. | M4, M5 |
+| AC-12 | Deleting a contract with receipts is blocked and the receipts to delete first are listed; after deleting in the right order, total receipts and revenue fall by exactly the deleted amounts. | M4 |
+| AC-13 | Deleted data is in the trash with its reason, viewable only by management, and cannot be deleted. | M1, M4 |
+| AC-14 | A frozen contract cannot be booked or checked in; reactivation shows the frozen days and the proposed new end date; the end date changes only after admin confirms and is never extended twice; a freeze over 10 days reminds the manager. | M4 |
+| AC-15 | "Đã tập" and no-show reduce sessions left by exactly 1 and credit the PT; "Hủy lịch" and delete do not; each status shows its color; booking is refused when no sessions are left, the contract has expired, or times overlap. | M5 |
+| AC-16 | A session in "Đã tập" cannot change status; when admin deletes it, the customer gets exactly 1 session back and the PT exactly 1 credit less; if its period was already paid, the next period has an adjustment line. | M5 |
+| AC-17 | Every credited or refunded session sends exactly one email to the customer, from the template and in the right language, with its sending status stored in the customer profile. | M6 |
+| AC-18 | The PT revenue allocation report matches GymMaster's export on the same data; PT payout vouchers never pay a session twice. | M5 |
+| AC-19 | Each contract's paid amount and debt always equal the sum of its valid receipts; cash book closing balance equals opening balance plus receipts minus expenses. | M4 |
+| AC-20 | A customer's plans and every session log are visible in their profile, with plan and actual on the same row; choosing a Cardio exercise shows time, speed, and heart rate. | M7 |
+| AC-21 | Choosing Action "Stop + Escalation" notifies the manager and Master, and the item stays in the waiting list until handled; the weekly workout dashboard gives the right Flag and Action percentages. | M7 |
+| AC-22 | Data imported from GymMaster matches the number of customers, contract value, paid amounts, and sessions left. | M9 |
+| AC-23 | The lead, PT calendar, and session log screens work on a phone. | M2, M5, M7 |
 
-## Contract
+## Engineering acceptance (every milestone)
 
-- [ ] Staff can create a session-based contract for a customer.
-- [ ] Contract shows total/completed/remaining sessions.
-- [ ] Contract shows value/paid/debt.
-- [ ] Debt is calculated from confirmed payments.
-- [ ] An active contract past its end date shows as expired, without any scheduled job.
-
-## Booking
-
-- [ ] Staff can create a PT booking.
-- [ ] Same trainer cannot have overlapping active bookings, including when two bookings are created at the same time.
-- [ ] Booking creation does not consume a session.
-- [ ] Staff can reschedule and cancel eligible bookings.
-
-## Session
-
-- [ ] Staff/PT can manually check in an eligible booking.
-- [ ] Check-in does not consume a session.
-- [ ] Completion consumes exactly one session.
-- [ ] Repeated completion does not consume again, including concurrent completion requests.
-- [ ] No-show does not consume a session in V1.
-- [ ] Completion fails when no sessions remain, including when the last sessions are completed at the same time.
-
-## Finance
-
-- [ ] Authorized user can record a confirmed contract payment.
-- [ ] Contract debt updates correctly.
-- [ ] Submitting the same payment twice (double-click or retry) records one payment.
-- [ ] Voiding a payment requires a reason and removes it from the paid amount.
-- [ ] Authorized user can record income/expense transactions.
-
-## Dashboard / reports
-
-- [ ] Dashboard shows today's booking/session status totals.
-- [ ] Dashboard shows financial summary.
-- [ ] Session, PT, contract/debt, and finance reports are available.
-
-## Security
-
-- [ ] Users must authenticate.
-- [ ] RBAC is enforced server-side.
-- [ ] A disabled user loses access on their next request.
-- [ ] Critical actions produce audit events.
-
-## Production readiness
-
-- [ ] Production database backup is enabled.
-- [ ] Restore procedure is documented.
-- [ ] Critical E2E suite passes.
+- Lint, type-check, unit, integration, E2E, and security suites pass in CI.
+- Migrations apply cleanly to a copy of production data on staging.
+- The milestone runs on staging for the owner's trial.
+- Docs match the behavior (`AGENTS.md` §7).

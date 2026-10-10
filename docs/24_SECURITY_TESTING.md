@@ -25,6 +25,10 @@ Scanning our own app locally needs no permission. Before scanning a deployed env
 | **A09 Security Logging & Alerting Failures** | JSON security events (below); domain audit log | `tests/integration/security.int.test.ts`: denials and sign-ins are logged; passwords never appear in logs |
 | **A10 Mishandling of Exceptional Conditions** | Errors leave in the documented shape (`handleApi`, `runAction`); unexpected errors become `INTERNAL_ERROR` with details only in the server log; input fails closed | `e2e/security/errors.spec.ts`: malformed JSON, wrong types, non-object bodies, oversized fields, control characters, bad ids, unsupported methods, absurd paging — all documented errors without stack traces |
 
+**Brief v2 (milestones M1–M11):** the suite moves to the NestJS API. Every endpoint declares a permission key; an automated test walks the OpenAPI document and checks that every endpoint refuses anonymous calls, refuses a role without the permission, applies data scope (another consultant's lead is `404`) and branch access, and returns no masked field. New abuse cases: self-approval, using a pending record, editing an approved contract, deleting without a reason or out of order, double payouts, concurrent reactivation, sign-in outside allowed hours, masked fields in Excel exports, and access to ID and health data (`13_TEST_STRATEGY.md`). Manual pentest (layer 3) before go-live and after M4 and M5 (money and sessions).
+
+The entries below describe the Phases 0–4 code.
+
 Phase 2 added `e2e/security/contracts.spec.ts`: contract role matrix, mass assignment of status/code/opening balances, Idempotency-Key required and not reusable, and input errors.
 
 Phase 4 added `e2e/security/finance.spec.ts`: payment, void, and cash role matrix (a trainer cannot void, E2E-009); mass assignment of status, contract, and recorder; INT-004 and INT-005 over HTTP, including five identical submissions at once; input errors, future dates, overpayment, and payments on a cancelled contract.

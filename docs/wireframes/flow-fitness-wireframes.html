@@ -1,0 +1,514 @@
+<title>Flow Fitness Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a drafting board — tabs on top, each screen drawn in a device frame, developer notes in a mono margin column. */
+:root {
+  --paper: #f4f6f7;
+  --sheet: #ffffff;
+  --ink: #1d2a30;
+  --muted: #5f7079;
+  --line: #d3dadd;
+  --hatch: #e8edef;
+  --accent: #0f7c7a;
+  --accent-soft: #d8efed;
+  --s-booked: #d64545;
+  --s-trained: #2f6fd6;
+  --s-cancel: #8457c9;
+  --s-noshow: #a77d00;
+  --ok: #2e8b57;
+  --bad: #c2410c;
+  --font-ui: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --font-note: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12191c; --sheet: #1a2428; --ink: #e3ecef; --muted: #93a6ae; --line: #2f3d43; --hatch: #22302f;
+    --accent: #3cc2bd; --accent-soft: #163b3a; --s-booked: #ef6b6b; --s-trained: #6ea0ff; --s-cancel: #b48cf0; --s-noshow: #e5bd45;
+    --ok: #5cc28a; --bad: #f08a4b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12191c; --sheet: #1a2428; --ink: #e3ecef; --muted: #93a6ae; --line: #2f3d43; --hatch: #22302f;
+  --accent: #3cc2bd; --accent-soft: #163b3a; --s-booked: #ef6b6b; --s-trained: #6ea0ff; --s-cancel: #b48cf0; --s-noshow: #e5bd45;
+  --ok: #5cc28a; --bad: #f08a4b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; }
+h1 { font-size: 1.6rem; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 0; text-wrap: balance; }
+h3 { font-size: 0.95rem; margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 70ch; margin-top: 6px; }
+.note, .tag, .mono { font-family: var(--font-note); font-size: 12px; }
+header.top { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+nav.tabs button { font: inherit; font-weight: 600; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 10px 12px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.board { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .board { grid-template-columns: minmax(0, 1fr); } }
+.notes { display: grid; gap: 10px; }
+.notes li { list-style: none; background: var(--sheet); border: 1px dashed var(--line); border-radius: 6px; padding: 10px; font-family: var(--font-note); font-size: 12px; color: var(--muted); }
+.notes ol { margin: 0; padding: 0; display: grid; gap: 10px; }
+.notes b { color: var(--ink); font-weight: 600; }
+.pin { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--sheet); font: 600 11px var(--font-note); vertical-align: middle; margin-right: 4px; flex: none; }
+.screens { display: grid; gap: 20px; min-width: 0; }
+.frame { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-width: 0; }
+.frame > .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.dots { display: flex; gap: 4px; } .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); display: block; }
+.frame .body { padding: 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.between { justify-content: space-between; }
+.btn { font: inherit; font-size: 12px; font-weight: 600; border: 1px solid var(--line); background: var(--sheet); color: var(--ink); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+.chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; background: var(--hatch); color: var(--muted); white-space: nowrap; }
+.chip.ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.chip.late { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.chip.acc { background: var(--accent-soft); color: var(--accent); }
+.field { display: grid; gap: 4px; font-size: 12px; min-width: 0; }
+.field > span { color: var(--muted); }
+.input, select.input { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--sheet); color: var(--ink); border-radius: 6px; padding: 6px 8px; width: 100%; }
+.skel { height: 9px; border-radius: 4px; background: var(--hatch); }
+.scroll { overflow-x: auto; }
+/* Leads */
+.kanban { display: grid; grid-auto-flow: column; grid-auto-columns: 180px; gap: 10px; padding-bottom: 6px; }
+.col { background: var(--paper); border-radius: 8px; padding: 8px; display: grid; gap: 8px; align-content: start; }
+.col h3 { font-size: 12px; display: flex; justify-content: space-between; color: var(--muted); }
+.card { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 8px; display: grid; gap: 4px; font-size: 12px; }
+.card b { font-size: 13px; }
+.detail { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+.panel { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.steps { display: grid; gap: 6px; }
+.step { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; font-size: 12px; padding: 6px; border-radius: 6px; }
+.step.now { background: var(--accent-soft); }
+.box { width: 16px; height: 16px; border: 1.5px solid var(--muted); border-radius: 4px; display: grid; place-items: center; font-size: 11px; color: var(--sheet); }
+.box.done { background: var(--ok); border-color: var(--ok); }
+.timeline { display: grid; gap: 8px; font-size: 12px; }
+.timeline div { display: grid; grid-template-columns: 70px 1fr; gap: 8px; }
+.timeline .mono { color: var(--muted); }
+/* Calendar */
+.grid-cal { display: grid; font-size: 11px; min-width: 1200px; }
+.grid-cal .h { color: var(--muted); padding: 4px 0 4px 4px; border-left: 1px solid var(--line); font-family: var(--font-note); }
+.grid-cal .pt { position: sticky; left: 0; background: var(--sheet); padding: 8px; border-top: 1px solid var(--line); font-weight: 600; z-index: 1; }
+.grid-cal .lane { position: relative; border-top: 1px solid var(--line); height: 54px; display: grid; }
+.cell { border-left: 1px solid var(--line); }
+.cell.free { background: color-mix(in srgb, var(--ok) 13%, transparent); }
+.cell.off { background: repeating-linear-gradient(45deg, var(--hatch) 0 4px, transparent 4px 8px); }
+.blk { position: absolute; top: 5px; bottom: 5px; border-radius: 5px; padding: 3px 6px; color: var(--sheet); font-size: 11px; line-height: 1.25; overflow: hidden; }
+.blk b { display: block; }
+.dialog { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; max-width: 360px; background: var(--sheet); box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
+.kv { display: grid; grid-template-columns: 110px 1fr; gap: 4px 8px; font-size: 12px; }
+.kv span:nth-child(odd) { color: var(--muted); }
+/* Phones */
+.phones { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.phone { width: 300px; max-width: 100%; background: var(--sheet); border: 1px solid var(--line); border-radius: 26px; padding: 10px; }
+.phone .scr { border-radius: 18px; background: var(--paper); padding: 12px; display: grid; gap: 10px; min-height: 540px; align-content: start; }
+.phone .scr h3 { font-size: 14px; }
+.scale { display: flex; gap: 3px; }
+.scale i { flex: 1; height: 22px; border-radius: 4px; background: var(--hatch); display: grid; place-items: center; font-style: normal; font-size: 10px; color: var(--muted); }
+.scale i.on { background: var(--accent); color: var(--sheet); }
+table.sets { border-collapse: collapse; width: 100%; font-size: 11px; }
+table.sets th { text-align: left; color: var(--muted); font-weight: 500; padding: 4px 3px; border-bottom: 1px solid var(--line); }
+table.sets td { padding: 5px 3px; border-bottom: 1px solid var(--line); vertical-align: top; font-variant-numeric: tabular-nums; }
+.plan { color: var(--muted); font-family: var(--font-note); font-size: 11px; }
+.act { display: inline-block; min-width: 34px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; background: var(--sheet); }
+.alert { border: 1px solid var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); color: var(--ink); border-radius: 8px; padding: 8px; font-size: 12px; }
+/* Permissions */
+.perm { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; }
+@media (max-width: 760px) { .perm { grid-template-columns: minmax(0, 1fr); } }
+.roles { display: grid; gap: 4px; align-content: start; }
+.roles div { padding: 7px 9px; border-radius: 6px; font-size: 13px; }
+.roles .sel { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; min-width: 560px; }
+table.matrix th, table.matrix td { border-bottom: 1px solid var(--line); padding: 6px; text-align: center; }
+table.matrix th:first-child, table.matrix td:first-child { text-align: left; }
+table.matrix th { color: var(--muted); font-weight: 500; }
+.ck { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--muted); vertical-align: middle; }
+.ck.on { background: var(--accent); border-color: var(--accent); }
+.indent { padding-left: 18px !important; color: var(--muted); }
+.panel-tab[hidden] { display: none !important; }
+.other-note { border-color: var(--bad); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Flow Fitness CRM · Wireframes</h1>
+      <p class="lede">Low-fidelity screens the brief asks for before development starts (brief §12): leads, PT calendar, session log, and permissions. Screen text is Vietnamese, as in the product; notes on the right are for developers and cite the docs.</p>
+    </div>
+    <div class="legend" aria-label="Session status colors (initial configuration)">
+      <span><i class="sw" style="background:var(--s-booked)"></i>Đặt lịch</span>
+      <span><i class="sw" style="background:var(--s-trained)"></i>Đã tập</span>
+      <span><i class="sw" style="background:var(--s-cancel)"></i>Hủy lịch</span>
+      <span><i class="sw" style="background:var(--s-noshow)"></i>Khách không đến</span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Screens">
+    <button role="tab" id="tab-leads" aria-controls="leads" aria-selected="true">Lead &amp; tư vấn</button>
+    <button role="tab" id="tab-calendar" aria-controls="calendar" aria-selected="false">Lịch PT</button>
+    <button role="tab" id="tab-log" aria-controls="log" aria-selected="false">Nhật ký buổi tập</button>
+    <button role="tab" id="tab-permissions" aria-controls="permissions" aria-selected="false">Phân quyền</button>
+  </nav>
+
+  <!-- LEADS -->
+  <section class="panel-tab" id="leads" role="tabpanel" aria-labelledby="tab-leads">
+    <div class="board">
+      <div class="screens">
+        <div class="frame">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span>Lead &amp; tư vấn › Kanban · Chi nhánh: Flow Thảo Điền</div>
+          <div class="body" style="display:grid;gap:12px">
+            <div class="row between">
+              <div class="row"><span class="pin">1</span><input class="input" style="width:220px" aria-label="Tìm lead" placeholder="Tìm tên, SĐT, mã lead"><select class="input" style="width:150px" aria-label="Kênh"><option>Kênh: Tất cả</option></select><select class="input" style="width:150px" aria-label="Người phụ trách"><option>PIC: Của tôi</option></select></div>
+              <div class="row"><button class="btn">Xuất Excel</button><button class="btn primary">+ Lead nhanh</button></div>
+            </div>
+            <div class="scroll">
+              <div class="kanban" id="kanban"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span>Lead LD000418 · Trần Minh Anh</div>
+          <div class="body detail">
+            <div class="panel">
+              <h3>Hồ sơ lead</h3>
+              <label class="field"><span>Kênh liên hệ</span><select class="input" id="f-channel"><option>WhatsApp</option><option>Zalo</option><option>Messenger</option></select></label>
+              <label class="field"><span>Nguồn lead · Organic / Paid</span><select class="input" id="f-source"><option>Google Maps · Organic</option><option>Fanpage · Paid</option></select></label>
+              <label class="field"><span>Nhóm nhu cầu</span><select class="input" id="f-need"><option>2 - Pain Relief &amp; Better Movement</option><option>1 - Body Transformation</option></select></label>
+              <label class="field"><span><span class="pin">2</span>Chi tiết nhu cầu</span>
+                <select class="input" id="f-need-detail"><option>2.04 Đau thắt lưng khi ngồi lâu</option><option value="other">Khác…</option></select>
+              </label>
+              <label class="field" id="other-wrap" hidden><span>Nội dung "Khác" (bắt buộc)</span><input class="input other-note" id="f-other" placeholder="Nhập nội dung để lưu"></label>
+              <label class="field"><span>Pain Status</span><select class="input" id="f-pain"><option>2.1 (Coach)</option><option>2.2 (Expert)</option><option>No</option></select></label>
+              <label class="field"><span>Loại Assessment</span><select class="input" id="f-assess"><option>Pain Assessment</option><option>Physical Assessment</option></select></label>
+            </div>
+            <div class="panel">
+              <div class="row between"><h3><span class="pin">3</span>Hành trình tư vấn</h3><span class="chip acc">Tuân thủ 86%</span></div>
+              <div class="steps" id="steps"></div>
+              <div class="row"><button class="btn primary">Chuyển thành khách hàng</button><span class="note">needs CCCD, DOB, nationality, email</span></div>
+            </div>
+            <div class="panel">
+              <h3>Dòng thời gian</h3>
+              <div class="timeline">
+                <div><span class="mono">09/10 18:02</span><span>Lead vào từ WhatsApp, phân cho Hoàng Lan</span></div>
+                <div><span class="mono">09/10 18:20</span><span>Bước 1 xong · Pain Status 2.1</span></div>
+                <div><span class="mono">09/10 19:21</span><span>Nhắc lần 1 · Done</span></div>
+                <div><span class="mono">10/10 09:05</span><span>Đặt lịch 11/10 17:30 · Pain Assessment</span></div>
+              </div>
+              <h3><span class="pin">4</span>Kịch bản</h3>
+              <select class="input" aria-label="Tình huống"><option>Khách có cơn đau</option><option>Mời Assessment</option><option>Giá Hybrid</option></select>
+              <div class="skel"></div><div class="skel" style="width:80%"></div>
+              <div class="row"><button class="btn">Sao chép VI</button><button class="btn">Copy EN</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="notes"><ol>
+        <li><span class="pin">1</span><b>Shared list template.</b> Filters, search, Export Excel, Add — same on every list (brief §1). Data scope: a consultant sees only their own leads (D-017).</li>
+        <li><span class="pin">2</span><b>Drop-down + "Khác".</b> Choose "Khác…" to see the required note appear; save is blocked while it is empty (D-016, AC-04). Need detail is a coded catalog.</li>
+        <li><span class="pin">3</span><b>Timed checklist.</b> Each step is a task with a deadline from parameters (60 min, 24 h, 3 h, 60 min, 15 days); result is a drop-down; late steps count in the audit and in "Việc hôm nay" (D-020, AC-07). Báo Studio creates a task for the coach manager.</li>
+        <li><span class="pin">4</span><b>Script library.</b> Situations with VI and EN answers; copy to paste into the chat (D-045).</li>
+        <li><b>Phone.</b> Kanban becomes a status filter + list; quick-add is one column (AC-23).</li>
+      </ol></aside>
+    </div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="panel-tab" id="calendar" role="tabpanel" aria-labelledby="tab-calendar" hidden>
+    <div class="board">
+      <div class="screens">
+        <div class="frame">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span>Lịch PT · Thứ Bảy 11/10/2026</div>
+          <div class="body" style="display:grid;gap:12px">
+            <div class="row between">
+              <div class="row"><button class="btn" aria-label="Ngày trước">‹</button><button class="btn">Hôm nay</button><button class="btn" aria-label="Ngày sau">›</button><span class="pin">1</span><button class="btn primary">Ngày</button><button class="btn">Tuần</button></div>
+              <div class="row"><select class="input" style="width:160px" aria-label="Chi nhánh"><option>Flow Thảo Điền</option></select><select class="input" style="width:150px" aria-label="Huấn luyện viên"><option>Tất cả HLV</option></select><input class="input" style="width:150px" aria-label="Khách hàng" placeholder="Khách hàng"></div>
+            </div>
+            <div class="scroll"><div class="grid-cal" id="cal"></div></div>
+            <div class="row" style="align-items:flex-start;gap:16px">
+              <div class="dialog" role="dialog" aria-label="Chi tiết lịch tập">
+                <div class="row between"><h3>Chi tiết lịch tập</h3><span class="chip" style="background:color-mix(in srgb,var(--s-booked) 18%,transparent);color:var(--s-booked)">Đặt lịch</span></div>
+                <div class="kv">
+                  <span>Huấn luyện viên</span><span>Trần Minh Khoa</span>
+                  <span>Hội viên</span><span>HV0013 · Nguyễn Văn An · •••• 456</span>
+                  <span>Gói tập</span><span>HD000254 · Hybrid Training 30 buổi</span>
+                  <span>Giờ</span><span>17:00 – 18:00</span>
+                  <span>Còn lại</span><span>12 buổi</span>
+                </div>
+                <div class="row"><span class="pin">2</span><button class="btn primary">Đã tập</button><button class="btn">Khách không đến</button><button class="btn">Hủy lịch</button><button class="btn">Xóa</button><button class="btn">Mở nhật ký</button></div>
+              </div>
+              <div class="phone" aria-label="PT phone view">
+                <div class="scr">
+                  <div class="row between"><h3>Lịch của tôi</h3><span class="chip acc">11/10 · 4 buổi</span></div>
+                  <div id="mobile-day" style="display:grid;gap:8px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="notes"><ol>
+        <li><span class="pin">1</span><b>Rows per PT.</b> Count in brackets; 30-min cells 05:00–22:00 from parameters; day and week view (D-030). Green = bookable (inside the PT's working schedule, future); hatched = off or past.</li>
+        <li><span class="pin">2</span><b>Actions by permission.</b> "Đã tập" is admin-only by default and locks the session; consumes and credits follow the status rules, colors too (D-025, D-026). Admin also gets bulk check-in for the day.</li>
+        <li><b>Refusals.</b> PT overlap, customer overlap, pending/frozen/expired contract, no sessions left (AC-15).</li>
+        <li><b>Masking.</b> Roles without phone access see "••••" here and in exports (AC-01).</li>
+        <li><b>Phone.</b> A PT sees their own day as a list; tapping opens the same detail (A-012/D-043).</li>
+      </ol></aside>
+    </div>
+  </section>
+
+  <!-- SESSION LOG -->
+  <section class="panel-tab" id="log" role="tabpanel" aria-labelledby="tab-log" hidden>
+    <div class="board">
+      <div class="phones">
+        <div class="phone"><div class="scr">
+          <div class="row between"><h3>Nhật ký buổi tập</h3><span class="chip">1/3</span></div>
+          <p class="note">Nguyễn Văn An · Coach Khoa · 11/10/2026<br>Mục tiêu: Hip hinge, giảm đau lưng</p>
+          <h3><span class="pin">1</span>Pre-session</h3>
+          <div class="field"><span>Mức stress trong ngày</span><div class="scale" id="stress"></div></div>
+          <div class="field"><span>Mức năng lượng</span><div class="scale" id="energy"></div></div>
+          <label class="field"><span>Ảnh hưởng đến buổi tập</span><select class="input" id="f-impact"><option>Trung bình</option><option>Thấp</option><option>Cao</option><option>Không ảnh hưởng</option></select></label>
+          <button class="btn primary">Tiếp: In-session</button>
+        </div></div>
+
+        <div class="phone"><div class="scr">
+          <div class="row between"><h3>In-session</h3><span class="chip">2/3</span></div>
+          <p class="note"><span class="pin">2</span>plan (grey) and actual on one row</p>
+          <div class="scroll">
+          <table class="sets">
+            <thead><tr><th>Set</th><th>Kế hoạch</th><th>Thực tế</th><th>Flag</th></tr></thead>
+            <tbody>
+              <tr><td colspan="4"><b>Romanian Deadlift</b></td></tr>
+              <tr><td>1</td><td class="plan">40kg×8 RIR3</td><td><span class="act">40</span> × <span class="act">8</span></td><td><span class="chip ok">Normal</span></td></tr>
+              <tr><td>2</td><td class="plan">45kg×8 RIR2</td><td><span class="act">45</span> × <span class="act">8</span></td><td><span class="chip ok">Normal</span></td></tr>
+              <tr><td>3</td><td class="plan">50kg×6 RIR2</td><td><span class="act">50</span> × <span class="act">4</span></td><td><span class="chip late">Pattern</span></td></tr>
+              <tr><td colspan="4"><b>Bike (Cardio)</b> <span class="note">time · speed · HR</span></td></tr>
+              <tr><td>1</td><td class="plan">10′ · 22 · 135</td><td><span class="act">10</span> <span class="act">21</span> <span class="act">138</span></td><td><span class="chip ok">Normal</span></td></tr>
+            </tbody>
+          </table>
+          </div>
+          <label class="field"><span><span class="pin">3</span>Action (set 3)</span><select class="input" id="f-action"><option>Đổi bài</option><option>None</option><option>Theo dõi thêm</option><option>Giảm tải</option><option>Tăng tải</option><option>Dừng + Escalation</option></select></label>
+          <div class="alert" id="esc" hidden>Escalation sent to Fitness Manager and Master. Task stays open until reviewed.</div>
+        </div></div>
+
+        <div class="phone"><div class="scr">
+          <div class="row between"><h3>Post-session</h3><span class="chip">3/3</span></div>
+          <div class="field"><span>Độ khó buổi tập (sRPE)</span><div class="scale" id="srpe"></div></div>
+          <div class="field"><span>Năng lượng sau buổi</span><div class="scale" id="after"></div></div>
+          <label class="field"><span>Tổng kết</span><select class="input" id="f-summary"><option>Tốt hơn</option><option>Không thay đổi</option><option>Tệ hơn</option><option>Khác…</option></select></label>
+          <label class="field"><span>Coach Notes</span><textarea class="input" id="f-notes" rows="3">Lưng đỡ hơn tuần trước; set 3 mất form, đổi sang KB deadlift.</textarea></label>
+          <button class="btn primary">Lưu nhật ký</button>
+        </div></div>
+      </div>
+      <aside class="notes"><ol>
+        <li><span class="pin">1</span><b>Three parts, phone-first.</b> Scales 1–10 with optional notes; lists are admin option lists (D-033, D-016).</li>
+        <li><span class="pin">2</span><b>Plan and actual on one row.</b> Actuals default to the plan, Flag to Normal, Action to None — the coach edits only differences. Cardio rows swap weights for time, speed, heart rate. No "Match" column (AC-20).</li>
+        <li><span class="pin">3</span><b>Escalation.</b> Choose "Dừng + Escalation" to see the alert; manager and Master are notified and a task stays open (AC-21).</li>
+        <li><b>Profile.</b> Every log appears in the customer's profile with trends of weight, reps, stress, energy, sRPE, Flags and Actions.</li>
+      </ol></aside>
+    </div>
+  </section>
+
+  <!-- PERMISSIONS -->
+  <section class="panel-tab" id="permissions" role="tabpanel" aria-labelledby="tab-permissions" hidden>
+    <div class="board">
+      <div class="screens">
+        <div class="frame">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span>Quản trị › Vai trò › Consulting</div>
+          <div class="body perm">
+            <div class="roles">
+              <div>Quản trị hệ thống</div><div>Fitness Manager</div><div>Master</div><div class="sel">Consulting</div><div>Huấn luyện viên (PT)</div><div>Lễ tân</div><div>Marketing</div>
+              <button class="btn" style="margin-top:8px">Nhân bản vai trò</button>
+            </div>
+            <div style="display:grid;gap:14px;min-width:0">
+              <div class="scroll">
+                <table class="matrix">
+                  <thead><tr><th><span class="pin">1</span>Cây quyền</th><th>Xem</th><th>Thêm</th><th>Sửa</th><th>Xóa</th><th>Duyệt</th><th>Xuất</th></tr></thead>
+                  <tbody id="tree"></tbody>
+                </table>
+              </div>
+              <div class="row" style="align-items:flex-start;gap:14px">
+                <div class="panel" style="flex:1 1 240px">
+                  <h3><span class="pin">2</span>Phạm vi dữ liệu</h3>
+                  <label class="field"><span>Lead</span><select class="input" id="sc-lead"><option>Chỉ của mình phụ trách</option><option>Tất cả</option></select></label>
+                  <label class="field"><span>Hội viên</span><select class="input" id="sc-member"><option>Chỉ của mình phụ trách</option><option>Tất cả</option></select></label>
+                  <label class="field"><span>Hợp đồng</span><select class="input" id="sc-contract"><option>Chỉ của mình phụ trách</option><option>Tất cả</option></select></label>
+                </div>
+                <div class="panel" style="flex:1 1 240px">
+                  <h3><span class="pin">3</span>Ẩn trường nhạy cảm</h3>
+                  <div class="row"><span class="ck"></span>SĐT hội viên</div>
+                  <div class="row"><span class="ck"></span>Email hội viên</div>
+                  <div class="row"><span class="ck on"></span>Địa chỉ</div>
+                  <div class="row"><span class="ck on"></span>Giấy tờ (CCCD/Passport)</div>
+                  <div class="row"><span class="ck on"></span>Tổng tiền danh sách phiếu thu</div>
+                  <label class="field"><span>Ngưỡng tự duyệt giảm giá</span><input class="input" id="thr" value="0 %"></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="frame">
+          <div class="bar"><span class="dots"><i></i><i></i><i></i></span>Quản trị › Ma trận duyệt</div>
+          <div class="body scroll">
+            <table class="matrix">
+              <thead><tr><th><span class="pin">4</span>Nhóm thao tác</th><th>Cần duyệt</th><th>Người duyệt</th><th>Vượt ngưỡng</th><th>Nhắc sau</th></tr></thead>
+              <tbody>
+                <tr><td>Tạo và sửa hợp đồng, giá ngoại lệ</td><td><span class="ck on"></span></td><td>Fitness Manager</td><td>Admin</td><td class="mono">24 h</td></tr>
+                <tr><td>Phiếu biến động</td><td><span class="ck on"></span></td><td>Fitness Manager</td><td>—</td><td class="mono">24 h</td></tr>
+                <tr><td>Phiếu thu, phiếu chi</td><td><span class="ck on"></span></td><td>Fitness Manager / Admin</td><td>—</td><td class="mono">8 h</td></tr>
+                <tr><td>Xóa dữ liệu; hủy kích hoạt hợp đồng</td><td><span class="ck on"></span></td><td>Admin</td><td>—</td><td class="mono">24 h</td></tr>
+                <tr><td>Sửa thông tin định danh khách</td><td><span class="ck on"></span></td><td>Fitness Manager</td><td>—</td><td class="mono">24 h</td></tr>
+                <tr><td>Tạo và sửa giáo án, template</td><td><span class="ck on"></span></td><td>Master</td><td>—</td><td class="mono">48 h</td></tr>
+                <tr><td>Thao tác hằng ngày</td><td><span class="ck"></span></td><td>—</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <aside class="notes"><ol>
+        <li><span class="pin">1</span><b>Permission tree.</b> Module groups expand to actions; sensitive actions (Đã tập, Burn Show, delete, edit receipt date, view trash) are their own rows (D-017).</li>
+        <li><span class="pin">2</span><b>Data scope</b> is separate from functions: all vs. only mine, per resource.</li>
+        <li><span class="pin">3</span><b>Masking</b> applies to every screen and every Excel export (AC-01). The user page adds per-user overrides, branches, login hours, and login history.</li>
+        <li><span class="pin">4</span><b>Approval matrix.</b> Initial values from brief §2; nobody approves their own submission; overdue requests remind the approver (D-018, AC-05). "Thao tác hằng ngày" is OQ-029.</li>
+      </ol></aside>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  // Tabs, with a bare #anchor for deep links.
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  function show(id) {
+    tabs.forEach(function (t) {
+      var on = t.getAttribute('aria-controls') === id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () { show(t.getAttribute('aria-controls')); try { history.replaceState(null, '', '#' + t.getAttribute('aria-controls')); } catch (e) {} });
+  });
+  var start = (location.hash || '').replace('#', '');
+  if (['leads', 'calendar', 'log', 'permissions'].indexOf(start) >= 0) show(start);
+
+  // Kanban columns: lead statuses from D-020.
+  var cols = [
+    ['Mới', [['Phạm Thu Trang', 'Messenger · chưa phân', '']]],
+    ['Đang tư vấn', [['Trần Minh Anh', 'WhatsApp · Hoàng Lan', 'Bước 4 · 2 giờ'], ['Lê Quốc Huy', 'Zalo · Hoàng Lan', 'Nhắc 1 · trễ 15′']]],
+    ['Cân nhắc', [['David Nguyen', 'Instagram · Minh Thư', 'Báo giá Hybrid']]],
+    ['Chưa phản hồi', [['Ngô Thảo', 'Gọi điện · Minh Thư', 'Nhắc 2 · 18 giờ']]],
+    ['Đã đặt lịch', [['Vũ Hà My', 'Website · Hoàng Lan', '11/10 17:30 · Pain']]],
+    ['Show', [['Đỗ Gia Bảo', 'Người quen', 'Chờ ký HĐ']]],
+    ['No show', [['Bùi Lan', 'TikTok', 'Tái chăm sóc 25/10']]],
+    ['Từ chối', [['Kim Long', 'Fanpage', 'Lý do: Giá']]]
+  ];
+  var kb = document.getElementById('kanban');
+  cols.forEach(function (c) {
+    var col = document.createElement('div'); col.className = 'col';
+    col.innerHTML = '<h3><span>' + c[0] + '</span><span class="mono">' + c[1].length + '</span></h3>';
+    c[1].forEach(function (k) {
+      var late = /trễ/.test(k[2]);
+      col.insertAdjacentHTML('beforeend', '<div class="card"><b>' + k[0] + '</b><span style="color:var(--muted)">' + k[1] + '</span>' + (k[2] ? '<span class="chip ' + (late ? 'late' : 'acc') + '">' + k[2] + '</span>' : '') + '</div>');
+    });
+    kb.appendChild(col);
+  });
+
+  // Consulting checklist (initial steps, D-020).
+  var steps = [
+    ['1. Tư vấn sản phẩm phù hợp', 'Done · đúng hạn', 'ok', true],
+    ['2. Nhắc lần 1 (60′)', 'Done · đúng hạn', 'ok', true],
+    ['3. Nhắc lần 2 (24 giờ)', 'Bỏ qua — đã phản hồi', '', true],
+    ['4. Đặt lịch', 'Hạn 10/10 20:00', 'acc', false, true],
+    ['5. Nhắc trước hẹn 1 (3 giờ)', '11/10 14:30', '', false],
+    ['6. Báo Studio lần 1', 'tạo việc cho coach Manager', '', false],
+    ['7. Nhắc trước hẹn 2 (60′)', '11/10 16:30', '', false],
+    ['8. Báo Studio lần 2', '', '', false],
+    ['9. Ghi nhận Show / No show', '11/10 17:30', '', false],
+    ['10. Tái chăm sóc (15 ngày)', 'nếu No show / Từ chối', '', false]
+  ];
+  var st = document.getElementById('steps');
+  steps.forEach(function (s) {
+    st.insertAdjacentHTML('beforeend', '<div class="step' + (s[4] ? ' now' : '') + '"><span class="box' + (s[3] ? ' done' : '') + '">' + (s[3] ? '✓' : '') + '</span><span>' + s[0] + '</span>' + (s[1] ? '<span class="chip ' + s[2] + '">' + s[1] + '</span>' : '<span></span>') + '</div>');
+  });
+
+  // "Khác" requires a note (D-016).
+  var nd = document.getElementById('f-need-detail'), ow = document.getElementById('other-wrap');
+  nd.addEventListener('change', function () { ow.hidden = nd.value !== 'other'; });
+
+  // PT grid: rows per PT, 30-minute columns 05:00-22:00 (D-030).
+  var startH = 5, endH = 22, slots = (endH - startH) * 2;
+  var pts = [
+    { name: 'Trần Minh Khoa', work: [6, 13, 16, 21], s: [[7, 8, 'trained', 'N. Văn An'], [9, 10, 'noshow', 'Bùi Lan'], [17, 18, 'booked', 'Vũ Ngọc Lan'], [18.5, 19.5, 'booked', 'Lê Minh Tuấn']] },
+    { name: 'Lê Thu Hà', work: [5, 12, 0, 0], s: [[6, 7, 'trained', 'T. Thu Hương'], [8, 9, 'booked', 'Hoàng Thị Mai'], [10, 11, 'cancel', 'Ngân']] },
+    { name: 'Phạm Đức Anh', work: [14, 22, 0, 0], s: [[15, 16, 'booked', 'Đỗ Quang Huy'], [18, 19, 'booked', 'Lê Minh Tuấn']] }
+  ];
+  var color = { booked: 'var(--s-booked)', trained: 'var(--s-trained)', cancel: 'var(--s-cancel)', noshow: 'var(--s-noshow)' };
+  var cal = document.getElementById('cal');
+  cal.style.gridTemplateColumns = '150px repeat(' + slots + ', minmax(30px, 1fr))';
+  cal.insertAdjacentHTML('beforeend', '<div></div>');
+  for (var i = 0; i < slots; i++) {
+    var h = startH + i / 2;
+    cal.insertAdjacentHTML('beforeend', '<div class="h">' + (i % 2 === 0 ? String(h).padStart(2, '0') + ':00' : '') + '</div>');
+  }
+  pts.forEach(function (p) {
+    var active = p.s.filter(function (x) { return x[2] !== 'cancel'; }).length;
+    cal.insertAdjacentHTML('beforeend', '<div class="pt">' + p.name + ' <span class="mono" style="color:var(--muted)">(' + active + ')</span></div>');
+    var lane = document.createElement('div'); lane.className = 'lane';
+    lane.style.gridColumn = '2 / span ' + slots;
+    lane.style.gridTemplateColumns = 'repeat(' + slots + ', 1fr)';
+    for (var j = 0; j < slots; j++) {
+      var t = startH + j / 2;
+      var working = (t >= p.work[0] && t < p.work[1]) || (t >= p.work[2] && t < p.work[3]);
+      lane.insertAdjacentHTML('beforeend', '<div class="cell ' + (working ? 'free' : 'off') + '"></div>');
+    }
+    p.s.forEach(function (x) {
+      var left = ((x[0] - startH) / (endH - startH)) * 100, width = ((x[1] - x[0]) / (endH - startH)) * 100;
+      var label = { booked: 'Đặt lịch', trained: 'Đã tập', cancel: 'Hủy lịch', noshow: 'Không đến' }[x[2]];
+      lane.insertAdjacentHTML('beforeend', '<div class="blk" style="left:calc(' + left + '% + 2px);width:calc(' + width + '% - 4px);background:' + color[x[2]] + '"><b>' + x[3] + '</b>' + label + '</div>');
+    });
+    cal.appendChild(lane);
+  });
+
+  // PT phone day list.
+  var md = document.getElementById('mobile-day');
+  pts[0].s.forEach(function (x) {
+    var hh = function (v) { return String(Math.floor(v)).padStart(2, '0') + ':' + (v % 1 ? '30' : '00'); };
+    md.insertAdjacentHTML('beforeend', '<div class="card" style="border-left:4px solid ' + color[x[2]] + '"><b>' + hh(x[0]) + '–' + hh(x[1]) + ' · ' + x[3] + '</b><span style="color:var(--muted)">' + { booked: 'Đặt lịch · chạm để mở', trained: 'Đã tập · đã khóa', cancel: 'Hủy lịch', noshow: 'Khách không đến' }[x[2]] + '</span></div>');
+  });
+
+  // Scales 1-10.
+  [['stress', 6], ['energy', 5], ['srpe', 7], ['after', 6]].forEach(function (s) {
+    var el = document.getElementById(s[0]);
+    for (var k = 1; k <= 10; k++) el.insertAdjacentHTML('beforeend', '<i class="' + (k === s[1] ? 'on' : '') + '">' + k + '</i>');
+  });
+
+  // Escalation preview.
+  var act = document.getElementById('f-action'), esc = document.getElementById('esc');
+  act.addEventListener('change', function () { esc.hidden = act.value !== 'Dừng + Escalation'; });
+
+  // Permission tree for the Consulting role (initial, docs/09).
+  var tree = [
+    ['Lead và tư vấn', null], ['Lead', [1, 1, 1, 0, 0, 0]], ['Bước tư vấn', [1, 0, 1, 0, 0, 0]], ['Phân bổ lại lead', [0, 0, 0, 0, 0, 0]],
+    ['Khách hàng', null], ['Hồ sơ khách', [1, 0, 1, 0, 0, 0]], ['Sửa thông tin định danh', [0, 0, 1, 0, 0, 0]],
+    ['Nghiệp vụ hợp đồng', null], ['Hợp đồng (chờ duyệt)', [1, 1, 1, 0, 0, 0]], ['Giá ngoại lệ', [0, 1, 0, 0, 0, 0]], ['Hủy kích hoạt / Xóa hợp đồng', [0, 0, 0, 0, 0, 0]],
+    ['Lịch PT và lịch lớp', null], ['Đã tập / Burn Show / Xóa buổi', [0, 0, 0, 0, 0, 0]],
+    ['Sổ quỹ', null], ['Phiếu thu', [1, 1, 0, 0, 0, 0]], ['Sửa ngày thu tiền', [0, 0, 0, 0, 0, 0]],
+    ['Báo cáo', null], ['Dashboard tư vấn (của mình)', [1, 0, 0, 0, 0, 0]]
+  ];
+  var tb = document.getElementById('tree');
+  tree.forEach(function (r) {
+    if (!r[1]) { tb.insertAdjacentHTML('beforeend', '<tr><td colspan="7"><b>' + r[0] + '</b></td></tr>'); return; }
+    tb.insertAdjacentHTML('beforeend', '<tr><td class="indent">' + r[0] + '</td>' + r[1].map(function (v) { return '<td><span class="ck' + (v ? ' on' : '') + '"></span></td>'; }).join('') + '</tr>');
+  });
+})();
+</script>

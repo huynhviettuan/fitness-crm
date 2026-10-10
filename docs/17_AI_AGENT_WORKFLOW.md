@@ -7,8 +7,11 @@ Read AGENTS.md and all documents required by the task.
 Treat them as the source of truth.
 Do not invent business rules.
 
-The V1 architecture is a single full-stack Next.js application deployed on Vercel with PostgreSQL + Prisma.
-Do not introduce NestJS, Express, Railway, microservices, or another backend unless explicitly approved.
+The source of truth is docs/source/BRIEF_V2_vi.md and docs/18_DECISIONS_ASSUMPTIONS.md.
+The architecture is a monorepo: apps/web (Next.js, UI only) and apps/api (NestJS, all business logic),
+PostgreSQL + Prisma, web on Vercel, API on Railway or Render.
+Do not add other backends, microservices, Redis, or brokers.
+Never hard-code a value the brief marks as admin-configurable.
 
 Before coding:
 1. summarize the requirement,
@@ -42,19 +45,18 @@ Implement: <feature>
 - ...
 
 ## Architecture constraints
-- Next.js App Router
-- Vercel deployment target
-- PostgreSQL + Prisma
-- thin Server Action / Route Handler
-- business logic in application/domain service
-- repository/data-access boundary
+- apps/web: Next.js App Router, calls the API through the generated client
+- apps/api: NestJS controller → service → repository, permission key on every endpoint
+- PostgreSQL + Prisma, migrations
+- configuration from the database (option lists, parameters, status rules)
+- approval matrix, audit with before/after, trash instead of delete
 
 ## Out of scope
 - ...
 
 ## Deliverables
 - UI where applicable
-- server action/route handler where applicable
+- API controller with OpenAPI and permission key
 - application/domain service
 - repository/data access
 - migration if required
@@ -82,7 +84,7 @@ Prioritize:
 3. authorization,
 4. concurrency/idempotency,
 5. data consistency,
-6. Vercel/serverless database safety,
+6. permissions, data scope, masking, and approvals,
 7. separation of request/UI handling from business logic,
 8. missing tests.
 Do not focus on style before correctness.
@@ -93,7 +95,7 @@ Do not focus on style before correctness.
 Do not prompt:
 
 ```text
-Build the complete Fitness CRM.
+Build the complete Flow Fitness CRM.
 ```
 
 Do not allow the agent to:
@@ -103,7 +105,9 @@ Do not allow the agent to:
 - decrement sessions on booking
 - silently delete payment history
 - put financial/session business logic directly in React components
-- put large business workflows directly in Route Handlers or Server Actions
-- call Prisma directly from client components
-- introduce NestJS/Railway because it is familiar to the model
+- put business workflows in controllers or in the web app
+- access the database from apps/web
+- hard-code prices, timers, reasons, statuses, colors, or permissions
+- edit an approved contract or hard-delete business data
+- add services beyond apps/web, apps/api, and its worker
 - merge large unrelated features into one change

@@ -1,67 +1,33 @@
-# 01 — MVP Scope
+# 01 — Phase 1 Scope
 
-## In scope
+Phase 1 delivers 12 modules (brief §1, D-013), in the milestones of `16_IMPLEMENTATION_PLAN.md`.
 
-### Customer Management
-- Create/update/search customer.
-- Unique customer code/ID.
-- Customer detail page.
-- View all contracts, payments, bookings, and sessions of a customer.
+| Module | Main content | Brief | Requirements |
+|---|---|---|---|
+| Platform and permissions | Users, roles, permission tree, branches, approvals, option lists, parameters, audit log, trash, notifications, employees | §2, §8.4, §8.5 | FR-PLT, FR-EMP, FR-TRASH |
+| Leads and consulting | Lead intake, automatic assignment, timed consulting checklist, reminders, audit, re-care, script library | §3, §4.1 | FR-LEAD |
+| Customers | One profile from lead to member | §4.2 | FR-CUS |
+| Services and price tiers | Services, tiers by session range, promotions and vouchers | §5.1 | FR-SVC |
+| Contracts | Create, approve, lock, freeze, delete; change vouchers | §5.2–§5.6 | FR-CON, FR-CHG |
+| PT schedule | Booking, check-in ("Đã tập"), session statuses, consumption, PT credit, Burn Show | §6.1–§6.3, §6.5 | FR-PT |
+| Class schedule | Group classes, enrollment, attendance | §6.4 | FR-CLS |
+| Workout plans | Catalogs, templates, customer plans, session logs, Flag, Action, escalation | §7 | FR-WKO |
+| Cash book | Receipts, expense vouchers, debt, PT payouts | §8.1 | FR-CASH |
+| Tasks | Assigning and tracking work within and between departments | §8.2 | FR-TASK |
+| Customer email | Automatic emails when sessions change and on other events | §8.3 | FR-MAIL |
+| Dashboards and reports | Consulting, workouts, contracts, sessions, money, tasks | §9 | FR-RPT, doc 10 |
 
-### Contract Management
-- Create contract for a customer.
-- Store package name, contract value, start/end date, total sessions, and status.
-- View session consumption.
-- View payments and outstanding debt.
+## Cross-cutting requirements
 
-### Booking & Session Operations
-- Calendar/list booking view.
-- Create, reschedule, cancel booking.
-- Assign customer, contract, PT, scheduled start/end.
-- Manual check-in.
-- Mark session completed.
-- Track no-show.
-- Consume exactly one contract session on completion.
+- Several branches from the start (D-014).
+- Every value configurable by admin; drop-downs with "Khác" (D-015, D-016).
+- Approval matrix (D-018).
+- Shared list screen: filters on the left, search, table with paging and totals row, Add, Export Excel (brief §1).
+- Web app usable on phones; Vietnamese UI, ready for English (D-043).
+- Sensitive personal data protected (D-042).
+- Data imported from GymMaster and the consulting Excel (D-039).
+- Lead channel APIs enabled gradually after manual entry (D-044).
 
-### Finance
-- Record confirmed payments for contracts.
-- Show amount paid and debt.
-- Record manual income/expense transactions.
-- View payment history.
+## Out of phase 1
 
-### Dashboard & Reports
-- Today's bookings and session statuses.
-- Completed session counts.
-- PT performance.
-- Contract revenue, collected amount, debt, expense, and net cash flow.
-- Export can be added after core reporting is stable.
-
-### Administration
-- Login.
-- Role-based permissions.
-- User management.
-- Audit log for critical actions.
-
-## Explicitly out of scope for V1
-
-- Fingerprint devices or biometric integration.
-- Multi-gym SaaS / multi-tenant isolation.
-- Mobile application.
-- Facebook/TikTok/WhatsApp unified inbox.
-- Online payment gateway automation.
-- Pro Shop / inventory.
-- Locker/towel management.
-- Loyalty points.
-- Payroll.
-- Advanced marketing automation.
-- Automatic no-show session deduction.
-
-## Future-compatible design
-
-The architecture should allow later addition of:
-
-- Fingerprint connector.
-- WhatsApp/Facebook/TikTok messaging.
-- Mobile app.
-- Multiple branches.
-- Online payment gateways.
+Pro Shop, lockers, towels, loyalty contracts and points, day passes, fingerprint integration, member mobile app, Zalo OA, tax accounting and e-invoices, and other ERP modules (retail, inventory, HR and payroll). Also not built: GymMaster's "edit approved contract", "type sessions used", "deposit payout", and "free package" (D-022). See `19_FUTURE_ROADMAP.md`.
