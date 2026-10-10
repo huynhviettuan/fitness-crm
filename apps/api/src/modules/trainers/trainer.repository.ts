@@ -1,6 +1,7 @@
 import type { Db } from "../../platform/db/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { formatTrainerCode, type TrainerData } from "@flow/shared/trainers";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 
 const withUser = {
   user: { select: { id: true, name: true, email: true } },
@@ -11,10 +12,13 @@ export type TrainerWrite = Omit<TrainerData, "branchId"> & { branchId: string };
 
 export type TrainerRecord = Prisma.TrainerGetPayload<{ include: typeof withUser }>;
 
-/** Draws the next code from the sequence; concurrent callers never get the same value. */
+/**
+ * Draws the next code from the sequence; concurrent callers never get the same value.
+ * The prefix is configuration (D-038); the number never repeats, whatever the prefix.
+ */
 export async function nextTrainerCode(db: Db): Promise<string> {
   const [row] = await db.$queryRaw<{ value: bigint }[]>`SELECT nextval('trainer_code_seq') AS value`;
-  return formatTrainerCode(row.value);
+  return formatTrainerCode(await readParameter(db, "trainerCodePrefix"), row.value);
 }
 
 export function createTrainer(db: Db, trainerCode: string, data: TrainerWrite): Promise<TrainerRecord> {

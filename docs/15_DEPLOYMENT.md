@@ -45,7 +45,6 @@ SENTRY_DSN, LOG_LEVEL
 # Web (apps/web/.env.example)
 API_URL                 # where the web server reaches the API; browsers never call it directly (T-053)
 GYM_TIMEZONE            # for showing dates and times
-SCHEDULE_START_HOUR, SCHEDULE_END_HOUR   # calendar hours, until they become system parameters (T-049)
 SENTRY_DSN
 ```
 

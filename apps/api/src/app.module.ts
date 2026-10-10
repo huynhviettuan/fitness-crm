@@ -5,6 +5,8 @@ import { AuthGuard } from "./platform/auth/auth.guard.js";
 import { MeController } from "./platform/auth/me.controller.js";
 import { BranchesController } from "./platform/branches/branches.controller.js";
 import { RolesController } from "./platform/roles/roles.controller.js";
+import { OptionListsController } from "./platform/options/options.controller.js";
+import { ParametersController } from "./platform/parameters/parameters.controller.js";
 import { ErrorFilter } from "./platform/http/error.filter.js";
 import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
@@ -30,6 +32,8 @@ import { UsersController } from "./modules/users/users.controller.js";
     UsersController,
     RolesController,
     BranchesController,
+    OptionListsController,
+    ParametersController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

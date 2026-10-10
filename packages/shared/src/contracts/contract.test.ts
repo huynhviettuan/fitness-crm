@@ -7,10 +7,10 @@ import { contractInputSchema } from "./contract.schema.js";
 const GYM_TZ = "Asia/Ho_Chi_Minh";
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
-describe("formatContractCode (A-003)", () => {
-  it("pads to HD + 6 digits", () => {
-    expect(formatContractCode(BigInt(1))).toBe("HD000001");
-    expect(formatContractCode(1_000_000)).toBe("HD1000000");
+describe("formatContractCode (D-038)", () => {
+  it("pads to the prefix + 6 digits", () => {
+    expect(formatContractCode("HD", BigInt(1))).toBe("HD000001");
+    expect(formatContractCode("HP", 1_000_000)).toBe("HP1000000");
   });
 });
 

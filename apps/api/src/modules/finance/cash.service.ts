@@ -10,6 +10,7 @@ import { inBranches, isMasked, isOwnOnly, resolveBranch } from "../../platform/p
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
+import { chosen, resolveChoice } from "../../platform/options/option.service.js";
 import { idempotencyKeySchema } from "@flow/shared/contracts";
 import * as repo from "./cash.repository.js";
 import { sumConfirmedPayments } from "./payment.repository.js";
@@ -81,13 +82,28 @@ export async function recordCashTransaction(
   try {
     const created = await prisma.$transaction(async (tx) => {
       const branchId = await resolveBranch(tx, actor, data.branchId);
-      const transaction = await repo.createCashTransaction(tx, { ...data, branchId, idempotencyKey: key.data, createdById: actor.id });
+      // Income and expenses have their own lists; "Khác" needs a note (D-016).
+      const list = data.type === "INCOME" ? "incomeCategories" : "expenseTypes";
+      const category = await resolveChoice(tx, list, "categoryId", { optionId: data.categoryId, note: data.categoryNote });
+      const transaction = await repo.createCashTransaction(tx, {
+        ...data,
+        categoryId: category.optionId,
+        categoryNote: category.note,
+        branchId,
+        idempotencyKey: key.data,
+        createdById: actor.id,
+      });
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "cash_transaction",
         entityId: transaction.id,
         action: "cash_transaction.created",
-        metadata: { type: data.type, category: data.category, amount: data.amount, occurredOn: data.occurredOn.toISOString().slice(0, 10) },
+        metadata: {
+          type: data.type,
+          category: { optionId: category.optionId, note: category.note },
+          amount: data.amount,
+          occurredOn: data.occurredOn.toISOString().slice(0, 10),
+        },
       });
       return transaction;
     });
@@ -101,10 +117,13 @@ export async function recordCashTransaction(
   }
 }
 
-/** A-009: corrected by voiding with a reason and recording a new one. Repeating returns the current state. */
+/**
+ * A-009: corrected by voiding with a reason from the list (D-016) and recording a new
+ * one. Repeating returns the current state.
+ */
 export async function voidCashTransaction(actor: Actor, id: string, input: unknown): Promise<CashTransactionView> {
   assertCan(actor, "cash.manage");
-  const { reason } = parseInput(voidSchema, input);
+  const { reasonId, reasonNote } = parseInput(voidSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
   return prisma.$transaction(async (tx) => {
@@ -112,13 +131,15 @@ export async function voidCashTransaction(actor: Actor, id: string, input: unkno
     if (!transaction) throw new AppError("NOT_FOUND");
     if (transaction.status === "VOIDED") return toView(transaction);
 
-    if ((await repo.voidCashTransaction(tx, id, { voidedAt: new Date(), voidedById: actor.id, voidReason: reason })) === 1) {
+    const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+    const voided = { voidedAt: new Date(), voidedById: actor.id, voidReasonId: reason.optionId, voidReasonNote: reason.note };
+    if ((await repo.voidCashTransaction(tx, id, voided)) === 1) {
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "cash_transaction",
         entityId: id,
         action: "cash_transaction.voided",
-        metadata: { type: transaction.type, amount: Number(transaction.amount), reason },
+        metadata: { type: transaction.type, amount: Number(transaction.amount), reason: { optionId: reason.optionId, note: reason.note } },
       });
     }
     return toView((await repo.findCashTransaction(tx, id))!);
@@ -131,7 +152,8 @@ async function replayOf(key: string, data: CashTransactionData, actor: Actor): P
   const same =
     existing.createdById === actor.id &&
     existing.type === data.type &&
-    existing.category === data.category &&
+    existing.categoryId === data.categoryId &&
+    existing.categoryNote === data.categoryNote &&
     Number(existing.amount) === data.amount &&
     existing.description === data.description &&
     existing.reference === data.reference &&
@@ -145,7 +167,7 @@ function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
     id: transaction.id,
     branch: transaction.branch,
     type: transaction.type,
-    category: transaction.category,
+    category: chosen(transaction.category, transaction.categoryNote),
     amount: Number(transaction.amount),
     description: transaction.description,
     reference: transaction.reference,
@@ -155,7 +177,7 @@ function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
     createdBy: transaction.createdBy.name,
     voidedAt: transaction.voidedAt,
     voidedBy: transaction.voidedBy?.name ?? null,
-    voidReason: transaction.voidReason,
+    voidReason: transaction.voidReason ? chosen(transaction.voidReason, transaction.voidReasonNote) : null,
   };
 }
 

@@ -29,6 +29,14 @@
       "types": "./dist/finance/index.d.ts",
       "default": "./dist/finance/index.js"
     },
+    "./options": {
+      "types": "./dist/options/index.d.ts",
+      "default": "./dist/options/index.js"
+    },
+    "./parameters": {
+      "types": "./dist/parameters/index.d.ts",
+      "default": "./dist/parameters/index.js"
+    },
     "./permissions": {
       "types": "./dist/permissions/index.d.ts",
       "default": "./dist/permissions/index.js"

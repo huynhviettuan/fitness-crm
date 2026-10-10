@@ -6,6 +6,7 @@
  */
 export const PERMISSION_GROUPS = {
   system: ["user.manage", "role.manage", "branch.manage"],
+  configuration: ["config.manage"],
   customers: ["customer.view", "customer.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],

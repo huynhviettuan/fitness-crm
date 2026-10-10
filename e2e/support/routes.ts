@@ -11,6 +11,8 @@ export type ApiRoute = {
   /** The template with path parameters filled in. */
   path: string;
   methods: string[];
+  /** The permission each method declares (`x-permission`); "authenticated" = any signed-in user. */
+  permissions: Record<string, string>;
 };
 
 /**
@@ -19,10 +21,16 @@ export type ApiRoute = {
  * access-control tests automatically, so it cannot ship without authentication unnoticed.
  */
 export function discoverApiRoutes(): ApiRoute[] {
-  const document = JSON.parse(fs.readFileSync(OPENAPI, "utf8")) as { paths: Record<string, Record<string, unknown>> };
-  return Object.entries(document.paths).map(([template, operations]) => ({
-    template,
-    path: template.replace(/\{[^}]+\}/g, () => randomUUID()),
-    methods: METHODS.filter((method) => method in operations).map((method) => method.toUpperCase()),
-  }));
+  const document = JSON.parse(fs.readFileSync(OPENAPI, "utf8")) as {
+    paths: Record<string, Record<string, { "x-permission"?: string }>>;
+  };
+  return Object.entries(document.paths).map(([template, operations]) => {
+    const methods = METHODS.filter((method) => method in operations);
+    return {
+      template,
+      path: template.replace(/\{[^}]+\}/g, () => randomUUID()),
+      methods: methods.map((method) => method.toUpperCase()),
+      permissions: Object.fromEntries(methods.map((method) => [method.toUpperCase(), operations[method]["x-permission"] ?? ""])),
+    };
+  });
 }

@@ -877,14 +877,14 @@
                       }
                     ]
                   },
-                  "method": {
+                  "methodId": {
                     "type": "string",
-                    "enum": [
-                      "CASH",
-                      "BANK_TRANSFER",
-                      "CARD",
-                      "E_WALLET"
-                    ]
+                    "format": "uuid"
+                  },
+                  "methodNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
                   },
                   "paidOn": {
                     "type": "string",
@@ -893,7 +893,7 @@
                 },
                 "required": [
                   "amount",
-                  "method",
+                  "methodId",
                   "paidOn"
                 ]
               }
@@ -1878,13 +1878,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "reason": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
                     "type": "string",
                     "maxLength": 500
                   }
                 },
                 "required": [
-                  "reason"
+                  "reasonId"
                 ]
               }
             }
@@ -2088,9 +2093,14 @@
                       "EXPENSE"
                     ]
                   },
-                  "category": {
+                  "categoryId": {
                     "type": "string",
-                    "maxLength": 100
+                    "format": "uuid"
+                  },
+                  "categoryNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
                   },
                   "amount": {
                     "anyOf": [
@@ -2119,7 +2129,7 @@
                 },
                 "required": [
                   "type",
-                  "category",
+                  "categoryId",
                   "amount",
                   "occurredOn"
                 ]
@@ -2234,13 +2244,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "reason": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
                     "type": "string",
                     "maxLength": 500
                   }
                 },
                 "required": [
-                  "reason"
+                  "reasonId"
                 ]
               }
             }
@@ -2643,6 +2658,7 @@
                             "user.manage",
                             "role.manage",
                             "branch.manage",
+                            "config.manage",
                             "customer.view",
                             "customer.manage",
                             "contract.view",
@@ -3007,6 +3023,7 @@
                         "user.manage",
                         "role.manage",
                         "branch.manage",
+                        "config.manage",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -3192,6 +3209,7 @@
                         "user.manage",
                         "role.manage",
                         "branch.manage",
+                        "config.manage",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -3519,6 +3537,408 @@
         ],
         "x-permission": "branch.manage"
       }
+    },
+    "/api/v1/option-lists/{key}/options": {
+      "get": {
+        "operationId": "OptionListsController_list",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "authenticated"
+      },
+      "post": {
+        "operationId": "OptionListsController_create",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "labelVi": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "labelEn": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "labelVi",
+                  "labelEn"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Option"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
+    "/api/v1/option-lists/{key}/options/{id}": {
+      "patch": {
+        "operationId": "OptionListsController_update",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "labelVi": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "labelEn": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "labelVi",
+                  "labelEn"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Option"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
+    "/api/v1/option-lists/{key}/order": {
+      "put": {
+        "operationId": "OptionListsController_reorder",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "optionIds": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "optionIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
+    "/api/v1/option-lists/{key}/other-notes": {
+      "get": {
+        "operationId": "OptionListsController_otherNotes",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OtherNoteList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
+    "/api/v1/parameters": {
+      "get": {
+        "operationId": "ParametersController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Parameters"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "authenticated"
+      },
+      "put": {
+        "operationId": "ParametersController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "calendarDayStart": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "calendarDayEnd": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "customerCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  },
+                  "contractCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  },
+                  "trainerCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  }
+                },
+                "required": [
+                  "calendarDayStart",
+                  "calendarDayEnd",
+                  "customerCodePrefix",
+                  "contractCodePrefix",
+                  "trainerCodePrefix"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Parameters"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ],
+        "x-permission": "config.manage"
+      }
     }
   },
   "info": {
@@ -3626,6 +4046,7 @@
                 "user.manage",
                 "role.manage",
                 "branch.manage",
+                "config.manage",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -3996,13 +4417,7 @@
             "type": "integer"
           },
           "method": {
-            "type": "string",
-            "enum": [
-              "CASH",
-              "BANK_TRANSFER",
-              "CARD",
-              "E_WALLET"
-            ]
+            "$ref": "#/components/schemas/ChosenOption"
           },
           "paidOn": {
             "type": "string",
@@ -4056,7 +4471,11 @@
           },
           "voidReason": {
             "nullable": true,
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
           }
         },
         "required": [
@@ -4072,6 +4491,35 @@
           "voidedAt",
           "voidedBy",
           "voidReason"
+        ]
+      },
+      "ChosenOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "labelVi": {
+            "type": "string"
+          },
+          "labelEn": {
+            "type": "string"
+          },
+          "isOther": {
+            "type": "boolean"
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "labelVi",
+          "labelEn",
+          "isOther",
+          "note"
         ]
       },
       "TrainerList": {
@@ -4439,7 +4887,7 @@
             ]
           },
           "category": {
-            "type": "string"
+            "$ref": "#/components/schemas/ChosenOption"
           },
           "amount": {
             "type": "integer"
@@ -4481,7 +4929,11 @@
           },
           "voidReason": {
             "nullable": true,
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
           }
         },
         "required": [
@@ -4647,6 +5099,7 @@
                     "user.manage",
                     "role.manage",
                     "branch.manage",
+                    "config.manage",
                     "customer.view",
                     "customer.manage",
                     "contract.view",
@@ -4860,6 +5313,7 @@
                 "user.manage",
                 "role.manage",
                 "branch.manage",
+                "config.manage",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -4958,6 +5412,120 @@
           "name",
           "address",
           "active"
+        ]
+      },
+      "OptionList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Option": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "listKey": {
+            "type": "string",
+            "enum": [
+              "paymentMethods",
+              "incomeCategories",
+              "expenseTypes",
+              "deleteReasons"
+            ]
+          },
+          "labelVi": {
+            "type": "string"
+          },
+          "labelEn": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "integer"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "isOther": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "listKey",
+          "labelVi",
+          "labelEn",
+          "sortOrder",
+          "active",
+          "isOther"
+        ]
+      },
+      "OtherNoteList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "note": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "lastUsedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "note",
+                "count",
+                "lastUsedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Parameters": {
+        "type": "object",
+        "properties": {
+          "calendarDayStart": {
+            "type": "string"
+          },
+          "calendarDayEnd": {
+            "type": "string"
+          },
+          "customerCodePrefix": {
+            "type": "string"
+          },
+          "contractCodePrefix": {
+            "type": "string"
+          },
+          "trainerCodePrefix": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "calendarDayStart",
+          "calendarDayEnd",
+          "customerCodePrefix",
+          "contractCodePrefix",
+          "trainerCodePrefix"
         ]
       }
     }

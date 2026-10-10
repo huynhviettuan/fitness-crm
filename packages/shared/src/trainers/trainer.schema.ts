@@ -1,14 +1,15 @@
 import { z } from "zod";
 import { branchChoice } from "../branches/branch.schema.js";
 import { hasNoControlCharacters } from "../validation/index.js";
+import { formatCode } from "../parameters/parameter.schema.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 
 export const TRAINER_STATUSES = ["ACTIVE", "INACTIVE"] as const;
 
-/** A-003: trainer codes are "PT" + at least 3 digits, e.g. PT001. */
-export function formatTrainerCode(sequenceValue: bigint | number): string {
-  return `PT${sequenceValue.toString().padStart(3, "0")}`;
+/** D-038: the configured prefix + at least 3 digits, e.g. PT001. */
+export function formatTrainerCode(prefix: string, sequenceValue: bigint | number): string {
+  return formatCode(prefix, sequenceValue, 3);
 }
 
 const fullName = z

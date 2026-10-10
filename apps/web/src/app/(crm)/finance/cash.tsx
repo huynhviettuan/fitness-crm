@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTimeZone, useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ReceiptTextIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,19 +12,21 @@ import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
+import { ChosenOptionText, OptionSelect, useChosenOptionText } from "@/components/option-select";
 import { Money } from "@/components/money";
 import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
 import { CASH_TRANSACTION_TYPES, cashTransactionInputSchema, type CashTransactionInput } from "@flow/shared/finance";
+import type { ChosenOption } from "@flow/shared/options";
 import { recordCashTransactionAction, voidCashTransactionAction } from "./actions";
 import { VoidDialog } from "./void-dialog";
 
 export type CashRow = {
   id: string;
   type: (typeof CASH_TRANSACTION_TYPES)[number];
-  category: string;
+  category: ChosenOption;
   amount: number;
   description: string | null;
   reference: string | null;
@@ -32,7 +34,7 @@ export type CashRow = {
   status: "CONFIRMED" | "VOIDED";
   createdBy: string;
   voidedBy: string | null;
-  voidReason: string | null;
+  voidReason: ChosenOption | null;
 };
 
 /** Income and expense entries (FR-CASH-001). Corrected by voiding and recording again (A-009). */
@@ -41,6 +43,7 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
   const locale = useLocale();
   const router = useRouter();
   const [voiding, setVoiding] = useState<CashRow | null>(null);
+  const chosenText = useChosenOptionText();
 
   const columns: DataTableColumn<CashRow>[] = [
     { id: "occurredOn", header: t("fields.occurredOn"), cell: ({ row }) => <DateTime value={row.original.occurredOn} format="dateOnly" /> },
@@ -50,7 +53,9 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
       header: t("fields.category"),
       cell: ({ row }) => (
         <div className="max-w-64 whitespace-normal">
-          <p>{row.original.category}</p>
+          <p>
+            <ChosenOptionText option={row.original.category} />
+          </p>
           {row.original.description && <p className="text-xs text-muted-foreground">{row.original.description}</p>}
         </div>
       ),
@@ -69,7 +74,7 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
           <StatusBadge entity="cashTransaction" status={row.original.status} />
           {row.original.voidReason && (
             <p className="max-w-56 text-xs whitespace-normal text-muted-foreground">
-              {t("voidedBy", { name: row.original.voidedBy ?? "", reason: row.original.voidReason })}
+              {t("voidedBy", { name: row.original.voidedBy ?? "", reason: chosenText(row.original.voidReason) })}
             </p>
           )}
         </div>
@@ -109,7 +114,8 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
 type CashFormValues = {
   branchId: string;
   type: string;
-  category: string;
+  categoryId: string;
+  categoryNote: string;
   amount: string;
   occurredOn: string;
   reference: string;
@@ -159,13 +165,20 @@ function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string
     defaultValues: {
       branchId: "",
       type: "",
-      category: "",
+      categoryId: "",
+      categoryNote: "",
       amount: "",
       occurredOn: formatDate(new Date(), timeZone),
       reference: "",
       description: "",
     },
   });
+
+  // Income and expenses have their own lists (D-034); the category follows the type.
+  const type = useWatch({ control: form.control, name: "type" });
+  const listKey = type === "INCOME" ? "incomeCategories" : type === "EXPENSE" ? "expenseTypes" : null;
+  const { setValue } = form;
+  useEffect(() => setValue("categoryId", ""), [listKey, setValue]);
 
   const onSubmit = form.handleSubmit((values) =>
     startTransition(async () => {
@@ -201,7 +214,7 @@ function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string
             name="type"
             label={t(`${f}.type`)}
             placeholder={t("bookings.choose")}
-            options={CASH_TRANSACTION_TYPES.map((type) => ({ value: type, label: t(`finance.types.${type}`) }))}
+            options={CASH_TRANSACTION_TYPES.map((value) => ({ value, label: t(`finance.types.${value}`) }))}
           />
           <TextField
             control={form.control}
@@ -211,7 +224,7 @@ function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string
             inputMode="numeric"
           />
         </div>
-        <TextField control={form.control} name="category" label={t(`${f}.category`)} autoComplete="off" />
+        <OptionSelect control={form.control} name="categoryId" noteName="categoryNote" listKey={listKey} label={t(`${f}.category`)} />
         <div className="grid grid-cols-2 gap-4">
           <TextField
             control={form.control}

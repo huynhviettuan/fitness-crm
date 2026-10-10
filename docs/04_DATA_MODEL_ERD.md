@@ -64,10 +64,10 @@ erDiagram
 | `role_field_masks` | role_id, field (member phone, email, address, documents; receipt totals) |
 | `approval_rules` | action_type, required, approver_role_id, escalation_threshold, escalation_role_id, overdue_hours |
 | `approval_requests` | action_type, entity_type, entity_id, payload (json), submitted_by, status, decided_by, decided_at, reason_option_id, reason_note; check: decided_by ≠ submitted_by |
-| `option_lists` / `options` | list key (channels, sources, needs, refusal reasons, delete reasons, freeze reasons, exception reasons, step results, flags, actions, session summaries, expense types, payment methods, departments, …); option: code, label_vi, label_en, order, active, is_other |
-| `system_parameters` | key, value (json), description — timers, thresholds, calendar hours, cancel cut-off, freeze reminder days, re-care days |
+| `options` | list_key (channels, sources, needs, refusal reasons, delete reasons, freeze reasons, exception reasons, step results, flags, actions, session summaries, income categories, expense types, payment methods, departments, …; the keys are code, T-055), label_vi (unique per list), label_en, sort_order, active, is_other; one "Khác" per list, always active (A-034). Records keep `<field>_option_id` and `<field>_note` |
+| `system_parameters` | key (unique), value (json) — timers, thresholds, calendar hours, code prefixes, cancel cut-off, freeze reminder days, re-care days; keys and defaults are code, a missing row means the default (T-055) |
 | `session_status_rules` | status key, label, consumes, credits_pt, color token, active |
-| `code_sequences` | entity, prefix, next_value — codes never reused (D-038) |
+| *(sequences)* | One PostgreSQL sequence per code (`customer_code_seq`, …); the prefix is a system parameter — codes never reused (D-038, T-055) |
 | `audit_events` | actor_user_id, entity_type, entity_id, action, before (json), after (json), at (T-048) |
 | `trash_entries` | entity_type, entity_id, snapshot (json), deleted_by, deleted_at, reason_option_id, reason_note — no update or delete path |
 | `notifications` | user_id, kind, title, link, read_at |
@@ -145,7 +145,7 @@ erDiagram
 
 | Constraint | Rule |
 |---|---|
-| Unique codes per entity, never reused | D-038; `code_sequences` and unique indexes |
+| Unique codes per entity, never reused | D-038; sequences and unique indexes |
 | Unique idempotency keys | contracts, receipts, expense vouchers, change vouchers (T-015) |
 | Exclusion: no overlapping sessions per PT and per person while the status holds the slot | D-030, T-014, A-024 |
 | `end_at > start_at` on sessions | BR-011 |

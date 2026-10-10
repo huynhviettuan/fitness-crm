@@ -2,6 +2,7 @@ import type { Db } from "../../platform/db/prisma.js";
 import type { CustomerStatus, Prisma } from "../../generated/prisma/client.js";
 import { normalizeForSearch, normalizePhone } from "@flow/shared/validation";
 import { formatCustomerCode } from "@flow/shared/customers";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 
 const withBranch = { branch: { select: { id: true, name: true } } } as const;
 
@@ -16,10 +17,13 @@ export type CustomerWrite = {
   status?: CustomerStatus;
 };
 
-/** Draws the next code from the sequence; concurrent callers never get the same value. */
+/**
+ * Draws the next code from the sequence; concurrent callers never get the same value.
+ * The prefix is configuration (D-038); the number never repeats, whatever the prefix.
+ */
 export async function nextCustomerCode(db: Db): Promise<string> {
   const [row] = await db.$queryRaw<{ value: bigint }[]>`SELECT nextval('customer_code_seq') AS value`;
-  return formatCustomerCode(row.value);
+  return formatCustomerCode(await readParameter(db, "customerCodePrefix"), row.value);
 }
 
 export function createCustomer(db: Db, customerCode: string, data: CustomerWrite & { branchId: string; createdById: string }) {

@@ -125,7 +125,7 @@ Each cross-cutting concern has exactly one owner in `apps/web/src/components/`. 
 | `notify` | Toasts (wraps Sonner) |
 | Form field wrappers | Label, input, help text, and error message layout |
 | `FilterPanel` | Left-side filters of list pages; state kept in the URL |
-| `OptionSelect` | Drop-down from an option list; choosing "Khác" shows a required note (D-016) |
+| `OptionSelect` | Drop-down from an option list, loaded when the form opens; choosing "Khác" shows a required note (D-016). Records show the choice with `ChosenOptionText` ("Khác: note") |
 | `ApprovalBadge` / `ApprovalBar` | Pending state of a record and the approve/reject actions with reason |
 | `ExportButton` | Excel export of the current filter (permission `*.export`) |
 | `Masked` | Shows "•••" for fields hidden by the user's role (D-017) |

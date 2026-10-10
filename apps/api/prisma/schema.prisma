@@ -65,14 +65,6 @@ enum MoneyRecordStatus {
   VOIDED
 }
 
-// A-020
-enum PaymentMethod {
-  CASH
-  BANK_TRANSFER
-  CARD
-  E_WALLET
-}
-
 enum CashTransactionType {
   INCOME
   EXPENSE
@@ -244,6 +236,45 @@ model LoginEvent {
 
   @@index([userId, at])
   @@map("login_history")
+}
+
+// ---------------------------------------------------------------------------
+// Configuration (T-049): values admin changes on screen; the flows stay in code.
+// ---------------------------------------------------------------------------
+
+// One option of an option list (D-016). The list keys are code (packages/shared);
+// options are never deleted, only made inactive, so old records keep theirs. One
+// "Khác" per list (partial unique index in migration SQL), which needs a note.
+model Option {
+  id        String   @id @default(uuid()) @db.Uuid
+  listKey   String   @map("list_key")
+  labelVi   String   @map("label_vi")
+  labelEn   String   @map("label_en")
+  sortOrder Int      @map("sort_order")
+  active    Boolean  @default(true)
+  isOther   Boolean  @default(false) @map("is_other")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  paymentMethods     Payment[]         @relation("PaymentMethod")
+  paymentVoidReasons Payment[]         @relation("PaymentVoidReason")
+  cashCategories     CashTransaction[] @relation("CashCategory")
+  cashVoidReasons    CashTransaction[] @relation("CashVoidReason")
+
+  @@unique([listKey, labelVi])
+  @@index([listKey, sortOrder])
+  @@map("options")
+}
+
+// A system parameter (T-049). Keys and defaults are code (packages/shared); a missing
+// row means the default.
+model SystemParameter {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("system_parameters")
 }
 
 model AuthSession {
@@ -474,7 +505,10 @@ model Payment {
   contractId     String            @map("contract_id") @db.Uuid
   contract       Contract          @relation(fields: [contractId], references: [id], onDelete: Restrict)
   amount         Decimal           @db.Decimal(14, 0)
-  method         PaymentMethod
+  // D-016, D-034: from the "paymentMethods" option list.
+  methodId       String            @map("method_option_id") @db.Uuid
+  method         Option            @relation("PaymentMethod", fields: [methodId], references: [id], onDelete: Restrict)
+  methodNote     String?           @map("method_note")
   // The gym day the money was received (T-039).
   paidOn         DateTime          @map("paid_on") @db.Date
   status         MoneyRecordStatus @default(CONFIRMED)
@@ -486,7 +520,10 @@ model Payment {
   voidedAt       DateTime?         @map("voided_at") @db.Timestamptz(3)
   voidedById     String?           @map("voided_by") @db.Uuid
   voidedBy       User?             @relation("PaymentVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
-  voidReason     String?           @map("void_reason")
+  // From the "deleteReasons" option list (D-016, D-035).
+  voidReasonId   String?           @map("void_reason_option_id") @db.Uuid
+  voidReason     Option?           @relation("PaymentVoidReason", fields: [voidReasonId], references: [id], onDelete: Restrict)
+  voidReasonNote String?           @map("void_reason_note")
 
   @@index([contractId, status])
   @@index([paidOn])
@@ -499,7 +536,10 @@ model CashTransaction {
   branchId       String              @map("branch_id") @db.Uuid
   branch         Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
   type           CashTransactionType
-  category       String
+  // From "incomeCategories" or "expenseTypes", by type (D-016, D-034).
+  categoryId     String              @map("category_option_id") @db.Uuid
+  category       Option              @relation("CashCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryNote   String?             @map("category_note")
   amount         Decimal             @db.Decimal(14, 0)
   description    String?
   reference      String?
@@ -513,7 +553,9 @@ model CashTransaction {
   voidedAt       DateTime?           @map("voided_at") @db.Timestamptz(3)
   voidedById     String?             @map("voided_by") @db.Uuid
   voidedBy       User?               @relation("CashTransactionVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
-  voidReason     String?             @map("void_reason")
+  voidReasonId   String?             @map("void_reason_option_id") @db.Uuid
+  voidReason     Option?             @relation("CashVoidReason", fields: [voidReasonId], references: [id], onDelete: Restrict)
+  voidReasonNote String?             @map("void_reason_note")
 
   @@index([occurredOn])
   @@index([branchId])

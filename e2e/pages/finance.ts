@@ -17,9 +17,10 @@ export class PaymentDialog {
     readonly root: Locator,
   ) {}
 
-  async fill(input: { amount: string; method: string; paidOn?: string }): Promise<void> {
+  async fill(input: { amount: string; method: string; methodNote?: string; paidOn?: string }): Promise<void> {
     await this.root.getByLabel(f.amount, { exact: true }).fill(input.amount);
     await choose(this.page, this.root, f.method, input.method);
+    if (input.methodNote !== undefined) await this.root.getByLabel(labels.options.otherNote, { exact: true }).fill(input.methodNote);
     if (input.paidOn !== undefined) await this.root.getByLabel(f.paidOn, { exact: true }).fill(input.paidOn);
   }
 
@@ -46,7 +47,8 @@ export class CashDialog {
 
   async fill(input: { type: string; category: string; amount: string; reference?: string }): Promise<void> {
     await choose(this.page, this.root, f.type, input.type);
-    await this.root.getByLabel(f.category, { exact: true }).fill(input.category);
+    // The category list follows the type (D-034).
+    await choose(this.page, this.root, f.category, input.category);
     await this.root.getByLabel(f.amount, { exact: true }).fill(input.amount);
     if (input.reference) await this.root.getByLabel(f.reference, { exact: true }).fill(input.reference);
   }
@@ -73,13 +75,38 @@ export class PaymentsTable {
     return this.row(...rowTexts).getByRole("button", { name: labels.finance.void, exact: true });
   }
 
-  /** Voids a row, giving `reason` in the void dialog. Returns the dialog. */
-  async void(reason: string, ...rowTexts: string[]): Promise<Locator> {
+  /** Opens the void dialog of a row. */
+  async openVoid(...rowTexts: string[]): Promise<VoidDialog> {
     await this.voidButton(...rowTexts).click();
-    const dialog = this.page.getByRole("alertdialog");
-    await dialog.getByLabel(labels.finance.voidReason, { exact: true }).fill(reason);
-    await dialog.getByRole("button", { name: labels.finance.void, exact: true }).click();
-    return dialog;
+    return new VoidDialog(this.page, this.page.getByRole("alertdialog"));
+  }
+
+  /** Voids a row with `reason` from the list, and its note when there is one. */
+  async void(reason: { option: string; note?: string }, ...rowTexts: string[]): Promise<void> {
+    const dialog = await this.openVoid(...rowTexts);
+    await dialog.choose(reason.option, reason.note);
+    await dialog.confirm();
+  }
+}
+
+/** The void confirmation, which asks for a reason from the list (A-008, D-016). */
+export class VoidDialog {
+  constructor(
+    private readonly page: Page,
+    readonly root: Locator,
+  ) {}
+
+  async choose(option: string, note?: string): Promise<void> {
+    await choose(this.page, this.root, labels.finance.voidReason, option);
+    if (note !== undefined) await this.root.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
+  }
+
+  async confirm(): Promise<void> {
+    await this.root.getByRole("button", { name: labels.finance.void, exact: true }).click();
+  }
+
+  get fieldErrors(): Locator {
+    return this.root.locator('[data-slot="field-error"]');
   }
 }
 

@@ -1,5 +1,6 @@
 // Pure contract rules: no database, no framework. The API enforces them; the web app
 // uses them to show only the actions that can succeed.
+import { formatCode } from "../parameters/parameter.schema.js";
 
 /** Stored statuses; EXPIRED is derived from the end date (T-018). Matches the database enum. */
 export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "CANCELLED"] as const;
@@ -7,9 +8,9 @@ export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 
 export type EffectiveContractStatus = ContractStatus | "EXPIRED";
 
-/** A-003: contract codes are "HD" + at least 6 digits. */
-export function formatContractCode(sequenceValue: bigint | number): string {
-  return `HD${sequenceValue.toString().padStart(6, "0")}`;
+/** D-038: the configured prefix + at least 6 digits, e.g. HD000123. */
+export function formatContractCode(prefix: string, sequenceValue: bigint | number): string {
+  return formatCode(prefix, sequenceValue, 6);
 }
 
 /**

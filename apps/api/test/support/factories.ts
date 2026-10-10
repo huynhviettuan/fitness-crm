@@ -3,6 +3,7 @@ import { hashPassword } from "better-auth/crypto";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { loadCurrentUser, type CurrentUser } from "../../src/platform/auth/actor.js";
 import { createUserWithPassword } from "../../src/modules/users/user.repository.js";
+import type { OptionListKey } from "@flow/shared/options";
 
 export const TEST_PASSWORD = "Test-password-123";
 
@@ -40,6 +41,26 @@ export async function createTestUser(
     await hashPassword(TEST_PASSWORD),
   );
   return { user, actor: await actorOf(user.id) };
+}
+
+/** The options the migration creates (D-016, brief §8.1), as they are initially. */
+export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sortOrder: number; active: boolean }[] = [
+  ...[1, 2, 3, 4].map((n) => ({ id: `c0000000-0000-4000-8000-00000000000${n}`, labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true })),
+  { id: "c0000000-0000-4000-8000-000000000011", labelVi: "Tiền mặt", labelEn: "Cash", sortOrder: 1, active: true },
+  { id: "c0000000-0000-4000-8000-000000000012", labelVi: "Chuyển khoản", labelEn: "Bank transfer", sortOrder: 2, active: true },
+  { id: "c0000000-0000-4000-8000-000000000013", labelVi: "Thẻ", labelEn: "Card", sortOrder: 3, active: true },
+  { id: "c0000000-0000-4000-8000-000000000014", labelVi: "Ví điện tử", labelEn: "E-wallet", sortOrder: 4, active: false },
+];
+
+/** An option's id by its Vietnamese label; "Khác" is each list's Other. */
+export function optionId(listKey: OptionListKey, labelVi: string): Promise<string> {
+  return prisma.option.findFirstOrThrow({ where: { listKey, labelVi }, select: { id: true } }).then((option) => option.id);
+}
+
+/** An option made for a test. Removed by resetDatabase(). */
+export async function createTestOption(listKey: OptionListKey, labelVi: string, active = true): Promise<string> {
+  const option = await prisma.option.create({ data: { listKey, labelVi, labelEn: labelVi, sortOrder: 100, active }, select: { id: true } });
+  return option.id;
 }
 
 /** A second branch, for branch-access tests. Removed by resetDatabase(). */

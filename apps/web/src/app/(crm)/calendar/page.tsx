@@ -11,6 +11,8 @@ import { formatDateOnly } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { isActiveBooking } from "@flow/shared/bookings";
 import { listDayBookings } from "@/lib/api/bookings";
+import { getParameters } from "@/lib/api/configuration";
+import { minutesOfDay } from "@flow/shared/parameters";
 import { bookingContext } from "../bookings/booking-context";
 import { AddBookingButton } from "../bookings/bookings-table";
 import type { TrainerOption } from "../bookings/booking-types";
@@ -49,6 +51,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
 
   const trainerId = typeof params.trainer === "string" && context.trainers.some((tr) => tr.id === params.trainer) ? params.trainer : undefined;
   const bookings = (await listDayBookings({ date: formatDateOnly(day), trainerId })).filter((b) => isActiveBooking(b.status));
+  // Calendar hours are a system parameter (D-030, T-049).
+  const parameters = await getParameters();
   const columns = scheduleColumns(context.trainers, bookings.map((b) => b.trainer), trainerId);
 
   return (
@@ -67,8 +71,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
           date={formatDateOnly(day)}
           columns={columns}
           bookings={bookings}
-          startHour={env.SCHEDULE_START_HOUR}
-          endHour={env.SCHEDULE_END_HOUR}
+          dayStart={minutesOfDay(parameters.calendarDayStart)}
+          dayEnd={minutesOfDay(parameters.calendarDayEnd)}
           permissions={context.permissions}
           trainers={context.trainers}
         />

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { otherOptionId } from "./options";
 import type { APIRequestContext } from "@playwright/test";
 
 // Test data created through the public API. Names carry the test's tag so the
@@ -89,10 +90,11 @@ export function gymToday(): { date: string; url: string } {
   return { date: `${d}/${m}/${y}`, url: `${y}-${m}-${d}` };
 }
 
+/** A payment with "Khác" as its method and the note "E2E" (any list option would do). */
 export async function recordPaymentViaApi(api: APIRequestContext, contractId: string, amount: string, paidOn = gymToday().date) {
   const response = await api.post(`/api/v1/contracts/${contractId}/payments`, {
     headers: { "idempotency-key": randomUUID() },
-    data: { amount, method: "CASH", paidOn },
+    data: { amount, methodId: await otherOptionId(api, "paymentMethods"), methodNote: "E2E", paidOn },
   });
   if (response.status() !== 201) throw new Error(`Payment setup failed: ${response.status()} ${await response.text()}`);
   return response.json() as Promise<{ id: string; amount: number; status: string }>;

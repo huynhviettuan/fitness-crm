@@ -12,27 +12,29 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
-import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
+import { TextField, applyFieldErrors } from "@/components/form-fields";
+import { ChosenOptionText, OptionSelect, useChosenOptionText } from "@/components/option-select";
 import { Money } from "@/components/money";
 import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
-import { PAYMENT_METHODS, paymentInputSchema, type PaymentInput } from "@flow/shared/finance";
+import { paymentInputSchema, type PaymentInput } from "@flow/shared/finance";
+import type { ChosenOption } from "@flow/shared/options";
 import { recordPaymentAction, voidPaymentAction } from "./actions";
 import { VoidDialog } from "./void-dialog";
 
 export type PaymentRow = {
   id: string;
   amount: number;
-  method: (typeof PAYMENT_METHODS)[number];
+  method: ChosenOption;
   paidOn: Date;
   status: "CONFIRMED" | "VOIDED";
   createdBy: string;
   contract: { id: string; contractCode: string; packageName: string };
   customer: { id: string; customerCode: string; fullName: string };
   voidedBy: string | null;
-  voidReason: string | null;
+  voidReason: ChosenOption | null;
 };
 
 type PaymentsTableProps = {
@@ -51,6 +53,7 @@ export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, foot
   const locale = useLocale();
   const router = useRouter();
   const [voiding, setVoiding] = useState<PaymentRow | null>(null);
+  const chosenText = useChosenOptionText();
 
   const columns: DataTableColumn<PaymentRow>[] = [
     { id: "paidOn", header: t("fields.paidOn"), cell: ({ row }) => <DateTime value={row.original.paidOn} format="dateOnly" /> },
@@ -59,7 +62,7 @@ export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, foot
       header: t("fields.amount"),
       cell: ({ row }) => <Money amount={row.original.amount} struck={row.original.status === "VOIDED"} />,
     },
-    { id: "method", header: t("fields.method"), cell: ({ row }) => t(`methods.${row.original.method}`) },
+    { id: "method", header: t("fields.method"), cell: ({ row }) => <ChosenOptionText option={row.original.method} /> },
     ...(hide.customer
       ? []
       : [
@@ -94,7 +97,7 @@ export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, foot
           <StatusBadge entity="payment" status={row.original.status} />
           {row.original.voidReason && (
             <p className="max-w-56 text-xs whitespace-normal text-muted-foreground">
-              {t("voidedBy", { name: row.original.voidedBy ?? "", reason: row.original.voidReason })}
+              {t("voidedBy", { name: row.original.voidedBy ?? "", reason: chosenText(row.original.voidReason) })}
             </p>
           )}
         </div>
@@ -132,7 +135,7 @@ export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, foot
   );
 }
 
-type PaymentFormValues = { amount: string; method: string; paidOn: string };
+type PaymentFormValues = { amount: string; methodId: string; methodNote: string; paidOn: string };
 
 /** "Record payment" for one contract (FR-PAY-001): three fields, so a Dialog. */
 export function RecordPaymentButton({ contract }: { contract: { id: string; debt: number } }) {
@@ -173,7 +176,7 @@ function PaymentForm({ contractId, idempotencyKey, onDone }: { contractId: strin
   // Same schema as the server for instant feedback; raw values are sent and re-parsed there.
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentInputSchema, undefined, { raw: true }) as never,
-    defaultValues: { amount: "", method: "", paidOn: formatDate(new Date(), timeZone) },
+    defaultValues: { amount: "", methodId: "", methodNote: "", paidOn: formatDate(new Date(), timeZone) },
   });
 
   const onSubmit = form.handleSubmit((values) =>
@@ -200,12 +203,12 @@ function PaymentForm({ contractId, idempotencyKey, onDone }: { contractId: strin
           placeholder={t("finance.amountPlaceholder")}
           inputMode="numeric"
         />
-        <SelectField
+        <OptionSelect
           control={form.control}
-          name="method"
+          name="methodId"
+          noteName="methodNote"
+          listKey="paymentMethods"
           label={t("finance.fields.method")}
-          placeholder={t("bookings.choose")}
-          options={PAYMENT_METHODS.map((method) => ({ value: method, label: t(`finance.methods.${method}`) }))}
         />
         <TextField
           control={form.control}

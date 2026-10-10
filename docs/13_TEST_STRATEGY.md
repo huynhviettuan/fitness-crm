@@ -27,7 +27,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 |---|---|---|
 | E2E-101 | Lead from the quick form → assigned round-robin → checklist steps → appointment → Show → converted with the same ID | AC-06, AC-09 |
 | E2E-102 | Duplicate phone → warning → merge, one record | BR-202 |
-| E2E-103 | "Khác" without note refused; option deactivated stays on old record | AC-03, AC-04 |
+| E2E-103 | "Khác" without note refused; option deactivated stays on old record (`e2e/configuration.spec.ts`, `e2e/finance.spec.ts`) | AC-03, AC-04 |
 | E2E-104 | Contract with any session count → tier price, end date, name; exception price stays pending; booking refused until approved | AC-10, AC-11 |
 | E2E-105 | Approved contract cannot be edited by admin | AC-11 |
 | E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash | AC-12, AC-13 |

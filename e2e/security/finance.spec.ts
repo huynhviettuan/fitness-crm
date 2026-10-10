@@ -4,9 +4,13 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { createContractViaApi, createCustomerViaApi, gymToday, recordPaymentViaApi } from "../support/data";
+import { createOptionViaApi, otherOptionId } from "../support/options";
 import type { Role } from "../support/db";
 
-const PAYMENT = { amount: "1.000.000", method: "CASH", paidOn: gymToday().date };
+// Payment methods and void reasons come from option lists (D-016); "Khác" with a note fits any test.
+const PAYMENT = { amount: "1.000.000", methodNote: "E2E", paidOn: gymToday().date };
+const payment = async (api: import("@playwright/test").APIRequestContext) => ({ ...PAYMENT, methodId: await otherOptionId(api, "paymentMethods") });
+const voidReason = async (api: import("@playwright/test").APIRequestContext) => ({ reasonId: await otherOptionId(api, "deleteReasons"), reasonNote: "Kiểm tra" });
 
 async function activeContract(apiAs: (role: Role) => Promise<import("@playwright/test").APIRequestContext>, tag: string) {
   const reception = await apiAs("RECEPTIONIST");
@@ -24,9 +28,10 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
   for (const [role, status] of recordExpectations) {
     test(`${role} recording a payment gets ${status}`, async ({ apiAs, testTag }) => {
       const contract = await activeContract(apiAs, testTag);
-      const response = await (await apiAs(role)).post(`/api/v1/contracts/${contract.id}/payments`, {
+      const api = await apiAs(role);
+      const response = await api.post(`/api/v1/contracts/${contract.id}/payments`, {
         headers: { "idempotency-key": randomUUID() },
-        data: PAYMENT,
+        data: await payment(await apiAs("ADMIN")),
       });
       expect(response.status()).toBe(status);
     });
@@ -41,9 +46,9 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
   for (const [role, status] of voidExpectations) {
     test(`${role} voiding a payment gets ${status}`, async ({ apiAs, testTag }) => {
       const contract = await activeContract(apiAs, testTag);
-      const payment = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
+      const recorded = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
 
-      const response = await (await apiAs(role)).post(`/api/v1/payments/${payment.id}/void`, { data: { reason: "Kiểm tra" } });
+      const response = await (await apiAs(role)).post(`/api/v1/payments/${recorded.id}/void`, { data: await voidReason(await apiAs("ADMIN")) });
       expect(response.status()).toBe(status);
     });
   }
@@ -57,7 +62,12 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
     test(`${role} recording income gets ${status}`, async ({ apiAs, testTag }) => {
       const response = await (await apiAs(role)).post("/api/v1/cash-transactions", {
         headers: { "idempotency-key": randomUUID() },
-        data: { type: "INCOME", category: `Bán nước ${testTag}`, amount: "100.000", occurredOn: gymToday().date },
+        data: {
+          type: "INCOME",
+          categoryId: await createOptionViaApi(await apiAs("ADMIN"), "incomeCategories", `Bán nước ${testTag} ${role}`),
+          amount: "100.000",
+          occurredOn: gymToday().date,
+        },
       });
       expect(response.status()).toBe(status);
     });
@@ -78,7 +88,7 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
 
     const response = await reception.post(`/api/v1/contracts/${contract.id}/payments`, {
       headers: { "idempotency-key": randomUUID() },
-      data: { ...PAYMENT, status: "VOIDED", contractId: other.id, createdById: randomUUID(), voidReason: "x" },
+      data: { ...(await payment(reception)), status: "VOIDED", contractId: other.id, createdById: randomUUID(), voidReasonId: randomUUID() },
     });
 
     expect(response.status()).toBe(201);
@@ -91,8 +101,9 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
   test("a replay returns the original, and only one payment counts (INT-004)", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
     const reception = await apiAs("RECEPTIONIST");
+    const data = await payment(reception);
     const send = (key: string, amount = PAYMENT.amount) =>
-      reception.post(`/api/v1/contracts/${contract.id}/payments`, { headers: { "idempotency-key": key }, data: { ...PAYMENT, amount } });
+      reception.post(`/api/v1/contracts/${contract.id}/payments`, { headers: { "idempotency-key": key }, data: { ...data, amount } });
     const key = randomUUID();
 
     const first = await send(key);
@@ -113,10 +124,11 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
     const contract = await activeContract(apiAs, testTag);
     const reception = await apiAs("RECEPTIONIST");
     const key = randomUUID();
+    const data = await payment(reception);
 
     const responses = await Promise.all(
       Array.from({ length: 5 }, () =>
-        reception.post(`/api/v1/contracts/${contract.id}/payments`, { headers: { "idempotency-key": key }, data: PAYMENT }),
+        reception.post(`/api/v1/contracts/${contract.id}/payments`, { headers: { "idempotency-key": key }, data }),
       ),
     );
 
@@ -127,7 +139,8 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
   test("a payment without an Idempotency-Key is refused", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
 
-    const response = await (await apiAs("RECEPTIONIST")).post(`/api/v1/contracts/${contract.id}/payments`, { data: PAYMENT });
+    const reception = await apiAs("RECEPTIONIST");
+    const response = await reception.post(`/api/v1/contracts/${contract.id}/payments`, { data: await payment(reception) });
 
     expect(response.status()).toBe(400);
     expect(await response.json()).toMatchObject({ code: "IDEMPOTENCY_KEY_REQUIRED" });
@@ -135,7 +148,7 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
 });
 
 test.describe("A10 finance input errors", () => {
-  test("invalid amounts, methods, and dates are field errors", async ({ apiAs, testTag }) => {
+  test("invalid amounts, methods, and dates are field errors; Khác needs a note (AC-04)", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
     const reception = await apiAs("RECEPTIONIST");
     const [d, m, y] = gymToday().date.split("/").map(Number);
@@ -143,21 +156,29 @@ test.describe("A10 finance input errors", () => {
     const tomorrowText = `${String(tomorrow.getUTCDate()).padStart(2, "0")}/${String(tomorrow.getUTCMonth() + 1).padStart(2, "0")}/${tomorrow.getUTCFullYear()}`;
     const send = (data: object) =>
       reception.post(`/api/v1/contracts/${contract.id}/payments`, { headers: { "idempotency-key": randomUUID() }, data });
+    const valid = await payment(reception);
 
-    const invalid = await send({ amount: "12.5", method: "GOLD", paidOn: "2026-10-10" });
+    const invalid = await send({ amount: "12.5", methodId: "GOLD", paidOn: "2026-10-10" });
     expect(invalid.status()).toBe(400);
     expect(await invalid.json()).toMatchObject({
-      details: { fieldErrors: { amount: ["invalidAmount"], method: ["invalidChoice"], paidOn: ["invalidDate"] } },
+      details: { fieldErrors: { amount: ["invalidAmount"], methodId: ["required"], paidOn: ["invalidDate"] } },
     });
-    expect(await (await send({ ...PAYMENT, amount: "0" })).json()).toMatchObject({ details: { fieldErrors: { amount: ["amountNotPositive"] } } });
-    expect(await (await send({ ...PAYMENT, paidOn: tomorrowText })).json()).toMatchObject({ details: { fieldErrors: { paidOn: ["futureDate"] } } });
+    expect(await (await send({ ...valid, amount: "0" })).json()).toMatchObject({ details: { fieldErrors: { amount: ["amountNotPositive"] } } });
+    expect(await (await send({ ...valid, paidOn: tomorrowText })).json()).toMatchObject({ details: { fieldErrors: { paidOn: ["futureDate"] } } });
+    expect(await (await send({ ...valid, methodNote: " " })).json()).toMatchObject({ details: { fieldErrors: { methodNote: ["otherNeedsNote"] } } });
+    // An option of another list, or none at all, is not a method.
+    const reason = (await voidReason(reception)).reasonId;
+    for (const methodId of [reason, randomUUID()]) {
+      expect(await (await send({ ...valid, methodId })).json()).toMatchObject({ details: { fieldErrors: { methodId: ["invalidChoice"] } } });
+    }
   });
 
   test("business rules answer with their documented codes", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
     const reception = await apiAs("RECEPTIONIST");
+    const data = await payment(reception);
     const send = (contractId: string, amount: string) =>
-      reception.post(`/api/v1/contracts/${contractId}/payments`, { headers: { "idempotency-key": randomUUID() }, data: { ...PAYMENT, amount } });
+      reception.post(`/api/v1/contracts/${contractId}/payments`, { headers: { "idempotency-key": randomUUID() }, data: { ...data, amount } });
 
     const over = await send(contract.id, "12.000.001");
     expect(over.status()).toBe(422);
@@ -171,15 +192,18 @@ test.describe("A10 finance input errors", () => {
 
   test("a void needs a reason, and unknown ids are 404", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
-    const payment = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
+    const recorded = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
     const accountant = await apiAs("ACCOUNTANT");
+    const reason = await voidReason(accountant);
 
-    const noReason = await accountant.post(`/api/v1/payments/${payment.id}/void`, { data: { reason: " " } });
+    const noReason = await accountant.post(`/api/v1/payments/${recorded.id}/void`, { data: { reasonId: " " } });
     expect(noReason.status()).toBe(400);
-    expect(await noReason.json()).toMatchObject({ details: { fieldErrors: { reason: ["required"] } } });
+    expect(await noReason.json()).toMatchObject({ details: { fieldErrors: { reasonId: ["required"] } } });
+    const noNote = await accountant.post(`/api/v1/payments/${recorded.id}/void`, { data: { ...reason, reasonNote: "" } });
+    expect(await noNote.json()).toMatchObject({ details: { fieldErrors: { reasonNote: ["otherNeedsNote"] } } });
     for (const id of [randomUUID(), "not-a-uuid"]) {
-      expect((await accountant.post(`/api/v1/payments/${id}/void`, { data: { reason: "x" } })).status()).toBe(404);
-      expect((await accountant.post(`/api/v1/cash-transactions/${id}/void`, { data: { reason: "x" } })).status()).toBe(404);
+      expect((await accountant.post(`/api/v1/payments/${id}/void`, { data: reason })).status()).toBe(404);
+      expect((await accountant.post(`/api/v1/cash-transactions/${id}/void`, { data: reason })).status()).toBe(404);
     }
   });
 });

@@ -2,6 +2,7 @@ import type { Db } from "../../platform/db/prisma.js";
 import type { ContractStatus, Prisma } from "../../generated/prisma/client.js";
 import { normalizeForSearch } from "@flow/shared/validation";
 import { formatContractCode } from "@flow/shared/contracts";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 import type { ContractData } from "@flow/shared/contracts";
 
 const withCustomer = {
@@ -22,10 +23,13 @@ export async function lockContract(db: Db, id: string): Promise<boolean> {
   return rows.length === 1;
 }
 
-/** Draws the next code from the sequence; concurrent callers never get the same value. */
+/**
+ * Draws the next code from the sequence; concurrent callers never get the same value.
+ * The prefix is configuration (D-038); the number never repeats, whatever the prefix.
+ */
 export async function nextContractCode(db: Db): Promise<string> {
   const [row] = await db.$queryRaw<{ value: bigint }[]>`SELECT nextval('contract_code_seq') AS value`;
-  return formatContractCode(row.value);
+  return formatContractCode(await readParameter(db, "contractCodePrefix"), row.value);
 }
 
 export function createContract(

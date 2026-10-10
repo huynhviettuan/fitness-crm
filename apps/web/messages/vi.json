@@ -14,7 +14,9 @@
     "trainers": "Huấn luyện viên",
     "finance": "Tài chính",
     "roles": "Vai trò và phân quyền",
-    "branches": "Chi nhánh"
+    "branches": "Chi nhánh",
+    "options": "Danh mục lựa chọn",
+    "parameters": "Tham số hệ thống"
   },
   "status": {
     "customer": {
@@ -57,6 +59,10 @@
     "login": {
       "SUCCESS": "Thành công",
       "FAILED": "Thất bại"
+    },
+    "option": {
+      "ACTIVE": "Đang dùng",
+      "INACTIVE": "Ngừng dùng"
     }
   },
   "common": {
@@ -287,7 +293,11 @@
     "amountNotPositive": "Số tiền phải lớn hơn 0.",
     "futureDate": "Ngày không được sau hôm nay.",
     "nameAlreadyUsed": "Tên này đã được dùng.",
-    "duplicate": "Có mục bị lặp."
+    "duplicate": "Có mục bị lặp.",
+    "otherNeedsNote": "Đã chọn \"Khác\" thì phải ghi rõ.",
+    "otherAlwaysActive": "Lựa chọn \"Khác\" luôn được dùng, không thể ngừng.",
+    "notOnHalfHour": "Chọn giờ tròn hoặc giờ rưỡi, ví dụ 05:00 hoặc 05:30.",
+    "invalidCodePrefix": "Tiền tố gồm 1 đến 5 chữ cái không dấu, ví dụ KH."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -472,16 +482,9 @@
     "voidCashBody": "Khoản này không còn được tính vào tổng thu chi, nhưng vẫn được lưu lại. Ghi nhận khoản mới nếu cần sửa.",
     "voided": "Đã hủy bỏ",
     "voidReason": "Lý do",
-    "voidReasonPlaceholder": "Ví dụ: ghi nhầm hợp đồng",
     "voidedBy": "Hủy bỏ bởi {name}: {reason}",
     "datePlaceholder": "dd/mm/yyyy",
     "amountPlaceholder": "1.000.000",
-    "methods": {
-      "CASH": "Tiền mặt",
-      "BANK_TRANSFER": "Chuyển khoản",
-      "CARD": "Thẻ",
-      "E_WALLET": "Ví điện tử"
-    },
     "types": {
       "INCOME": "Thu",
       "EXPENSE": "Chi"
@@ -509,7 +512,8 @@
       "contracts": "Hợp đồng",
       "schedule": "Lịch PT và buổi tập",
       "employees": "Nhân sự",
-      "cashbook": "Sổ quỹ"
+      "cashbook": "Sổ quỹ",
+      "configuration": "Cấu hình"
     },
     "labels": {
       "user": {
@@ -550,6 +554,9 @@
       },
       "cash": {
         "manage": "Thu chi khác (xem, ghi, hủy)"
+      },
+      "config": {
+        "manage": "Quản lý danh mục lựa chọn và tham số hệ thống"
       }
     },
     "resources": {
@@ -615,5 +622,62 @@
     "active": "Đang hoạt động",
     "inactive": "Ngừng hoạt động",
     "rowActions": "Thao tác cho {name}"
+  },
+  "options": {
+    "title": "Danh mục lựa chọn",
+    "description": "Các danh sách thả xuống trong hệ thống. Lựa chọn ngừng dùng không còn chọn được nhưng vẫn giữ trên dữ liệu cũ. \"Khác\" luôn ở cuối và bắt buộc ghi chú.",
+    "listsLabel": "Danh mục",
+    "lists": {
+      "paymentMethods": "Hình thức thanh toán",
+      "incomeCategories": "Loại thu",
+      "expenseTypes": "Loại chi",
+      "deleteReasons": "Lý do xóa, hủy phiếu"
+    },
+    "create": "Thêm lựa chọn",
+    "edit": "Sửa lựa chọn",
+    "created": "Đã thêm {name}",
+    "saved": "Đã lưu lựa chọn",
+    "reordered": "Đã đổi thứ tự",
+    "moveUp": "Đưa {name} lên",
+    "moveDown": "Đưa {name} xuống",
+    "rowActions": "Sửa {name}",
+    "other": "Khác",
+    "otherHint": "Luôn ở cuối danh sách",
+    "fields": {
+      "order": "Thứ tự",
+      "labelVi": "Tên tiếng Việt",
+      "labelEn": "Tên tiếng Anh",
+      "status": "Trạng thái",
+      "active": "Đang dùng"
+    },
+    "empty": "Danh mục chưa có lựa chọn nào ngoài \"Khác\".",
+    "choose": "Chọn",
+    "loading": "Đang tải…",
+    "otherNote": "Ghi rõ",
+    "otherNoteHint": "Bắt buộc khi chọn \"Khác\".",
+    "otherNotes": {
+      "title": "Ghi chú khi chọn \"Khác\"",
+      "description": "Những ghi chú hay gặp nên được thêm thành lựa chọn riêng.",
+      "empty": "Chưa ai chọn \"Khác\" trong danh mục này.",
+      "note": "Ghi chú",
+      "count": "Số lần",
+      "lastUsedAt": "Lần gần nhất"
+    }
+  },
+  "parameters": {
+    "title": "Tham số hệ thống",
+    "description": "Các giá trị hệ thống dùng hằng ngày. Thay đổi có hiệu lực ngay và được ghi lại trong lịch sử.",
+    "calendar": "Lịch PT",
+    "calendarHint": "Giờ đầu và cuối của lịch PT. Buổi tập ngoài khung giờ vẫn được hiển thị.",
+    "codes": "Mã tự sinh",
+    "codesHint": "Tiền tố đứng trước số thứ tự. Số thứ tự không bao giờ lặp lại, kể cả khi đổi tiền tố.",
+    "fields": {
+      "calendarDayStart": "Giờ bắt đầu",
+      "calendarDayEnd": "Giờ kết thúc",
+      "customerCodePrefix": "Mã khách hàng",
+      "contractCodePrefix": "Mã hợp đồng",
+      "trainerCodePrefix": "Mã huấn luyện viên"
+    },
+    "saved": "Đã lưu tham số"
   }
 }

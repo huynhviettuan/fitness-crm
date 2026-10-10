@@ -3,20 +3,21 @@ import { branchRefSchema } from "../branches/branch.schema.js";
 import { contractSchema } from "../contracts/contract.view.js";
 import { customerRefSchema } from "../customers/customer.view.js";
 import { instant, pageOf } from "../validation/index.js";
-import { CASH_TRANSACTION_TYPES, MONEY_RECORD_STATUSES, PAYMENT_METHODS } from "./finance.schema.js";
+import { chosenOptionSchema } from "../options/option.schema.js";
+import { CASH_TRANSACTION_TYPES, MONEY_RECORD_STATUSES } from "./finance.schema.js";
 
 /** Who voided a record, when, and why (A-008, A-009). */
 const voidFacts = {
   voidedAt: instant.nullable(),
   voidedBy: z.string().nullable(),
-  voidReason: z.string().nullable(),
+  voidReason: chosenOptionSchema.nullable(),
 };
 
 export const paymentSchema = z
   .object({
     id: z.uuid(),
     amount: z.int(),
-    method: z.enum(PAYMENT_METHODS),
+    method: chosenOptionSchema,
     /** The gym day the money was received (T-039). */
     paidOn: instant,
     status: z.enum(MONEY_RECORD_STATUSES),
@@ -44,7 +45,7 @@ export const cashTransactionSchema = z
     id: z.uuid(),
     branch: branchRefSchema,
     type: z.enum(CASH_TRANSACTION_TYPES),
-    category: z.string(),
+    category: chosenOptionSchema,
     amount: z.int(),
     description: z.string().nullable(),
     reference: z.string().nullable(),

@@ -221,32 +221,54 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const c10 = await activateContract(manager, c10Draft.id);
   await history(plan(c10, son, anh, "07:00"), 3, 7);
 
+  // --- Option lists (D-016): the migration's payment methods, plus example categories
+  // and reasons an admin would add on screen.
+  const option = async (listKey: string, labelVi: string, labelEn = labelVi) => {
+    const found = await prisma.option.findFirst({ where: { listKey, labelVi }, select: { id: true } });
+    if (found) return found.id;
+    const last = await prisma.option.aggregate({ where: { listKey, isOther: false }, _max: { sortOrder: true } });
+    const created = await prisma.option.create({ data: { listKey, labelVi, labelEn, sortOrder: (last._max.sortOrder ?? 0) + 1 } });
+    return created.id;
+  };
+  const method = {
+    CASH: await option("paymentMethods", "Tiền mặt"),
+    BANK_TRANSFER: await option("paymentMethods", "Chuyển khoản"),
+    CARD: await option("paymentMethods", "Thẻ"),
+    OTHER: await option("paymentMethods", "Khác"),
+  };
+  const wrongAmount = await option("deleteReasons", "Ghi nhầm số tiền", "Wrong amount");
+  const enteredTwice = await option("deleteReasons", "Nhập trùng", "Entered twice");
+
   // --- Payments
-  const pay = (c: { id: string }, amount: string, method: "CASH" | "BANK_TRANSFER" | "CARD" | "E_WALLET", offset: number) =>
-    recordPayment(reception, c.id, { amount, method, paidOn: day(offset) }, randomUUID());
+  const pay = (c: { id: string }, amount: string, how: keyof typeof method, offset: number, note = "") =>
+    recordPayment(reception, c.id, { amount, methodId: method[how], methodNote: note, paidOn: day(offset) }, randomUUID());
   await pay(c1, "6.000.000", "BANK_TRANSFER", -45);
   await pay(c1, "6.000.000", "CASH", -15);
   await pay(yoga, "3.600.000", "CARD", -5);
   await pay(c2, "5.000.000", "CARD", -30);
   await pay(c3, "6.500.000", "BANK_TRANSFER", -40);
   await pay(c4, "4.000.000", "CASH", -20);
-  await pay(c4, "2.000.000", "E_WALLET", -2);
+  await pay(c4, "2.000.000", "OTHER", -2, "Ví MoMo");
   await pay(c5, "3.000.000", "CASH", -10);
   const wrong = await pay(c5, "3.250.000", "CASH", -9);
-  await voidPayment(accountant, wrong.payment.id, { reason: "Ghi nhầm số tiền, khách chỉ trả 3.000.000" });
+  await voidPayment(accountant, wrong.payment.id, { reasonId: wrongAmount, reasonNote: "Khách chỉ trả 3.000.000" });
   await pay(c8, "10.000.000", "BANK_TRANSFER", -199);
   await pay(c9, "2.000.000", "CASH", -5);
   await pay(c10, "1.000.000", "CASH", -7);
   await cancelContract(manager, c9.id);
 
   // --- Income and expenses (this month and last)
-  const cash = (type: "INCOME" | "EXPENSE", category: string, amount: string, offset: number, reference = "") =>
-    recordCashTransaction(accountant, { type, category, amount, occurredOn: day(offset), reference }, randomUUID());
+  const cash = async (type: "INCOME" | "EXPENSE", category: string, amount: string, offset: number, reference = "") =>
+    recordCashTransaction(
+      accountant,
+      { type, categoryId: await option(type === "INCOME" ? "incomeCategories" : "expenseTypes", category), amount, occurredOn: day(offset), reference },
+      randomUUID(),
+    );
   await cash("INCOME", "Bán nước uống", "450.000", -1);
   await cash("INCOME", "Phí gửi xe", "300.000", -3);
   await cash("EXPENSE", "Tiền điện", "3.200.000", -5, "EVN-0921");
   const duplicate = await cash("EXPENSE", "Tiền điện", "3.200.000", -5, "EVN-0921");
-  await voidCashTransaction(accountant, duplicate.transaction.id, { reason: "Nhập trùng" });
+  await voidCashTransaction(accountant, duplicate.transaction.id, { reasonId: enteredTwice });
   await cash("EXPENSE", "Tiền nước", "650.000", -5);
   await cash("EXPENSE", "Mua khăn tập", "800.000", -8);
   await cash("INCOME", "Bán nước uống", "520.000", -33);

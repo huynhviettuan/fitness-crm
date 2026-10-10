@@ -11,7 +11,7 @@ import { listBookings } from "../../src/modules/bookings/booking.service.js";
 import { collectedBetween, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { financeSummary } from "../../src/modules/finance/cash.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser } from "../support/factories.js";
+import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser, optionId } from "../support/factories.js";
 import { CONTRACT, activeContract, book, bookingScenario, linkedTrainer } from "../support/bookings.js";
 
 afterEach(resetDatabase);
@@ -128,8 +128,8 @@ describe("data scope (D-017, A-029)", () => {
     const { actor: reception } = await createTestUser("RECEPTIONIST");
     const mine = await createCustomer(consultant, { fullName: "Khách của tôi", phone: "0909000004" });
     const contract = await activeContract(scenario.manager, mine.id);
-    const pay = (actor: typeof reception, amount: number) =>
-      recordPayment(actor, contract.id, { amount, method: "CASH", paidOn: "05/10/2026" }, randomUUID());
+    const pay = async (actor: typeof reception, amount: number) =>
+      recordPayment(actor, contract.id, { amount, methodId: await optionId("paymentMethods", "Tiền mặt"), paidOn: "05/10/2026" }, randomUUID());
     const { payment } = await pay(consultant, 1_000_000);
     await pay(reception, 2_000_000);
 

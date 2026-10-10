@@ -10,6 +10,8 @@ import { inBranches, isMasked, isOwnOnly } from "../../platform/permissions/scop
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
+import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import type { ChosenOption } from "@flow/shared/options";
 import { findContract, lockContract } from "../contracts/contract.repository.js";
 import { contractViewsByIds, contractsVisibleTo, type ContractView } from "../contracts/contract.service.js";
 import { idempotencyKeySchema } from "@flow/shared/contracts";
@@ -29,7 +31,7 @@ import {
 export type PaymentView = {
   id: string;
   amount: number;
-  method: PaymentData["method"];
+  method: ChosenOption;
   paidOn: Date;
   status: "CONFIRMED" | "VOIDED";
   createdAt: Date;
@@ -38,7 +40,7 @@ export type PaymentView = {
   customer: { id: string; customerCode: string; fullName: string };
   voidedAt: Date | null;
   voidedBy: string | null;
-  voidReason: string | null;
+  voidReason: ChosenOption | null;
 };
 
 export type PaymentPage = { items: PaymentView[]; total: number; page: number; pageSize: number };
@@ -116,6 +118,9 @@ export async function recordPayment(
       const replayUnderLock = await replayOf(tx, key.data, contractId, data, actor);
       if (replayUnderLock) return { payment: replayUnderLock, replayed: true };
 
+      // An active option of the list; "Khác" needs a note (D-016).
+      const method = await resolveChoice(tx, "paymentMethods", "methodId", { optionId: data.methodId, note: data.methodNote });
+
       // Only on a contract the actor can see (D-017).
       const contract = await findContract(tx, contractId, contractsVisibleTo(actor));
       if (!contract) throw new AppError("NOT_FOUND");
@@ -131,7 +136,10 @@ export async function recordPayment(
 
       // A payment belongs to its contract's branch (D-014).
       const payment = await repo.createPayment(tx, {
-        ...data,
+        amount: data.amount,
+        paidOn: data.paidOn,
+        methodId: method.optionId,
+        methodNote: method.note,
         contractId,
         branchId: contract.branchId,
         idempotencyKey: key.data,
@@ -142,7 +150,12 @@ export async function recordPayment(
         entityType: "payment",
         entityId: payment.id,
         action: "payment.created",
-        metadata: { contractId, amount: data.amount, method: data.method, paidOn: data.paidOn.toISOString().slice(0, 10) },
+        metadata: {
+          contractId,
+          amount: data.amount,
+          method: { optionId: method.optionId, note: method.note },
+          paidOn: data.paidOn.toISOString().slice(0, 10),
+        },
       });
       return { payment: toView(payment), replayed: false };
     }, LOCKING_TRANSACTION);
@@ -156,12 +169,12 @@ export async function recordPayment(
 }
 
 /**
- * A-008: voids a payment with a reason. It stops counting toward the paid amount and
- * is never reinstated. Repeating the void returns the current state.
+ * A-008: voids a payment with a reason from the list (D-016). It stops counting toward
+ * the paid amount and is never reinstated. Repeating the void returns the current state.
  */
 export async function voidPayment(actor: Actor, id: string, input: unknown): Promise<PaymentView> {
   assertCan(actor, "payment.void");
-  const { reason } = parseInput(voidSchema, input);
+  const { reasonId, reasonNote } = parseInput(voidSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
   return prisma.$transaction(async (tx) => {
@@ -170,13 +183,15 @@ export async function voidPayment(actor: Actor, id: string, input: unknown): Pro
     await lockContract(tx, payment.contractId);
     if (payment.status === "VOIDED") return toView(payment);
 
-    if ((await repo.voidPayment(tx, id, { voidedAt: new Date(), voidedById: actor.id, voidReason: reason })) === 1) {
+    const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+    const voided = { voidedAt: new Date(), voidedById: actor.id, voidReasonId: reason.optionId, voidReasonNote: reason.note };
+    if ((await repo.voidPayment(tx, id, voided)) === 1) {
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "payment",
         entityId: id,
         action: "payment.voided",
-        metadata: { contractId: payment.contractId, amount: Number(payment.amount), reason },
+        metadata: { contractId: payment.contractId, amount: Number(payment.amount), reason: { optionId: reason.optionId, note: reason.note } },
       });
     }
     return toView((await repo.findPayment(tx, id))!);
@@ -205,7 +220,8 @@ async function replayOf(db: Db, key: string, contractId: string, data: PaymentDa
     existing.contractId === contractId &&
     existing.createdById === actor.id &&
     Number(existing.amount) === data.amount &&
-    existing.method === data.method &&
+    existing.methodId === data.methodId &&
+    existing.methodNote === data.methodNote &&
     existing.paidOn.getTime() === data.paidOn.getTime();
   if (!same) throw new AppError("IDEMPOTENCY_KEY_REUSED");
   return toView(existing);
@@ -216,7 +232,7 @@ function toView(payment: repo.PaymentRecord): PaymentView {
   return {
     id: payment.id,
     amount: Number(payment.amount),
-    method: payment.method,
+    method: chosen(payment.method, payment.methodNote),
     paidOn: payment.paidOn,
     status: payment.status,
     createdAt: payment.createdAt,
@@ -225,7 +241,7 @@ function toView(payment: repo.PaymentRecord): PaymentView {
     customer,
     voidedAt: payment.voidedAt,
     voidedBy: payment.voidedBy?.name ?? null,
-    voidReason: payment.voidReason,
+    voidReason: payment.voidReason ? chosen(payment.voidReason, payment.voidReasonNote) : null,
   };
 }
 

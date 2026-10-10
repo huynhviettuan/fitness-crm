@@ -1,5 +1,14 @@
 # Documentation Changelog
 
+## 2026-10-10 — M1 slice 3: configuration
+
+- Option lists (D-016): payment methods, income categories, expense types, and delete reasons are admin lists with "Khác", which needs a note. Admin adds, renames, reorders, and switches options off on **Administration → Option lists**, which also lists the notes written with "Khác". Switched-off options stay on old records. The migration keeps every existing method, category, and void reason (A-035).
+- Payments, cash entries, and voids use the shared `OptionSelect`; records show the choice with its note.
+- System parameters (T-049): PT calendar hours (no longer environment variables) and the customer, contract, and trainer code prefixes, on **Administration → System parameters**. Changes apply at once and are audited.
+- New permission `config.manage` (Admin).
+- Tests: unit (shared 81, web 208, API 70), integration 173, E2E and security 202.
+- Docs: 04, 07, 09, 13, 15, 16, 18 (T-055, A-034, A-035; T-038 and A-003 notes), 23, 24, 25, AGENTS.md.
+
 ## 2026-10-10 — M1 slice 2: branches and the permission tree
 
 - Branches: every customer, contract, trainer, session, receipt, and cash entry has a branch; users are granted branches (or all); other branches' records answer `404`. A migration moves existing data to "Chi nhánh chính" (A-031, A-032).

@@ -14,7 +14,9 @@
     "trainers": "Trainers",
     "finance": "Finance",
     "roles": "Roles and permissions",
-    "branches": "Branches"
+    "branches": "Branches",
+    "options": "Option lists",
+    "parameters": "System parameters"
   },
   "status": {
     "customer": {
@@ -57,6 +59,10 @@
     "login": {
       "SUCCESS": "Succeeded",
       "FAILED": "Failed"
+    },
+    "option": {
+      "ACTIVE": "In use",
+      "INACTIVE": "Not in use"
     }
   },
   "common": {
@@ -287,7 +293,11 @@
     "amountNotPositive": "Enter an amount greater than 0.",
     "futureDate": "The date can't be later than today.",
     "nameAlreadyUsed": "This name is already used.",
-    "duplicate": "Some entries appear twice."
+    "duplicate": "Some entries appear twice.",
+    "otherNeedsNote": "With \"Other\", say what it is.",
+    "otherAlwaysActive": "\"Other\" is always in use and cannot be switched off.",
+    "notOnHalfHour": "Use a full or half hour, for example 05:00 or 05:30.",
+    "invalidCodePrefix": "Use 1 to 5 letters without accents, for example KH."
   },
   "contracts": {
     "title": "Contracts",
@@ -472,16 +482,9 @@
     "voidCashBody": "It stops counting in the totals but stays on record. Record a new entry if it needs correcting.",
     "voided": "Voided",
     "voidReason": "Reason",
-    "voidReasonPlaceholder": "For example: entered against the wrong contract",
     "voidedBy": "Voided by {name}: {reason}",
     "datePlaceholder": "dd/mm/yyyy",
     "amountPlaceholder": "1,000,000",
-    "methods": {
-      "CASH": "Cash",
-      "BANK_TRANSFER": "Bank transfer",
-      "CARD": "Card",
-      "E_WALLET": "E-wallet"
-    },
     "types": {
       "INCOME": "Income",
       "EXPENSE": "Expense"
@@ -509,7 +512,8 @@
       "contracts": "Contracts",
       "schedule": "PT schedule and sessions",
       "employees": "Staff",
-      "cashbook": "Cash book"
+      "cashbook": "Cash book",
+      "configuration": "Configuration"
     },
     "labels": {
       "user": {
@@ -550,6 +554,9 @@
       },
       "cash": {
         "manage": "Other income and expenses (view, record, void)"
+      },
+      "config": {
+        "manage": "Manage option lists and system parameters"
       }
     },
     "resources": {
@@ -615,5 +622,62 @@
     "active": "Active",
     "inactive": "Inactive",
     "rowActions": "Actions for {name}"
+  },
+  "options": {
+    "title": "Option lists",
+    "description": "The drop-down lists used across the system. An option no longer in use cannot be chosen but stays on old records. \"Other\" is always last and needs a note.",
+    "listsLabel": "Lists",
+    "lists": {
+      "paymentMethods": "Payment methods",
+      "incomeCategories": "Income categories",
+      "expenseTypes": "Expense types",
+      "deleteReasons": "Reasons for deleting or voiding"
+    },
+    "create": "Add option",
+    "edit": "Edit option",
+    "created": "{name} added",
+    "saved": "Option saved",
+    "reordered": "Order changed",
+    "moveUp": "Move {name} up",
+    "moveDown": "Move {name} down",
+    "rowActions": "Edit {name}",
+    "other": "Other",
+    "otherHint": "Always last in the list",
+    "fields": {
+      "order": "Order",
+      "labelVi": "Vietnamese name",
+      "labelEn": "English name",
+      "status": "Status",
+      "active": "In use"
+    },
+    "empty": "This list has no options yet besides \"Other\".",
+    "choose": "Choose",
+    "loading": "Loading…",
+    "otherNote": "Details",
+    "otherNoteHint": "Required with \"Other\".",
+    "otherNotes": {
+      "title": "Notes written with \"Other\"",
+      "description": "Notes that come up often are worth adding as options of their own.",
+      "empty": "Nobody has chosen \"Other\" in this list yet.",
+      "note": "Note",
+      "count": "Times",
+      "lastUsedAt": "Last used"
+    }
+  },
+  "parameters": {
+    "title": "System parameters",
+    "description": "Values the system uses every day. Changes apply at once and are kept in the history.",
+    "calendar": "PT calendar",
+    "calendarHint": "First and last time on the PT calendar. Sessions outside them are still shown.",
+    "codes": "Generated codes",
+    "codesHint": "The prefix comes before the number. Numbers never repeat, even after the prefix changes.",
+    "fields": {
+      "calendarDayStart": "Start time",
+      "calendarDayEnd": "End time",
+      "customerCodePrefix": "Customer code",
+      "contractCodePrefix": "Contract code",
+      "trainerCodePrefix": "Trainer code"
+    },
+    "saved": "Parameters saved"
   }
 }

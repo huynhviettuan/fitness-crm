@@ -23,8 +23,9 @@ type TrainerScheduleGridProps = {
   columns: TrainerOption[];
   /** Active bookings of the day (A-005); cancelled and no-show ones free the slot. */
   bookings: BookingRow[];
-  startHour: number;
-  endHour: number;
+  /** The configured calendar hours, as minutes after midnight (D-030). */
+  dayStart: number;
+  dayEnd: number;
   permissions: BookingPermissions;
   /** Trainers a booking can be given to, for the create and reschedule forms. */
   trainers: TrainerOption[];
@@ -35,7 +36,7 @@ type TrainerScheduleGridProps = {
  * an empty slot opens the create dialog for that trainer and time; clicking a booking
  * opens its sheet. Hours outside the configured range appear when a booking needs them.
  */
-export function TrainerScheduleGrid({ date, columns, bookings, startHour, endHour, permissions, trainers }: TrainerScheduleGridProps) {
+export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd, permissions, trainers }: TrainerScheduleGridProps) {
   const t = useTranslations();
   const timeZone = useTimeZone() ?? "UTC";
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -46,8 +47,8 @@ export function TrainerScheduleGrid({ date, columns, bookings, startHour, endHou
     const local = new TZDate(instant, timeZone);
     return local.getHours() * 60 + local.getMinutes();
   };
-  let first = startHour * 60;
-  let last = endHour * 60;
+  let first = dayStart;
+  let last = dayEnd;
   for (const booking of bookings) {
     first = Math.min(first, Math.floor(minutesOf(booking.scheduledStart) / SLOT_MINUTES) * SLOT_MINUTES);
     last = Math.max(last, Math.ceil(minutesOf(booking.scheduledEnd) / SLOT_MINUTES) * SLOT_MINUTES);

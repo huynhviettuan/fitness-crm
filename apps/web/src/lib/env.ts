@@ -15,9 +15,6 @@ const envSchema = z.object({
   API_URL: z.url(),
   // A-001
   GYM_TIMEZONE: z.string().default("Asia/Ho_Chi_Minh").refine(isValidTimeZone, "Unknown IANA timezone"),
-  // Hours the PT calendar shows by default (docs/23 §9). Bookings outside them still show.
-  SCHEDULE_START_HOUR: z.coerce.number().int().min(0).max(23).default(6),
-  SCHEDULE_END_HOUR: z.coerce.number().int().min(1).max(24).default(22),
 });
 
 export const env = envSchema.parse(process.env);

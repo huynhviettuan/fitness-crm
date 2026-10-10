@@ -14,7 +14,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { TextField, applyFieldErrors } from "@/components/form-fields";
+import { applyFieldErrors } from "@/components/form-fields";
+import { OptionSelect } from "@/components/option-select";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
@@ -30,7 +31,10 @@ type VoidDialogProps = {
   onVoided: () => void;
 };
 
-/** Voiding a payment or cash transaction: a confirmation that asks for the reason (A-008, A-009). */
+/**
+ * Voiding a payment or cash transaction: a confirmation that asks for the reason from
+ * the "deleteReasons" list (A-008, A-009, D-016).
+ */
 export function VoidDialog({ open, onOpenChange, title, description, onVoid, onVoided }: VoidDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -50,9 +54,9 @@ function VoidForm({ onVoid, onVoided }: Pick<VoidDialogProps, "onVoid" | "onVoid
   const t = useTranslations();
   const errorMessage = useErrorMessage();
   const [pending, startTransition] = useTransition();
-  const form = useForm<{ reason: string }>({
+  const form = useForm<{ reasonId: string; reasonNote: string }>({
     resolver: zodResolver(voidSchema, undefined, { raw: true }) as never,
-    defaultValues: { reason: "" },
+    defaultValues: { reasonId: "", reasonNote: "" },
   });
 
   const onSubmit = form.handleSubmit((values) =>
@@ -70,13 +74,7 @@ function VoidForm({ onVoid, onVoided }: Pick<VoidDialogProps, "onVoid" | "onVoid
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      <TextField
-        control={form.control}
-        name="reason"
-        label={t("finance.voidReason")}
-        placeholder={t("finance.voidReasonPlaceholder")}
-        multiline
-      />
+      <OptionSelect control={form.control} name="reasonId" noteName="reasonNote" listKey="deleteReasons" label={t("finance.voidReason")} />
       <AlertDialogFooter>
         <AlertDialogCancel disabled={pending}>{t("common.cancel")}</AlertDialogCancel>
         <Button type="submit" variant="destructive" disabled={pending}>

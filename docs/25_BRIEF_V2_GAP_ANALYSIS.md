@@ -12,7 +12,7 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Users, roles, permissions (5 fixed roles → permission tree, data scope, masking, branches, login hours, history) | Built (M1 slice 2) for existing resources | M1 |
 | Branches (one gym → multi-branch) | Built (M1 slice 2) | M1 |
 | Approval engine and approval matrix (D-018) | New | M1 |
-| Option lists with "Khác", system parameters, status rules (D-015, D-016, T-049) | New | M1 |
+| Option lists with "Khác", system parameters, status rules (D-015, D-016, T-049) | Built (M1 slice 3) except status rules (M5) | M1 |
 | Audit log (exists for critical actions → before/after for everything, T-048) | Partly | M1 |
 | Trash and soft delete (D-035) | New | M1 |
 | Employees, PT working schedules | New | M1 |

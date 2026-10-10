@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { branchChoice } from "../branches/branch.schema.js";
+import { optionChoice, optionNote } from "../options/option.schema.js";
 import { calendarDate, vndAmount, hasNoControlCharacters } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 
-export const PAYMENT_METHODS = ["CASH", "BANK_TRANSFER", "CARD", "E_WALLET"] as const;
 export const CASH_TRANSACTION_TYPES = ["INCOME", "EXPENSE"] as const;
 export const MONEY_RECORD_STATUSES = ["CONFIRMED", "VOIDED"] as const;
 
@@ -20,24 +20,28 @@ const text = (max: number) =>
 /** Status, contract, and who recorded it are never accepted from the client. */
 export const paymentInputSchema = z.object({
   amount: positiveAmount,
-  method: z.enum(PAYMENT_METHODS, { error: "invalidChoice" }),
+  /** From the "paymentMethods" option list (D-016, D-034). */
+  methodId: optionChoice,
+  methodNote: optionNote,
   paidOn: calendarDate,
 });
 
 export const cashTransactionInputSchema = z.object({
   branchId: branchChoice,
   type: z.enum(CASH_TRANSACTION_TYPES, { error: "invalidChoice" }),
-  // Free text until the gym gives a list (OQ-016).
-  category: text(100).pipe(z.string().min(1, { error: "required" })),
+  /** From "incomeCategories" or "expenseTypes", by type (D-016, D-034). */
+  categoryId: optionChoice,
+  categoryNote: optionNote,
   amount: positiveAmount,
   occurredOn: calendarDate,
   reference: text(100).transform(emptyToNull).prefault(""),
   description: text(500).transform(emptyToNull).prefault(""),
 });
 
-/** A-008, A-009: voiding requires a reason. */
+/** A-008, A-009: voiding requires a reason from the "deleteReasons" list (D-016, D-035). */
 export const voidSchema = z.object({
-  reason: text(500).pipe(z.string().min(1, { error: "required" })),
+  reasonId: optionChoice,
+  reasonNote: optionNote,
 });
 
 const optionalDate = z.union([z.literal(""), calendarDate]).optional().transform((value) => value || undefined);

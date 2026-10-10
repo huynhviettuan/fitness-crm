@@ -1,5 +1,6 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { createContractViaApi, createCustomerViaApi, recordPaymentViaApi } from "./support/data";
+import { OTHER_OPTION_LABEL, createOptionViaApi } from "./support/options";
 import { labels } from "./support/labels";
 
 const cf = labels.contracts.fields;
@@ -27,17 +28,23 @@ test.describe("finance as a receptionist", () => {
     const reception = await apiAs("RECEPTIONIST");
     const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activate: true });
     const toasts = page.getByRole("region", { name: labels.common.notifications });
+    // Payment methods are an admin list (D-016); this test brings its own two.
+    const admin = await apiAs("ADMIN");
+    const cash = `Tiền mặt ${testTag}`;
+    const transfer = `Chuyển khoản ${testTag}`;
+    for (const label of [cash, transfer]) await createOptionViaApi(admin, "paymentMethods", label);
 
     await contractDetailPage.goto(contract.id);
     for (const [amount, method] of [
-      ["5.000.000", fin.methods.CASH],
-      ["3.000.000", fin.methods.BANK_TRANSFER],
+      ["5.000.000", cash],
+      ["3.000.000", transfer],
     ]) {
       const dialog = await contractDetailPage.openRecordPayment();
       await dialog.fill({ amount, method });
       await dialog.save();
       await expect(toasts.getByText(fin.paymentRecorded).first()).toBeVisible();
       await expect(contractDetailPage.payments.row(amount)).toContainText(labels.status.payment.CONFIRMED);
+      await expect(contractDetailPage.payments.row(amount)).toContainText(method);
     }
 
     await expect(contractDetailPage.figure(cf.paidAmount)).toHaveText(/8\.000\.000/);
@@ -54,7 +61,7 @@ test.describe("finance as a receptionist", () => {
     await contractDetailPage.goto(contract.id);
     const dialog = await contractDetailPage.openRecordPayment();
     await expect(dialog.root).toContainText(/2\.000\.000/);
-    await dialog.fill({ amount: "3.000.000", method: fin.methods.CASH });
+    await dialog.fill({ amount: "3.000.000", method: OTHER_OPTION_LABEL, methodNote: "Ví MoMo" });
     await dialog.save();
 
     await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.errors.PAYMENT_EXCEEDS_CONTRACT_VALUE)).toBeVisible();
@@ -77,7 +84,7 @@ test.describe("finance as a receptionist", () => {
 test.describe("finance as an accountant", () => {
   test.use(signedInAs("ACCOUNTANT"));
 
-  test("voiding a payment asks for a reason and puts the amount back into the debt (A-008)", async ({
+  test("E2E-103/AC-04: voiding a payment asks for a reason, Khác only with a note, and puts the amount back into the debt (A-008)", async ({
     page,
     apiAs,
     testTag,
@@ -89,10 +96,14 @@ test.describe("finance as an accountant", () => {
 
     await contractDetailPage.goto(contract.id);
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/7\.000\.000/);
-    const dialog = await contractDetailPage.payments.void("", "5.000.000");
-    await expect(dialog.locator('[data-slot="field-error"]')).toHaveText(labels.validation.required);
-    await dialog.getByLabel(fin.voidReason, { exact: true }).fill("Ghi nhầm hợp đồng");
-    await dialog.getByRole("button", { name: fin.void, exact: true }).click();
+    const dialog = await contractDetailPage.payments.openVoid("5.000.000");
+    await dialog.confirm();
+    await expect(dialog.fieldErrors).toHaveText(labels.validation.required);
+    await dialog.choose(OTHER_OPTION_LABEL, "");
+    await dialog.confirm();
+    await expect(dialog.fieldErrors).toHaveText(labels.validation.otherNeedsNote);
+    await dialog.choose(OTHER_OPTION_LABEL, "Ghi nhầm hợp đồng");
+    await dialog.confirm();
 
     await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(fin.voided)).toBeVisible();
     await expect(contractDetailPage.payments.row("5.000.000")).toContainText(labels.status.payment.VOIDED);
@@ -101,10 +112,15 @@ test.describe("finance as an accountant", () => {
   });
 
   test("income and expenses are totalled per month, apart from contract payments (FR-CASH-002, OQ-007 interim)", async ({
+    apiAs,
     testTag,
     financePage,
   }) => {
     const { month, day } = randomPastMonth();
+    // Categories are admin lists per type (D-016, D-034); this test brings its own.
+    const admin = await apiAs("ADMIN");
+    await createOptionViaApi(admin, "incomeCategories", `Bán nước ${testTag}`);
+    await createOptionViaApi(admin, "expenseTypes", `Điện nước ${testTag}`);
 
     await financePage.goto("cash", month);
     for (const entry of [
@@ -121,7 +137,7 @@ test.describe("finance as an accountant", () => {
     await expect(financePage.total(fin.expense)).toContainText("1.500.000");
     await expect(financePage.total(fin.contractPayments)).toContainText(/^\D*0\D*$/);
 
-    await financePage.table(fin.tabs.cash).void("Nhập sai số tiền", `Điện nước ${testTag}`);
+    await financePage.table(fin.tabs.cash).void({ option: OTHER_OPTION_LABEL, note: "Nhập sai số tiền" }, `Điện nước ${testTag}`);
     await expect(financePage.table(fin.tabs.cash).row(`Điện nước ${testTag}`)).toContainText(labels.status.cashTransaction.VOIDED);
     await expect(financePage.total(fin.expense)).not.toContainText("1.500.000");
   });

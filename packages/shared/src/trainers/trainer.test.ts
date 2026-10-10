@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { formatTrainerCode, trainerInputSchema } from "./trainer.schema.js";
 
-describe("formatTrainerCode (A-003)", () => {
-  it("pads to PT + 3 digits and keeps growing past 999", () => {
-    expect(formatTrainerCode(BigInt(1))).toBe("PT001");
-    expect(formatTrainerCode(1000)).toBe("PT1000");
+describe("formatTrainerCode (D-038)", () => {
+  it("pads to the prefix + 3 digits and keeps growing past 999", () => {
+    expect(formatTrainerCode("PT", BigInt(1))).toBe("PT001");
+    expect(formatTrainerCode("HLV", 1000)).toBe("HLV1000");
   });
 });
 

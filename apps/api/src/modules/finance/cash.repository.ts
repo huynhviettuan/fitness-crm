@@ -1,9 +1,12 @@
 import type { Db } from "../../platform/db/prisma.js";
 import type { CashTransactionType, Prisma } from "../../generated/prisma/client.js";
 import type { CashTransactionData } from "@flow/shared/finance";
+import { chosenSelect } from "../../platform/options/option.service.js";
 
 const cashInclude = {
   branch: { select: { id: true, name: true } },
+  category: { select: chosenSelect },
+  voidReason: { select: chosenSelect },
   createdBy: { select: { name: true } },
   voidedBy: { select: { name: true } },
 } as const satisfies Prisma.CashTransactionInclude;
@@ -33,7 +36,7 @@ export function findCashTransactionByIdempotencyKey(db: Db, idempotencyKey: stri
 export async function voidCashTransaction(
   db: Db,
   id: string,
-  data: { voidedAt: Date; voidedById: string; voidReason: string },
+  data: { voidedAt: Date; voidedById: string; voidReasonId: string; voidReasonNote: string | null },
 ): Promise<number> {
   const { count } = await db.cashTransaction.updateMany({ where: { id, status: "CONFIRMED" }, data: { ...data, status: "VOIDED" } });
   return count;

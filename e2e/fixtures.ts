@@ -5,6 +5,7 @@ import { test as base, expect, type APIRequestContext } from "@playwright/test";
 import type { Role } from "./support/db";
 import { BranchesPage, RolesPage, UserDetailPage } from "./pages/admin";
 import { AppShell } from "./pages/app-shell";
+import { OptionListsPage, ParametersPage } from "./pages/configuration";
 import { CalendarPage, CustomerBookingsTab, SessionsPage, TrainersPage } from "./pages/bookings";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
@@ -28,11 +29,18 @@ type Fixtures = {
   branchesPage: BranchesPage;
   rolesPage: RolesPage;
   userDetailPage: UserDetailPage;
+  optionListsPage: OptionListsPage;
+  parametersPage: ParametersPage;
+  /**
+   * For a test that changes system parameters (T-049): they are global, so teardown
+   * puts back exactly what was there before the test.
+   */
+  restoresParameters: void;
   /**
    * A unique marker for names this test creates. Teardown deletes every customer and
    * trainer whose name contains it, with their contracts, bookings, and payments, and
-   * every cash transaction whose category contains it, even if the test failed halfway.
-   * Users, roles, and branches whose name contains it go too.
+   * every cash transaction whose category, note, or reference contains it, even if the
+   * test failed halfway. Users, roles, branches, and options whose name contains it go too.
    */
   testTag: string;
   /**
@@ -60,6 +68,20 @@ export const test = base.extend<Fixtures>({
   branchesPage: async ({ page }, use) => use(new BranchesPage(page)),
   rolesPage: async ({ page }, use) => use(new RolesPage(page)),
   userDetailPage: async ({ page }, use) => use(new UserDetailPage(page)),
+  optionListsPage: async ({ page }, use) => use(new OptionListsPage(page)),
+  parametersPage: async ({ page }, use) => use(new ParametersPage(page)),
+
+  restoresParameters: async ({}, use) => {
+    const prisma = connect();
+    try {
+      const before = await prisma.systemParameter.findMany({ select: { key: true, value: true } });
+      await use();
+      await prisma.systemParameter.deleteMany();
+      for (const row of before) await prisma.systemParameter.create({ data: { key: row.key, value: row.value as string } });
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
 
   apiAs: async ({ playwright, baseURL }, use) => {
     const contexts: APIRequestContext[] = [];
@@ -105,7 +127,19 @@ export const test = base.extend<Fixtures>({
         }),
       );
       const paymentIds = ids(await prisma.payment.findMany({ where: { contractId: { in: contractIds } }, select: { id: true } }));
-      const cashIds = ids(await prisma.cashTransaction.findMany({ where: { category: { contains: tag } }, select: { id: true } }));
+      const taggedOptionIds = ids(await prisma.option.findMany({ where: { labelVi: { contains: tag } }, select: { id: true } }));
+      const cashIds = ids(
+        await prisma.cashTransaction.findMany({
+          where: {
+            OR: [
+              { categoryId: { in: taggedOptionIds } },
+              { categoryNote: { contains: tag } },
+              { reference: { contains: tag } },
+            ],
+          },
+          select: { id: true },
+        }),
+      );
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       await prisma.payment.deleteMany({ where: { id: { in: paymentIds } } });
@@ -126,6 +160,10 @@ export const test = base.extend<Fixtures>({
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...roleIds, ...branchIds] } } });
       await prisma.role.deleteMany({ where: { id: { in: roleIds } } });
       await prisma.branch.deleteMany({ where: { id: { in: branchIds } } });
+
+      // Options the test added, once nothing uses them.
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: taggedOptionIds } } });
+      await prisma.option.deleteMany({ where: { id: { in: taggedOptionIds } } });
     } finally {
       await prisma.$disconnect();
     }

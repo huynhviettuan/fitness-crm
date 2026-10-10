@@ -3,14 +3,14 @@ import { z } from "zod";
 import { formatCustomerCode } from "./customer.code.js";
 import { createCustomerSchema, updateCustomerSchema } from "./customer.schema.js";
 
-describe("formatCustomerCode (A-003)", () => {
-  it("pads to KH + 6 digits", () => {
-    expect(formatCustomerCode(BigInt(1))).toBe("KH000001");
-    expect(formatCustomerCode(123)).toBe("KH000123");
+describe("formatCustomerCode (D-038)", () => {
+  it("pads to the prefix + 6 digits", () => {
+    expect(formatCustomerCode("KH", BigInt(1))).toBe("KH000001");
+    expect(formatCustomerCode("HV", 123)).toBe("HV000123");
   });
 
   it("keeps growing past 999999 instead of wrapping", () => {
-    expect(formatCustomerCode(BigInt(1_000_000))).toBe("KH1000000");
+    expect(formatCustomerCode("KH", BigInt(1_000_000))).toBe("KH1000000");
   });
 });
 

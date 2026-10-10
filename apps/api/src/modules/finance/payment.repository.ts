@@ -1,10 +1,13 @@
 import type { Db } from "../../platform/db/prisma.js";
-import { Prisma, type PaymentMethod } from "../../generated/prisma/client.js";
+import { Prisma } from "../../generated/prisma/client.js";
+import { chosenSelect } from "../../platform/options/option.service.js";
 
 const paymentInclude = {
   contract: {
     select: { id: true, contractCode: true, packageName: true, customer: { select: { id: true, customerCode: true, fullName: true } } },
   },
+  method: { select: chosenSelect },
+  voidReason: { select: chosenSelect },
   createdBy: { select: { name: true } },
   voidedBy: { select: { name: true } },
 } as const satisfies Prisma.PaymentInclude;
@@ -17,7 +20,8 @@ export function createPayment(
     contractId: string;
     branchId: string;
     amount: number;
-    method: PaymentMethod;
+    methodId: string;
+    methodNote: string | null;
     paidOn: Date;
     idempotencyKey: string;
     createdById: string;
@@ -35,7 +39,11 @@ export function findPaymentByIdempotencyKey(db: Db, idempotencyKey: string): Pro
 }
 
 /** Voids the payment only if it is still CONFIRMED. Returns rows changed. */
-export async function voidPayment(db: Db, id: string, data: { voidedAt: Date; voidedById: string; voidReason: string }): Promise<number> {
+export async function voidPayment(
+  db: Db,
+  id: string,
+  data: { voidedAt: Date; voidedById: string; voidReasonId: string; voidReasonNote: string | null },
+): Promise<number> {
   const { count } = await db.payment.updateMany({ where: { id, status: "CONFIRMED" }, data: { ...data, status: "VOIDED" } });
   return count;
 }

@@ -15,6 +15,7 @@ const STATUS_VARIANTS = {
   payment: { CONFIRMED: "success", VOIDED: "muted" },
   cashTransaction: { CONFIRMED: "success", VOIDED: "muted" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },
+  option: { ACTIVE: "success", INACTIVE: "muted" },
   login: { SUCCESS: "success", FAILED: "destructive" },
 } as const satisfies Record<string, Record<string, BadgeVariant>>;
 

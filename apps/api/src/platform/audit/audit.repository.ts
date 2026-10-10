@@ -5,6 +5,8 @@ export type AuditEntityType =
   | "user"
   | "role"
   | "branch"
+  | "option"
+  | "parameter"
   | "customer"
   | "contract"
   | "trainer"
