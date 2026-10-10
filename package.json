@@ -14,10 +14,10 @@
     "test:e2e": "turbo run test:e2e",
     "test:security": "turbo run test:security",
     "db:up": "docker compose up -d --wait",
-    "db:migrate": "pnpm --filter web db:migrate",
-    "db:deploy": "pnpm --filter web db:deploy",
-    "db:seed": "pnpm --filter web db:seed",
-    "db:seed:demo": "pnpm --filter web db:seed:demo",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:deploy": "pnpm --filter api db:deploy",
+    "db:seed": "pnpm --filter api db:seed",
+    "db:seed:demo": "pnpm --filter api db:seed:demo",
     "security:audit": "node scripts/audit-check.mjs"
   },
   "devDependencies": {

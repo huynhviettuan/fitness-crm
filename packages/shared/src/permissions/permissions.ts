@@ -37,7 +37,14 @@ const PERMISSIONS = {
 
 export type Permission = keyof typeof PERMISSIONS;
 
+export const PERMISSION_KEYS = Object.keys(PERMISSIONS) as Permission[];
+
 export function can(role: Role, permission: Permission): boolean {
   return (PERMISSIONS[permission] as readonly Role[]).includes(role);
+}
+
+/** Everything a role may do; sent to the web app with the signed-in user (docs/07 `GET /me`). */
+export function permissionsOf(role: Role): Permission[] {
+  return PERMISSION_KEYS.filter((permission) => can(role, permission));
 }
 

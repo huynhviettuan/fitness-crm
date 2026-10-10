@@ -8,9 +8,9 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import { env } from "@/lib/env";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { formatDateOnly } from "@/lib/format";
-import { can } from "@flow/shared/permissions";
+import { can } from "@/lib/permissions";
 import { isActiveBooking } from "@flow/shared/bookings";
-import { listDayBookings } from "@/modules/bookings/booking.service";
+import { listDayBookings } from "@/lib/api/bookings";
 import { bookingContext } from "../bookings/booking-context";
 import { AddBookingButton } from "../bookings/bookings-table";
 import type { TrainerOption } from "../bookings/booking-types";
@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CalendarPage({ searchParams }: PageProps<"/calendar">) {
   const user = await requirePageUser();
-  if (!can(user.role, "booking.view")) return <ForbiddenState />;
+  if (!can(user, "booking.view")) return <ForbiddenState />;
 
   const t = await getTranslations("bookings");
   const params = await searchParams;
@@ -48,7 +48,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   }
 
   const trainerId = typeof params.trainer === "string" && context.trainers.some((tr) => tr.id === params.trainer) ? params.trainer : undefined;
-  const bookings = (await listDayBookings(user, { date: formatDateOnly(day), trainerId })).filter((b) => isActiveBooking(b.status));
+  const bookings = (await listDayBookings({ date: formatDateOnly(day), trainerId })).filter((b) => isActiveBooking(b.status));
   const columns = scheduleColumns(context.trainers, bookings.map((b) => b.trainer), trainerId);
 
   return (

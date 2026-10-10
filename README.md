@@ -33,7 +33,32 @@ See `docs/26_TECH_PROPOSAL.md`.
 
 ## Current state of the code
 
-Phases 0–4 of the first brief are built as a single Next.js app in `src/`: customers, contracts, PT bookings and sessions, payments, and income/expense, with tests. Brief v2 changes much of this. `docs/25_BRIEF_V2_GAP_ANALYSIS.md` lists what is reused and what is reworked, and milestone M1 restructures the code into the monorepo.
+Phases 0–4 of the first brief (customers, contracts, PT bookings and sessions, payments, income/expense) are built and tested. M1 slice 1 moved them into the monorepo:
+
+| Package | What it holds |
+|---|---|
+| `apps/api` | NestJS API under `/api/v1`: services, repositories, Prisma schema and migrations, Better Auth, integration tests. `openapi.json` is the committed contract. |
+| `apps/web` | Next.js UI. Pages and Server Actions call the API through a client generated from `openapi.json`; browsers reach the API through the web app's `/api/*` (T-053). |
+| `packages/shared` | Zod input and response schemas, permission keys, error codes, pure domain rules |
+| `packages/config` | ESLint and TypeScript presets |
+| `e2e` | Playwright E2E and the OWASP security suite, against both apps |
+
+Brief v2 changes much of the behavior; `docs/25_BRIEF_V2_GAP_ANALYSIS.md` lists what is reused and what is reworked in later milestones.
+
+## Running locally
+
+Needs Node.js 22+, pnpm 12 (`npm install -g pnpm@12`), and Docker.
+
+```bash
+pnpm install
+cp apps/api/.env.example apps/api/.env      # database URLs, auth secret, seed admin
+cp apps/web/.env.example apps/web/.env      # API_URL, gym timezone
+pnpm db:up                                  # PostgreSQL in Docker
+pnpm db:deploy && pnpm db:seed              # migrations and the first admin
+pnpm dev                                    # web on :3000, API on :4000 (docs at :4000/api/docs)
+```
+
+Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:integration`, `pnpm test:e2e`, `pnpm security:audit`. See `AGENTS.md` §8.
 
 ## Documentation map
 

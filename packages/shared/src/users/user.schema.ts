@@ -2,6 +2,10 @@ import { z } from "zod";
 import { ROLES } from "../permissions/index.js";
 import { hasNoControlCharacters } from "../validation/index.js";
 
+export const USER_STATUSES = ["ACTIVE", "DISABLED"] as const;
+export const LOCALES = ["vi", "en"] as const;
+export type Locale = (typeof LOCALES)[number];
+
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 const name = z
   .string()
@@ -16,8 +20,8 @@ const userId = z.uuid({ error: "required" });
 
 export const createUserSchema = z.object({ name, email, role, password });
 export const changeRoleSchema = z.object({ userId, role });
-export const setUserStatusSchema = z.object({ userId, status: z.enum(["ACTIVE", "DISABLED"]) });
+export const setUserStatusSchema = z.object({ userId, status: z.enum(USER_STATUSES) });
 export const resetPasswordSchema = z.object({ userId, password });
-export const setLocaleSchema = z.object({ locale: z.enum(["vi", "en"]) });
+export const setLocaleSchema = z.object({ locale: z.enum(LOCALES) });
 
 export type CreateUserInput = z.input<typeof createUserSchema>;

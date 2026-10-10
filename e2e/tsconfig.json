@@ -10,11 +10,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["node"],
-    "paths": {
-      // Type-only imports from the app reach files that use the app's alias.
-      "@/*": ["../apps/web/src/*"]
-    }
+    "types": ["node"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "test-results", "playwright-report"]

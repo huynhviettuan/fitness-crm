@@ -11,8 +11,8 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import { env } from "@/lib/env";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { formatDateOnly } from "@/lib/format";
-import { can } from "@flow/shared/permissions";
-import { listBookings } from "@/modules/bookings/booking.service";
+import { can } from "@/lib/permissions";
+import { listBookings, type BookingQuery } from "@/lib/api/bookings";
 import { bookingContext } from "../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../bookings/bookings-table";
 
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Session operations (docs/08 Screen 7): one list per view, filtered on the server. */
 export default async function SessionsPage({ searchParams }: PageProps<"/sessions">) {
   const user = await requirePageUser();
-  if (!can(user.role, "booking.view")) return <ForbiddenState />;
+  if (!can(user, "booking.view")) return <ForbiddenState />;
 
   const t = await getTranslations("bookings");
   const params = await searchParams;
@@ -55,7 +55,7 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
     );
   }
 
-  const result = await listBookings(user, { ...viewQuery(view), page });
+  const result = await listBookings({ ...viewQuery(view), page });
   const hrefFor = (target: { view?: View; page?: number }) => {
     const query = new URLSearchParams();
     const nextView = target.view ?? view;
@@ -92,7 +92,7 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
 }
 
 /** Each view as a booking query; days are gym days (A-001). */
-function viewQuery(view: View) {
+function viewQuery(view: View): BookingQuery {
   const today = calendarDateInTimeZone(env.GYM_TIMEZONE);
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   switch (view) {

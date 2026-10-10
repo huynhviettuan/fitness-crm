@@ -1,7 +1,7 @@
 import "server-only";
-import { can } from "@flow/shared/permissions";
-import type { CurrentUser } from "@/lib/auth/session";
-import { listTrainers, trainerIdOfUser } from "@/modules/trainers/trainer.service";
+import { can } from "@/lib/permissions";
+import type { CurrentUser } from "@/lib/auth/current-user";
+import { listTrainers } from "@/lib/api/trainers";
 import type { BookingPermissions, TrainerOption } from "./booking-types";
 
 export type BookingContext = {
@@ -15,17 +15,17 @@ export type BookingContext = {
 /** What every booking screen needs to know about the signed-in user. */
 export async function bookingContext(user: CurrentUser): Promise<BookingContext> {
   const permissions: BookingPermissions = {
-    manage: can(user.role, "booking.manage"),
-    checkIn: can(user.role, "session.checkIn"),
-    complete: can(user.role, "session.complete"),
+    manage: can(user, "booking.manage"),
+    checkIn: can(user, "session.checkIn"),
+    complete: can(user, "session.complete"),
   };
-  const active = (await listTrainers(user, { activeOnly: true })).map(({ id, trainerCode, fullName }) => ({
+  const active = (await listTrainers({ activeOnly: true })).map(({ id, trainerCode, fullName }) => ({
     id,
     trainerCode,
     fullName,
   }));
   if (user.role !== "TRAINER") return { permissions, trainers: active, unlinkedTrainer: false };
 
-  const own = await trainerIdOfUser(user.id);
+  const own = user.trainerId;
   return { permissions, trainers: active.filter((t) => t.id === own), unlinkedTrainer: own === null };
 }

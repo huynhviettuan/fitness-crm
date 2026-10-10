@@ -54,7 +54,7 @@ test.describe("A08 state-changing API requests must come from the app itself", (
 
   test("other sites cannot read API responses (no permissive CORS)", async ({ apiAs }) => {
     const attacker = await apiAs("RECEPTIONIST", { origin: EVIL_ORIGIN });
-    const response = await attacker.get("/api/v1/auth/me");
+    const response = await attacker.get("/api/v1/me");
 
     expect(response.headers()["access-control-allow-origin"]).toBeUndefined();
   });

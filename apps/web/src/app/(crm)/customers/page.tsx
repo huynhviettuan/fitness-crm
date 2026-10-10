@@ -7,8 +7,8 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@flow/shared/permissions";
-import { listCustomers } from "@/modules/customers/customer.service";
+import { can } from "@/lib/permissions";
+import { listCustomers } from "@/lib/api/customers";
 import { CreateCustomerButton } from "./customer-sheets";
 import { CustomersTable } from "./customers-table";
 
@@ -28,8 +28,8 @@ export default async function CustomersPage({ searchParams }: PageProps<"/custom
   const requestedPage = Number(params.page);
   const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
-  const result = await listCustomers(user, { q, page });
-  const canManage = can(user.role, "customer.manage");
+  const result = await listCustomers({ q, page });
+  const canManage = can(user, "customer.manage");
 
   const hrefFor = (target: number) => {
     const query = new URLSearchParams();

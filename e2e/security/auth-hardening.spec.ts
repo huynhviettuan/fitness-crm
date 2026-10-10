@@ -25,14 +25,14 @@ test.describe("A07 sessions", () => {
     const api = await apiAs(null);
     await api.post("/api/auth/sign-in/email", { data: { email: E2E_USERS.ACCOUNTANT.email, password: E2E_PASSWORD } });
     const stolen = await api.storageState();
-    expect((await api.get("/api/v1/auth/me")).status()).toBe(200);
+    expect((await api.get("/api/v1/me")).status()).toBe(200);
 
     await api.post("/api/auth/sign-out", { data: {} });
 
     // Someone who copied the cookie before sign-out cannot use it afterwards.
     const replay = await playwright.request.newContext({ baseURL, storageState: stolen });
     try {
-      expect((await replay.get("/api/v1/auth/me")).status()).toBe(401);
+      expect((await replay.get("/api/v1/me")).status()).toBe(401);
     } finally {
       await replay.dispose();
     }
@@ -44,7 +44,7 @@ test.describe("A07 sessions", () => {
       extraHTTPHeaders: { cookie: "better-auth.session_token=forged-token.forged-signature" },
     });
     try {
-      expect((await forged.get("/api/v1/auth/me")).status()).toBe(401);
+      expect((await forged.get("/api/v1/me")).status()).toBe(401);
     } finally {
       await forged.dispose();
     }

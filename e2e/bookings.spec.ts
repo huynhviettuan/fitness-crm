@@ -224,7 +224,7 @@ test.describe("as a trainer on a phone", () => {
   }) => {
     const reception = await apiAs("RECEPTIONIST");
     const { customer, refs } = await bookingSetup(apiAs, testTag);
-    const { trainerId } = await (await (await apiAs("TRAINER")).get("/api/v1/auth/me")).json();
+    const { trainerId } = await (await (await apiAs("TRAINER")).get("/api/v1/me")).json();
     const day = randomBookingDay();
     const booking = await createBookingViaApi(reception, { ...refs, trainerId }, { date: day.date, startTime: "10:00", endTime: "11:00" });
     await reception.post(`/api/v1/bookings/${booking.id}/check-in`);

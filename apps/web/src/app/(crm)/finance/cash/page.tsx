@@ -9,8 +9,8 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { formatMonth } from "@/lib/format";
-import { can } from "@flow/shared/permissions";
-import { financeSummary, listCashTransactions } from "@/modules/finance/cash.service";
+import { can } from "@/lib/permissions";
+import { financeSummary, listCashTransactions } from "@/lib/api/finance";
 import { CashTable, RecordCashButton } from "../cash";
 import { FinanceTabs, MonthNav } from "../finance-nav";
 import { pageParam, selectedMonth } from "../month";
@@ -26,14 +26,14 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Income and expenses of one month, with the month's totals (FR-CASH-001, FR-CASH-002). */
 export default async function CashPage({ searchParams }: PageProps<"/finance/cash">) {
   const user = await requirePageUser();
-  if (!can(user.role, "cash.manage")) return <ForbiddenState />;
+  if (!can(user, "cash.manage")) return <ForbiddenState />;
 
   const t = await getTranslations("finance");
   const params = await searchParams;
   const month = selectedMonth(params.month);
   const [summary, result] = await Promise.all([
-    financeSummary(user, month.query),
-    listCashTransactions(user, { ...month.query, page: pageParam(params.page) }),
+    financeSummary(month.query),
+    listCashTransactions({ ...month.query, page: pageParam(params.page) }),
   ]);
   // OQ-007 interim: payments and other income are separate lines, and there is no net figure.
   const totals = [

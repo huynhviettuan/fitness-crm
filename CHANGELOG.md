@@ -1,5 +1,16 @@
 # Documentation Changelog
 
+## 2026-10-10 — M1 slice 1: monorepo restructure
+
+The Phases 0–4 code now runs as the planned monorepo, with the same behavior (`docs/26_TECH_PROPOSAL.md` §8).
+
+- pnpm 12 workspaces + Turborepo replace npm. Packages: `apps/web` (Next.js, UI only), `apps/api` (NestJS 12, ES modules), `packages/shared` (Zod input and response schemas, permission keys, error codes, pure domain rules), `packages/config` (lint and TypeScript presets), `e2e` (Playwright).
+- `apps/api` owns the services, repositories, Prisma schema and migrations, Better Auth, and the integration tests. Thin controllers keep the old `/api/v1` paths and encode every response with its shared schema; new read endpoints serve the pages. `GET /auth/me` became `GET /me` (with `permissions`) plus `PATCH /me/locale`. The OpenAPI contract is committed as `apps/api/openapi.json`, and CI fails when it drifts.
+- `apps/web` has no Prisma or services. Pages and Server Actions call the API through a client generated from `openapi.json`; browsers reach the API through the web app's `/api/*`, which forwards the client address (T-053, new). A unit test enforces the boundary.
+- Settings split into `apps/api/.env` and `apps/web/.env`. The API runs on port 4000 and the web on 3000; `pnpm dev` starts both.
+- Tests: unit (shared 148, web 163, API 1), integration 136, E2E 169 (the access-control suite now covers every operation in the OpenAPI document).
+- Docs: README (setup), AGENTS.md (structure, commands, boundary rules), 07 (current endpoints), 15 (environment variables), 16 (progress), 18 (T-053; T-043 and T-044 amended), 22, 23, 24, 25, 26.
+
 ## 2026-10-10 — Brief v2 adopted (Flow Fitness CRM)
 
 The customer's new brief (`docs/source/BRIEF_V2_vi.md`) replaces the first brief. The package now describes Flow Fitness's own CRM replacing GymMaster: 12 modules, multi-branch, configurable roles and approvals, leads and consulting, service price tiers, locked contracts with change vouchers, configurable session statuses (no-show now consumes and credits the PT), workout plans and logs, cash book, tasks, and customer email.

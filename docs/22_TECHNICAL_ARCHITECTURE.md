@@ -1,6 +1,6 @@
 # 22 — Technical Architecture
 
-Decisions T-041 to T-052; technology, hosting, and costs in `26_TECH_PROPOSAL.md`.
+Decisions T-041 to T-053; technology, hosting, and costs in `26_TECH_PROPOSAL.md`.
 
 ## 1. Shape
 
@@ -9,7 +9,8 @@ Browser (desktop, phone)
    │
    ▼
 apps/web — Next.js on Vercel (UI only)
-   │  typed client generated from OpenAPI, cookie session
+   │  Server Components and Server Actions: typed client generated from OpenAPI, the user's cookie
+   │  browser requests to /api/*: forwarded with X-Forwarded-For (T-053)
    ▼
 apps/api — NestJS on Railway/Render (Singapore)
    ├── HTTP: controllers → services → repositories → Prisma
@@ -26,10 +27,10 @@ Future clients (member app, check-in devices, ERP modules) call the same `/api/v
 | Layer | Where | Responsibilities | Must not |
 |---|---|---|---|
 | Presentation | `apps/web` | Screens, forms, client validation with shared Zod schemas, hide what the user lacks permission for | Hold business rules, touch the database, compute authoritative figures |
-| Controller | `apps/api/src/**/*.controller.ts` | Route, permission key, input parsing, mapping errors to the error contract, OpenAPI | Contain business logic |
+| Controller | `apps/api/src/**/*.controller.ts` | Route, permission key, reading path, query, and body, encoding the result with its response schema from `packages/shared`, OpenAPI | Contain business logic |
 | Service | `*.service.ts` | Rules, state transitions, approvals, transactions and locks, idempotency, audit, trash, outbox events | Build SQL directly |
 | Repository | `*.repository.ts` | Prisma queries, row locks with `$queryRaw`, scope filters | Decide business outcomes |
-| Platform | `src/platform/*` | Auth, permission guard and scope, branches, approvals, audit, trash, configuration, notifications, files, jobs | Know module specifics |
+| Platform | `apps/api/src/platform/*` | Auth, permission guard and scope, branches, approvals, audit, trash, configuration, notifications, files, jobs | Know module specifics |
 | Database | PostgreSQL | Source of truth; constraints that must hold under concurrency (exclusions, unique keys, checks) | — |
 
 ## 3. Request lifecycle
@@ -37,9 +38,11 @@ Future clients (member app, check-in devices, ERP modules) call the same `/api/v
 1. Authentication: session cookie or token → user, account status, and login window (T-017, D-017).
 2. Authorization guard: permission key of the endpoint; effective permissions = role + overrides (T-046).
 3. Scope: branch access and data scope become filters passed to repositories; out-of-scope records are `404`.
-4. Validation with Zod from `packages/shared`.
+4. Validation with Zod from `packages/shared`, inside the service (`parseInput`), so errors keep the documented format.
 5. Service: if the action is under the approval matrix, store it as pending and create an approval request (D-018); otherwise apply it in a transaction with audit (T-048).
-6. Response serializer removes masked fields; exports use the same serializer.
+6. Response: the controller encodes the result with its schema (`encode`), which drops any field the schema does not list; masking (T-046) will hook in here, and exports use the same path.
+
+Before all of this, middleware rejects state changes without the app's Origin or with a non-JSON body (T-033), and an error filter turns every exception into the documented error body (405 for a known path with another method).
 
 ## 4. Configuration
 

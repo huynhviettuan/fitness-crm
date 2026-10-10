@@ -6,7 +6,7 @@ The goal is an interface that is **modern, simple, and consistent**: every scree
 
 | Need | Choice | Notes |
 |---|---|---|
-| Components | shadcn/ui (Radix + Tailwind CSS) | Generated into `src/components/ui/`; we own the code. No second component library. |
+| Components | shadcn/ui (Radix + Tailwind CSS) | Generated into `apps/web/src/components/ui/`; we own the code. No second component library. |
 | Icons | `lucide-react` | shadcn default. |
 | Forms | `react-hook-form` + `@hookform/resolvers/zod` | Forms reuse the server's Zod schemas for instant feedback. The server still re-validates; client validation is only UX. |
 | Tables | TanStack Table, via the shadcn Data Table pattern | Pagination, search, and sort run on the server. |
@@ -23,7 +23,7 @@ Adding any other UI, styling, or calendar library requires updating this documen
 
 - Neutral base palette with one accent color, `--primary`. The gym's brand color, if any, is applied by changing that one token.
 - shadcn default radius, spacing, and typography scale.
-- Tokens are defined only in `src/app/globals.css`.
+- Tokens are defined only in `apps/web/src/app/globals.css`.
 - Light theme only in V1. The tokens stay dark-ready, but there is no theme toggle.
 - Add semantic tokens `success`, `warning`, and `info` next to shadcn's `destructive` and `muted`.
 - Feature code uses tokens and component variants only. Never raw palette classes such as `bg-green-500` or hex values.
@@ -109,7 +109,7 @@ Critical actions (Đã tập, delete, deactivate, approve, cancel) use `ConfirmD
 
 ## 8. Shared components
 
-Each cross-cutting concern has exactly one owner in `apps/web/src/components/` (`src/components/` until the M1 restructure). Feature code composes these and never re-implements them.
+Each cross-cutting concern has exactly one owner in `apps/web/src/components/`. Feature code composes these and never re-implements them.
 
 | Component | Owns |
 |---|---|
@@ -170,7 +170,7 @@ Device targets (D-043):
 
 Do:
 
-- Build screens only from `src/components/ui` and the shared components in §8.
+- Build screens only from `apps/web/src/components/ui` and the shared components in §8.
 - Use the page templates in §7.
 - Put every new string in both `messages/vi.json` and `messages/en.json`.
 

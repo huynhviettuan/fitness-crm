@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { listContracts } from "@/modules/contracts/contract.service";
+import { listContracts } from "@/lib/api/contracts";
 import { ContractsTable } from "./contracts-table";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
@@ -20,14 +20,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Contracts are created from a customer's page, so this list has no create button.
 export default async function ContractsPage({ searchParams }: PageProps<"/contracts">) {
-  const user = await requirePageUser();
+  await requirePageUser();
   const t = await getTranslations("contracts");
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim() : "";
   const requestedPage = Number(params.page);
   const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
-  const result = await listContracts(user, { q, page });
+  const result = await listContracts({ q, page });
 
   const hrefFor = (target: number) => {
     const query = new URLSearchParams();

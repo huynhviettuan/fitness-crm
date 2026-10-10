@@ -8,7 +8,7 @@ const routes = discoverApiRoutes();
 test.describe("A01 every API route requires a session", () => {
   test("the route inventory found the API", () => {
     expect(routes.map((r) => r.template)).toEqual(
-      expect.arrayContaining(["/api/v1/customers", "/api/v1/customers/[id]", "/api/v1/auth/me"]),
+      expect.arrayContaining(["/api/v1/customers", "/api/v1/customers/{id}", "/api/v1/me"]),
     );
   });
 
@@ -107,9 +107,9 @@ test.describe("A04 responses never expose secrets", () => {
     const api = await apiAs("ADMIN");
     await api.post("/api/v1/customers", { data: { fullName: `Secrets ${testTag}`, phone: "0909000555" } });
 
-    const me = await api.get("/api/v1/auth/me");
-    expect(Object.keys(await me.json()).sort()).toEqual(["email", "id", "locale", "name", "role", "trainerId"]);
-    for (const path of ["/api/v1/auth/me", "/api/v1/customers"]) {
+    const me = await api.get("/api/v1/me");
+    expect(Object.keys(await me.json()).sort()).toEqual(["email", "id", "locale", "name", "permissions", "role", "trainerId"]);
+    for (const path of ["/api/v1/me", "/api/v1/customers"]) {
       expect(await (await api.get(path)).text()).not.toMatch(FORBIDDEN_KEYS);
     }
   });

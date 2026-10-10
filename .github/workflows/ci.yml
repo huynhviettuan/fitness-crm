@@ -44,6 +44,8 @@ jobs:
         run: pnpm security:audit
       - run: pnpm turbo run typecheck lint test
       - run: pnpm test:integration
+      - name: OpenAPI contract is up to date
+        run: pnpm turbo run openapi:check
       - name: Migrations apply cleanly
         run: pnpm db:deploy
       - run: pnpm --filter e2e exec playwright install --with-deps chromium

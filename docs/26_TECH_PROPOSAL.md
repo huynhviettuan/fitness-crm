@@ -41,7 +41,7 @@ flowchart LR
 | Language | TypeScript (strict) everywhere | One language for web, API, and shared schemas; easy to hire for. |
 | Monorepo | pnpm workspaces + Turborepo | Fast installs and cached builds; standard for TypeScript monorepos. |
 | Web | Next.js (App Router), shadcn/ui, Tailwind, next-intl (vi, en), TanStack Table, react-hook-form + Zod | Already built and tested in Phases 0–4 (T-002, T-025–T-027). |
-| API | NestJS 11 (Express adapter), `@nestjs/swagger` for OpenAPI, class-free Zod validation via `nestjs-zod` | Most popular Node API framework; modules match the brief's modules; easy handover. |
+| API | NestJS 12 (Express adapter, ES modules), `@nestjs/swagger` generating OpenAPI from the shared Zod schemas (Standard Schema support, no class DTOs) | Most popular Node API framework; modules match the brief's modules; easy handover. |
 | Database | PostgreSQL 17, Prisma 7 | Already in use (T-004, T-005); `btree_gist` exclusion constraints for overlaps (T-014). |
 | Auth | Better Auth inside the API (T-044) | Keeps existing users and password hashes; supports sessions, rate limits, and two-factor (TS-004). |
 | Jobs | pg-boss (T-045) | Durable timers and retries in PostgreSQL; no extra service. |
@@ -65,10 +65,11 @@ fitness-crm/
 │       ├── src/modules/     # one Nest module per brief module (below)
 │       ├── src/platform/    # auth, permissions, branches, approvals, audit, trash, config, jobs
 │       ├── prisma/          # schema and migrations
-│       └── test/            # integration tests against PostgreSQL
+│       ├── test/            # integration tests against PostgreSQL
+│       └── openapi.json     # the committed API contract
 ├── packages/
-│   ├── shared/              # Zod schemas, DTO types, permission keys, constants
-│   └── config/              # eslint, tsconfig, prettier presets
+│   ├── shared/              # Zod input and response schemas, permission keys, error codes, pure domain rules
+│   └── config/              # ESLint and TypeScript presets
 ├── e2e/                     # Playwright against web + API
 ├── docs/
 └── turbo.json, pnpm-workspace.yaml
@@ -94,7 +95,7 @@ Each module keeps the layers proven in Phases 0–4: controller (validation, per
 
 ## 5. Authentication
 
-- **Web:** Better Auth email + password, with sessions in PostgreSQL. The cookie is httpOnly, Secure, and SameSite=Lax on the parent domain (e.g. `app.flowfitness.vn` and `api.flowfitness.vn`).
+- **Web:** Better Auth email + password, with sessions in PostgreSQL. The cookie is httpOnly, Secure, and SameSite=Lax on the web app's domain: browsers reach the API through the web app's `/api/*`, and the web server calls the API with the user's cookie (T-053).
 - **State-changing requests** need the app's Origin and a JSON body (T-033).
 - **Account limits:** 12-hour idle expiry, rate limit per IP, login hours per account, and login history with device and IP (D-017). Two-factor for admins before go-live is recommended (TS-004).
 - **Future clients:** tokens for the member app; API keys scoped to check-in for devices.
@@ -135,11 +136,11 @@ Lead channel APIs (WhatsApp Business has per-conversation fees) and AI audit are
 
 ## 8. Moving the existing code
 
-The Phases 0–4 code becomes the base of the monorepo during milestone M1:
+Done in milestone M1 slice 1 (2026-10-10). The Phases 0–4 code is the base of the monorepo:
 
-1. Move the Next.js app into `apps/web`; move `src/modules`, `src/lib/{db,errors,permissions,validation}`, Prisma, and the integration tests into `apps/api`; and move the shared Zod schemas and constants into `packages/shared`.
-2. Turn the Route Handlers (`/api/v1/...`) into NestJS controllers with the same paths, and generate the OpenAPI client.
-3. Replace the Server Actions with calls to the API through the client. The UI components stay.
-4. Keep every test suite green after each step; the E2E suite is the safety net.
+1. The Next.js app moved to `apps/web`; `src/modules`, the platform code (`db`, `errors`, `permissions`, `validation`, `security`, `auth`, `audit`), Prisma, and the integration tests moved to `apps/api`; the Zod schemas, pure domain rules, permission matrix, and error codes moved to `packages/shared`, together with new response schemas.
+2. The Route Handlers became NestJS controllers with the same paths (except `GET /auth/me`, now `GET /me` as in doc 07), plus the read endpoints the pages need (`/contracts`, `/schedule`, `/payments`, `/payments/collected`, `/debts`, `/cash-transactions/summary`, `/trainers/logins`, `/users`, `/me/locale`). The OpenAPI document is committed as `apps/api/openapi.json`; the web client is generated from it.
+3. Pages and Server Actions call the API through the client; the UI components did not change. Browser requests reach the API through the web app (T-053).
+4. Every suite stayed green after each step: unit, integration (136), E2E with the OWASP suite (169, now covering every operation in the OpenAPI document).
 
-The gap analysis (`25_BRIEF_V2_GAP_ANALYSIS.md`) lists the behavior changes that follow in later milestones.
+The services are still plain functions called by thin controllers, and authorization is still the role matrix (T-020); the permission tree, guards per permission key (T-046), and branches come in the next M1 slices. The gap analysis (`25_BRIEF_V2_GAP_ANALYSIS.md`) lists the behavior changes that follow in later milestones.

@@ -4,7 +4,11 @@
   "globalDependencies": ["**/.env"],
   "globalPassThroughEnv": [
     "CI",
+    "NODE_ENV",
+    "PORT",
+    "API_URL",
     "DATABASE_URL",
+    "DATABASE_POOL_SIZE",
     "TEST_DATABASE_URL",
     "E2E_DATABASE_URL",
     "BETTER_AUTH_SECRET",
@@ -18,9 +22,14 @@
     "SEED_ADMIN_NAME"
   ],
   "tasks": {
-    "generate": {
+    "generate": {},
+    "api#generate": {
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
       "outputs": ["src/generated/**"]
+    },
+    "web#generate": {
+      "inputs": ["$TURBO_ROOT$/apps/api/openapi.json"],
+      "outputs": ["src/lib/api/schema.d.ts"]
     },
     "build": {
       "dependsOn": ["^build", "generate"],
@@ -37,6 +46,9 @@
     "typecheck": {
       "dependsOn": ["^build", "generate"]
     },
+    "e2e#typecheck": {
+      "dependsOn": ["^build", "api#generate"]
+    },
     "test": {
       "dependsOn": ["^build", "generate"]
     },
@@ -44,15 +56,16 @@
       "dependsOn": ["^build", "generate"],
       "cache": false
     },
-    "e2e#typecheck": {
-      "dependsOn": ["web#generate"]
+    "openapi:check": {
+      "dependsOn": ["build"],
+      "cache": false
     },
     "test:e2e": {
-      "dependsOn": ["web#build"],
+      "dependsOn": ["^build", "api#build", "web#build"],
       "cache": false
     },
     "test:security": {
-      "dependsOn": ["web#build"],
+      "dependsOn": ["^build", "api#build", "web#build"],
       "cache": false
     }
   }

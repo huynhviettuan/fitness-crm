@@ -75,4 +75,16 @@ Codes from Phases 0–4 that map to these: `BOOKING_TRAINER_OVERLAP` → `TRAINE
 
 ## Current state
 
-Phases 0–4 expose a smaller `/api/v1` from Next.js Route Handlers (customers, contracts, trainers, bookings, payments, cash transactions). Milestone M1 moves them into NestJS with the same paths where they still fit (`26_TECH_PROPOSAL.md` §8).
+Since M1 slice 1 the API is the NestJS app; its OpenAPI document is `apps/api/openapi.json` (interactive at `/api/docs` outside production). It still has the Phases 0–4 resources, under their old paths:
+
+| Area | Endpoints |
+|---|---|
+| Me | `GET /me` (user, `trainerId`, `permissions`), `PATCH /me/locale` |
+| Customers | `/customers` (`?search=&page=&pageSize=`), `/customers/:id`, `/customers/:id/contracts` (list; create with `Idempotency-Key`) |
+| Contracts | `/contracts` (`?q=&customerId=`), `/contracts/:id`, `/contracts/:id/activate`, `/contracts/:id/cancel`, `/contracts/:id/payments` (list; record with `Idempotency-Key`) |
+| Trainers | `/trainers` (`?activeOnly=`), `/trainers/:id`, `/trainers/logins` |
+| Bookings | `/bookings` (filters), `/bookings/:id` (get, reschedule), `/bookings/:id/cancel`, `/no-show`, `/check-in`, `/complete`; `/schedule?date=&trainerId=` (one gym day) |
+| Money | `/payments` (filters), `/payments/collected?from=&to=`, `/payments/:id/void`, `/debts`, `/cash-transactions` (list; record with `Idempotency-Key`), `/cash-transactions/summary?from=&to=`, `/cash-transactions/:id/void` |
+| Users | `/users` (list, create), `/users/:id/role`, `/users/:id/status`, `/users/:id/password` (`PUT`) |
+
+Calendar days in queries and bodies are `dd/MM/yyyy`; responses carry instants and calendar days as ISO 8601 (calendar days at UTC midnight). Lists answer `{ items, total, page, pageSize }` without `totals` yet. These resources are replaced by the ones above as their milestones land.

@@ -2,36 +2,27 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-const API_ROOT = path.join(import.meta.dirname, "..", "..", "apps", "web", "src", "app", "api", "v1");
-const METHOD_EXPORT = /export\s+(?:const|async\s+function|function)\s+(GET|POST|PUT|PATCH|DELETE)\b/g;
+const OPENAPI = path.join(import.meta.dirname, "..", "..", "apps", "api", "openapi.json");
+const METHODS = ["get", "post", "put", "patch", "delete"] as const;
 
 export type ApiRoute = {
-  /** e.g. /api/v1/customers/[id] */
+  /** e.g. /api/v1/customers/{id} */
   template: string;
-  /** The template with dynamic segments filled in. */
+  /** The template with path parameters filled in. */
   path: string;
   methods: string[];
 };
 
 /**
- * Every Route Handler under /api/v1, read from the source tree. A new route is
- * covered by the access-control tests automatically, so it cannot ship without
- * authentication unnoticed.
+ * Every /api/v1 operation, read from the API's OpenAPI document (docs/07), which the
+ * API's CI check keeps in step with the controllers. A new endpoint is covered by the
+ * access-control tests automatically, so it cannot ship without authentication unnoticed.
  */
 export function discoverApiRoutes(): ApiRoute[] {
-  const routes: ApiRoute[] = [];
-  const walk = (dir: string) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name === "route.ts") {
-        const segments = path.relative(API_ROOT, dir).split(path.sep).filter((s) => s && !s.startsWith("("));
-        const template = ["/api/v1", ...segments].join("/");
-        const methods = [...fs.readFileSync(full, "utf8").matchAll(METHOD_EXPORT)].map((m) => m[1]);
-        routes.push({ template, path: template.replace(/\[[^\]]+\]/g, () => randomUUID()), methods });
-      }
-    }
-  };
-  walk(API_ROOT);
-  return routes;
+  const document = JSON.parse(fs.readFileSync(OPENAPI, "utf8")) as { paths: Record<string, Record<string, unknown>> };
+  return Object.entries(document.paths).map(([template, operations]) => ({
+    template,
+    path: template.replace(/\{[^}]+\}/g, () => randomUUID()),
+    methods: METHODS.filter((method) => method in operations).map((method) => method.toUpperCase()),
+  }));
 }

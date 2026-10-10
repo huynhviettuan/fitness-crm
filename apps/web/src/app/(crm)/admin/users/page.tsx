@@ -3,8 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@flow/shared/permissions";
-import { listUsers } from "@/modules/users/user.service";
+import { can } from "@/lib/permissions";
+import { listUsers } from "@/lib/api/users";
 import { CreateUserButton, UsersTable } from "./users-table";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
@@ -17,10 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function UsersPage() {
   const user = await requirePageUser();
-  if (!can(user.role, "user.manage")) return <ForbiddenState />;
+  if (!can(user, "user.manage")) return <ForbiddenState />;
 
   const t = await getTranslations("users");
-  const users = await listUsers(user);
+  const users = await listUsers();
 
   return (
     <>

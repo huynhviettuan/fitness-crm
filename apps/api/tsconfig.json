@@ -1,0 +1,10 @@
+{
+  "extends": "@flow/config/tsconfig.node.json",
+  "compilerOptions": {
+    // NestJS dependency injection reads constructor types from decorator metadata.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "noEmit": true
+  },
+  "include": ["src", "test", "prisma", "prisma.config.ts", "vitest.config.mts"]
+}

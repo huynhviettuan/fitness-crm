@@ -8,7 +8,7 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 
 | Area | Status | Milestone |
 |---|---|---|
-| Architecture (one Next.js app → `apps/web` + `apps/api` NestJS, T-041) | Conflicts | M1 |
+| Architecture (one Next.js app → `apps/web` + `apps/api` NestJS, T-041) | Built (M1 slice 1, 2026-10-10) | M1 |
 | Users, roles, permissions (5 fixed roles → permission tree, data scope, masking, branches, login hours, history) | Conflicts | M1 |
 | Branches (one gym → multi-branch) | New | M1 |
 | Approval engine and approval matrix (D-018) | New | M1 |
@@ -65,7 +65,7 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Fixed code prefixes KH/HD/PT | Configurable prefixes, legacy codes kept (D-038) | Prefix settings; import keeps old codes. | M1, M9 |
 | Free-text categories and reasons | Drop-downs with "Khác" (D-016) | Option-list tables; migrate existing free text as "Khác" entries. | M1, then each module |
 | Email: none | Customer email on every session-count change (D-036) | Outbox, provider, templates. | M6 |
-| Server Actions and Route Handlers in Next.js | API in NestJS; web calls it (T-041, T-043) | Route handlers become controllers; Server Actions become calls to the API. | M1 |
+| Server Actions and Route Handlers in Next.js | API in NestJS; web calls it (T-041, T-043) | Done in M1 slice 1: Route Handlers became controllers; Server Actions are thin calls to the API; browsers reach the API through the web app (T-053) | M1 |
 
 ## Brief section coverage
 

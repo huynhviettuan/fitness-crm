@@ -14,20 +14,20 @@ Scanning our own app locally needs no permission. Before scanning a deployed env
 
 | Category | Controls in the app | Automated tests |
 |---|---|---|
-| **A01 Broken Access Control** | Authorization in services (`assertCan`, T-020/T-024); trainer data scope (OQ-006 interim); fields such as `customerCode` and `status` cannot be set by the client | `e2e/security/access-control.spec.ts`: every `/api/v1` route × method without a session → 401, found automatically from the source tree; role matrix; trainer cannot open a customer by its real id; mass assignment ignored; unused Better Auth endpoints → 404. `src/lib/security/server-actions.test.ts`: every Server Action calls `requireActionUser()`. `tests/integration/*`: service-level role tests |
-| **A02 Security Misconfiguration** | Content Security Policy with a per-request nonce (`src/proxy.ts`); `nosniff`, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy, HSTS in production (`next.config.ts`); no `X-Powered-By`; environment validated at startup | `e2e/security/headers.spec.ts`: headers present on pages and API; CSP is strict and its nonce changes per request; the main screens and login run with no CSP violations |
-| **A03 Software Supply Chain Failures** | `npm ci` from the lockfile; `npm run security:audit` gate; triaged allowlist; Dependabot; CLI tools kept out of runtime dependencies; `mysql2` forced to a patched version | `scripts/audit-check.mjs` in CI: fails on any untriaged high/critical advisory or an expired allowlist entry |
-| **A04 Cryptographic Failures** | Better Auth password hashing; secret of at least 32 characters; HttpOnly SameSite=Lax session cookie, Secure over HTTPS; TLS from the platform | `access-control.spec.ts`: API responses never contain password, hash, token, or secret fields. `auth-hardening.spec.ts`: cookie flags |
+| **A01 Broken Access Control** | Authorization in services (`assertCan`, T-020/T-024); trainer data scope (OQ-006 interim); fields such as `customerCode` and `status` cannot be set by the client | `e2e/security/access-control.spec.ts`: every `/api/v1` operation without a session → 401, found automatically from `apps/api/openapi.json`; role matrix; trainer cannot open a customer by its real id; mass assignment ignored; unused Better Auth endpoints → 404. `apps/web/src/lib/security/api-boundary.test.ts`: no web file imports Prisma or server-side auth, and Server Actions call nothing but the API (T-043). `apps/api/test/integration/*`: service-level role tests |
+| **A02 Security Misconfiguration** | Content Security Policy with a per-request nonce (`apps/web/src/proxy.ts`); `nosniff`, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy, HSTS in production, from the web app (`next.config.ts`) and from the API for direct clients (`platform/http/security-headers.ts`, plus `Cache-Control: no-store`); no `X-Powered-By`; environment validated at startup in both apps; API docs (`/api/docs`) not served in production | `e2e/security/headers.spec.ts`: headers present on pages and API; CSP is strict and its nonce changes per request; the main screens and login run with no CSP violations |
+| **A03 Software Supply Chain Failures** | `pnpm install --frozen-lockfile`; pnpm's release-age policy (no version younger than a day) and build-script allowlist (`allowBuilds` in `pnpm-workspace.yaml`); `pnpm security:audit` gate; triaged allowlist; Dependabot; CLI tools kept out of runtime dependencies; `mysql2` forced to a patched version | `scripts/audit-check.mjs` in CI: fails on any untriaged high/critical advisory or an expired allowlist entry |
+| **A04 Cryptographic Failures** | Better Auth password hashing; responses encoded with their schema, so unlisted fields never leave the API (T-043); secret of at least 32 characters; HttpOnly SameSite=Lax session cookie, Secure over HTTPS; TLS from the platform | `access-control.spec.ts`: API responses never contain password, hash, token, or secret fields. `auth-hardening.spec.ts`: cookie flags |
 | **A05 Injection** | Prisma parameterized queries (raw SQL only as tagged templates); React output escaping; CSP blocks injected scripts; control characters rejected | `e2e/security/injection.spec.ts`: SQL, script, and template payloads stored verbatim and rendered without running; SQL in search matches nothing |
 | **A06 Insecure Design** | Concurrency and idempotency design (T-013 to T-015, T-036); fail-closed interim rules for open questions | Abuse-case tests per phase: concurrent code generation and duplicate emails; INT-001 to INT-003 and INT-007 (Phase 3) and INT-004 and INT-005 (Phase 4), also over HTTP; concurrent overpayment |
 | **A07 Authentication Failures** | Generic sign-in error; rate limit of 20 per minute per IP; 12-hour session expiry; sessions revoked on disable and on password reset; no self sign-up | `e2e/security/auth-hardening.spec.ts`: sign-out ends the session on the server; forged cookies rejected. `e2e/security/rate-limit.spec.ts`: repeated failures get 429. `users.int.test.ts`: INT-006 |
-| **A08 Software or Data Integrity Failures** | `/api/v1` state changes require the app's own `Origin` and a JSON body; Server Actions and Better Auth check origin themselves; audit events written in the same transaction (T-022) | `e2e/security/csrf.spec.ts`: other-origin and missing-Origin requests → 403 and nothing changes; `text/plain` → 415; no permissive CORS |
-| **A09 Security Logging & Alerting Failures** | JSON security events (below); domain audit log | `tests/integration/security.int.test.ts`: denials and sign-ins are logged; passwords never appear in logs |
-| **A10 Mishandling of Exceptional Conditions** | Errors leave in the documented shape (`handleApi`, `runAction`); unexpected errors become `INTERNAL_ERROR` with details only in the server log; input fails closed | `e2e/security/errors.spec.ts`: malformed JSON, wrong types, non-object bodies, oversized fields, control characters, bad ids, unsupported methods, absurd paging — all documented errors without stack traces |
+| **A08 Software or Data Integrity Failures** | `/api/v1` state changes require the app's own `Origin` and a JSON body (`platform/http/request-guards.middleware.ts`); Server Actions and Better Auth check origin themselves; audit events written in the same transaction (T-022) | `e2e/security/csrf.spec.ts`: other-origin and missing-Origin requests → 403 and nothing changes; `text/plain` → 415; no permissive CORS |
+| **A09 Security Logging & Alerting Failures** | JSON security events (below); domain audit log | `apps/api/test/integration/security.int.test.ts`: denials and sign-ins are logged; passwords never appear in logs |
+| **A10 Mishandling of Exceptional Conditions** | Errors leave in the documented shape (the API's `ErrorFilter`, including 405 for an unsupported method and body-parser errors; `runAction` in the web); unexpected errors become `INTERNAL_ERROR` with details only in the server log; input fails closed | `e2e/security/errors.spec.ts`: malformed JSON, wrong types, non-object bodies, oversized fields, control characters, bad ids, unsupported methods, absurd paging — all documented errors without stack traces |
 
 **Brief v2 (milestones M1–M11):** the suite moves to the NestJS API. Every endpoint declares a permission key; an automated test walks the OpenAPI document and checks that every endpoint refuses anonymous calls, refuses a role without the permission, applies data scope (another consultant's lead is `404`) and branch access, and returns no masked field. New abuse cases: self-approval, using a pending record, editing an approved contract, deleting without a reason or out of order, double payouts, concurrent reactivation, sign-in outside allowed hours, masked fields in Excel exports, and access to ID and health data (`13_TEST_STRATEGY.md`). Manual pentest (layer 3) before go-live and after M4 and M5 (money and sessions).
 
-The entries below describe the Phases 0–4 code.
+M1 slice 1 (2026-10-10) moved the suite onto the NestJS API without changing what it checks: browsers still call `/api/v1` on the web origin, which forwards to the API (T-053). The access-control inventory now comes from the OpenAPI document, so it also covers the new read endpoints. The entries below describe the Phases 0–4 code.
 
 Phase 2 added `e2e/security/contracts.spec.ts`: contract role matrix, mass assignment of status/code/opening balances, Idempotency-Key required and not reusable, and input errors.
 
@@ -41,7 +41,7 @@ The security tests were written first and run against the app as it was. They fa
 
 | OWASP | Finding | Fix |
 |---|---|---|
-| A08 | `/api/v1` accepted POST/PATCH from another origin, or with no Origin at all, relying only on SameSite cookies | Origin check in `handleApi`; JSON-only bodies (`UNSUPPORTED_MEDIA_TYPE`) |
+| A08 | `/api/v1` accepted POST/PATCH from another origin, or with no Origin at all, relying only on SameSite cookies | Origin check (then `handleApi`, now API middleware); JSON-only bodies (`UNSUPPORTED_MEDIA_TYPE`) |
 | A02 | No CSP, no clickjacking protection, no `nosniff`, `X-Powered-By: Next.js` sent | Headers in `next.config.ts`; nonce-based CSP in `src/proxy.ts` |
 | A10/A05 | A NUL character in a name caused a 500: PostgreSQL rejects it | Control characters rejected by validation (`invalidCharacters`) |
 | A07 | Rate limiting was off outside production and could not be tested | Enabled in every environment except unit/integration tests |
@@ -60,31 +60,31 @@ One JSON line per event on the server log, with `type: "security"`. Passwords, c
 | `authz.denied` | warn | `userId`, `role`, `permission` |
 | `request.cross_origin_rejected` | warn | `method`, `path`, `origin`, `ip` |
 
-Alerting is not set up yet. Before go-live, forward these logs (e.g. a Vercel log drain) and alert on bursts of `auth.sign_in.failed` and `request.cross_origin_rejected`.
+Alerting is not set up yet. Before go-live, forward the API's logs (the platform's log drain) and alert on bursts of `auth.sign_in.failed` and `request.cross_origin_rejected`.
 
 ## Dependency triage (A03)
 
-`npm run security:audit` runs in CI. When it fails:
+`pnpm security:audit` runs in CI. When it fails:
 
-1. Upgrade the dependency if a fixed version exists. Use an `overrides` entry in `package.json` for a transitive dependency when the fix is in the same major version.
+1. Upgrade the dependency if a fixed version exists. Use an `overrides` entry in `pnpm-workspace.yaml` for a transitive dependency when the fix is in the same major version.
 2. Otherwise, add the advisory to `security/audit-allowlist.json` with why it is not exploitable here and a `reviewBy` date at most three months away.
 3. The gate fails again when the review date passes, and warns when an entry is no longer needed.
 
 ## Running
 
 ```text
-npm run security:audit    # dependency gate
-npm test                  # includes the Server Action guard
-npm run test:integration  # includes security.int.test.ts
-npm run test:security     # builds, then runs e2e/security (rate-limit project last)
+pnpm security:audit       # dependency gate
+pnpm test                 # includes the web's API-boundary guard
+pnpm test:integration     # includes security.int.test.ts
+pnpm test:security        # builds both apps, then runs e2e/security (rate-limit project last)
 ```
 
-The E2E suite runs against a production build, so the CSP has no `'unsafe-eval'` and production code paths are tested.
+The E2E suite runs against production builds of both apps, so the CSP has no `'unsafe-eval'` and production code paths are tested.
 
 ## Deployment requirements
 
-- **Client IP:** Better Auth trusts `X-Forwarded-For` only when it holds a single address. Vercel sets it to the real client IP. Behind any other proxy, configure `advanced.ipAddress` in `src/lib/auth/auth.ts`, or rate limiting falls back to one shared bucket.
-- **Origin:** `BETTER_AUTH_URL` must be the exact public origin of each deployment. The API Origin check and Better Auth both use it, so preview deployments need their own value.
+- **Client IP:** sign-in rate limits and logs key on `X-Forwarded-For`. The web app forwards the address it received (Vercel sets it to the real client IP and overwrites what the client sent); the API uses the connection address when the header is missing (`platform/http/client-address.ts`). The API trusts the header, so in production it should be reachable only from the web app and through the platform's proxy; revisit (`advanced.ipAddress.trustedProxies` in `apps/api/src/platform/auth/auth.ts`) before direct clients arrive.
+- **Origin:** `BETTER_AUTH_URL` must be the exact public origin of each deployment. It is the web app's URL, set in the API: the API's Origin check and Better Auth both use it, so preview deployments need their own value.
 - **HSTS** is sent only in production builds.
 
 ## Open items

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // Stable machine-readable error codes (docs/07_API_SPECIFICATION.md, "Error contract").
 // Add a code here, to the docs/07 table, and to the web app's messages/*.json `errors` together.
 export const ERROR_HTTP_STATUS = {
@@ -26,3 +28,14 @@ export const ERROR_HTTP_STATUS = {
 export type ErrorCode = keyof typeof ERROR_HTTP_STATUS;
 
 export type FieldErrors = Record<string, string[]>;
+
+/** The body of every error response (docs/07 "Error contract"). */
+export const apiErrorSchema = z
+  .object({
+    code: z.enum(Object.keys(ERROR_HTTP_STATUS) as ErrorCode[]),
+    message: z.string(),
+    details: z.object({ fieldErrors: z.record(z.string(), z.array(z.string())).optional() }),
+  })
+  .meta({ id: "ApiError" });
+
+export type ApiErrorBody = z.output<typeof apiErrorSchema>;

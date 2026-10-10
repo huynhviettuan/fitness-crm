@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CustomerSearch } from "@/components/app-shell/customer-search";
 import { UserMenu } from "@/components/app-shell/user-menu";
-import type { CurrentUser } from "@/lib/auth/session";
+import type { CurrentUser } from "@/lib/auth/current-user";
 
 export function AppHeader({ user, showSearch }: { user: CurrentUser; showSearch: boolean }) {
   const t = useTranslations("common");

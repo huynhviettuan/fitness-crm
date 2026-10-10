@@ -6,8 +6,8 @@ import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@flow/shared/permissions";
-import { listDebts } from "@/modules/finance/payment.service";
+import { can } from "@/lib/permissions";
+import { listDebts } from "@/lib/api/finance";
 import { ContractsTable } from "../../contracts/contracts-table";
 import { FinanceTabs } from "../finance-nav";
 import { pageParam } from "../month";
@@ -23,15 +23,15 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Contracts that still owe money, largest first (BR-013, A-022). */
 export default async function DebtPage({ searchParams }: PageProps<"/finance/debt">) {
   const user = await requirePageUser();
-  if (!can(user.role, "payment.view")) return <ForbiddenState />;
+  if (!can(user, "payment.view")) return <ForbiddenState />;
 
   const t = await getTranslations("finance");
-  const result = await listDebts(user, { page: pageParam((await searchParams).page) });
+  const result = await listDebts({ page: pageParam((await searchParams).page) });
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <FinanceTabs active="debt" showCash={can(user.role, "cash.manage")} />
+      <FinanceTabs active="debt" showCash={can(user, "cash.manage")} />
       <p className="mb-4 text-sm text-muted-foreground">{t("debtDescription")}</p>
       <ContractsTable
         contracts={result.items}

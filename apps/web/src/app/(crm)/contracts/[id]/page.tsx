@@ -10,13 +10,13 @@ import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
-import type { CurrentUser } from "@/lib/auth/session";
-import { isAppError } from "@/lib/errors/app-error";
-import { can } from "@flow/shared/permissions";
+import type { CurrentUser } from "@/lib/auth/current-user";
+import { isApiError } from "@/lib/api/errors";
+import { can } from "@/lib/permissions";
 import { canActivate, canCancel, isEditable } from "@flow/shared/contracts";
-import { getContract } from "@/modules/contracts/contract.service";
-import { listBookings } from "@/modules/bookings/booking.service";
-import { listPayments } from "@/modules/finance/payment.service";
+import { getContract } from "@/lib/api/contracts";
+import { listBookings } from "@/lib/api/bookings";
+import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
 import { PaymentsTable, RecordPaymentButton } from "../../finance/payments";
@@ -24,9 +24,9 @@ import { ActivateContractButton, CancelContractButton, EditContractButton } from
 
 async function loadContract(user: CurrentUser, id: string) {
   try {
-    return await getContract(user, id);
+    return await getContract(id);
   } catch (error) {
-    if (isAppError(error) && error.code === "NOT_FOUND") notFound();
+    if (isApiError(error) && error.code === "NOT_FOUND") notFound();
     throw error;
   }
 }
@@ -46,22 +46,22 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
   const t = await getTranslations("contracts");
   const f = (key: Parameters<typeof t>[0]) => t(key);
 
-  const canSeeBookings = can(user.role, "booking.view");
+  const canSeeBookings = can(user, "booking.view");
   const [history, context] = canSeeBookings
-    ? await Promise.all([listBookings(user, { contractId: contract.id, order: "desc", pageSize: 100 }), bookingContext(user)])
+    ? await Promise.all([listBookings({ contractId: contract.id, order: "desc", pageSize: 100 }), bookingContext(user)])
     : [null, null];
-  const payments = can(user.role, "payment.view")
-    ? await listPayments(user, { contractId: contract.id, pageSize: 100 })
+  const payments = can(user, "payment.view")
+    ? await listPayments({ contractId: contract.id, pageSize: 100 })
     : null;
   // OQ-003 and OQ-013 interim: nothing more to collect once paid in full, or once cancelled.
-  const canRecordPayment = can(user.role, "payment.record") && contract.status !== "CANCELLED" && contract.debt > 0;
-  const cancellable = can(user.role, "contract.cancel") && canCancel(contract.status);
+  const canRecordPayment = can(user, "payment.record") && contract.status !== "CANCELLED" && contract.debt > 0;
+  const cancellable = can(user, "contract.cancel") && canCancel(contract.status);
   // D-010: the cancel confirmation lists the bookings it will cancel.
   const toCancel = cancellable
-    ? (await listBookings(user, { contractId: contract.id, status: "BOOKED", pageSize: 100 })).items
+    ? (await listBookings({ contractId: contract.id, status: "BOOKED", pageSize: 100 })).items
     : [];
 
-  const manage = can(user.role, "contract.manage");
+  const manage = can(user, "contract.manage");
   const actions = (
     <>
       {manage && isEditable(contract.status) && <EditContractButton contract={contract} />}
@@ -129,7 +129,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
           </div>
           <PaymentsTable
             payments={payments.items}
-            canVoid={can(user.role, "payment.void")}
+            canVoid={can(user, "payment.void")}
             label={t("paymentHistory")}
             hide={{ contract: true, customer: true }}
             empty={<EmptyState icon={BanknoteIcon} title={t("paymentHistoryEmpty")} />}

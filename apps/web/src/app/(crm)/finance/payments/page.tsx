@@ -7,8 +7,8 @@ import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@flow/shared/permissions";
-import { collectedBetween, listPayments } from "@/modules/finance/payment.service";
+import { can } from "@/lib/permissions";
+import { collectedBetween, listPayments } from "@/lib/api/finance";
 import { FinanceTabs, MonthNav } from "../finance-nav";
 import { pageParam, selectedMonth } from "../month";
 import { PaymentsTable } from "../payments";
@@ -24,20 +24,20 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Contract payments of one month, newest first (FR-PAY-002). */
 export default async function PaymentsPage({ searchParams }: PageProps<"/finance/payments">) {
   const user = await requirePageUser();
-  if (!can(user.role, "payment.view")) return <ForbiddenState />;
+  if (!can(user, "payment.view")) return <ForbiddenState />;
 
   const t = await getTranslations("finance");
   const params = await searchParams;
   const month = selectedMonth(params.month);
   const [result, collected] = await Promise.all([
-    listPayments(user, { ...month.query, page: pageParam(params.page) }),
-    collectedBetween(user, month.from, month.to),
+    listPayments({ ...month.query, page: pageParam(params.page) }),
+    collectedBetween(month.query),
   ]);
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <FinanceTabs active="payments" showCash={can(user.role, "cash.manage")} />
+      <FinanceTabs active="payments" showCash={can(user, "cash.manage")} />
       <MonthNav path="/finance/payments" month={month.from} thisMonth={month.thisMonth} />
       <p className="mb-4 text-sm">
         <span className="text-muted-foreground">{t("collected")}: </span>
@@ -47,7 +47,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
       </p>
       <PaymentsTable
         payments={result.items}
-        canVoid={can(user.role, "payment.void")}
+        canVoid={can(user, "payment.void")}
         label={t("tabs.payments")}
         empty={<EmptyState icon={BanknoteIcon} title={t("paymentsEmpty")} />}
         footer={

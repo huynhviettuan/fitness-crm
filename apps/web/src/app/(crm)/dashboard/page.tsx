@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { can } from "@flow/shared/permissions";
+import { can } from "@/lib/permissions";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
         title={t("comingTitle")}
         description={t("comingBody")}
         action={
-          can(user.role, "customer.view") && (
+          can(user, "customer.view") && (
             <Button variant="outline" asChild>
               <Link href="/customers">{t("goToCustomers")}</Link>
             </Button>

@@ -61,12 +61,13 @@ In `docs/18_DECISIONS_ASSUMPTIONS.md`:
 
 - TypeScript strict mode everywhere.
 - Validate all external input at the API boundary with Zod schemas shared from `packages/shared`.
-- Every endpoint declares a permission key and is checked by the API guards: effective permissions, branch access, login hours, data scope, field masking (T-046). Hiding UI is never authorization.
+- Every endpoint declares a permission key and is checked by the API guards: effective permissions, branch access, login hours, data scope, field masking (T-046). Hiding UI is never authorization. Until the M1 permission-tree slice lands, services authorize with `assertCan` against the role matrix in `packages/shared` (T-020), and the web hides UI from the permissions `GET /me` returns.
 - Use database transactions for operations that change more than one record; keep lock order contract → session/booking (T-013, T-036, T-040, T-050).
 - Creates of contracts, receipts, expense vouchers, and change vouchers require an idempotency key (T-015).
 - Never trust client-calculated debt, sessions left, payment state, prices, or permissions.
 - Keep controllers thin; business logic lives in services; Prisma only in repositories inside `apps/api`.
-- `apps/web` never imports Prisma or server-side services; it calls the API through the generated client (T-043).
+- `apps/web` never imports Prisma or server-side services; it calls the API through the generated client (T-043), from Server Components and Server Actions. Browsers reach the API only through the web app's `/api/*` (T-053). `apps/web/src/lib/security/api-boundary.test.ts` enforces this.
+- Every API response is encoded with its response schema from `packages/shared` (`encode(schema, value)`); the web decodes with the same schema. After changing a controller or schema, run `pnpm --filter api build && pnpm --filter api openapi` and commit `apps/api/openapi.json`; CI fails when it is out of date.
 - Use migrations; never schema push in shared environments.
 - Every critical change requires tests: unit, integration against PostgreSQL, and E2E where users see it.
 
@@ -93,22 +94,24 @@ UI rules (full rules in `docs/23_UI_DESIGN_SYSTEM.md` §12):
 
 ```text
 apps/
-├── web/                      # Next.js: routes, components, i18n messages, generated API client
+├── web/                      # Next.js: routes, components, i18n messages
+│   └── src/lib/api/          # typed API client (generated from apps/api/openapi.json) and one module per area
 └── api/                      # NestJS
-    ├── src/platform/         # auth, permissions, branches, approvals, audit, trash, config, notifications, files, jobs
+    ├── src/platform/         # auth, http (guards, errors, OpenAPI), db, permissions, audit; later branches,
+    │                         # approvals, trash, config, notifications, files, jobs
     ├── src/modules/          # leads, consulting, customers, services, contracts, contract-changes,
     │                         # schedule, classes, workouts, cashbook, tasks, mail, employees, reports
-    └── prisma/               # schema and migrations
+    ├── test/                 # integration tests against PostgreSQL
+    ├── prisma/               # schema, migrations, seeds
+    └── openapi.json          # the committed API contract (docs/07)
 packages/
-├── shared/                   # Zod schemas, DTO types, permission keys, constants
+├── shared/                   # Zod input and response schemas, permission keys, error codes, pure domain rules
 └── config/                   # lint and TypeScript presets
-e2e/                          # Playwright
+e2e/                          # Playwright E2E and the OWASP security suite
 docs/
 ```
 
-Inside an API module: `*.controller.ts` → `*.service.ts` → `*.repository.ts`, with `*.schema.ts` (in `packages/shared`) and tests next to the code.
-
-Until milestone M1 restructures the repository (`docs/26_TECH_PROPOSAL.md` §8), the Phases 0–4 code still lives in `src/` as a single Next.js app.
+Inside an API module: `*.controller.ts` → `*.service.ts` → `*.repository.ts`, with `*.schema.ts` (inputs), `*.view.ts` (responses), and `*.domain.ts` (pure rules) in `packages/shared`, and tests next to the code. Relative imports in `apps/api` and `packages/shared` end in `.js` (ES modules).
 
 ## 6. Required task workflow
 
@@ -139,23 +142,25 @@ A task is done only when:
 
 ## 8. Commands and conventions
 
-Current single-app commands (until the M1 restructure):
+From the repository root (pnpm 12; tasks run through Turborepo, which builds `packages/shared` and generates the Prisma client and API types first):
 
 ```text
-npm run db:up             # PostgreSQL in Docker
-npm run db:migrate        # create/apply a migration (prisma migrate dev)
-npm run db:seed:demo      # demo data for manual testing (local dev database only, after db:seed)
-npm run typecheck         # next typegen + tsc
-npm run lint
-npm test                  # unit (Vitest)
-npm run test:integration  # integration against TEST_DATABASE_URL
-npm run test:e2e          # builds, then Playwright against E2E_DATABASE_URL
-npm run test:security     # builds, then the OWASP security suite
-npm run security:audit    # dependency vulnerability gate
-npm run build
+pnpm dev                  # shared (watch), API on :4000, web on :3000
+pnpm db:up                # PostgreSQL in Docker
+pnpm db:migrate           # create/apply a migration (prisma migrate dev, in apps/api)
+pnpm db:seed              # first admin; pnpm db:seed:demo adds demo data (local only)
+pnpm typecheck
+pnpm lint
+pnpm test                 # unit (Vitest) in every package
+pnpm test:integration     # API integration tests against TEST_DATABASE_URL
+pnpm test:e2e             # builds both apps, then Playwright against E2E_DATABASE_URL
+pnpm test:security        # builds, then the OWASP security suite
+pnpm security:audit       # dependency vulnerability gate
+pnpm turbo run openapi:check   # apps/api/openapi.json matches the controllers
+pnpm build
 ```
 
-After the restructure, the same tasks run through Turborepo (`pnpm turbo run lint typecheck test`), per app with `--filter web` or `--filter api`.
+One package: `pnpm --filter api <script>` or `pnpm --filter web <script>`. Settings: `apps/api/.env` and `apps/web/.env` (copy the `.env.example` next to each).
 
 - Services take an `Actor` (user, effective permissions, branches) and authorize with the permission guard and `assertCan`.
 - Every signed-in page and layout in the web app sets `export const instant = false` (T-029).

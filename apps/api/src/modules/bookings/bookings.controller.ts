@@ -1,0 +1,108 @@
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import type { Request } from "express";
+import {
+  bookingInputSchema,
+  bookingListSchema,
+  bookingPageSchema,
+  bookingSchema,
+  rescheduleSchema,
+  sessionCompletionSchema,
+} from "@flow/shared/bookings";
+import { CurrentActor } from "../../platform/auth/auth.guard.js";
+import type { CurrentUser } from "../../platform/auth/session.js";
+import { encode } from "../../platform/http/encode.js";
+import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
+import { queryOf } from "../../platform/http/query.js";
+import { checkIn, completeSession } from "../sessions/session.service.js";
+import {
+  cancelBooking,
+  createBooking,
+  getBooking,
+  listBookings,
+  listDayBookings,
+  markNoShow,
+  rescheduleBooking,
+} from "./booking.service.js";
+
+const FILTERS = ["from", "to", "status", "trainerId", "customerId", "contractId", "order", "page", "pageSize"] as const;
+
+@ApiTags("bookings")
+@ApiErrors()
+@Controller("bookings")
+export class BookingsController {
+  @Get()
+  @ApiOptionalQuery(...FILTERS)
+  @ApiResult(bookingPageSchema)
+  async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(bookingPageSchema, await listBookings(actor, queryOf(request, FILTERS)));
+  }
+
+  /**
+   * No Idempotency-Key (T-015 covers money and contracts): a repeated create for the
+   * same trainer and time is refused by the overlap constraint (T-014).
+   */
+  @Post()
+  @ApiResult(bookingSchema, 201, "Created")
+  async create(@CurrentActor() actor: CurrentUser, @Body({ schema: bookingInputSchema }) body: unknown) {
+    return encode(bookingSchema, await createBooking(actor, body));
+  }
+
+  @Get(":id")
+  @ApiResult(bookingSchema)
+  async get(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(bookingSchema, await getBooking(actor, id));
+  }
+
+  /** Reschedule (A-006: BOOKED only): trainer, date, start and end time. */
+  @Patch(":id")
+  @ApiResult(bookingSchema)
+  async reschedule(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: rescheduleSchema }) body: unknown) {
+    return encode(bookingSchema, await rescheduleBooking(actor, id, body));
+  }
+
+  @Post(":id/cancel")
+  @HttpCode(200)
+  @ApiResult(bookingSchema)
+  async cancel(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(bookingSchema, await cancelBooking(actor, id));
+  }
+
+  @Post(":id/no-show")
+  @HttpCode(200)
+  @ApiResult(bookingSchema)
+  async noShow(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(bookingSchema, await markNoShow(actor, id));
+  }
+
+  @Post(":id/check-in")
+  @HttpCode(200)
+  @ApiResult(bookingSchema)
+  async checkIn(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(bookingSchema, await checkIn(actor, id));
+  }
+
+  /**
+   * Idempotent: repeating it returns the same completed state and consumes nothing more
+   * (BR-007). The response carries the contract with its new remaining sessions.
+   */
+  @Post(":id/complete")
+  @HttpCode(200)
+  @ApiResult(sessionCompletionSchema)
+  async complete(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(sessionCompletionSchema, await completeSession(actor, id));
+  }
+}
+
+/** The PT calendar: one gym day of bookings, optionally for one trainer (docs/07 `/schedule`). */
+@ApiTags("bookings")
+@ApiErrors()
+@Controller("schedule")
+export class ScheduleController {
+  @Get()
+  @ApiOptionalQuery("date", "trainerId")
+  @ApiResult(bookingListSchema)
+  async day(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(bookingListSchema, { items: await listDayBookings(actor, queryOf(request, ["date", "trainerId"])) });
+  }
+}

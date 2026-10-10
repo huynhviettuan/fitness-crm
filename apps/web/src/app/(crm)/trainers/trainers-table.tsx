@@ -16,7 +16,7 @@ import { SelectField, TextField, applyFieldErrors } from "@/components/form-fiel
 import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
-import type { ErrorCode, FieldErrors } from "@/lib/errors/app-error";
+import type { ErrorCode, FieldErrors } from "@/lib/api/errors";
 import { trainerInputSchema } from "@flow/shared/trainers";
 import { createTrainerAction, updateTrainerAction } from "./actions";
 

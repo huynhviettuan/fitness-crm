@@ -2,10 +2,14 @@ import path from "node:path";
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
 
-// E2E_DATABASE_URL lives with the app's other settings.
-loadEnv({ path: path.join(import.meta.dirname, "..", "apps", "web", ".env"), quiet: true });
+const API_DIR = path.join(import.meta.dirname, "..", "apps", "api");
+const WEB_DIR = path.join(import.meta.dirname, "..", "apps", "web");
+
+// E2E_DATABASE_URL lives with the API's other settings.
+loadEnv({ path: path.join(API_DIR, ".env"), quiet: true });
 
 const PORT = 3100;
+const API_PORT = 4100;
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -37,19 +41,32 @@ export default defineConfig({
       dependencies: ["chromium"],
     },
   ],
-  // Tests run against a production build (`pnpm test:e2e` builds first): it behaves
-  // like the deployed app (CSP without 'unsafe-eval', rate limiting) and does not
-  // collide with a developer's own `next dev` (Next.js allows one per folder).
-  webServer: {
-    command: `pnpm exec next start --port ${PORT}`,
-    cwd: path.join(import.meta.dirname, "..", "apps", "web"),
-    url: `${baseURL}/login`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    env: {
-      DATABASE_URL: process.env.E2E_DATABASE_URL ?? "",
-      BETTER_AUTH_URL: baseURL,
-      NEXT_PUBLIC_APP_URL: baseURL,
+  // Tests run against production builds (`pnpm test:e2e` builds first): they behave like
+  // the deployed apps (CSP without 'unsafe-eval', rate limiting) and use their own ports,
+  // so they do not collide with a developer's own `pnpm dev`. Browsers talk only to the
+  // web app, which forwards /api/* to the API (T-053).
+  webServer: [
+    {
+      command: "node dist/main.js",
+      cwd: API_DIR,
+      url: `http://localhost:${API_PORT}/api/auth/ok`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        PORT: String(API_PORT),
+        DATABASE_URL: process.env.E2E_DATABASE_URL ?? "",
+        BETTER_AUTH_URL: baseURL,
+      },
     },
-  },
+    {
+      command: `pnpm exec next start --port ${PORT}`,
+      cwd: WEB_DIR,
+      url: `${baseURL}/login`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      env: {
+        API_URL: `http://localhost:${API_PORT}`,
+      },
+    },
+  ],
 });

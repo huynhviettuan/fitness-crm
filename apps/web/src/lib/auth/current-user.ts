@@ -1,25 +1,18 @@
 import "server-only";
 import { cache } from "react";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { AppError } from "@/lib/errors/app-error";
-import { getSessionUser, type CurrentUser } from "@/lib/auth/session";
+import type { Me } from "@flow/shared/users";
+import { getMe } from "@/lib/api/users";
+
+/** The signed-in user as the API sees them, with their permissions (docs/07 `GET /me`). */
+export type CurrentUser = Me;
 
 /** The signed-in user for this request, read once per request. */
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  return getSessionUser(await headers());
-});
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => getMe());
 
 /** For pages and layouts: sends signed-out users to the login page. */
 export async function requirePageUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return user;
-}
-
-/** For Server Actions: a signed-out user gets UNAUTHENTICATED. */
-export async function requireActionUser(): Promise<CurrentUser> {
-  const user = await getCurrentUser();
-  if (!user) throw new AppError("UNAUTHENTICATED");
   return user;
 }

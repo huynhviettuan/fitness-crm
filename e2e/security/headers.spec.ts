@@ -7,7 +7,7 @@ function nonceOf(csp: string | undefined): string | undefined {
 }
 
 test.describe("A02 security headers", () => {
-  for (const path of ["/login", "/api/v1/auth/me"]) {
+  for (const path of ["/login", "/api/v1/me"]) {
     test(`${path} sends the baseline headers and hides the framework`, async ({ apiAs }) => {
       const response = await (await apiAs(null)).get(path);
       const headers = response.headers();

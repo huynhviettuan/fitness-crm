@@ -9,13 +9,13 @@ import { DateTime } from "@/components/date-time";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
-import { isAppError } from "@/lib/errors/app-error";
-import { can } from "@flow/shared/permissions";
-import type { CurrentUser } from "@/lib/auth/session";
-import { getCustomer } from "@/modules/customers/customer.service";
-import { listContracts } from "@/modules/contracts/contract.service";
-import { listBookings } from "@/modules/bookings/booking.service";
-import { listPayments } from "@/modules/finance/payment.service";
+import { isApiError } from "@/lib/api/errors";
+import { can } from "@/lib/permissions";
+import type { CurrentUser } from "@/lib/auth/current-user";
+import { getCustomer } from "@/lib/api/customers";
+import { listContracts } from "@/lib/api/contracts";
+import { listBookings } from "@/lib/api/bookings";
+import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
 import { CreateContractButton } from "../../contracts/contract-buttons";
@@ -25,9 +25,9 @@ import { EditCustomerButton } from "../customer-sheets";
 
 async function loadCustomer(user: CurrentUser, id: string) {
   try {
-    return await getCustomer(user, id);
+    return await getCustomer(id);
   } catch (error) {
-    if (isAppError(error) && error.code === "NOT_FOUND") notFound();
+    if (isApiError(error) && error.code === "NOT_FOUND") notFound();
     throw error;
   }
 }
@@ -46,17 +46,17 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
   const customer = await loadCustomer(user, (await params).id);
   const t = await getTranslations("customers");
   const tc = await getTranslations("contracts");
-  const canSeeContracts = can(user.role, "contract.view");
-  const contracts = canSeeContracts ? await listContracts(user, { customerId: customer.id, pageSize: 100 }) : null;
-  const canSeeBookings = can(user.role, "booking.view");
+  const canSeeContracts = can(user, "contract.view");
+  const contracts = canSeeContracts ? await listContracts({ customerId: customer.id, pageSize: 100 }) : null;
+  const canSeeBookings = can(user, "booking.view");
   const [bookings, context, tb] = canSeeBookings
     ? await Promise.all([
-        listBookings(user, { customerId: customer.id, order: "desc", pageSize: 100 }),
+        listBookings({ customerId: customer.id, order: "desc", pageSize: 100 }),
         bookingContext(user),
         getTranslations("bookings"),
       ])
     : [null, null, null];
-  const payments = can(user.role, "payment.view") ? await listPayments(user, { customerId: customer.id, pageSize: 100 }) : null;
+  const payments = can(user, "payment.view") ? await listPayments({ customerId: customer.id, pageSize: 100 }) : null;
 
   const details: { label: string; value: React.ReactNode }[] = [
     { label: t("fields.customerCode"), value: <span className="font-mono">{customer.customerCode}</span> },
@@ -76,7 +76,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
       <PageHeader
         title={customer.fullName}
         description={`${customer.customerCode} · ${customer.phone}`}
-        actions={can(user.role, "customer.manage") && <EditCustomerButton customer={customer} />}
+        actions={can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
       />
       <Tabs defaultValue="overview">
         <TabsList>
@@ -106,7 +106,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
         </TabsContent>
         {contracts && (
           <TabsContent value="contracts" className="space-y-4">
-            {can(user.role, "contract.manage") && (
+            {can(user, "contract.manage") && (
               <div className="flex justify-end">
                 <CreateContractButton customerId={customer.id} />
               </div>
@@ -142,7 +142,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           <TabsContent value="payments">
             <PaymentsTable
               payments={payments.items}
-              canVoid={can(user.role, "payment.void")}
+              canVoid={can(user, "payment.void")}
               label={t("tabs.payments")}
               hide={{ customer: true }}
               empty={<EmptyState icon={BanknoteIcon} title={tc("paymentHistoryEmpty")} />}

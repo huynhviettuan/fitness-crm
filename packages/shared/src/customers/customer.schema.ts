@@ -2,6 +2,8 @@ import { z } from "zod";
 import { parseDateOnly, normalizePhone, hasNoControlCharacters } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
+export const CUSTOMER_STATUSES = ["ACTIVE", "INACTIVE"] as const;
+
 // Form inputs send "" for an empty optional field; it is stored as null.
 const emptyToNull = (value: string) => (value === "" ? null : value);
 
@@ -63,7 +65,7 @@ export const updateCustomerSchema = z
     email,
     dateOfBirth,
     notes,
-    status: z.enum(["ACTIVE", "INACTIVE"]),
+    status: z.enum(CUSTOMER_STATUSES),
   })
   .partial();
 

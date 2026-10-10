@@ -1,0 +1,23 @@
+import "server-only";
+import { customerPageSchema, customerSchema, type CreateCustomerInput, type UpdateCustomerInput } from "@flow/shared/customers";
+import { api, query, read } from "./client";
+
+export async function listCustomers(params: { q?: string; page?: number }) {
+  const client = await api();
+  return read(
+    customerPageSchema,
+    client.GET("/api/v1/customers", { params: { query: query({ search: params.q, page: params.page }) } }),
+  );
+}
+
+export async function getCustomer(id: string) {
+  return read(customerSchema, (await api()).GET("/api/v1/customers/{id}", { params: { path: { id } } }));
+}
+
+export async function createCustomer(input: CreateCustomerInput) {
+  return read(customerSchema, (await api()).POST("/api/v1/customers", { body: input }));
+}
+
+export async function updateCustomer(id: string, input: UpdateCustomerInput) {
+  return read(customerSchema, (await api()).PATCH("/api/v1/customers/{id}", { params: { path: { id } }, body: input }));
+}

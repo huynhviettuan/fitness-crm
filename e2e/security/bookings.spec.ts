@@ -107,7 +107,7 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
 
   test("a trainer's login link cannot be pointed at a non-trainer account", async ({ apiAs, testTag }) => {
     const admin = await apiAs("ADMIN");
-    const { id: adminId } = await (await admin.get("/api/v1/auth/me")).json();
+    const { id: adminId } = await (await admin.get("/api/v1/me")).json();
 
     const response = await admin.post("/api/v1/trainers", { data: { fullName: `PT ${testTag}`, userId: adminId } });
 

@@ -3,6 +3,8 @@ import { hasNoControlCharacters } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 
+export const TRAINER_STATUSES = ["ACTIVE", "INACTIVE"] as const;
+
 /** A-003: trainer codes are "PT" + at least 3 digits, e.g. PT001. */
 export function formatTrainerCode(sequenceValue: bigint | number): string {
   return `PT${sequenceValue.toString().padStart(3, "0")}`;
@@ -23,7 +25,7 @@ const userId = z
 /** Create and update take the same fields; the trainer code is never accepted (T-019). */
 export const trainerInputSchema = z.object({
   fullName,
-  status: z.enum(["ACTIVE", "INACTIVE"], { error: "invalidChoice" }).prefault("ACTIVE"),
+  status: z.enum(TRAINER_STATUSES, { error: "invalidChoice" }).prefault("ACTIVE"),
   userId: userId.prefault(""),
 });
 
