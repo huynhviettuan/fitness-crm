@@ -1,0 +1,22 @@
+# Local development and test database. Not used in production.
+services:
+  postgres:
+    image: postgres:17
+    container_name: fitness-crm-postgres
+    environment:
+      POSTGRES_USER: fitness
+      POSTGRES_PASSWORD: fitness
+      POSTGRES_DB: fitness_crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitness -d fitness_crm"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

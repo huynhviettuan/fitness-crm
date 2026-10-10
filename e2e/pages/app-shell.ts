@@ -1,0 +1,29 @@
+import type { Locator, Page } from "@playwright/test";
+import { labels } from "../support/labels";
+
+/** The signed-in layout: sidebar, top bar, and the page's main region. */
+export class AppShell {
+  constructor(private readonly page: Page) {}
+
+  get sidebar(): Locator {
+    return this.page.locator('[data-sidebar="sidebar"]');
+  }
+
+  get main(): Locator {
+    return this.page.getByRole("main");
+  }
+
+  navLink(name: string): Locator {
+    return this.sidebar.getByRole("link", { name, exact: true });
+  }
+
+  pageHeading(name: string): Locator {
+    return this.main.getByRole("heading", { level: 1, name });
+  }
+
+  /** Opens the Ctrl+K customer search and returns its dialog. */
+  async openCustomerSearch(): Promise<Locator> {
+    await this.page.getByRole("banner").getByRole("button", { name: labels.search.trigger }).click();
+    return this.page.getByRole("dialog", { name: labels.search.title });
+  }
+}

@@ -1,0 +1,201 @@
+import "server-only";
+import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
+import { LOCKING_TRANSACTION, prisma, type Db } from "@/lib/db/prisma";
+import { isUniqueViolation } from "@/lib/db/errors";
+import { env } from "@/lib/env";
+import { AppError } from "@/lib/errors/app-error";
+import { calendarDateInTimeZone } from "@/lib/format";
+import { assertCan } from "@/lib/permissions/assert";
+import { parseInput } from "@/lib/validation/parse";
+import type { Actor } from "@/lib/auth/session";
+import { recordAudit } from "@/modules/audit/audit.repository";
+import { findContract, lockContract } from "@/modules/contracts/contract.repository";
+import { contractViewsByIds, type ContractView } from "@/modules/contracts/contract.service";
+import { idempotencyKeySchema } from "@/modules/contracts/contract.schema";
+import * as repo from "@/modules/finance/payment.repository";
+import { exceedsContractValue, isFutureDay } from "@/modules/finance/finance.domain";
+import {
+  debtListSchema,
+  listPaymentsSchema,
+  paymentInputSchema,
+  voidSchema,
+  type PaymentData,
+} from "@/modules/finance/finance.schema";
+
+/** What the UI and API see. */
+export type PaymentView = {
+  id: string;
+  amount: number;
+  method: PaymentData["method"];
+  paidOn: Date;
+  status: "CONFIRMED" | "VOIDED";
+  createdAt: Date;
+  createdBy: string;
+  contract: { id: string; contractCode: string; packageName: string };
+  customer: { id: string; customerCode: string; fullName: string };
+  voidedAt: Date | null;
+  voidedBy: string | null;
+  voidReason: string | null;
+};
+
+export type PaymentPage = { items: PaymentView[]; total: number; page: number; pageSize: number };
+
+export async function listPayments(actor: Actor, rawQuery: unknown): Promise<PaymentPage> {
+  assertCan(actor, "payment.view");
+  const query = parseInput(listPaymentsSchema, rawQuery);
+  const where: Prisma.PaymentWhereInput = {
+    status: query.status,
+    contractId: query.contractId,
+    contract: query.customerId ? { customerId: query.customerId } : undefined,
+    paidOn: { gte: query.from, lte: query.to },
+  };
+  const { items, total } = await repo.listPayments(prisma, where, {
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  });
+  return { items: items.map(toView), total, page: query.page, pageSize: query.pageSize };
+}
+
+/** Confirmed payments received between two gym days, inclusive (D-011: no opening balances). */
+export async function collectedBetween(actor: Actor, from: Date, to: Date): Promise<number> {
+  assertCan(actor, "payment.view");
+  return repo.sumConfirmedPayments(prisma, { paidOn: { gte: from, lte: to } });
+}
+
+/**
+ * Records a CONFIRMED payment (T-015, A-008). A replay with the same key and content
+ * returns the original; the same key with other content is refused. Runs under the
+ * contract lock, so two payments cannot together take the paid amount above the
+ * contract value (OQ-003 interim, T-040).
+ */
+export async function recordPayment(
+  actor: Actor,
+  contractId: string,
+  input: unknown,
+  idempotencyKey: unknown,
+): Promise<{ payment: PaymentView; replayed: boolean }> {
+  assertCan(actor, "payment.record");
+  const key = idempotencyKeySchema.safeParse(idempotencyKey);
+  if (!key.success) throw new AppError("IDEMPOTENCY_KEY_REQUIRED");
+  const data = parseInput(paymentInputSchema, input);
+  if (isFutureDay(data.paidOn, gymToday())) {
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { paidOn: ["futureDate"] } });
+  }
+  if (!z.uuid().safeParse(contractId).success) throw new AppError("NOT_FOUND");
+
+  const replay = await replayOf(prisma, key.data, contractId, data, actor);
+  if (replay) return { payment: replay, replayed: true };
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      if (!(await lockContract(tx, contractId))) throw new AppError("NOT_FOUND");
+      // The same request sent twice at once waits here for the first; it is a replay,
+      // not a second payment that would exceed the contract value.
+      const replayUnderLock = await replayOf(tx, key.data, contractId, data, actor);
+      if (replayUnderLock) return { payment: replayUnderLock, replayed: true };
+
+      const contract = await findContract(tx, contractId, {});
+      if (!contract) throw new AppError("NOT_FOUND");
+      // OQ-013 interim: nothing new is collected on a cancelled contract.
+      if (contract.status === "CANCELLED") throw new AppError("PAYMENT_CONTRACT_CANCELLED");
+      const confirmedPaidAmount = await repo.sumConfirmedPayments(tx, { contractId });
+      const figures = {
+        contractValue: Number(contract.contractValue),
+        openingPaidAmount: Number(contract.openingPaidAmount),
+        confirmedPaidAmount,
+      };
+      if (exceedsContractValue(figures, data.amount)) throw new AppError("PAYMENT_EXCEEDS_CONTRACT_VALUE");
+
+      const payment = await repo.createPayment(tx, { ...data, contractId, idempotencyKey: key.data, createdById: actor.id });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "payment",
+        entityId: payment.id,
+        action: "payment.created",
+        metadata: { contractId, amount: data.amount, method: data.method, paidOn: data.paidOn.toISOString().slice(0, 10) },
+      });
+      return { payment: toView(payment), replayed: false };
+    }, LOCKING_TRANSACTION);
+  } catch (error) {
+    // The same key used for another contract at the same moment: the unique key decides.
+    if (!isUniqueViolation(error)) throw error;
+    const replayAfterRace = await replayOf(prisma, key.data, contractId, data, actor);
+    if (replayAfterRace) return { payment: replayAfterRace, replayed: true };
+    throw error;
+  }
+}
+
+/**
+ * A-008: voids a payment with a reason. It stops counting toward the paid amount and
+ * is never reinstated. Repeating the void returns the current state.
+ */
+export async function voidPayment(actor: Actor, id: string, input: unknown): Promise<PaymentView> {
+  assertCan(actor, "payment.void");
+  const { reason } = parseInput(voidSchema, input);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+
+  return prisma.$transaction(async (tx) => {
+    const payment = await repo.findPayment(tx, id);
+    if (!payment) throw new AppError("NOT_FOUND");
+    await lockContract(tx, payment.contractId);
+    if (payment.status === "VOIDED") return toView(payment);
+
+    if ((await repo.voidPayment(tx, id, { voidedAt: new Date(), voidedById: actor.id, voidReason: reason })) === 1) {
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "payment",
+        entityId: id,
+        action: "payment.voided",
+        metadata: { contractId: payment.contractId, amount: Number(payment.amount), reason },
+      });
+    }
+    return toView((await repo.findPayment(tx, id))!);
+  }, LOCKING_TRANSACTION);
+}
+
+/** Contracts that still owe money, largest debt first (BR-013, A-022). */
+export async function listDebts(
+  actor: Actor,
+  rawQuery: unknown,
+): Promise<{ items: ContractView[]; total: number; page: number; pageSize: number }> {
+  assertCan(actor, "payment.view");
+  const query = parseInput(debtListSchema, rawQuery);
+  const { ids, total } = await repo.contractsWithDebt(prisma, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  return { items: await contractViewsByIds(actor, ids), total, page: query.page, pageSize: query.pageSize };
+}
+
+async function replayOf(db: Db, key: string, contractId: string, data: PaymentData, actor: Actor): Promise<PaymentView | null> {
+  const existing = await repo.findPaymentByIdempotencyKey(db, key);
+  if (!existing) return null;
+  const same =
+    existing.contractId === contractId &&
+    existing.createdById === actor.id &&
+    Number(existing.amount) === data.amount &&
+    existing.method === data.method &&
+    existing.paidOn.getTime() === data.paidOn.getTime();
+  if (!same) throw new AppError("IDEMPOTENCY_KEY_REUSED");
+  return toView(existing);
+}
+
+function toView(payment: repo.PaymentRecord): PaymentView {
+  const { customer, ...contract } = payment.contract;
+  return {
+    id: payment.id,
+    amount: Number(payment.amount),
+    method: payment.method,
+    paidOn: payment.paidOn,
+    status: payment.status,
+    createdAt: payment.createdAt,
+    createdBy: payment.createdBy.name,
+    contract,
+    customer,
+    voidedAt: payment.voidedAt,
+    voidedBy: payment.voidedBy?.name ?? null,
+    voidReason: payment.voidReason,
+  };
+}
+
+function gymToday(): Date {
+  return calendarDateInTimeZone(env.GYM_TIMEZONE);
+}

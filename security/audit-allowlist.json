@@ -1,0 +1,17 @@
+{
+  "$comment": "Advisories accepted after triage (OWASP A03). Each entry needs a reason it is not exploitable here and a date to re-check. `npm run security:audit` fails on any other high/critical advisory and on expired entries. See docs/24_SECURITY_TESTING.md.",
+  "advisories": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "reason": "No fixed version exists (all versions affected). Reached only through glob tooling at development/build time (fast-glob/micromatch under eslint-config-next, the shadcn CLI, ts-morph), with glob patterns written by us. Never receives request input.",
+      "reviewBy": "2027-01-09"
+    },
+    {
+      "id": "GHSA-ggr8-5vv4-36mx",
+      "package": "deepmerge-ts",
+      "reason": "Pinned to 7.1.5 by @prisma/config; the fix is the 8.x major, which Prisma does not support yet. Used only by the Prisma CLI to merge our own prisma.config.ts at build time. Not in the request path; no untrusted input.",
+      "reviewBy": "2027-01-09"
+    }
+  ]
+}
