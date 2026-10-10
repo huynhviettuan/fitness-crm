@@ -1,5 +1,15 @@
 # Documentation Changelog
 
+## 2026-10-11 — M1 slice 5: approvals
+
+- Maker-checker (D-018): receipts, income and expenses, deletions to the trash, and changes of a customer's name, phone, or email wait for approval as the matrix says; until then they have no effect. Nobody approves their own request. Rejections take a reason from the new "rejectReasons" list.
+- **Approvals** inbox (top bar, with a count): requests to decide, requests I sent, and all requests for admins; overdue ones are flagged (A-037).
+- **Administration → Approval matrix**: per action, whether approval is needed, which roles approve, and when a request is overdue; changes apply at once (`approval.manage`). Initial matrix from doc 09: receipts and cash by Fitness Manager or Admin, deletions by Admin, identity edits by Fitness Manager.
+- Receipts and cash entries show their approval status and count only when approved; pending receipts count toward the contract value cap (A-038). A contract's creator can no longer activate it (A-039).
+- API: `202` for actions under approval; `/approvals`, `/approvals/summary`, approve, reject, `/approval-rules`; errors `APPROVAL_OWN_REQUEST`, `APPROVAL_NOT_PENDING`, `APPROVAL_ALREADY_PENDING`.
+- Tests: unit (shared 85, web 227, API 78), integration 200, E2E and security 216.
+- Docs: 04, 07, 09, 13, 16, 18 (T-057, A-037 to A-040), 24, 25, AGENTS.md.
+
 ## 2026-10-10 — M1 slice 4: audit and trash
 
 - Action history (T-048): every change is recorded with its values before and after, in columns of their own; earlier events were converted. **Administration → Action history** searches by kind of record, record, user, and day (`audit.view`).

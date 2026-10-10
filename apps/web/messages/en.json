@@ -18,7 +18,8 @@
     "options": "Option lists",
     "parameters": "System parameters",
     "trash": "Trash",
-    "audit": "Action history"
+    "audit": "Action history",
+    "approvalRules": "Approval matrix"
   },
   "status": {
     "customer": {
@@ -57,6 +58,12 @@
     "option": {
       "ACTIVE": "In use",
       "INACTIVE": "Not in use"
+    },
+    "approval": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Withdrawn"
     }
   },
   "common": {
@@ -141,7 +148,9 @@
       "contracts": "Contracts",
       "bookings": "Bookings",
       "payments": "Payments"
-    }
+    },
+    "identitySubmitted": "Saved. The change of name, phone, or email waits for approval.",
+    "pendingIdentity": "Waiting for approval: {changes}. The current details apply until it is approved."
   },
   "users": {
     "title": "Users",
@@ -264,7 +273,10 @@
     "BOOKING_CUSTOMER_CONTRACT_MISMATCH": "That contract belongs to a different customer.",
     "BOOKING_OUTSIDE_CONTRACT_PERIOD": "The session date is outside the contract's start and end dates.",
     "PAYMENT_EXCEEDS_CONTRACT_VALUE": "This payment would make the paid amount exceed the contract value.",
-    "PAYMENT_CONTRACT_CANCELLED": "Payments can't be recorded on a cancelled contract."
+    "PAYMENT_CONTRACT_CANCELLED": "Payments can't be recorded on a cancelled contract.",
+    "APPROVAL_OWN_REQUEST": "You cannot approve a request you submitted.",
+    "APPROVAL_NOT_PENDING": "This request has already been decided.",
+    "APPROVAL_ALREADY_PENDING": "A request for this record is already waiting for approval."
   },
   "validation": {
     "required": "Required.",
@@ -291,7 +303,9 @@
     "otherNeedsNote": "With \"Other\", say what it is.",
     "otherAlwaysActive": "\"Other\" is always in use and cannot be switched off.",
     "notOnHalfHour": "Use a full or half hour, for example 05:00 or 05:30.",
-    "invalidCodePrefix": "Use 1 to 5 letters without accents, for example KH."
+    "invalidCodePrefix": "Use 1 to 5 letters without accents, for example KH.",
+    "approverRequired": "Choose at least one approver role.",
+    "outOfRange": "Enter a number from 1 to 720."
   },
   "contracts": {
     "title": "Contracts",
@@ -488,7 +502,8 @@
       "occurredOn": "Date",
       "reference": "Reference",
       "description": "Description",
-      "branch": "Branch"
+      "branch": "Branch",
+      "approvalStatus": "Approval"
     },
     "delete": "Delete",
     "deletePaymentTitle": "Delete the payment of {amount}?",
@@ -558,6 +573,9 @@
       },
       "trash": {
         "view": "View the trash"
+      },
+      "approval": {
+        "manage": "Manage the approval matrix"
       }
     },
     "resources": {
@@ -632,7 +650,8 @@
       "paymentMethods": "Payment methods",
       "incomeCategories": "Income categories",
       "expenseTypes": "Expense types",
-      "deleteReasons": "Reasons for deleting or voiding"
+      "deleteReasons": "Reasons for deleting or voiding",
+      "rejectReasons": "Reasons for rejecting"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -734,7 +753,9 @@
       "trainer": "Trainer",
       "booking": "Booking",
       "payment": "Receipt",
-      "cash_transaction": "Income or expense"
+      "cash_transaction": "Income or expense",
+      "approval_request": "Approval request",
+      "approval_rule": "Approval matrix"
     },
     "verbs": {
       "created": "Created",
@@ -754,7 +775,10 @@
       "branches_changed": "Branches changed",
       "overrides_changed": "Own permissions changed",
       "access_hours_changed": "Sign-in hours changed",
-      "password_reset": "Password reset"
+      "password_reset": "Password reset",
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected"
     },
     "fields": {
       "at": "When",
@@ -769,5 +793,73 @@
     "context": "Details",
     "copyId": "Filter by this record",
     "empty": "No actions match the filters."
+  },
+  "approvals": {
+    "title": "Approvals",
+    "description": "Actions that need approval take effect only when someone else approves them. Nobody approves their own request.",
+    "inboxLabel": "Approvals, {count, plural, =0 {nothing waiting} other {# waiting}}",
+    "views": {
+      "toDecide": "Waiting for me",
+      "mine": "Submitted by me",
+      "all": "All"
+    },
+    "empty": {
+      "toDecide": "Nothing is waiting for your approval.",
+      "mine": "You have not submitted any requests.",
+      "all": "There are no requests yet."
+    },
+    "actions": {
+      "payment_create": "Receipt",
+      "cash_create": "Income or expense",
+      "record_delete": "Deletion",
+      "customer_identity": "Customer details"
+    },
+    "fields": {
+      "submittedAt": "Submitted",
+      "action": "Kind",
+      "record": "Record",
+      "amount": "Amount",
+      "branch": "Branch",
+      "submittedBy": "Submitted by",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "overdue": "Overdue",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveLabel": "Approve {name}",
+    "rejectLabel": "Reject {name}",
+    "approveTitle": "Approve {name}?",
+    "approveBody": {
+      "payment_create": "The payment counts toward the contract's paid amount and debt.",
+      "cash_create": "The entry counts toward the totals.",
+      "record_delete": "The record is deleted and moved to the trash.",
+      "customer_identity": "The customer's new details take effect."
+    },
+    "approved": "Approved",
+    "rejectTitle": "Reject {name}?",
+    "rejectBody": "The request has no effect. The submitter sees the reason you choose.",
+    "rejectReason": "Reason for rejecting",
+    "rejected": "Rejected",
+    "submitted": "Sent for approval. The change takes effect once approved.",
+    "deleteReason": "Reason for deleting: {reason}"
+  },
+  "approvalRules": {
+    "title": "Approval matrix",
+    "description": "Which actions need approval, and who approves. Changes apply at once, also to requests already waiting.",
+    "fields": {
+      "action": "Action",
+      "required": "Needs approval",
+      "approvers": "Approver roles",
+      "overdueHours": "Overdue after (hours)"
+    },
+    "on": "Yes",
+    "off": "No",
+    "hours": "{hours} h",
+    "edit": "Edit",
+    "editLabel": "Edit {name}",
+    "editDescription": "A submitter never approves their own request, even with approval rights.",
+    "approversHint": "Anyone with one of these roles, in the same branch, may approve.",
+    "saved": "Approval matrix saved"
   }
 }

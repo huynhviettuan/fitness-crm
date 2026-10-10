@@ -22,6 +22,13 @@ export const customerSchema = z
     updatedAt: instant,
     /** Fields hidden from this user, so screens can say "hidden" rather than "not provided". */
     maskedFields: z.array(z.enum(["phone", "email"])),
+    /**
+     * A change of name, phone, or email waiting for approval (D-018): the values it
+     * would set (hidden ones left out), or null. The fields above are still in effect.
+     */
+    pendingIdentity: z
+      .object({ approvalId: z.uuid(), fullName: z.string().optional(), phone: z.string().nullable().optional(), email: z.string().nullable().optional() })
+      .nullable(),
   })
   .meta({ id: "Customer" });
 

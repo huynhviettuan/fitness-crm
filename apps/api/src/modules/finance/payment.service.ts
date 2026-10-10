@@ -10,8 +10,11 @@ import { inBranches, isMasked, isOwnOnly } from "../../platform/permissions/scop
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
-import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import { chosen, chosenSelect, resolveChoice } from "../../platform/options/option.service.js";
 import { moveToTrash } from "../../platform/trash/trash.service.js";
+import { cancelPendingFor, ruleFor, submitForApproval, withPendingConflictMapped } from "../../platform/approvals/approval.engine.js";
+import type { RecordApprovalStatus } from "@flow/shared/approvals";
+import type { Db as TxDb } from "../../platform/db/prisma.js";
 import { encode } from "../../platform/http/encode.js";
 import { deleteSchema } from "@flow/shared/trash";
 import type { ChosenOption } from "@flow/shared/options";
@@ -36,6 +39,7 @@ export type PaymentView = {
   amount: number;
   method: ChosenOption;
   paidOn: Date;
+  approvalStatus: RecordApprovalStatus;
   createdAt: Date;
   createdBy: string;
   contract: { id: string; contractCode: string; packageName: string };
@@ -85,10 +89,11 @@ export function paymentsVisibleTo(actor: Actor): Prisma.PaymentWhereInput {
 }
 
 /**
- * Records a CONFIRMED payment (T-015, A-008). A replay with the same key and content
- * returns the original; the same key with other content is refused. Runs under the
- * contract lock, so two payments cannot together take the paid amount above the
- * contract value (OQ-003 interim, T-040).
+ * Records a payment (T-015). When the matrix requires it, the payment is PENDING and
+ * counts only once someone else approves it (D-018). A replay with the same key and
+ * content returns the original; the same key with other content is refused. Runs
+ * under the contract lock, so payments, pending ones included, cannot together take
+ * the paid amount above the contract value (OQ-003 interim, A-038, T-040).
  */
 export async function recordPayment(
   actor: Actor,
@@ -124,7 +129,7 @@ export async function recordPayment(
       if (!contract) throw new AppError("NOT_FOUND");
       // OQ-013 interim: nothing new is collected on a cancelled contract.
       if (contract.status === "CANCELLED") throw new AppError("PAYMENT_CONTRACT_CANCELLED");
-      const confirmedPaidAmount = await repo.sumValidPayments(tx, { contractId });
+      const confirmedPaidAmount = await repo.sumCommittedPayments(tx, { contractId });
       const figures = {
         contractValue: Number(contract.contractValue),
         openingPaidAmount: Number(contract.openingPaidAmount),
@@ -132,8 +137,10 @@ export async function recordPayment(
       };
       if (exceedsContractValue(figures, data.amount)) throw new AppError("PAYMENT_EXCEEDS_CONTRACT_VALUE");
 
+      const rule = await ruleFor(tx, "payment.create");
       // A payment belongs to its contract's branch (D-014).
       const payment = await repo.createPayment(tx, {
+        approvalStatus: rule.required ? "PENDING" : "APPROVED",
         amount: data.amount,
         paidOn: data.paidOn,
         methodId: method.optionId,
@@ -153,9 +160,22 @@ export async function recordPayment(
           amount: data.amount,
           method: { optionId: method.optionId, note: method.note },
           paidOn: data.paidOn.toISOString().slice(0, 10),
+          approvalStatus: payment.approvalStatus,
         },
       });
-      return { payment: toView(payment), replayed: false };
+      const view = toView(payment);
+      if (rule.required) {
+        await submitForApproval(tx, actor, {
+          action: "payment.create",
+          entityType: "payment",
+          entityId: payment.id,
+          branchId: payment.branchId,
+          title: titleOf(view),
+          amount: view.amount,
+          payload: { contractId },
+        });
+      }
+      return { payment: view, replayed: false };
     }, LOCKING_TRANSACTION);
   } catch (error) {
     // The same key used for another contract at the same moment: the unique key decides.
@@ -167,49 +187,102 @@ export async function recordPayment(
 }
 
 /**
- * Deletes a payment to the trash with a reason from the list (D-035, D-016). It leaves
- * lists and stops counting toward the paid amount and debt at once, and is never
- * reinstated. Runs under the contract lock (T-040), so it cannot interleave with a new
- * payment's check against the contract value; a payment already deleted is NOT_FOUND.
+ * Deletes a payment to the trash with a reason from the list (D-035, D-016). When the
+ * matrix requires it, the deletion waits for approval and the payment stays in effect
+ * until then (D-018). Runs under the contract lock (T-040); a payment already deleted
+ * is NOT_FOUND.
  */
-export async function deletePayment(actor: Actor, id: string, input: unknown): Promise<void> {
+export async function deletePayment(actor: Actor, id: string, input: unknown): Promise<{ approval: { id: string } } | null> {
   assertCan(actor, "payment.delete");
   const { reasonId, reasonNote } = parseInput(deleteSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
-  await prisma.$transaction(async (tx) => {
-    const found = await repo.findPayment(tx, id, paymentsVisibleTo(actor));
-    if (!found) throw new AppError("NOT_FOUND");
-    // Lock order: contract, then the payment (T-040).
-    await lockContract(tx, found.contractId);
-    const payment = await repo.findPayment(tx, id);
-    if (!payment) throw new AppError("NOT_FOUND");
+  return withPendingConflictMapped(() =>
+    prisma.$transaction(async (tx) => {
+      const found = await repo.findPayment(tx, id, paymentsVisibleTo(actor));
+      if (!found) throw new AppError("NOT_FOUND");
+      // Lock order: contract, then the payment (T-040).
+      await lockContract(tx, found.contractId);
+      const payment = await repo.findPayment(tx, id);
+      if (!payment) throw new AppError("NOT_FOUND");
 
-    const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
-    const deletedAt = new Date();
-    const marked = await repo.markPaymentDeleted(tx, id, {
-      deletedAt,
-      deletedById: actor.id,
-      deleteReasonId: reason.optionId,
-      deleteReasonNote: reason.note,
-    });
-    if (marked !== 1) throw new AppError("NOT_FOUND");
-    const view = toView(payment);
-    await moveToTrash(
-      tx,
-      actor,
-      {
-        entityType: "payment",
-        entityId: id,
-        branchId: payment.branchId,
-        title: `${view.contract.contractCode} · ${view.customer.fullName}`,
-        amount: view.amount,
-        snapshot: encode(paymentSchema, view) as Record<string, unknown>,
-      },
-      reason,
-      deletedAt,
-    );
-  }, LOCKING_TRANSACTION);
+      const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+      if ((await ruleFor(tx, "record.delete")).required) {
+        const view = toView(payment);
+        const option = await tx.option.findUniqueOrThrow({ where: { id: reason.optionId }, select: chosenSelect });
+        const approval = await submitForApproval(tx, actor, {
+          action: "record.delete",
+          entityType: "payment",
+          entityId: id,
+          branchId: payment.branchId,
+          title: titleOf(view),
+          amount: view.amount,
+          payload: { reason: chosen(option, reason.note) },
+        });
+        return { approval };
+      }
+      await applyPaymentDeletion(tx, payment, actor, reason);
+      return null;
+    }, LOCKING_TRANSACTION),
+  );
+}
+
+/**
+ * Deletes the payment now, under the contract lock the caller holds: marks it, writes
+ * the trash entry and audit (T-056), and withdraws its other pending requests.
+ */
+export async function applyPaymentDeletion(
+  tx: TxDb,
+  payment: repo.PaymentRecord,
+  deleter: Pick<Actor, "id">,
+  reason: { optionId: string; note: string | null },
+): Promise<void> {
+  const deletedAt = new Date();
+  const marked = await repo.markPaymentDeleted(tx, payment.id, {
+    deletedAt,
+    deletedById: deleter.id,
+    deleteReasonId: reason.optionId,
+    deleteReasonNote: reason.note,
+  });
+  if (marked !== 1) throw new AppError("NOT_FOUND");
+  const view = toView(payment);
+  await moveToTrash(
+    tx,
+    deleter,
+    {
+      entityType: "payment",
+      entityId: payment.id,
+      branchId: payment.branchId,
+      title: titleOf(view),
+      amount: view.amount,
+      snapshot: encode(paymentSchema, view) as Record<string, unknown>,
+    },
+    reason,
+    deletedAt,
+  );
+  await cancelPendingFor(tx, payment.id);
+}
+
+/** For approvals: the payment a request is about, not deleted. */
+export function findPaymentForApproval(tx: TxDb, id: string): Promise<repo.PaymentRecord | null> {
+  return repo.findPayment(tx, id);
+}
+
+/** Approving or rejecting a pending payment (D-018), with its audit. */
+export async function decidePayment(tx: TxDb, decider: Pick<Actor, "id">, id: string, to: "APPROVED" | "REJECTED"): Promise<void> {
+  if ((await repo.setPaymentApprovalStatus(tx, id, "PENDING", to)) !== 1) throw new AppError("APPROVAL_NOT_PENDING");
+  await recordAudit(tx, {
+    actorUserId: decider.id,
+    entityType: "payment",
+    entityId: id,
+    action: to === "APPROVED" ? "payment.approved" : "payment.rejected",
+    before: { approvalStatus: "PENDING" },
+    after: { approvalStatus: to },
+  });
+}
+
+function titleOf(view: PaymentView): string {
+  return `${view.contract.contractCode} · ${view.customer.fullName}`;
 }
 
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
@@ -248,6 +321,7 @@ function toView(payment: repo.PaymentRecord): PaymentView {
     amount: Number(payment.amount),
     method: chosen(payment.method, payment.methodNote),
     paidOn: payment.paidOn,
+    approvalStatus: payment.approvalStatus as RecordApprovalStatus,
     createdAt: payment.createdAt,
     createdBy: payment.createdBy.name,
     contract,

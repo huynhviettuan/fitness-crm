@@ -39,15 +39,23 @@ export class CustomersController {
     return encode(customerSchema, await getCustomer(actor, id));
   }
 
+  /**
+   * 200 when every change took effect; 202 when a change of name, phone, or email waits
+   * for approval (D-018) — the other fields changed, and `pendingIdentity` shows it.
+   */
   @Patch(":id")
   @RequirePermission("customer.manage")
   @ApiResult(customerSchema)
+  @ApiResult(customerSchema, 202, "Identity change waiting for approval (D-018)")
   async update(
     @CurrentActor() actor: CurrentUser,
     @Param("id") id: string,
     @Body({ schema: updateCustomerSchema }) body: unknown,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return encode(customerSchema, await updateCustomer(actor, id, body));
+    const { customer, approval } = await updateCustomer(actor, id, body);
+    response.status(approval ? 202 : 200);
+    return encode(customerSchema, customer);
   }
 
   @Get(":id/contracts")

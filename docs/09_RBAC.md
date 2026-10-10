@@ -101,6 +101,7 @@ The model above runs in the API (T-054) for the resources that exist today. Scre
 | Cash book | `payment.view`, `payment.record`, `payment.delete`, `cash.manage`, `cash.delete` |
 | Configuration | `config.manage` (option lists and system parameters; Admin only, M1 slice 3) |
 | History | `audit.view` (action history), `trash.view` (Admin only, M1 slice 4) |
+| System | `approval.manage`: the approval matrix (Admin, M1 slice 5). Deciding a request needs no permission of its own: the matrix names the approver roles (D-018) |
 
 Data-scope resources: customers, contracts, schedule, vouchers (*only mine* per A-029). Hideable fields: customer phone, customer email, receipt totals.
 

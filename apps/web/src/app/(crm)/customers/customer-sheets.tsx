@@ -99,9 +99,10 @@ export function EditCustomerButton({ customer }: { customer: EditableCustomer })
           masked={customer.maskedFields}
           submit={(values) => updateCustomerAction(customer.id, values)}
           onCancel={() => setOpen(false)}
-          onSaved={() => {
+          onSaved={(result) => {
             setOpen(false);
-            notify.success(t("updated"));
+            // Name, phone, and email may wait for approval while the rest is saved (D-018).
+            notify.success((result as { submitted: boolean }).submitted ? t("identitySubmitted") : t("updated"));
             router.refresh();
           }}
         />

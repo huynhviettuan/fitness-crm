@@ -34,6 +34,16 @@ export async function read<S extends z.ZodType>(schema: S, call: Promise<Answer>
   return schema.parse(data);
 }
 
+/**
+ * For actions under the approval matrix (D-018) that answer 204 when done or 202 when
+ * waiting for approval: true when the change was submitted for approval.
+ */
+export async function submittedOrDone(call: Promise<Answer>): Promise<boolean> {
+  const { error, response } = await call;
+  if (!response.ok) throw ApiError.fromResponse(response.status, error);
+  return response.status === 202;
+}
+
 /** For calls that answer 204 No Content. */
 export async function done(call: Promise<Answer>): Promise<void> {
   const { error, response } = await call;

@@ -20,6 +20,7 @@ export function createPayment(
     amount: number;
     methodId: string;
     methodNote: string | null;
+    approvalStatus: "PENDING" | "APPROVED";
     paidOn: Date;
     idempotencyKey: string;
     createdById: string;
@@ -63,10 +64,31 @@ export async function listPayments(db: Db, where: Prisma.PaymentWhereInput, opti
   return { items, total };
 }
 
-/** SUM of the payments matching `where` that are not deleted (BR-013, BR-014, D-035). */
+/** SUM of the valid payments matching `where`: approved and not deleted (BR-013, D-018, D-035). */
 export async function sumValidPayments(db: Db, where: Prisma.PaymentWhereInput): Promise<number> {
-  const { _sum } = await db.payment.aggregate({ where: { AND: [where, { deletedAt: null }] }, _sum: { amount: true } });
+  const { _sum } = await db.payment.aggregate({
+    where: { AND: [where, { deletedAt: null, approvalStatus: "APPROVED" }] },
+    _sum: { amount: true },
+  });
   return Number(_sum.amount ?? 0);
+}
+
+/**
+ * SUM of the payments that are valid or waiting for approval (A-038): what a contract's
+ * value must still cover, so approving a pending payment can never overpay it.
+ */
+export async function sumCommittedPayments(db: Db, where: Prisma.PaymentWhereInput): Promise<number> {
+  const { _sum } = await db.payment.aggregate({
+    where: { AND: [where, { deletedAt: null, approvalStatus: { in: ["PENDING", "APPROVED"] } }] },
+    _sum: { amount: true },
+  });
+  return Number(_sum.amount ?? 0);
+}
+
+/** Moves a payment's approval status only from `from`, so a decision applies once (D-018). */
+export async function setPaymentApprovalStatus(db: Db, id: string, from: "PENDING", to: "APPROVED" | "REJECTED"): Promise<number> {
+  const { count } = await db.payment.updateMany({ where: { id, approvalStatus: from, deletedAt: null }, data: { approvalStatus: to } });
+  return count;
 }
 
 /** Paid amount per contract from payments that are not deleted, for a page of contracts. */
@@ -74,7 +96,7 @@ export async function validPaidByContract(db: Db, contractIds: string[]): Promis
   if (contractIds.length === 0) return new Map();
   const rows = await db.payment.groupBy({
     by: ["contractId"],
-    where: { contractId: { in: contractIds }, deletedAt: null },
+    where: { contractId: { in: contractIds }, deletedAt: null, approvalStatus: "APPROVED" },
     _sum: { amount: true },
   });
   return new Map(rows.map((row) => [row.contractId, Number(row._sum.amount ?? 0)]));
@@ -107,7 +129,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
     db.$queryRaw<{ id: string }[]>`
       SELECT c.id
       FROM contracts c
-      LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL
+      LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
       WHERE c.status <> 'DRAFT' AND ${where}
       GROUP BY c.id
       HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
@@ -117,7 +139,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
       SELECT COUNT(*) AS total FROM (
         SELECT c.id
         FROM contracts c
-        LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL
+        LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
         WHERE c.status <> 'DRAFT' AND ${where}
         GROUP BY c.id
         HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0

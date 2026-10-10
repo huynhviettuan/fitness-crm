@@ -37,7 +37,7 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
   for (const [role, status] of cancelExpectations) {
     test(`${role} cancelling a contract gets ${status}`, async ({ apiAs, testTag }) => {
       const reception = await apiAs("RECEPTIONIST");
-      const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activate: true });
+      const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
 
       const response = await (await apiAs(role)).post(`/api/v1/contracts/${contract.id}/cancel`);
       expect(response.status()).toBe(status);
@@ -128,7 +128,7 @@ test.describe("A10 contract input errors", () => {
 
   test("an active contract cannot be edited, and an unknown customer is 404", async ({ apiAs, testTag }) => {
     const seller = await apiAs("FITNESS_MANAGER");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(seller, testTag)).id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(seller, testTag)).id, { activateWith: await apiAs("ADMIN") });
 
     const edit = await seller.patch(`/api/v1/contracts/${contract.id}`, { data: PT24 });
     expect(edit.status()).toBe(409);

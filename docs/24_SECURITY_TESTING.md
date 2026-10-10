@@ -35,6 +35,8 @@ M1 slice 3 (2026-10-10) added option lists and system parameters (T-055). The pe
 
 M1 slice 4 (2026-10-10) replaced voids with deletion to the trash (T-056). `e2e/security/finance.spec.ts` checks the delete permission per role (only Admin and "Kế toán"), that a deletion needs a reason and "Khác" a note, and that a deleted record is `404`; a client cannot set deletion fields on create. The trash and the action history are refused to a Fitness Manager (`permissions.spec.ts`); `history.int.test.ts` covers branch limits, masked amounts and fields, and five concurrent deletions leaving one trash entry.
 
+M1 slice 5 (2026-10-11) added maker-checker approvals (T-057). `approvals.int.test.ts` covers: no effect while pending, no self-approval (also a database CHECK), approvers by current rule and branch, one decision under concurrent approvals, rejection reasons, pending receipts in the value cap, held deletions and identity edits, and matrix changes taking effect at once. Over HTTP, `security/finance.spec.ts` checks that a client cannot set `approvalStatus` (mass assignment) and that a second deletion request is `409`; the matrix endpoints are refused to a Fitness Manager.
+
 Phase 2 added `e2e/security/contracts.spec.ts`: contract role matrix, mass assignment of status/code/opening balances, Idempotency-Key required and not reusable, and input errors.
 
 Phase 4 added `e2e/security/finance.spec.ts`: payment, void, and cash role matrix (a trainer cannot void, E2E-009); mass assignment of status, contract, and recorder; INT-004 and INT-005 over HTTP, including five identical submissions at once; input errors, future dates, overpayment, and payments on a cancelled contract.

@@ -1,5 +1,5 @@
 import { prisma } from "../../src/platform/db/prisma.js";
-import { DEFAULT_BRANCH_ID, SEEDED_OPTIONS } from "./factories.js";
+import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS } from "./factories.js";
 
 /**
  * Removes every row the tests created. Called from the integration tests' teardown
@@ -7,7 +7,7 @@ import { DEFAULT_BRANCH_ID, SEEDED_OPTIONS } from "./factories.js";
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "audit_events", "trash_entries", "payments", "cash_transactions", "sessions", "bookings", "trainers", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "audit_events", "trash_entries", "approval_requests", "payments", "cash_transactions", "sessions", "bookings", "trainers", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Roles and branches the tests created; the migration's defaults stay.
@@ -19,4 +19,11 @@ export async function resetDatabase(): Promise<void> {
     await prisma.option.update({ where: { id }, data: initial });
   }
   await prisma.systemParameter.deleteMany();
+  // The approval matrix back to the migration's (09_RBAC.md).
+  for (const { action, required, approvers } of SEEDED_APPROVAL_RULES) {
+    await prisma.approvalRule.update({ where: { actionType: action }, data: { required, overdueHours: 24 } });
+    await prisma.approvalRuleRole.deleteMany({ where: { actionType: action } });
+    const roles = await prisma.role.findMany({ where: { code: { in: approvers } }, select: { id: true } });
+    await prisma.approvalRuleRole.createMany({ data: roles.map((role) => ({ actionType: action, roleId: role.id })) });
+  }
 }

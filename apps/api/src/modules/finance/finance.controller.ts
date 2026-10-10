@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Req, Res } from "@nestjs/common";
 import { ApiNoContentResponse } from "@nestjs/swagger";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
@@ -12,6 +12,7 @@ import {
   paymentPageSchema,
 } from "@flow/shared/finance";
 import { deleteSchema } from "@flow/shared/trash";
+import { submittedSchema } from "@flow/shared/approvals";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
@@ -45,13 +46,21 @@ export class PaymentsController {
     return encode(collectedSchema, { total: await collectedBetween(actor, queryOf(request, ["from", "to"])) });
   }
 
-  /** D-035: the body carries the reason; the payment moves to the trash. */
+  /**
+   * D-035: the body carries the reason; the payment moves to the trash (204), or the
+   * deletion waits for approval (202 with the request, D-018).
+   */
   @Delete(":id")
   @RequirePermission("payment.delete")
-  @HttpCode(204)
   @ApiNoContentResponse({ description: "Deleted to the trash" })
-  async delete(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: deleteSchema }) body: unknown): Promise<void> {
-    await deletePayment(actor, id, body);
+  @ApiResult(submittedSchema, 202, "Waiting for approval (D-018)")
+  async delete(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: deleteSchema }) body: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return submittedOrDone(response, await deletePayment(actor, id, body));
   }
 }
 
@@ -86,6 +95,7 @@ export class CashTransactionsController {
   @RequirePermission("cash.manage")
   @ApiIdempotencyKey()
   @ApiResult(cashTransactionSchema, 201, "Created")
+  @ApiResult(cashTransactionSchema, 202, "Waiting for approval (D-018)")
   @ApiResult(cashTransactionSchema, 200, "Replayed")
   async record(
     @CurrentActor() actor: CurrentUser,
@@ -94,7 +104,7 @@ export class CashTransactionsController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { transaction, replayed } = await recordCashTransaction(actor, body, request.get("idempotency-key"));
-    response.status(replayed ? 200 : 201);
+    response.status(replayed ? 200 : transaction.approvalStatus === "PENDING" ? 202 : 201);
     return encode(cashTransactionSchema, transaction);
   }
 
@@ -107,12 +117,27 @@ export class CashTransactionsController {
     return encode(financeSummarySchema, await financeSummary(actor, queryOf(request, ["from", "to"])));
   }
 
-  /** D-035: the body carries the reason; the entry moves to the trash. */
+  /** D-035: like deleting a payment, 204 when done or 202 when waiting for approval (D-018). */
   @Delete(":id")
   @RequirePermission("cash.delete")
-  @HttpCode(204)
   @ApiNoContentResponse({ description: "Deleted to the trash" })
-  async delete(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: deleteSchema }) body: unknown): Promise<void> {
-    await deleteCashTransaction(actor, id, body);
+  @ApiResult(submittedSchema, 202, "Waiting for approval (D-018)")
+  async delete(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: deleteSchema }) body: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return submittedOrDone(response, await deleteCashTransaction(actor, id, body));
   }
+}
+
+/** 202 with the approval request it created, or 204 when the change took effect. */
+function submittedOrDone(response: Response, submitted: { approval: { id: string } } | null) {
+  if (!submitted) {
+    response.status(204);
+    return undefined;
+  }
+  response.status(202);
+  return encode(submittedSchema, { approval: { id: submitted.approval.id, status: "PENDING" } });
 }

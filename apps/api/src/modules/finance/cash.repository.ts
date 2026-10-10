@@ -13,7 +13,12 @@ export type CashTransactionRecord = Prisma.CashTransactionGetPayload<{ include: 
 
 export function createCashTransaction(
   db: Db,
-  data: Omit<CashTransactionData, "branchId"> & { branchId: string; idempotencyKey: string; createdById: string },
+  data: Omit<CashTransactionData, "branchId"> & {
+    branchId: string;
+    idempotencyKey: string;
+    createdById: string;
+    approvalStatus: "PENDING" | "APPROVED";
+  },
 ): Promise<CashTransactionRecord> {
   return db.cashTransaction.create({ data, include: cashInclude });
 }
@@ -56,7 +61,7 @@ export async function listCashTransactions(db: Db, where: Prisma.CashTransaction
   return { items, total };
 }
 
-/** SUM of the transactions of one type between two days, inclusive, within `visibility`, deleted ones left out. */
+/** SUM of the valid transactions (approved, not deleted) of one type between two days, inclusive, within `visibility`. */
 export async function sumValidCash(
   db: Db,
   type: CashTransactionType,
@@ -65,8 +70,14 @@ export async function sumValidCash(
   visibility: Prisma.CashTransactionWhereInput,
 ): Promise<number> {
   const { _sum } = await db.cashTransaction.aggregate({
-    where: { AND: [visibility, { type, deletedAt: null, occurredOn: { gte: from, lte: to } }] },
+    where: { AND: [visibility, { type, deletedAt: null, approvalStatus: "APPROVED", occurredOn: { gte: from, lte: to } }] },
     _sum: { amount: true },
   });
   return Number(_sum.amount ?? 0);
+}
+
+/** Moves an entry's approval status only from `from`, so a decision applies once (D-018). */
+export async function setCashApprovalStatus(db: Db, id: string, from: "PENDING", to: "APPROVED" | "REJECTED"): Promise<number> {
+  const { count } = await db.cashTransaction.updateMany({ where: { id, approvalStatus: from, deletedAt: null }, data: { approvalStatus: to } });
+  return count;
 }

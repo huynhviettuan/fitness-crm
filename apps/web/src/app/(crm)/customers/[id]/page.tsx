@@ -83,6 +83,20 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
         description={[customer.customerCode, customer.phone].filter(Boolean).join(" · ")}
         actions={can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
       />
+      {customer.pendingIdentity && (
+        // D-018: the change is not in effect until an approver agrees.
+        <p role="status" className="mb-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+          {t("pendingIdentity", {
+            changes: [
+              customer.pendingIdentity.fullName !== undefined && `${t("fields.fullName")}: ${customer.pendingIdentity.fullName}`,
+              customer.pendingIdentity.phone !== undefined && `${t("fields.phone")}: ${customer.pendingIdentity.phone ?? "—"}`,
+              customer.pendingIdentity.email !== undefined && `${t("fields.email")}: ${customer.pendingIdentity.email ?? "—"}`,
+            ]
+              .filter(Boolean)
+              .join("; "),
+          })}
+        </p>
+      )}
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">{t("tabs.overview")}</TabsTrigger>

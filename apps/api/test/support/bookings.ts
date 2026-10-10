@@ -29,9 +29,11 @@ export async function bookingScenario(options: { totalSessions?: number; fullNam
   return { manager, customer, contract, trainer };
 }
 
+/** A contract `actor` sells and an admin approves: nobody approves their own (D-018). */
 export async function activeContract(actor: Actor, customerId: string, overrides: Partial<typeof CONTRACT> = {}) {
   const { contract } = await createContract(actor, customerId, { ...CONTRACT, ...overrides }, randomUUID());
-  return activateContract(actor, contract.id);
+  const { actor: approver } = await createTestUser("ADMIN", { allBranches: true });
+  return activateContract(approver, contract.id);
 }
 
 /** A PT login linked to a new trainer record (A-010), as the API sees it after the link. */

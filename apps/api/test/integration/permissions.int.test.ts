@@ -1,6 +1,6 @@
 // D-014, D-017, T-046: configurable roles, data scope, field masking, and branches.
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DATA_SCOPE_RESOURCES } from "@flow/shared/permissions";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { cloneRole, createRole, getRole, listRoles, updateRole } from "../../src/platform/roles/role.service.js";
@@ -11,7 +11,7 @@ import { listBookings } from "../../src/modules/bookings/booking.service.js";
 import { collectedBetween, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { financeSummary } from "../../src/modules/finance/cash.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser, optionId } from "../support/factories.js";
+import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser, optionId, withoutApprovals } from "../support/factories.js";
 import { CONTRACT, activeContract, book, bookingScenario, linkedTrainer } from "../support/bookings.js";
 
 afterEach(resetDatabase);
@@ -86,6 +86,11 @@ describe("roles (FR-PLT-002)", () => {
     });
   });
 });
+// These tests are about something else than approvals (approvals.int.test.ts).
+beforeEach(async () => {
+  await withoutApprovals();
+});
+
 
 describe("data scope (D-017, A-029)", () => {
   it("with own customers, a user sees the ones they created and the ones they train", async () => {

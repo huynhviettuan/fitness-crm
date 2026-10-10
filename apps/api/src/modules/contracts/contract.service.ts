@@ -157,6 +157,8 @@ export async function activateContract(actor: Actor, id: string): Promise<Contra
     if (before.status === "ACTIVE") return presentOne(tx, before, today);
     const from = effectiveStatus(before, today);
     if (!canActivate(from)) throw new AppError("INVALID_STATUS_TRANSITION");
+    // Activating is the contract's approval until M4: never by its creator (D-018).
+    if (before.createdById === actor.id) throw new AppError("APPROVAL_OWN_REQUEST");
 
     if ((await repo.moveStatus(tx, id, before.status, "ACTIVE")) === 0) {
       // Another request changed it first.

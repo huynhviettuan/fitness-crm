@@ -40,6 +40,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const { recordPayment, deletePayment } = await import("../src/modules/finance/payment.service.js");
   const { recordCashTransaction, deleteCashTransaction } = await import("../src/modules/finance/cash.service.js");
   const { loadCurrentUser } = await import("../src/platform/auth/actor.js");
+  const { approveRequest } = await import("../src/modules/approvals/approval.service.js");
   type Actor = import("../src/platform/auth/session.js").Actor;
   const actorOf = async (userId: string): Promise<Actor> => (await loadCurrentUser(prisma, userId))!;
 
@@ -114,7 +115,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
       { packageName: spec.pkg, contractValue: spec.value, totalSessions: String(spec.sessions), startDate: day(spec.start), endDate: day(spec.end) },
       randomUUID(),
     );
-    return activate ? activateContract(manager, created.id) : created;
+    return activate ? activateContract(asAdmin, created.id) : created;
   }
 
   // --- Bookings. Each contract trains with one trainer at one hour, so nothing overlaps.
@@ -218,7 +219,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     randomUUID(),
   );
   await prisma.contract.update({ where: { id: c10Draft.id }, data: { openingSessionsUsed: 16, openingPaidAmount: 9_000_000 } });
-  const c10 = await activateContract(manager, c10Draft.id);
+  const c10 = await activateContract(asAdmin, c10Draft.id);
   await history(plan(c10, son, anh, "07:00"), 3, 7);
 
   // --- Option lists (D-016): the migration's payment methods, plus example categories
@@ -239,6 +240,14 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const wrongAmount = await option("deleteReasons", "Ghi nhầm số tiền", "Wrong amount");
   const enteredTwice = await option("deleteReasons", "Nhập trùng", "Entered twice");
 
+  // Everything submitted under the approval matrix so far is approved (D-018): by the
+  // admin, or by the Fitness Manager for customer identity changes.
+  const approvePending = async () => {
+    for (const request of await prisma.approvalRequest.findMany({ where: { status: "PENDING" }, orderBy: { submittedAt: "asc" } })) {
+      await approveRequest(request.actionType === "customer.identity" ? manager : asAdmin, request.id);
+    }
+  };
+
   // --- Payments
   const pay = (c: { id: string }, amount: string, how: keyof typeof method, offset: number, note = "") =>
     recordPayment(reception, c.id, { amount, methodId: method[how], methodNote: note, paidOn: day(offset) }, randomUUID());
@@ -251,6 +260,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   await pay(c4, "2.000.000", "OTHER", -2, "Ví MoMo");
   await pay(c5, "3.000.000", "CASH", -10);
   const wrong = await pay(c5, "3.250.000", "CASH", -9);
+  await approvePending();
   await deletePayment(accountant, wrong.payment.id, { reasonId: wrongAmount, reasonNote: "Khách chỉ trả 3.000.000" });
   await pay(c8, "10.000.000", "BANK_TRANSFER", -199);
   await pay(c9, "2.000.000", "CASH", -5);
@@ -268,11 +278,14 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   await cash("INCOME", "Phí gửi xe", "300.000", -3);
   await cash("EXPENSE", "Tiền điện", "3.200.000", -5, "EVN-0921");
   const duplicate = await cash("EXPENSE", "Tiền điện", "3.200.000", -5, "EVN-0921");
+  await approvePending();
   await deleteCashTransaction(accountant, duplicate.transaction.id, { reasonId: enteredTwice });
   await cash("EXPENSE", "Tiền nước", "650.000", -5);
   await cash("EXPENSE", "Mua khăn tập", "800.000", -8);
   await cash("INCOME", "Bán nước uống", "520.000", -33);
   await cash("EXPENSE", "Sửa máy chạy bộ", "1.500.000", -35);
+
+  await approvePending();
 
   const counts = await Promise.all([prisma.customer.count(), prisma.contract.count(), prisma.booking.count(), prisma.payment.count()]);
   console.log(`Demo data loaded: ${counts[0]} customers, ${counts[1]} contracts, ${counts[2]} bookings, ${counts[3]} payments.`);

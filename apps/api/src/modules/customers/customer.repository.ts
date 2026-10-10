@@ -44,7 +44,7 @@ export function updateCustomer(db: Db, id: string, data: Partial<CustomerWrite>)
   });
 }
 
-export function findCustomer(db: Db, id: string, visibility: Prisma.CustomerWhereInput) {
+export function findCustomer(db: Db, id: string, visibility: Prisma.CustomerWhereInput = {}) {
   return db.customer.findFirst({ where: { AND: [{ id }, visibility] }, include: withBranch });
 }
 

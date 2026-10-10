@@ -1,17 +1,22 @@
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { listAuditEvents } from "../../src/platform/audit/audit.service.js";
 import { listTrash } from "../../src/platform/trash/trash.service.js";
 import { createCustomer, updateCustomer } from "../../src/modules/customers/customer.service.js";
 import { deletePayment, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, createTestBranch, createTestUser, optionId, roleId } from "../support/factories.js";
+import { DEFAULT_BRANCH_ID, createTestBranch, createTestUser, optionId, roleId, withoutApprovals } from "../support/factories.js";
 import { activeContract } from "../support/bookings.js";
 
 afterEach(async () => {
   await resetDatabase();
 });
+// These tests are about something else than approvals (approvals.int.test.ts).
+beforeEach(async () => {
+  await withoutApprovals();
+});
+
 
 const OTHER_REASON = await optionId("deleteReasons", "Khác");
 const CASH = await optionId("paymentMethods", "Tiền mặt");

@@ -27,7 +27,7 @@ type DeleteDialogProps = {
   title: string;
   /** States the effect of deleting before the user confirms. */
   description: string;
-  onDelete: (input: DeleteInput) => Promise<ActionResult>;
+  onDelete: (input: DeleteInput) => Promise<ActionResult<{ submitted: boolean }>>;
   onDeleted: () => void;
 };
 
@@ -67,7 +67,8 @@ function DeleteForm({ onDelete, onDeleted }: Pick<DeleteDialogProps, "onDelete" 
         notify.error(errorMessage(result.code));
         return;
       }
-      notify.success(t("finance.deleted"));
+      // Under the approval matrix the record stays until an approver agrees (D-018).
+      notify.success(result.data.submitted ? t("approvals.submitted") : t("finance.deleted"));
       onDeleted();
     }),
   );

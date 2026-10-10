@@ -2,29 +2,36 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { createContractViaApi, createCustomerViaApi, recordPaymentViaApi } from "./support/data";
 import { fill, labels } from "./support/labels";
-import { OTHER_OPTION_LABEL } from "./support/options";
+import { otherOptionId } from "./support/options";
 
 const fin = labels.finance;
 
 test.describe("the trash and the action history as an admin", () => {
   test.use(signedInAs("ADMIN"));
 
-  test("AC-13: a deleted payment is in the trash with its reason, and in the record's history", async ({
+  test("AC-13: a deletion the admin approves puts the payment in the trash with its reason, and in the record's history", async ({
     apiAs,
     testTag,
     contractDetailPage,
+    approvalsPage,
     trashPage,
     auditPage,
   }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activate: true });
-    const payment = await recordPaymentViaApi(reception, contract.id, "4.000.000");
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN") });
+    const payment = await recordPaymentViaApi(reception, contract.id, "4.000.000", { approver: await apiAs("FITNESS_MANAGER") });
     const title = `${contract.contractCode} · ${customer.fullName}`;
     const reason = `Ghi nhầm ${testTag}`;
 
+    // "Kế toán" asks to delete; deleting is approved by an admin (09_RBAC.md).
+    const accountant = await apiAs("ACCOUNTANT");
+    const deleteReasonId = await otherOptionId(accountant, "deleteReasons");
+    expect((await accountant.delete(`/api/v1/payments/${payment.id}`, { data: { reasonId: deleteReasonId, reasonNote: reason } })).status()).toBe(202);
+    await approvalsPage.goto("toDecide");
+    await approvalsPage.approve(title);
+
     await contractDetailPage.goto(contract.id);
-    await contractDetailPage.payments.delete({ option: OTHER_OPTION_LABEL, note: reason }, "4.000.000");
     await expect(contractDetailPage.payments.row("4.000.000")).toHaveCount(0);
 
     await trashPage.goto({ type: "payment" });

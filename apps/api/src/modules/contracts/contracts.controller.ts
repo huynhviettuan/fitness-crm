@@ -69,6 +69,7 @@ export class ContractsController {
   @RequirePermission("payment.record")
   @ApiIdempotencyKey()
   @ApiResult(paymentSchema, 201, "Created")
+  @ApiResult(paymentSchema, 202, "Waiting for approval (D-018)")
   @ApiResult(paymentSchema, 200, "Replayed")
   async recordPayment(
     @CurrentActor() actor: CurrentUser,
@@ -78,7 +79,7 @@ export class ContractsController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { payment, replayed } = await recordPayment(actor, id, body, request.get("idempotency-key"));
-    response.status(replayed ? 200 : 201);
+    response.status(replayed ? 200 : payment.approvalStatus === "PENDING" ? 202 : 201);
     return encode(paymentSchema, payment);
   }
 }

@@ -13,6 +13,8 @@ const STATUS_VARIANTS = {
   booking: { BOOKED: "info", CHECKED_IN: "warning", COMPLETED: "success", CANCELLED: "muted", NO_SHOW: "destructive" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },
   option: { ACTIVE: "success", INACTIVE: "muted" },
+  // D-018: only an approved record has an effect.
+  approval: { PENDING: "warning", APPROVED: "success", REJECTED: "destructive", CANCELLED: "muted" },
   login: { SUCCESS: "success", FAILED: "destructive" },
 } as const satisfies Record<string, Record<string, BadgeVariant>>;
 

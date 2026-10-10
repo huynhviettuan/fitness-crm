@@ -18,7 +18,8 @@
     "options": "Danh mục lựa chọn",
     "parameters": "Tham số hệ thống",
     "trash": "Thùng rác",
-    "audit": "Lịch sử thao tác"
+    "audit": "Lịch sử thao tác",
+    "approvalRules": "Ma trận phê duyệt"
   },
   "status": {
     "customer": {
@@ -57,6 +58,12 @@
     "option": {
       "ACTIVE": "Đang dùng",
       "INACTIVE": "Ngừng dùng"
+    },
+    "approval": {
+      "PENDING": "Chờ duyệt",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Từ chối",
+      "CANCELLED": "Đã hủy"
     }
   },
   "common": {
@@ -141,7 +148,9 @@
       "contracts": "Hợp đồng",
       "bookings": "Lịch tập",
       "payments": "Thanh toán"
-    }
+    },
+    "identitySubmitted": "Đã lưu. Thay đổi họ tên, điện thoại, email đang chờ duyệt.",
+    "pendingIdentity": "Đang chờ duyệt: {changes}. Thông tin hiện tại vẫn có hiệu lực đến khi được duyệt."
   },
   "users": {
     "title": "Người dùng",
@@ -264,7 +273,10 @@
     "BOOKING_CUSTOMER_CONTRACT_MISMATCH": "Hợp đồng này thuộc về khách hàng khác.",
     "BOOKING_OUTSIDE_CONTRACT_PERIOD": "Ngày tập nằm ngoài thời hạn của hợp đồng.",
     "PAYMENT_EXCEEDS_CONTRACT_VALUE": "Khoản thanh toán làm tổng đã trả vượt giá trị hợp đồng.",
-    "PAYMENT_CONTRACT_CANCELLED": "Không ghi nhận thanh toán cho hợp đồng đã hủy."
+    "PAYMENT_CONTRACT_CANCELLED": "Không ghi nhận thanh toán cho hợp đồng đã hủy.",
+    "APPROVAL_OWN_REQUEST": "Bạn không thể tự duyệt yêu cầu do chính mình gửi.",
+    "APPROVAL_NOT_PENDING": "Yêu cầu này đã được xử lý.",
+    "APPROVAL_ALREADY_PENDING": "Đã có một yêu cầu đang chờ duyệt cho dữ liệu này."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -291,7 +303,9 @@
     "otherNeedsNote": "Đã chọn \"Khác\" thì phải ghi rõ.",
     "otherAlwaysActive": "Lựa chọn \"Khác\" luôn được dùng, không thể ngừng.",
     "notOnHalfHour": "Chọn giờ tròn hoặc giờ rưỡi, ví dụ 05:00 hoặc 05:30.",
-    "invalidCodePrefix": "Tiền tố gồm 1 đến 5 chữ cái không dấu, ví dụ KH."
+    "invalidCodePrefix": "Tiền tố gồm 1 đến 5 chữ cái không dấu, ví dụ KH.",
+    "approverRequired": "Chọn ít nhất một vai trò được duyệt.",
+    "outOfRange": "Nhập một số từ 1 đến 720."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -488,7 +502,8 @@
       "occurredOn": "Ngày",
       "reference": "Số chứng từ",
       "description": "Diễn giải",
-      "branch": "Chi nhánh"
+      "branch": "Chi nhánh",
+      "approvalStatus": "Phê duyệt"
     },
     "delete": "Xóa",
     "deletePaymentTitle": "Xóa khoản thanh toán {amount}?",
@@ -558,6 +573,9 @@
       },
       "trash": {
         "view": "Xem thùng rác"
+      },
+      "approval": {
+        "manage": "Quản lý ma trận phê duyệt"
       }
     },
     "resources": {
@@ -632,7 +650,8 @@
       "paymentMethods": "Hình thức thanh toán",
       "incomeCategories": "Loại thu",
       "expenseTypes": "Loại chi",
-      "deleteReasons": "Lý do xóa, hủy phiếu"
+      "deleteReasons": "Lý do xóa, hủy phiếu",
+      "rejectReasons": "Lý do từ chối duyệt"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -734,7 +753,9 @@
       "trainer": "Huấn luyện viên",
       "booking": "Lịch tập",
       "payment": "Phiếu thu",
-      "cash_transaction": "Khoản thu chi"
+      "cash_transaction": "Khoản thu chi",
+      "approval_request": "Yêu cầu duyệt",
+      "approval_rule": "Ma trận phê duyệt"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -754,7 +775,10 @@
       "branches_changed": "Đổi chi nhánh",
       "overrides_changed": "Đổi quyền riêng",
       "access_hours_changed": "Đổi giờ đăng nhập",
-      "password_reset": "Đặt lại mật khẩu"
+      "password_reset": "Đặt lại mật khẩu",
+      "submitted": "Gửi duyệt",
+      "approved": "Duyệt",
+      "rejected": "Từ chối"
     },
     "fields": {
       "at": "Thời điểm",
@@ -769,5 +793,73 @@
     "context": "Thông tin thêm",
     "copyId": "Lọc theo bản ghi này",
     "empty": "Không có thao tác nào khớp bộ lọc."
+  },
+  "approvals": {
+    "title": "Phê duyệt",
+    "description": "Thao tác cần duyệt chỉ có hiệu lực khi người khác duyệt. Không ai tự duyệt yêu cầu của mình.",
+    "inboxLabel": "Phê duyệt, {count, plural, =0 {không có yêu cầu chờ} other {# yêu cầu chờ}}",
+    "views": {
+      "toDecide": "Chờ tôi duyệt",
+      "mine": "Tôi đã gửi",
+      "all": "Tất cả"
+    },
+    "empty": {
+      "toDecide": "Không có yêu cầu nào chờ bạn duyệt.",
+      "mine": "Bạn chưa gửi yêu cầu nào.",
+      "all": "Chưa có yêu cầu nào."
+    },
+    "actions": {
+      "payment_create": "Phiếu thu",
+      "cash_create": "Khoản thu chi",
+      "record_delete": "Xóa dữ liệu",
+      "customer_identity": "Sửa thông tin khách hàng"
+    },
+    "fields": {
+      "submittedAt": "Gửi lúc",
+      "action": "Loại",
+      "record": "Nội dung",
+      "amount": "Số tiền",
+      "branch": "Chi nhánh",
+      "submittedBy": "Người gửi",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "overdue": "Quá hạn",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "approveLabel": "Duyệt {name}",
+    "rejectLabel": "Từ chối {name}",
+    "approveTitle": "Duyệt {name}?",
+    "approveBody": {
+      "payment_create": "Khoản thanh toán được tính vào số đã trả và công nợ của hợp đồng.",
+      "cash_create": "Khoản này được tính vào tổng thu chi.",
+      "record_delete": "Dữ liệu được xóa và chuyển vào thùng rác.",
+      "customer_identity": "Thông tin mới của khách hàng có hiệu lực."
+    },
+    "approved": "Đã duyệt",
+    "rejectTitle": "Từ chối {name}?",
+    "rejectBody": "Yêu cầu không có hiệu lực. Người gửi thấy lý do bạn chọn.",
+    "rejectReason": "Lý do từ chối",
+    "rejected": "Đã từ chối",
+    "submitted": "Đã gửi duyệt. Thay đổi có hiệu lực khi được duyệt.",
+    "deleteReason": "Lý do xóa: {reason}"
+  },
+  "approvalRules": {
+    "title": "Ma trận phê duyệt",
+    "description": "Thao tác nào cần duyệt và ai được duyệt. Thay đổi có hiệu lực ngay, kể cả với yêu cầu đang chờ.",
+    "fields": {
+      "action": "Thao tác",
+      "required": "Cần duyệt",
+      "approvers": "Vai trò được duyệt",
+      "overdueHours": "Quá hạn sau (giờ)"
+    },
+    "on": "Có",
+    "off": "Không",
+    "hours": "{hours} giờ",
+    "edit": "Sửa",
+    "editLabel": "Sửa {name}",
+    "editDescription": "Người gửi không bao giờ tự duyệt được yêu cầu của mình, dù có quyền duyệt.",
+    "approversHint": "Người có một trong các vai trò này, cùng chi nhánh, được duyệt.",
+    "saved": "Đã lưu ma trận phê duyệt"
   }
 }

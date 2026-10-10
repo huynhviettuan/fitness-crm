@@ -7,6 +7,7 @@ import { BranchesPage, RolesPage, UserDetailPage } from "./pages/admin";
 import { AppShell } from "./pages/app-shell";
 import { OptionListsPage, ParametersPage } from "./pages/configuration";
 import { AuditPage, TrashPage } from "./pages/history";
+import { ApprovalRulesPage, ApprovalsPage } from "./pages/approvals";
 import { CalendarPage, CustomerBookingsTab, SessionsPage, TrainersPage } from "./pages/bookings";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
@@ -34,11 +35,15 @@ type Fixtures = {
   parametersPage: ParametersPage;
   trashPage: TrashPage;
   auditPage: AuditPage;
+  approvalsPage: ApprovalsPage;
+  approvalRulesPage: ApprovalRulesPage;
   /**
    * For a test that changes system parameters (T-049): they are global, so teardown
    * puts back exactly what was there before the test.
    */
   restoresParameters: void;
+  /** Like restoresParameters, for a test that edits the approval matrix (D-018). */
+  restoresApprovalRules: void;
   /**
    * A unique marker for names this test creates. Teardown deletes every customer and
    * trainer whose name contains it, with their contracts, bookings, and payments, and
@@ -75,6 +80,23 @@ export const test = base.extend<Fixtures>({
   parametersPage: async ({ page }, use) => use(new ParametersPage(page)),
   trashPage: async ({ page }, use) => use(new TrashPage(page)),
   auditPage: async ({ page }, use) => use(new AuditPage(page)),
+  approvalsPage: async ({ page }, use) => use(new ApprovalsPage(page)),
+  approvalRulesPage: async ({ page }, use) => use(new ApprovalRulesPage(page)),
+
+  restoresApprovalRules: async ({}, use) => {
+    const prisma = connect();
+    try {
+      const before = await prisma.approvalRule.findMany({ include: { approvers: true } });
+      await use();
+      for (const rule of before) {
+        await prisma.approvalRule.update({ where: { id: rule.id }, data: { required: rule.required, overdueHours: rule.overdueHours } });
+        await prisma.approvalRuleRole.deleteMany({ where: { actionType: rule.actionType } });
+        await prisma.approvalRuleRole.createMany({ data: rule.approvers.map((a) => ({ actionType: a.actionType, roleId: a.roleId })) });
+      }
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
 
   restoresParameters: async ({}, use) => {
     const prisma = connect();
@@ -149,6 +171,7 @@ export const test = base.extend<Fixtures>({
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).
       await prisma.trashEntry.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds] } } });
+      await prisma.approvalRequest.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds, ...customerIds] } } });
       await prisma.payment.deleteMany({ where: { id: { in: paymentIds } } });
       await prisma.cashTransaction.deleteMany({ where: { id: { in: cashIds } } });
       const audited = [...customerIds, ...contractIds, ...bookingIds, ...trainerIds, ...paymentIds, ...cashIds];
@@ -161,6 +184,7 @@ export const test = base.extend<Fixtures>({
       // overrides go with them (cascade); audit events they wrote first (restricted).
       const userIds = ids(await prisma.user.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
       await prisma.auditEvent.deleteMany({ where: { OR: [{ actorUserId: { in: userIds } }, { entityId: { in: userIds } }] } });
+      await prisma.approvalRequest.deleteMany({ where: { OR: [{ submittedById: { in: userIds } }, { decidedById: { in: userIds } }] } });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
       const roleIds = ids(await prisma.role.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
       const branchIds = ids(await prisma.branch.findMany({ where: { name: { contains: tag } }, select: { id: true } }));

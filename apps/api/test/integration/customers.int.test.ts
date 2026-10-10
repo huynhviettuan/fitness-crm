@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import {
   createCustomer,
@@ -7,7 +7,7 @@ import {
   updateCustomer,
 } from "../../src/modules/customers/customer.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestUser } from "../support/factories.js";
+import { createTestUser, withoutApprovals } from "../support/factories.js";
 
 afterEach(resetDatabase);
 
@@ -56,6 +56,11 @@ describe("createCustomer", () => {
     expect(await prisma.customer.count()).toBe(0);
   });
 });
+// These tests are about something else than approvals (approvals.int.test.ts).
+beforeEach(async () => {
+  await withoutApprovals();
+});
+
 
 describe("updateCustomer", () => {
   it("audits only the fields that changed, with before and after", async () => {
@@ -81,7 +86,7 @@ describe("updateCustomer", () => {
     const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);
 
-    const updated = await updateCustomer(actor, customer.id, { customerCode: "KH999999", status: "INACTIVE" });
+    const { customer: updated } = await updateCustomer(actor, customer.id, { customerCode: "KH999999", status: "INACTIVE" });
 
     expect(updated.customerCode).toBe(customer.customerCode);
     expect(updated.status).toBe("INACTIVE");

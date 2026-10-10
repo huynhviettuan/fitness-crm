@@ -42,6 +42,7 @@ test.describe("A01 permissions on every endpoint (T-046)", () => {
       "/api/v1/option-lists/paymentMethods/other-notes",
       "/api/v1/trash",
       "/api/v1/audit-events",
+      "/api/v1/approval-rules",
     ]) {
       expect((await manager.get(path)).status(), path).toBe(403);
     }

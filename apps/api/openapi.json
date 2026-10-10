@@ -320,6 +320,16 @@
               }
             }
           },
+          "202": {
+            "description": "Identity change waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
           "default": {
             "description": "Error (docs/07 error contract)",
             "content": {
@@ -913,6 +923,16 @@
           },
           "201": {
             "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1888,6 +1908,16 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedForApproval"
+                }
+              }
+            }
+          },
           "204": {
             "description": "Deleted to the trash"
           },
@@ -2135,6 +2165,16 @@
               }
             }
           },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashTransaction"
+                }
+              }
+            }
+          },
           "default": {
             "description": "Error (docs/07 error contract)",
             "content": {
@@ -2239,6 +2279,16 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedForApproval"
+                }
+              }
+            }
+          },
           "204": {
             "description": "Deleted to the trash"
           },
@@ -2628,6 +2678,7 @@
                             "user.manage",
                             "role.manage",
                             "branch.manage",
+                            "approval.manage",
                             "config.manage",
                             "audit.view",
                             "trash.view",
@@ -2996,6 +3047,7 @@
                         "user.manage",
                         "role.manage",
                         "branch.manage",
+                        "approval.manage",
                         "config.manage",
                         "audit.view",
                         "trash.view",
@@ -3185,6 +3237,7 @@
                         "user.manage",
                         "role.manage",
                         "branch.manage",
+                        "approval.manage",
                         "config.manage",
                         "audit.view",
                         "trash.view",
@@ -4080,6 +4133,301 @@
         ],
         "x-permission": "trash.view"
       }
+    },
+    "/api/v1/approvals": {
+      "get": {
+        "operationId": "ApprovalsController_list",
+        "parameters": [
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalRequestPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "approvals"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/approvals/summary": {
+      "get": {
+        "operationId": "ApprovalsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "approvals"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/approvals/{id}/approve": {
+      "post": {
+        "operationId": "ApprovalsController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Approved; the change took effect"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "approvals"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/approvals/{id}/reject": {
+      "post": {
+        "operationId": "ApprovalsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Rejected; nothing changed"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "approvals"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/approval-rules": {
+      "get": {
+        "operationId": "ApprovalRulesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalRuleList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "approvals"
+        ],
+        "x-permission": "approval.manage"
+      }
+    },
+    "/api/v1/approval-rules/{action}": {
+      "put": {
+        "operationId": "ApprovalRulesController_update",
+        "parameters": [
+          {
+            "name": "action",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "approverRoleIds": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "overdueHours": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 720
+                  }
+                },
+                "required": [
+                  "required",
+                  "approverRoleIds",
+                  "overdueHours"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalRule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "approvals"
+        ],
+        "x-permission": "approval.manage"
+      }
     }
   },
   "info": {
@@ -4109,6 +4457,7 @@
               "IDEMPOTENCY_KEY_REQUIRED",
               "UNAUTHENTICATED",
               "FORBIDDEN",
+              "APPROVAL_OWN_REQUEST",
               "NOT_FOUND",
               "EMAIL_ALREADY_USED",
               "CANNOT_CHANGE_OWN_ACCESS",
@@ -4120,6 +4469,8 @@
               "PAYMENT_CONTRACT_CANCELLED",
               "BOOKING_TRAINER_OVERLAP",
               "IDEMPOTENCY_KEY_REUSED",
+              "APPROVAL_NOT_PENDING",
+              "APPROVAL_ALREADY_PENDING",
               "UNSUPPORTED_MEDIA_TYPE",
               "BOOKING_CUSTOMER_CONTRACT_MISMATCH",
               "BOOKING_OUTSIDE_CONTRACT_PERIOD",
@@ -4187,6 +4538,7 @@
                 "user.manage",
                 "role.manage",
                 "branch.manage",
+                "approval.manage",
                 "config.manage",
                 "audit.view",
                 "trash.view",
@@ -4376,6 +4728,30 @@
                 "email"
               ]
             }
+          },
+          "pendingIdentity": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "approvalId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fullName": {
+                "type": "string"
+              },
+              "phone": {
+                "nullable": true,
+                "type": "string"
+              },
+              "email": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "approvalId"
+            ]
           }
         },
         "required": [
@@ -4390,7 +4766,8 @@
           "notes",
           "createdAt",
           "updatedAt",
-          "maskedFields"
+          "maskedFields",
+          "pendingIdentity"
         ]
       },
       "ContractPage": {
@@ -4567,6 +4944,14 @@
             "type": "string",
             "format": "date-time"
           },
+          "approvalStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4603,6 +4988,7 @@
           "amount",
           "method",
           "paidOn",
+          "approvalStatus",
           "createdAt",
           "createdBy",
           "contract",
@@ -4933,6 +5319,33 @@
           "total"
         ]
       },
+      "SubmittedForApproval": {
+        "type": "object",
+        "properties": {
+          "approval": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PENDING"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "approval"
+        ]
+      },
       "DebtPage": {
         "type": "object",
         "properties": {
@@ -5020,6 +5433,14 @@
             "type": "string",
             "format": "date-time"
           },
+          "approvalStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -5037,6 +5458,7 @@
           "description",
           "reference",
           "occurredOn",
+          "approvalStatus",
           "createdAt",
           "createdBy"
         ]
@@ -5187,6 +5609,7 @@
                     "user.manage",
                     "role.manage",
                     "branch.manage",
+                    "approval.manage",
                     "config.manage",
                     "audit.view",
                     "trash.view",
@@ -5404,6 +5827,7 @@
                 "user.manage",
                 "role.manage",
                 "branch.manage",
+                "approval.manage",
                 "config.manage",
                 "audit.view",
                 "trash.view",
@@ -5535,7 +5959,8 @@
               "paymentMethods",
               "incomeCategories",
               "expenseTypes",
-              "deleteReasons"
+              "deleteReasons",
+              "rejectReasons"
             ]
           },
           "labelVi": {
@@ -5793,6 +6218,228 @@
           "deletedBy",
           "reason",
           "snapshot"
+        ]
+      },
+      "ApprovalRequestPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalRequest"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "ApprovalRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "payment.create",
+              "cash.create",
+              "record.delete",
+              "customer.identity"
+            ]
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "amount": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "changes": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "submittedBy": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "decidedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "rejectReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "canDecide": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "entityType",
+          "entityId",
+          "branch",
+          "title",
+          "amount",
+          "changes",
+          "status",
+          "submittedBy",
+          "submittedAt",
+          "decidedBy",
+          "decidedAt",
+          "rejectReason",
+          "overdue",
+          "canDecide"
+        ]
+      },
+      "ApprovalSummary": {
+        "type": "object",
+        "properties": {
+          "toDecide": {
+            "type": "integer"
+          },
+          "overdue": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "toDecide",
+          "overdue"
+        ]
+      },
+      "ApprovalRuleList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalRule"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ApprovalRule": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "payment.create",
+              "cash.create",
+              "record.delete",
+              "customer.identity"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "approvers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "overdueHours": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action",
+          "required",
+          "approvers",
+          "overdueHours"
         ]
       }
     }

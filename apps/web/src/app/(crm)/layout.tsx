@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar, type NavItemKey } from "@/components/app-shell/app-sidebar";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { getApprovalSummary } from "@/lib/api/approvals";
 
 // Every page in the CRM reads the session, so it renders per request instead of
 // from a prerendered shell (see next.config.ts).
@@ -24,13 +25,15 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "config.manage")) adminItems.push("options", "parameters");
   if (can(user, "audit.view")) adminItems.push("audit");
   if (can(user, "trash.view")) adminItems.push("trash");
+  if (can(user, "approval.manage")) adminItems.push("approvalRules");
+  const approvals = await getApprovalSummary();
 
   return (
     <SidebarProvider>
       <AppSidebar mainItems={mainItems} adminItems={adminItems} />
       {/* min-w-0: wide content (e.g. the PT calendar) scrolls inside the page, not the page itself. */}
       <SidebarInset className="min-w-0">
-        <AppHeader user={user} showSearch={can(user, "customer.view")} />
+        <AppHeader user={user} showSearch={can(user, "customer.view")} approvals={approvals} />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>

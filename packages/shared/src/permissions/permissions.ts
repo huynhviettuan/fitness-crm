@@ -5,7 +5,7 @@
  * are built. Safe to import from client components; the API enforces permissions.
  */
 export const PERMISSION_GROUPS = {
-  system: ["user.manage", "role.manage", "branch.manage"],
+  system: ["user.manage", "role.manage", "branch.manage", "approval.manage"],
   configuration: ["config.manage"],
   history: ["audit.view", "trash.view"],
   customers: ["customer.view", "customer.manage"],

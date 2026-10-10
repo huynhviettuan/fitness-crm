@@ -11,7 +11,7 @@ describe("permission catalog (D-017)", () => {
   });
 
   it("keeps each group's keys together", () => {
-    expect(PERMISSION_GROUPS.system).toEqual(["user.manage", "role.manage", "branch.manage"]);
+    expect(PERMISSION_GROUPS.system).toEqual(["user.manage", "role.manage", "branch.manage", "approval.manage"]);
   });
 
   it("recognizes catalog keys only", () => {

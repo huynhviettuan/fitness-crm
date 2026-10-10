@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { otherOptionId } from "./options";
+import { approvePendingViaApi } from "./approvals";
 import type { APIRequestContext } from "@playwright/test";
 
 // Test data created through the public API. Names carry the test's tag so the
@@ -22,7 +23,8 @@ export async function createCustomerViaApi(api: APIRequestContext, tag: string, 
 export async function createContractViaApi(
   api: APIRequestContext,
   customerId: string,
-  options: { activate?: boolean; data?: Partial<typeof PT24> } = {},
+  /** `activateWith`: who approves (activates) it; never its creator (D-018). */
+  options: { activateWith?: APIRequestContext; data?: Partial<typeof PT24> } = {},
 ) {
   const response = await api.post(`/api/v1/customers/${customerId}/contracts`, {
     headers: { "idempotency-key": randomUUID() },
@@ -30,7 +32,10 @@ export async function createContractViaApi(
   });
   if (response.status() !== 201) throw new Error(`Contract setup failed: ${response.status()}`);
   const contract = (await response.json()) as { id: string; contractCode: string; status: string };
-  if (options.activate) await api.post(`/api/v1/contracts/${contract.id}/activate`);
+  if (options.activateWith) {
+    const activated = await options.activateWith.post(`/api/v1/contracts/${contract.id}/activate`);
+    if (!activated.ok()) throw new Error(`Contract activation failed: ${activated.status()} ${await activated.text()}`);
+  }
   return contract;
 }
 
@@ -63,13 +68,13 @@ export async function createBookingViaApi(
  * collide with another test's trainer. Everything carries the tag.
  */
 export async function bookingSetup(
-  apiAs: (role: "RECEPTIONIST" | "FITNESS_MANAGER") => Promise<APIRequestContext>,
+  apiAs: (role: "RECEPTIONIST" | "FITNESS_MANAGER" | "ADMIN") => Promise<APIRequestContext>,
   tag: string,
   contract: Partial<typeof PT24> = {},
 ) {
   const reception = await apiAs("RECEPTIONIST");
   const customer = await createCustomerViaApi(reception, tag);
-  const created = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activate: true, data: contract });
+  const created = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN"), data: contract });
   const trainer = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), tag);
   return { customer, contract: created, trainer, refs: { customerId: customer.id, contractId: created.id, trainerId: trainer.id } };
 }
@@ -90,12 +95,22 @@ export function gymToday(): { date: string; url: string } {
   return { date: `${d}/${m}/${y}`, url: `${y}-${m}-${d}` };
 }
 
-/** A payment with "Khác" as its method and the note "E2E" (any list option would do). */
-export async function recordPaymentViaApi(api: APIRequestContext, contractId: string, amount: string, paidOn = gymToday().date) {
+/**
+ * A payment with "Khác" as its method and the note "E2E" (any list option would do).
+ * It waits for approval (D-018) unless `approver` approves it at once.
+ */
+export async function recordPaymentViaApi(
+  api: APIRequestContext,
+  contractId: string,
+  amount: string,
+  options: { approver?: APIRequestContext; paidOn?: string } = {},
+) {
   const response = await api.post(`/api/v1/contracts/${contractId}/payments`, {
     headers: { "idempotency-key": randomUUID() },
-    data: { amount, methodId: await otherOptionId(api, "paymentMethods"), methodNote: "E2E", paidOn },
+    data: { amount, methodId: await otherOptionId(api, "paymentMethods"), methodNote: "E2E", paidOn: options.paidOn ?? gymToday().date },
   });
-  if (response.status() !== 201) throw new Error(`Payment setup failed: ${response.status()} ${await response.text()}`);
-  return response.json() as Promise<{ id: string; amount: number; status: string }>;
+  if (![201, 202].includes(response.status())) throw new Error(`Payment setup failed: ${response.status()} ${await response.text()}`);
+  const payment = (await response.json()) as { id: string; amount: number; approvalStatus: string };
+  if (options.approver && payment.approvalStatus === "PENDING") await approvePendingViaApi(options.approver, payment.id);
+  return payment;
 }

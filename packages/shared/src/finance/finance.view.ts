@@ -5,6 +5,7 @@ import { customerRefSchema } from "../customers/customer.view.js";
 import { instant, pageOf } from "../validation/index.js";
 import { chosenOptionSchema } from "../options/option.schema.js";
 import { CASH_TRANSACTION_TYPES } from "./finance.schema.js";
+import { RECORD_APPROVAL_STATUSES } from "../approvals/approval.schema.js";
 
 export const paymentSchema = z
   .object({
@@ -13,6 +14,8 @@ export const paymentSchema = z
     method: chosenOptionSchema,
     /** The gym day the money was received (T-039). */
     paidOn: instant,
+    /** Counts toward the paid amount only when APPROVED (D-018, D-034). */
+    approvalStatus: z.enum(RECORD_APPROVAL_STATUSES),
     createdAt: instant,
     createdBy: z.string(),
     contract: z.object({ id: z.uuid(), contractCode: z.string(), packageName: z.string() }),
@@ -42,6 +45,8 @@ export const cashTransactionSchema = z
     reference: z.string().nullable(),
     /** The gym day it happened (T-039). */
     occurredOn: instant,
+    /** Counts toward the totals only when APPROVED (D-018, D-034). */
+    approvalStatus: z.enum(RECORD_APPROVAL_STATUSES),
     createdAt: instant,
     createdBy: z.string(),
   })

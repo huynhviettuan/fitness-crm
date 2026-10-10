@@ -14,7 +14,7 @@ const text = (max: number) =>
  * which needs a note wherever it is chosen. Lists are added with the features that
  * use them.
  */
-export const OPTION_LISTS = ["paymentMethods", "incomeCategories", "expenseTypes", "deleteReasons"] as const;
+export const OPTION_LISTS = ["paymentMethods", "incomeCategories", "expenseTypes", "deleteReasons", "rejectReasons"] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 
 export function isOptionList(value: string): value is OptionListKey {

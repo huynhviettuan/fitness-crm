@@ -18,6 +18,10 @@ export async function createCustomer(input: CreateCustomerInput) {
   return read(customerSchema, (await api()).POST("/api/v1/customers", { body: input }));
 }
 
+/** `submitted`: a change of name, phone, or email waits for approval (D-018). */
 export async function updateCustomer(id: string, input: UpdateCustomerInput) {
-  return read(customerSchema, (await api()).PATCH("/api/v1/customers/{id}", { params: { path: { id } }, body: input }));
+  const call = (await api()).PATCH("/api/v1/customers/{id}", { params: { path: { id } }, body: input });
+  const { response } = await call;
+  const customer = await read(customerSchema, call);
+  return { customer, submitted: response.status === 202 };
 }

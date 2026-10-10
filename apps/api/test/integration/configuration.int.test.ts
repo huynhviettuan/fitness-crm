@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { createOption, listOptions, otherNotes, reorderOptions, updateOption } from "../../src/platform/options/option.service.js";
 import { readParameters, updateParameters } from "../../src/platform/parameters/parameter.service.js";
@@ -7,12 +7,17 @@ import { createCustomer } from "../../src/modules/customers/customer.service.js"
 import { deletePayment, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { PARAMETER_DEFAULTS } from "@flow/shared/parameters";
 import { resetDatabase } from "../support/database.js";
-import { createTestUser, optionId } from "../support/factories.js";
+import { createTestUser, optionId, withoutApprovals } from "../support/factories.js";
 import { activeContract } from "../support/bookings.js";
 
 afterEach(async () => {
   await resetDatabase();
 });
+// These tests are about something else than approvals (approvals.int.test.ts).
+beforeEach(async () => {
+  await withoutApprovals();
+});
+
 
 const labels = (options: { labelVi: string }[]) => options.map((option) => option.labelVi);
 

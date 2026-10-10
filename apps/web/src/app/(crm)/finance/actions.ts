@@ -6,26 +6,33 @@ import type { CashTransactionInput, PaymentInput } from "@flow/shared/finance";
 import type { DeleteInput } from "@flow/shared/trash";
 
 /** `idempotencyKey` is generated when the form opens, so a double submit reuses it (T-015). */
-export async function recordPaymentAction(contractId: string, input: PaymentInput, idempotencyKey: string): Promise<ActionResult> {
+/** `pending`: the payment waits for approval and does not count yet (D-018). */
+export async function recordPaymentAction(
+  contractId: string,
+  input: PaymentInput,
+  idempotencyKey: string,
+): Promise<ActionResult<{ pending: boolean }>> {
   return runAction(async () => {
-    await recordPayment(contractId, input, idempotencyKey);
+    const payment = await recordPayment(contractId, input, idempotencyKey);
+    return { pending: payment.approvalStatus === "PENDING" };
   });
 }
 
-export async function deletePaymentAction(id: string, input: DeleteInput): Promise<ActionResult> {
+/** `submitted`: the deletion waits for approval (D-018). */
+export async function deletePaymentAction(id: string, input: DeleteInput): Promise<ActionResult<{ submitted: boolean }>> {
+  return runAction(async () => ({ submitted: await deletePayment(id, input) }));
+}
+
+export async function recordCashTransactionAction(
+  input: CashTransactionInput,
+  idempotencyKey: string,
+): Promise<ActionResult<{ pending: boolean }>> {
   return runAction(async () => {
-    await deletePayment(id, input);
+    const transaction = await recordCashTransaction(input, idempotencyKey);
+    return { pending: transaction.approvalStatus === "PENDING" };
   });
 }
 
-export async function recordCashTransactionAction(input: CashTransactionInput, idempotencyKey: string): Promise<ActionResult> {
-  return runAction(async () => {
-    await recordCashTransaction(input, idempotencyKey);
-  });
-}
-
-export async function deleteCashTransactionAction(id: string, input: DeleteInput): Promise<ActionResult> {
-  return runAction(async () => {
-    await deleteCashTransaction(id, input);
-  });
+export async function deleteCashTransactionAction(id: string, input: DeleteInput): Promise<ActionResult<{ submitted: boolean }>> {
+  return runAction(async () => ({ submitted: await deleteCashTransaction(id, input) }));
 }

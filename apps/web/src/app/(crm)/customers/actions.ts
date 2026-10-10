@@ -13,8 +13,6 @@ export async function createCustomerAction(
   });
 }
 
-export async function updateCustomerAction(id: string, input: UpdateCustomerInput): Promise<ActionResult> {
-  return runAction(async () => {
-    await updateCustomer(id, input);
-  });
+export async function updateCustomerAction(id: string, input: UpdateCustomerInput): Promise<ActionResult<{ submitted: boolean }>> {
+  return runAction(async () => ({ submitted: (await updateCustomer(id, input)).submitted }));
 }

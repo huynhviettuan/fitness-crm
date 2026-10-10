@@ -9,6 +9,7 @@ import { OptionListsController } from "./platform/options/options.controller.js"
 import { ParametersController } from "./platform/parameters/parameters.controller.js";
 import { AuditEventsController } from "./platform/audit/audit.controller.js";
 import { TrashController } from "./platform/trash/trash.controller.js";
+import { ApprovalRulesController, ApprovalsController } from "./modules/approvals/approvals.controller.js";
 import { ErrorFilter } from "./platform/http/error.filter.js";
 import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
@@ -38,6 +39,8 @@ import { UsersController } from "./modules/users/users.controller.js";
     ParametersController,
     AuditEventsController,
     TrashController,
+    ApprovalsController,
+    ApprovalRulesController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

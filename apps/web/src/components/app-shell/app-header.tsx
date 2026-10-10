@@ -1,18 +1,33 @@
+import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { InboxIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CustomerSearch } from "@/components/app-shell/customer-search";
 import { UserMenu } from "@/components/app-shell/user-menu";
 import type { CurrentUser } from "@/lib/auth/current-user";
 
-export function AppHeader({ user, showSearch }: { user: CurrentUser; showSearch: boolean }) {
+type ApprovalCounts = { toDecide: number; overdue: number };
+
+export function AppHeader({ user, showSearch, approvals }: { user: CurrentUser; showSearch: boolean; approvals: ApprovalCounts }) {
   const t = useTranslations("common");
+  const ta = useTranslations("approvals");
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
       <SidebarTrigger aria-label={t("toggleSidebar")} />
       <Separator orientation="vertical" className="h-5!" />
       <div className="flex flex-1 items-center">{showSearch && <CustomerSearch />}</div>
+      {/* The approvals inbox (docs/08): what waits for this user's decision (D-018). */}
+      <Button asChild variant="ghost" size="sm" className="relative">
+        <Link href="/approvals" aria-label={ta("inboxLabel", { count: approvals.toDecide })}>
+          <InboxIcon />
+          <span className="hidden sm:inline">{ta("title")}</span>
+          {approvals.toDecide > 0 && <Badge variant={approvals.overdue > 0 ? "destructive" : "default"}>{approvals.toDecide}</Badge>}
+        </Link>
+      </Button>
       <UserMenu user={{ name: user.name, email: user.email, roleName: user.role.name }} />
     </header>
   );

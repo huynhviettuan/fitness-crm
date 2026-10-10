@@ -5,6 +5,10 @@
   "description": "Zod schemas, response shapes, permission keys, error codes, and pure domain rules shared by the API and the web app.",
   "type": "module",
   "exports": {
+    "./approvals": {
+      "types": "./dist/approvals/index.d.ts",
+      "default": "./dist/approvals/index.js"
+    },
     "./audit": {
       "types": "./dist/audit/index.d.ts",
       "default": "./dist/audit/index.js"

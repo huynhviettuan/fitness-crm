@@ -11,12 +11,17 @@ import {
 } from "../../src/modules/finance/cash.service.js";
 import { recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestOption, createTestUser, optionId } from "../support/factories.js";
+import { createTestOption, createTestUser, optionId, withoutApprovals } from "../support/factories.js";
 import { activeContract } from "../support/bookings.js";
 
 afterEach(async () => {
   await resetDatabase();
 });
+// These tests are about something else than approvals (approvals.int.test.ts).
+beforeEach(async () => {
+  await withoutApprovals();
+});
+
 
 const OTHER_REASON = await optionId("deleteReasons", "Khác");
 

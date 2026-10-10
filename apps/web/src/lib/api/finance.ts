@@ -11,7 +11,7 @@ import {
   type PaymentInput,
 } from "@flow/shared/finance";
 import type { DeleteInput } from "@flow/shared/trash";
-import { api, done, query, read } from "./client";
+import { api, query, read, submittedOrDone } from "./client";
 
 /** First and last gym day, inclusive (dd/MM/yyyy). */
 type Period = { from: string; to: string };
@@ -39,9 +39,9 @@ export async function recordPayment(contractId: string, input: PaymentInput, ide
   );
 }
 
-/** D-035: moves the payment to the trash. */
+/** D-035: moves the payment to the trash; true when the deletion waits for approval (D-018). */
 export async function deletePayment(id: string, input: DeleteInput) {
-  return done((await api()).DELETE("/api/v1/payments/{id}", { params: { path: { id } }, body: input }));
+  return submittedOrDone((await api()).DELETE("/api/v1/payments/{id}", { params: { path: { id } }, body: input }));
 }
 
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
@@ -67,7 +67,7 @@ export async function recordCashTransaction(input: CashTransactionInput, idempot
   );
 }
 
-/** D-035: moves the entry to the trash. */
+/** D-035: moves the entry to the trash; true when the deletion waits for approval (D-018). */
 export async function deleteCashTransaction(id: string, input: DeleteInput) {
-  return done((await api()).DELETE("/api/v1/cash-transactions/{id}", { params: { path: { id } }, body: input }));
+  return submittedOrDone((await api()).DELETE("/api/v1/cash-transactions/{id}", { params: { path: { id } }, body: input }));
 }

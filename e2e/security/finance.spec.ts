@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { createContractViaApi, createCustomerViaApi, gymToday, recordPaymentViaApi } from "../support/data";
 import { createOptionViaApi, otherOptionId } from "../support/options";
+import { approvePendingViaApi } from "../support/approvals";
 import type { Role } from "../support/db";
 
 // Payment methods and delete reasons come from option lists (D-016); "Khác" with a note fits any test.
@@ -14,15 +15,16 @@ const deleteReason = async (api: import("@playwright/test").APIRequestContext) =
 
 async function activeContract(apiAs: (role: Role) => Promise<import("@playwright/test").APIRequestContext>, tag: string) {
   const reception = await apiAs("RECEPTIONIST");
-  return createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, tag)).id, { activate: true });
+  return createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, tag)).id, { activateWith: await apiAs("ADMIN") });
 }
 
 test.describe("A01 finance roles (docs/09, A-021)", () => {
+  // Receipts wait for approval in the initial matrix (D-018): 202.
   const recordExpectations: [Role, number][] = [
-    ["ADMIN", 201],
-    ["FITNESS_MANAGER", 201],
-    ["RECEPTIONIST", 201],
-    ["ACCOUNTANT", 201],
+    ["ADMIN", 202],
+    ["FITNESS_MANAGER", 202],
+    ["RECEPTIONIST", 202],
+    ["ACCOUNTANT", 202],
     ["PT", 403],
   ];
   for (const [role, status] of recordExpectations) {
@@ -43,7 +45,8 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
     // E2E-009 (part 2): a trainer cannot delete payments.
     ["PT", 403],
     ["FITNESS_MANAGER", 403],
-    ["ACCOUNTANT", 204],
+    // Allowed, and waits for an admin's approval (D-018).
+    ["ACCOUNTANT", 202],
   ];
   for (const [role, status] of deleteExpectations) {
     test(`${role} deleting a payment gets ${status}`, async ({ apiAs, testTag }) => {
@@ -58,7 +61,7 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
   const cashExpectations: [Role, number][] = [
     ["RECEPTIONIST", 403],
     ["PT", 403],
-    ["ACCOUNTANT", 201],
+    ["ACCOUNTANT", 202],
   ];
   for (const [role, status] of cashExpectations) {
     test(`${role} recording income gets ${status}`, async ({ apiAs, testTag }) => {
@@ -83,19 +86,26 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
     expect((await trainer.get("/api/v1/cash-transactions")).status()).toBe(403);
   });
 
-  test("status, contract, and recorder cannot be set by the client (mass assignment)", async ({ apiAs, testTag }) => {
+  test("approval status, contract, and recorder cannot be set by the client (mass assignment)", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
     const other = await activeContract(apiAs, `${testTag}b`);
     const reception = await apiAs("RECEPTIONIST");
 
     const response = await reception.post(`/api/v1/contracts/${contract.id}/payments`, {
       headers: { "idempotency-key": randomUUID() },
-      data: { ...(await payment(reception)), deletedAt: new Date().toISOString(), contractId: other.id, createdById: randomUUID(), deleteReasonId: randomUUID() },
+      data: {
+        ...(await payment(reception)),
+        approvalStatus: "APPROVED",
+        deletedAt: new Date().toISOString(),
+        contractId: other.id,
+        createdById: randomUUID(),
+        deleteReasonId: randomUUID(),
+      },
     });
 
-    expect(response.status()).toBe(201);
-    expect(await response.json()).toMatchObject({ contract: { id: contract.id } });
-    expect((await (await reception.get(`/api/v1/contracts/${contract.id}`)).json()).paidAmount).toBe(1_000_000);
+    expect(response.status()).toBe(202);
+    expect(await response.json()).toMatchObject({ contract: { id: contract.id }, approvalStatus: "PENDING" });
+    expect((await (await reception.get(`/api/v1/contracts/${contract.id}`)).json()).paidAmount).toBe(0);
     expect((await (await reception.get(`/api/v1/contracts/${other.id}`)).json()).paidAmount).toBe(0);
   });
 });
@@ -112,14 +122,16 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
     const first = await send(key);
     const second = await send(key);
 
-    expect([first.status(), second.status()]).toEqual([201, 200]);
-    expect((await second.json()).id).toBe((await first.json()).id);
+    expect([first.status(), second.status()]).toEqual([202, 200]);
+    const id = (await first.json()).id;
+    expect((await second.json()).id).toBe(id);
 
     // INT-005: the same key with another amount.
     const reused = await send(key, "2.000.000");
     expect(reused.status()).toBe(409);
     expect(await reused.json()).toMatchObject({ code: "IDEMPOTENCY_KEY_REUSED" });
 
+    await approvePendingViaApi(await apiAs("FITNESS_MANAGER"), id);
     expect((await (await reception.get(`/api/v1/contracts/${contract.id}`)).json()).paidAmount).toBe(1_000_000);
   });
 
@@ -135,7 +147,8 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
       ),
     );
 
-    expect(responses.map((r) => r.status()).sort()).toEqual([200, 200, 200, 200, 201]);
+    expect(responses.map((r) => r.status()).sort()).toEqual([200, 200, 200, 200, 202]);
+    await approvePendingViaApi(await apiAs("FITNESS_MANAGER"), (await responses[0].json()).id);
     expect((await (await reception.get(`/api/v1/contracts/${contract.id}`)).json()).paidAmount).toBe(1_000_000);
   });
 
@@ -193,7 +206,7 @@ test.describe("A10 finance input errors", () => {
     expect(await cancelled.json()).toMatchObject({ code: "PAYMENT_CONTRACT_CANCELLED" });
   });
 
-  test("a deletion needs a reason; a deleted or unknown record is 404", async ({ apiAs, testTag }) => {
+  test("a deletion needs a reason and waits for approval once; a deleted or unknown record is 404", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
     const recorded = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
     const accountant = await apiAs("ACCOUNTANT");
@@ -204,7 +217,13 @@ test.describe("A10 finance input errors", () => {
     expect(await noReason.json()).toMatchObject({ details: { fieldErrors: { reasonId: ["required"] } } });
     const noNote = await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: { ...reason, reasonNote: "" } });
     expect(await noNote.json()).toMatchObject({ details: { fieldErrors: { reasonNote: ["otherNeedsNote"] } } });
-    expect((await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: reason })).status()).toBe(204);
+    const submitted = await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: reason });
+    expect(submitted.status()).toBe(202);
+    expect(await submitted.json()).toMatchObject({ approval: { status: "PENDING" } });
+    const again = await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: reason });
+    expect(again.status()).toBe(409);
+    expect(await again.json()).toMatchObject({ code: "APPROVAL_ALREADY_PENDING" });
+    await approvePendingViaApi(await apiAs("ADMIN"), recorded.id, "record.delete");
     expect((await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: reason })).status()).toBe(404);
     for (const id of [randomUUID(), "not-a-uuid"]) {
       expect((await accountant.delete(`/api/v1/payments/${id}`, { data: reason })).status()).toBe(404);

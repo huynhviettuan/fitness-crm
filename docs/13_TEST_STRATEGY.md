@@ -37,7 +37,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-110 | Two receipts → paid and debt; cash book balance | AC-19 |
 | E2E-111 | Session log on phone: plan and actual per row; cardio fields; escalation reaches manager and Master | AC-20, AC-21, AC-23 |
 | E2E-112 | Role without a module: menu hidden and direct URL refused; masked phone absent from screen and export | AC-01 |
-| E2E-113 | Submitter cannot approve own request; approval matrix change takes effect immediately | AC-05 |
+| E2E-113 | Submitter cannot approve own request; approval matrix change takes effect immediately (`e2e/approvals.spec.ts`) | AC-05 |
 
 ## Concurrency scenarios (integration)
 

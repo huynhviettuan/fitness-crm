@@ -1,18 +1,23 @@
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
 import { cancelContract, createContract, getContract, listContracts } from "../../src/modules/contracts/contract.service.js";
 import { collectedBetween, deletePayment, listDebts, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestOption, createTestUser, optionId } from "../support/factories.js";
+import { createTestOption, createTestUser, optionId, withoutApprovals } from "../support/factories.js";
 import { activeContract, CONTRACT } from "../support/bookings.js";
 
 afterEach(async () => {
   vi.useRealTimers();
   await resetDatabase();
 });
+// These tests are about something else than approvals (approvals.int.test.ts).
+beforeEach(async () => {
+  await withoutApprovals();
+});
+
 
 // Seeded by the migration (D-016), so their ids stay the same between tests.
 const CASH = await optionId("paymentMethods", "Tiền mặt");

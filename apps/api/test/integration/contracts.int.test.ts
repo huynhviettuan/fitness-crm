@@ -24,10 +24,12 @@ afterEach(async () => {
 const pt24 = { packageName: "PT 24 buổi", contractValue: "12.000.000", totalSessions: "24", startDate: "01/10/2026", endDate: "31/03/2027" };
 
 /** A Fitness Manager, who creates and approves contracts (09_RBAC.md), and a customer. */
+/** A Fitness Manager who sells, and another who approves: nobody approves their own (D-018). */
 async function setup() {
   const { actor: seller } = await createTestUser("FITNESS_MANAGER");
+  const { actor: approver } = await createTestUser("FITNESS_MANAGER");
   const customer = await createCustomer(seller, { fullName: "Nguyễn Văn An", phone: "0909123456" });
-  return { seller, customer };
+  return { seller, approver, customer };
 }
 
 function create(actor: Actor, customerId: string, input: object = pt24, key = randomUUID()) {
@@ -132,42 +134,50 @@ describe("duplicate submission (T-015)", () => {
 
 describe("status changes", () => {
   it("activates a draft once, and a repeat changes nothing", async () => {
-    const { seller, customer } = await setup();
+    const { seller, approver, customer } = await setup();
     const { contract } = await create(seller, customer.id);
 
-    expect((await activateContract(seller, contract.id)).status).toBe("ACTIVE");
-    expect((await activateContract(seller, contract.id)).status).toBe("ACTIVE");
+    expect((await activateContract(approver, contract.id)).status).toBe("ACTIVE");
+    expect((await activateContract(approver, contract.id)).status).toBe("ACTIVE");
 
     expect(await prisma.auditEvent.count({ where: { entityId: contract.id, action: "contract.activated" } })).toBe(1);
   });
 
-  it("concurrent activations record exactly one transition", async () => {
+  it("is never approved by the contract's creator (D-018)", async () => {
     const { seller, customer } = await setup();
     const { contract } = await create(seller, customer.id);
 
-    await Promise.all(Array.from({ length: 5 }, () => activateContract(seller, contract.id)));
+    await expect(activateContract(seller, contract.id)).rejects.toMatchObject({ code: "APPROVAL_OWN_REQUEST" });
+    expect((await getContract(seller, contract.id)).status).toBe("DRAFT");
+  });
+
+  it("concurrent activations record exactly one transition", async () => {
+    const { seller, approver, customer } = await setup();
+    const { contract } = await create(seller, customer.id);
+
+    await Promise.all(Array.from({ length: 5 }, () => activateContract(approver, contract.id)));
 
     expect(await prisma.auditEvent.count({ where: { entityId: contract.id, action: "contract.activated" } })).toBe(1);
   });
 
   it("a receptionist cannot cancel; a Fitness Manager can (09_RBAC.md)", async () => {
-    const { seller, customer } = await setup();
+    const { seller, approver, customer } = await setup();
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { actor: reception } = await createTestUser("RECEPTIONIST");
     const { contract } = await create(seller, customer.id);
-    await activateContract(seller, contract.id);
+    await activateContract(approver, contract.id);
 
     await expect(cancelContract(reception, contract.id)).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect((await cancelContract(manager, contract.id)).status).toBe("CANCELLED");
     expect((await cancelContract(manager, contract.id)).status).toBe("CANCELLED");
-    await expect(activateContract(seller, contract.id)).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
+    await expect(activateContract(approver, contract.id)).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
   it("an expired contract cannot be cancelled", async () => {
-    const { seller, customer } = await setup();
+    const { seller, approver, customer } = await setup();
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { contract } = await create(seller, customer.id, { ...pt24, startDate: "01/01/2025", endDate: "31/12/2025" });
-    expect((await activateContract(seller, contract.id)).status).toBe("EXPIRED");
+    expect((await activateContract(approver, contract.id)).status).toBe("EXPIRED");
 
     await expect(cancelContract(manager, contract.id)).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
@@ -189,9 +199,9 @@ describe("editing (OQ-015 interim: drafts only)", () => {
   });
 
   it("an active contract cannot be edited", async () => {
-    const { seller, customer } = await setup();
+    const { seller, approver, customer } = await setup();
     const { contract } = await create(seller, customer.id);
-    await activateContract(seller, contract.id);
+    await activateContract(approver, contract.id);
 
     await expect(updateContract(seller, contract.id, { ...pt24, totalSessions: "48" })).rejects.toMatchObject({
       code: "CONTRACT_NOT_EDITABLE",
@@ -215,9 +225,9 @@ describe("reading", () => {
   });
 
   it("reports EXPIRED from the end date and the gym's clock, with no job (INT-008)", async () => {
-    const { seller, customer } = await setup();
+    const { seller, approver, customer } = await setup();
     const { contract } = await create(seller, customer.id, { ...pt24, startDate: "01/10/2026", endDate: "10/10/2026" });
-    await activateContract(seller, contract.id);
+    await activateContract(approver, contract.id);
 
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-10T16:59:00Z")); // 23:59 in the gym

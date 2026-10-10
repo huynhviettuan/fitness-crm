@@ -28,7 +28,8 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M1 | 2. Branches and the permission tree: configurable roles, per-user overrides, data scope, hidden fields, branch access, allowed hours, login history; endpoint permission guard (T-046, T-054); admin screens for users, roles, branches | **Done** 2026-10-10 |
 | M1 | 3. Configuration: option lists with "Khác" (payment methods, income categories, expense types, delete reasons), system parameters (PT calendar hours, code prefixes), admin screens, `OptionSelect` (D-016, T-049, T-055) | **Done** 2026-10-10 |
 | M1 | 4. Audit with before and after values for every change; the trash; payments and cash entries deleted to the trash instead of voided; Action history and Trash screens (T-048, D-035, T-056) | **Done** 2026-10-10 |
-| M1 | Next: 5 approvals, 6 employees, 7 notifications and tasks | Not started |
+| M1 | 5. Approvals: engine, matrix screen, inbox with top-bar count; receipts, income and expenses, deletions, and customer identity edits under approval; a contract's creator cannot activate it (D-018, T-057) | **Done** 2026-10-11 |
+| M1 | Next: 6 employees and PT schedules, 7 notifications and tasks (approval reminders, A-037) | Not started |
 
 ## Open questions per milestone
 

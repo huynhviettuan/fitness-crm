@@ -14,6 +14,7 @@ import { DateTime } from "@/components/date-time";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { ChosenOptionText, OptionSelect } from "@/components/option-select";
 import { Money } from "@/components/money";
+import { StatusBadge } from "@/components/status-badge";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -30,6 +31,7 @@ export type CashRow = {
   description: string | null;
   reference: string | null;
   occurredOn: Date;
+  approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   createdBy: string;
 };
 
@@ -69,6 +71,11 @@ export function CashTable({ transactions, canDelete, label, empty, footer }: Cas
       id: "amount",
       header: t("fields.amount"),
       cell: ({ row }) => <Money amount={row.original.amount} />,
+    },
+    {
+      id: "approvalStatus",
+      header: t("fields.approvalStatus"),
+      cell: ({ row }) => <StatusBadge entity="approval" status={row.original.approvalStatus} />,
     },
     { id: "createdBy", header: t("fields.createdBy"), cell: ({ row }) => row.original.createdBy },
     {
@@ -178,7 +185,7 @@ function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string
         notify.error(errorMessage(result.code));
         return;
       }
-      notify.success(t("finance.cashRecorded"));
+      notify.success(result.data.pending ? t("approvals.submitted") : t("finance.cashRecorded"));
       onDone();
       router.refresh();
     }),

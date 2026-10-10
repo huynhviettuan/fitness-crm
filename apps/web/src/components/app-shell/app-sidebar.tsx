@@ -8,6 +8,7 @@ import {
   Building2Icon,
   CalendarDaysIcon,
   ClipboardCheckIcon,
+  ClipboardListIcon,
   DumbbellIcon,
   FileTextIcon,
   HistoryIcon,
@@ -50,6 +51,7 @@ const NAV_ITEMS = {
   parameters: { href: "/admin/parameters", icon: SlidersHorizontalIcon },
   audit: { href: "/admin/audit", icon: HistoryIcon },
   trash: { href: "/admin/trash", icon: Trash2Icon },
+  approvalRules: { href: "/admin/approvals", icon: ClipboardListIcon },
 } as const;
 
 export type NavItemKey = keyof typeof NAV_ITEMS;

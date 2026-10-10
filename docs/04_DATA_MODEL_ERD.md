@@ -62,8 +62,8 @@ erDiagram
 | `user_permission_overrides` | user_id, permission_key, granted (on/off) |
 | `role_data_scopes` | role_id, resource (leads, members, contracts, schedule, vouchers, staff, history), scope (ALL, OWN); a missing row = OWN |
 | `role_field_masks` | role_id, field (member phone, email, address, documents; receipt totals) |
-| `approval_rules` | action_type, required, approver_role_id, escalation_threshold, escalation_role_id, overdue_hours |
-| `approval_requests` | action_type, entity_type, entity_id, payload (json), submitted_by, status, decided_by, decided_at, reason_option_id, reason_note; check: decided_by ≠ submitted_by |
+| `approval_rules` | action_type (unique; keys are code, T-057), required, overdue_hours (1–720); approver roles in `approval_rule_roles` (action_type, role_id). Escalation by discount threshold arrives with M4 |
+| `approval_requests` | action_type, entity_type, entity_id, branch_id, title, amount, payload (json), submitted_by, submitted_at, status (PENDING, APPROVED, REJECTED, CANCELLED), decided_by, decided_at, reject_reason_option_id, reject_reason_note; checks: decided_by ≠ submitted_by, decision complete; one PENDING per action and record |
 | `options` | list_key (channels, sources, needs, refusal reasons, delete reasons, freeze reasons, exception reasons, step results, flags, actions, session summaries, income categories, expense types, payment methods, departments, …; the keys are code, T-055), label_vi (unique per list), label_en, sort_order, active, is_other; one "Khác" per list, always active (A-034). Records keep `<field>_option_id` and `<field>_note` |
 | `system_parameters` | key (unique), value (json) — timers, thresholds, calendar hours, code prefixes, cancel cut-off, freeze reminder days, re-care days; keys and defaults are code, a missing row means the default (T-055) |
 | `session_status_rules` | status key, label, consumes, credits_pt, color token, active |

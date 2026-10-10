@@ -7,7 +7,7 @@ const f = labels.contracts.fields;
 test.describe("contracts as a Fitness Manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-001 (part 2): a Fitness Manager adds a contract for a customer and activates it", async ({
+  test("E2E-001 (part 2): a Fitness Manager adds a contract; it is approved by someone else, never its creator (D-018)", async ({
     page,
     apiAs,
     testTag,
@@ -29,7 +29,15 @@ test.describe("contracts as a Fitness Manager", () => {
     await expect(contractDetailPage.figure(f.remainingSessions)).toHaveText("24");
     await expect(contractDetailPage.figure(f.debt)).toHaveText(/12\.000\.000/);
 
-    await contractDetailPage.confirmAction(labels.contracts.activate);
+    // The seller cannot approve their own contract.
+    await contractDetailPage.action(labels.contracts.activate).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: labels.contracts.activate, exact: true }).click();
+    await expect(toasts.getByText(labels.errors.APPROVAL_OWN_REQUEST)).toBeVisible();
+    await page.keyboard.press("Escape");
+    const contractId = new URL(page.url()).pathname.split("/").pop()!;
+    const activated = await (await apiAs("ADMIN")).post(`/api/v1/contracts/${contractId}/activate`);
+    expect(activated.status()).toBe(200);
+    await page.reload();
 
     await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.ACTIVE);
     await expect(contractDetailPage.action(labels.contracts.edit)).toHaveCount(0);
@@ -87,7 +95,7 @@ test.describe("contracts as a manager", () => {
   test("a manager cancels an active contract after confirming", async ({ apiAs, testTag, contractDetailPage }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN") });
 
     await contractDetailPage.goto(contract.id);
     await contractDetailPage.confirmAction(labels.contracts.cancel);

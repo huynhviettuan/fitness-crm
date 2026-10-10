@@ -10,8 +10,11 @@ import { inBranches, isMasked, isOwnOnly, resolveBranch } from "../../platform/p
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
-import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import { chosen, chosenSelect, resolveChoice } from "../../platform/options/option.service.js";
 import { moveToTrash } from "../../platform/trash/trash.service.js";
+import { cancelPendingFor, ruleFor, submitForApproval, withPendingConflictMapped } from "../../platform/approvals/approval.engine.js";
+import type { Db as TxDb } from "../../platform/db/prisma.js";
+import type { RecordApprovalStatus } from "@flow/shared/approvals";
 import { encode } from "../../platform/http/encode.js";
 import { deleteSchema } from "@flow/shared/trash";
 import { idempotencyKeySchema } from "@flow/shared/contracts";
@@ -65,7 +68,11 @@ export async function financeSummary(actor: Actor, rawPeriod: unknown): Promise<
   return { contractPayments, otherIncome, expense };
 }
 
-/** Records a CONFIRMED income or expense (T-015). Replays behave like payments. */
+/**
+ * Records an income or expense (T-015). When the matrix requires it, the entry is
+ * PENDING and counts only once someone else approves it (D-018). Replays behave like
+ * payments.
+ */
 export async function recordCashTransaction(
   actor: Actor,
   input: unknown,
@@ -88,8 +95,10 @@ export async function recordCashTransaction(
       // Income and expenses have their own lists; "Khác" needs a note (D-016).
       const list = data.type === "INCOME" ? "incomeCategories" : "expenseTypes";
       const category = await resolveChoice(tx, list, "categoryId", { optionId: data.categoryId, note: data.categoryNote });
+      const rule = await ruleFor(tx, "cash.create");
       const transaction = await repo.createCashTransaction(tx, {
         ...data,
+        approvalStatus: rule.required ? "PENDING" : "APPROVED",
         categoryId: category.optionId,
         categoryNote: category.note,
         branchId,
@@ -106,8 +115,21 @@ export async function recordCashTransaction(
           category: { optionId: category.optionId, note: category.note },
           amount: data.amount,
           occurredOn: data.occurredOn.toISOString().slice(0, 10),
+          approvalStatus: transaction.approvalStatus,
         },
       });
+      if (rule.required) {
+        const view = toView(transaction);
+        await submitForApproval(tx, actor, {
+          action: "cash.create",
+          entityType: "cash_transaction",
+          entityId: transaction.id,
+          branchId: transaction.branchId,
+          title: titleOf(view),
+          amount: view.amount,
+          payload: { type: view.type },
+        });
+      }
       return transaction;
     });
     return { transaction: toView(created), replayed: false };
@@ -122,43 +144,94 @@ export async function recordCashTransaction(
 
 /**
  * Deletes an income or expense entry to the trash with a reason from the list (D-035,
- * D-016); a mistake is corrected by deleting it and recording it again. Deleting
- * vouchers is its own permission (09_RBAC.md). An entry already deleted is NOT_FOUND.
+ * D-016); a mistake is corrected by deleting it and recording it again. When the
+ * matrix requires it, the deletion waits for approval (D-018). Deleting vouchers is its
+ * own permission (09_RBAC.md). An entry already deleted is NOT_FOUND.
  */
-export async function deleteCashTransaction(actor: Actor, id: string, input: unknown): Promise<void> {
+export async function deleteCashTransaction(actor: Actor, id: string, input: unknown): Promise<{ approval: { id: string } } | null> {
   assertCan(actor, "cash.delete");
   const { reasonId, reasonNote } = parseInput(deleteSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
-  await prisma.$transaction(async (tx) => {
-    const transaction = await repo.findCashTransaction(tx, id, cashVisibleTo(actor));
-    if (!transaction) throw new AppError("NOT_FOUND");
+  return withPendingConflictMapped(() =>
+    prisma.$transaction(async (tx) => {
+      const transaction = await repo.findCashTransaction(tx, id, cashVisibleTo(actor));
+      if (!transaction) throw new AppError("NOT_FOUND");
 
-    const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
-    const deletedAt = new Date();
-    const marked = await repo.markCashTransactionDeleted(tx, id, {
-      deletedAt,
-      deletedById: actor.id,
-      deleteReasonId: reason.optionId,
-      deleteReasonNote: reason.note,
-    });
-    if (marked !== 1) throw new AppError("NOT_FOUND");
-    const view = toView(transaction);
-    await moveToTrash(
-      tx,
-      actor,
-      {
-        entityType: "cash_transaction",
-        entityId: id,
-        branchId: transaction.branchId,
-        title: view.category.note ? `${view.category.labelVi}: ${view.category.note}` : view.category.labelVi,
-        amount: view.amount,
-        snapshot: encode(cashTransactionSchema, view) as Record<string, unknown>,
-      },
-      reason,
-      deletedAt,
-    );
+      const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+      if ((await ruleFor(tx, "record.delete")).required) {
+        const view = toView(transaction);
+        const option = await tx.option.findUniqueOrThrow({ where: { id: reason.optionId }, select: chosenSelect });
+        const approval = await submitForApproval(tx, actor, {
+          action: "record.delete",
+          entityType: "cash_transaction",
+          entityId: id,
+          branchId: transaction.branchId,
+          title: titleOf(view),
+          amount: view.amount,
+          payload: { reason: chosen(option, reason.note) },
+        });
+        return { approval };
+      }
+      await applyCashDeletion(tx, transaction, actor, reason);
+      return null;
+    }),
+  );
+}
+
+/** Deletes the entry now: marks it, writes the trash entry and audit, withdraws its pending requests. */
+export async function applyCashDeletion(
+  tx: TxDb,
+  transaction: repo.CashTransactionRecord,
+  deleter: Pick<Actor, "id">,
+  reason: { optionId: string; note: string | null },
+): Promise<void> {
+  const deletedAt = new Date();
+  const marked = await repo.markCashTransactionDeleted(tx, transaction.id, {
+    deletedAt,
+    deletedById: deleter.id,
+    deleteReasonId: reason.optionId,
+    deleteReasonNote: reason.note,
   });
+  if (marked !== 1) throw new AppError("NOT_FOUND");
+  const view = toView(transaction);
+  await moveToTrash(
+    tx,
+    deleter,
+    {
+      entityType: "cash_transaction",
+      entityId: transaction.id,
+      branchId: transaction.branchId,
+      title: titleOf(view),
+      amount: view.amount,
+      snapshot: encode(cashTransactionSchema, view) as Record<string, unknown>,
+    },
+    reason,
+    deletedAt,
+  );
+  await cancelPendingFor(tx, transaction.id);
+}
+
+/** For approvals: the entry a request is about, not deleted. */
+export function findCashForApproval(tx: TxDb, id: string): Promise<repo.CashTransactionRecord | null> {
+  return repo.findCashTransaction(tx, id);
+}
+
+/** Approving or rejecting a pending entry (D-018), with its audit. */
+export async function decideCashTransaction(tx: TxDb, decider: Pick<Actor, "id">, id: string, to: "APPROVED" | "REJECTED"): Promise<void> {
+  if ((await repo.setCashApprovalStatus(tx, id, "PENDING", to)) !== 1) throw new AppError("APPROVAL_NOT_PENDING");
+  await recordAudit(tx, {
+    actorUserId: decider.id,
+    entityType: "cash_transaction",
+    entityId: id,
+    action: to === "APPROVED" ? "cash_transaction.approved" : "cash_transaction.rejected",
+    before: { approvalStatus: "PENDING" },
+    after: { approvalStatus: to },
+  });
+}
+
+function titleOf(view: CashTransactionView): string {
+  return view.category.note ? `${view.category.labelVi}: ${view.category.note}` : view.category.labelVi;
 }
 
 async function replayOf(key: string, data: CashTransactionData, actor: Actor): Promise<CashTransactionView | null> {
@@ -187,6 +260,7 @@ function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
     description: transaction.description,
     reference: transaction.reference,
     occurredOn: transaction.occurredOn,
+    approvalStatus: transaction.approvalStatus as RecordApprovalStatus,
     createdAt: transaction.createdAt,
     createdBy: transaction.createdBy.name,
   };

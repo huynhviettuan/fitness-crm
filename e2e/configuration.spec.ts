@@ -19,7 +19,7 @@ test.describe("configuration", () => {
   }) => {
     const method = `Ví ${testTag}`;
     const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag)).id, {
-      activate: true,
+      activateWith: await apiAs("ADMIN"),
     });
 
     await optionListsPage.goto("paymentMethods");
@@ -66,13 +66,14 @@ test.describe("configuration", () => {
 
   test("notes written with Khác are listed for admin to promote (FR-PLT-005)", async ({ apiAs, testTag, optionListsPage }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activate: true });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
     const note = `Séc ${testTag}`;
     const response = await reception.post(`/api/v1/contracts/${contract.id}/payments`, {
       headers: { "idempotency-key": randomUUID() },
       data: { amount: "1.000.000", methodId: await otherOptionId(reception, "paymentMethods"), methodNote: note, paidOn: gymToday().date },
     });
-    expect(response.status()).toBe(201);
+    // Receipts wait for approval (D-018); the note counts either way.
+    expect(response.status()).toBe(202);
 
     await optionListsPage.goto("paymentMethods");
 

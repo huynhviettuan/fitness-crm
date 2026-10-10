@@ -4,6 +4,7 @@ import { prisma } from "../../src/platform/db/prisma.js";
 import { loadCurrentUser, type CurrentUser } from "../../src/platform/auth/actor.js";
 import { createUserWithPassword } from "../../src/modules/users/user.repository.js";
 import type { OptionListKey } from "@flow/shared/options";
+import type { ApprovalAction } from "@flow/shared/approvals";
 
 export const TEST_PASSWORD = "Test-password-123";
 
@@ -50,7 +51,24 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   { id: "c0000000-0000-4000-8000-000000000012", labelVi: "Chuyển khoản", labelEn: "Bank transfer", sortOrder: 2, active: true },
   { id: "c0000000-0000-4000-8000-000000000013", labelVi: "Thẻ", labelEn: "Card", sortOrder: 3, active: true },
   { id: "c0000000-0000-4000-8000-000000000014", labelVi: "Ví điện tử", labelEn: "E-wallet", sortOrder: 4, active: false },
+  { id: "c0000000-0000-4000-8000-000000000005", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
 ];
+
+/** The approval matrix the migration creates (09_RBAC.md). */
+export const SEEDED_APPROVAL_RULES: { action: ApprovalAction; required: boolean; approvers: RoleCode[] }[] = [
+  { action: "payment.create", required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] },
+  { action: "cash.create", required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] },
+  { action: "record.delete", required: true, approvers: ["ADMIN"] },
+  { action: "customer.identity", required: true, approvers: ["FITNESS_MANAGER"] },
+];
+
+/**
+ * Switches the approval matrix off, for tests about something else (payments, debt,
+ * deletion). resetDatabase() switches it back on.
+ */
+export async function withoutApprovals(): Promise<void> {
+  await prisma.approvalRule.updateMany({ data: { required: false } });
+}
 
 /** An option's id by its Vietnamese label; "Khác" is each list's Other. */
 export function optionId(listKey: OptionListKey, labelVi: string): Promise<string> {

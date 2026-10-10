@@ -59,6 +59,16 @@ enum BookingStatus {
   NO_SHOW
 }
 
+// D-018: a request moves from PENDING to APPROVED or REJECTED by someone other than
+// its submitter, or is CANCELLED when its record goes away. Records that can need
+// approval use PENDING, APPROVED, and REJECTED, and count only when APPROVED.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 enum CashTransactionType {
   INCOME
   EXPENSE
@@ -84,24 +94,26 @@ model User {
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions          AuthSession[]
-  accounts          AuthAccount[]
-  auditEvents       AuditEvent[]
-  contractsCreated  Contract[]
+  sessions           AuthSession[]
+  accounts           AuthAccount[]
+  auditEvents        AuditEvent[]
+  contractsCreated   Contract[]
   // A-010: a TRAINER user acts on bookings through this link.
-  trainer           Trainer?
-  sessionsCheckedIn Session[]                @relation("SessionCheckedInBy")
-  sessionsCompleted Session[]                @relation("SessionCompletedBy")
-  paymentsRecorded  Payment[]                @relation("PaymentCreatedBy")
-  paymentsDeleted   Payment[]                @relation("PaymentDeletedBy")
-  cashRecorded      CashTransaction[]        @relation("CashTransactionCreatedBy")
-  cashDeleted       CashTransaction[]        @relation("CashTransactionDeletedBy")
-  trashEntries      TrashEntry[]
-  customersCreated  Customer[]
-  branches          UserBranch[]
-  overrides         UserPermissionOverride[]
-  accessWindows     UserAccessWindow[]
-  loginEvents       LoginEvent[]
+  trainer            Trainer?
+  sessionsCheckedIn  Session[]                @relation("SessionCheckedInBy")
+  sessionsCompleted  Session[]                @relation("SessionCompletedBy")
+  paymentsRecorded   Payment[]                @relation("PaymentCreatedBy")
+  paymentsDeleted    Payment[]                @relation("PaymentDeletedBy")
+  cashRecorded       CashTransaction[]        @relation("CashTransactionCreatedBy")
+  cashDeleted        CashTransaction[]        @relation("CashTransactionDeletedBy")
+  trashEntries       TrashEntry[]
+  approvalsSubmitted ApprovalRequest[]        @relation("ApprovalSubmittedBy")
+  approvalsDecided   ApprovalRequest[]        @relation("ApprovalDecidedBy")
+  customersCreated   Customer[]
+  branches           UserBranch[]
+  overrides          UserPermissionOverride[]
+  accessWindows      UserAccessWindow[]
+  loginEvents        LoginEvent[]
 
   @@index([roleId])
   @@map("users")
@@ -128,6 +140,7 @@ model Branch {
   payments         Payment[]
   cashTransactions CashTransaction[]
   trashEntries     TrashEntry[]
+  approvalRequests ApprovalRequest[]
 
   @@map("branches")
 }
@@ -144,11 +157,12 @@ model Role {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  clones      Role[]           @relation("RoleClones")
-  users       User[]
-  permissions RolePermission[]
-  dataScopes  RoleDataScope[]
-  fieldMasks  RoleFieldMask[]
+  clones        Role[]             @relation("RoleClones")
+  users         User[]
+  approvalRules ApprovalRuleRole[]
+  permissions   RolePermission[]
+  dataScopes    RoleDataScope[]
+  fieldMasks    RoleFieldMask[]
 
   @@map("roles")
 }
@@ -257,6 +271,7 @@ model Option {
   cashCategories       CashTransaction[] @relation("CashCategory")
   cashDeleteReasons    CashTransaction[] @relation("CashDeleteReason")
   trashEntries         TrashEntry[]
+  approvalRejections   ApprovalRequest[]
 
   @@unique([listKey, labelVi])
   @@index([listKey, sortOrder])
@@ -377,6 +392,63 @@ model TrashEntry {
   @@unique([entityType, entityId])
   @@index([deletedAt])
   @@map("trash_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Approvals (D-018): the matrix and the requests. Action keys are code
+// (packages/shared/approvals); which need approval and who approves is configuration.
+// ---------------------------------------------------------------------------
+
+model ApprovalRule {
+  // An id of its own so the audit log can key the rule's history (T-048).
+  id           String             @id @default(uuid()) @db.Uuid
+  actionType   String             @unique @map("action_type")
+  required     Boolean
+  overdueHours Int                @map("overdue_hours")
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  approvers    ApprovalRuleRole[]
+
+  @@map("approval_rules")
+}
+
+model ApprovalRuleRole {
+  actionType String       @map("action_type")
+  rule       ApprovalRule @relation(fields: [actionType], references: [actionType], onDelete: Cascade)
+  roleId     String       @map("role_id") @db.Uuid
+  role       Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([actionType, roleId])
+  @@map("approval_rule_roles")
+}
+
+// One request per submission. The decider is never the submitter, one PENDING request
+// per record and action, and the decision facts are complete: CHECKs and a partial
+// unique index in migration SQL.
+model ApprovalRequest {
+  id               String         @id @default(uuid()) @db.Uuid
+  actionType       String         @map("action_type")
+  entityType       String         @map("entity_type")
+  entityId         String         @map("entity_id") @db.Uuid
+  branchId         String         @map("branch_id") @db.Uuid
+  branch           Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  title            String
+  amount           Decimal?       @db.Decimal(14, 0)
+  // What approval applies, e.g. a customer's new phone, or a deletion's reason.
+  payload          Json           @default("{}")
+  status           ApprovalStatus @default(PENDING)
+  submittedById    String         @map("submitted_by") @db.Uuid
+  submittedBy      User           @relation("ApprovalSubmittedBy", fields: [submittedById], references: [id], onDelete: Restrict)
+  submittedAt      DateTime       @default(now()) @map("submitted_at") @db.Timestamptz(3)
+  decidedById      String?        @map("decided_by") @db.Uuid
+  decidedBy        User?          @relation("ApprovalDecidedBy", fields: [decidedById], references: [id], onDelete: Restrict)
+  decidedAt        DateTime?      @map("decided_at") @db.Timestamptz(3)
+  rejectReasonId   String?        @map("reject_reason_option_id") @db.Uuid
+  rejectReason     Option?        @relation(fields: [rejectReasonId], references: [id], onDelete: Restrict)
+  rejectReasonNote String?        @map("reject_reason_note")
+
+  @@index([status, actionType])
+  @@index([entityId])
+  @@map("approval_requests")
 }
 
 // ---------------------------------------------------------------------------
@@ -528,31 +600,33 @@ model Session {
 // ---------------------------------------------------------------------------
 
 model Payment {
-  id               String    @id @default(uuid()) @db.Uuid
-  branchId         String    @map("branch_id") @db.Uuid
-  branch           Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  contractId       String    @map("contract_id") @db.Uuid
-  contract         Contract  @relation(fields: [contractId], references: [id], onDelete: Restrict)
-  amount           Decimal   @db.Decimal(14, 0)
+  id               String         @id @default(uuid()) @db.Uuid
+  branchId         String         @map("branch_id") @db.Uuid
+  branch           Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  contractId       String         @map("contract_id") @db.Uuid
+  contract         Contract       @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  amount           Decimal        @db.Decimal(14, 0)
   // D-016, D-034: from the "paymentMethods" option list.
-  methodId         String    @map("method_option_id") @db.Uuid
-  method           Option    @relation("PaymentMethod", fields: [methodId], references: [id], onDelete: Restrict)
-  methodNote       String?   @map("method_note")
+  methodId         String         @map("method_option_id") @db.Uuid
+  method           Option         @relation("PaymentMethod", fields: [methodId], references: [id], onDelete: Restrict)
+  methodNote       String?        @map("method_note")
   // The gym day the money was received (T-039).
-  paidOn           DateTime  @map("paid_on") @db.Date
+  paidOn           DateTime       @map("paid_on") @db.Date
+  // D-018, D-034: counts toward the paid amount only when APPROVED.
+  approvalStatus   ApprovalStatus @default(APPROVED) @map("approval_status")
   // T-015: replaying a create with the same key returns this payment.
-  idempotencyKey   String    @unique @map("idempotency_key")
-  createdById      String    @map("created_by") @db.Uuid
-  createdBy        User      @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  idempotencyKey   String         @unique @map("idempotency_key")
+  createdById      String         @map("created_by") @db.Uuid
+  createdBy        User           @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   // Deleted to the trash (D-035, T-047): left out of lists, totals, and debt.
-  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
-  deletedById      String?   @map("deleted_by") @db.Uuid
-  deletedBy        User?     @relation("PaymentDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+  deletedAt        DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  deletedById      String?        @map("deleted_by") @db.Uuid
+  deletedBy        User?          @relation("PaymentDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
   // From the "deleteReasons" option list (D-016, D-035).
-  deleteReasonId   String?   @map("delete_reason_option_id") @db.Uuid
-  deleteReason     Option?   @relation("PaymentDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
-  deleteReasonNote String?   @map("delete_reason_note")
+  deleteReasonId   String?        @map("delete_reason_option_id") @db.Uuid
+  deleteReason     Option?        @relation("PaymentDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
+  deleteReasonNote String?        @map("delete_reason_note")
 
   @@index([contractId])
   @@index([paidOn])
@@ -574,6 +648,8 @@ model CashTransaction {
   reference        String?
   // The gym day it happened (T-039).
   occurredOn       DateTime            @map("occurred_on") @db.Date
+  // D-018, D-034: counts toward the totals only when APPROVED.
+  approvalStatus   ApprovalStatus      @default(APPROVED) @map("approval_status")
   idempotencyKey   String              @unique @map("idempotency_key")
   createdById      String              @map("created_by") @db.Uuid
   createdBy        User                @relation("CashTransactionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
