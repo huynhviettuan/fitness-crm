@@ -1,4 +1,4 @@
-import vi from "../../messages/vi.json" with { type: "json" };
+import vi from "../../apps/web/messages/vi.json" with { type: "json" };
 
 /** UI text comes from the Vietnamese catalog, never hard-coded in specs (docs/13). */
 export const labels = vi;

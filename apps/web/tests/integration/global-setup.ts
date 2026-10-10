@@ -11,7 +11,7 @@ export default function setup() {
     throw new Error("TEST_DATABASE_URL must not equal DATABASE_URL.");
   }
 
-  execSync("npx prisma migrate deploy", {
+  execSync("pnpm exec prisma migrate deploy", {
     stdio: "inherit",
     env: { ...process.env, DATABASE_URL: testUrl },
   });

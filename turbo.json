@@ -1,0 +1,59 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalDependencies": ["**/.env"],
+  "globalPassThroughEnv": [
+    "CI",
+    "DATABASE_URL",
+    "TEST_DATABASE_URL",
+    "E2E_DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "GYM_TIMEZONE",
+    "LOG_LEVEL",
+    "SCHEDULE_START_HOUR",
+    "SCHEDULE_END_HOUR",
+    "SEED_ADMIN_EMAIL",
+    "SEED_ADMIN_PASSWORD",
+    "SEED_ADMIN_NAME"
+  ],
+  "tasks": {
+    "generate": {
+      "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
+      "outputs": ["src/generated/**"]
+    },
+    "build": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build", "generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "test": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build", "generate"],
+      "cache": false
+    },
+    "e2e#typecheck": {
+      "dependsOn": ["web#generate"]
+    },
+    "test:e2e": {
+      "dependsOn": ["web#build"],
+      "cache": false
+    },
+    "test:security": {
+      "dependsOn": ["web#build"],
+      "cache": false
+    }
+  }
+}

@@ -4,7 +4,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi } from "../support/data";
-import type { Role } from "../../src/lib/permissions";
+import type { Role } from "../../apps/web/src/lib/permissions";
 
 const SLOT = { date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" };
 

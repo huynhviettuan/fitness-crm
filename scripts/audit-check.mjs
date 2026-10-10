@@ -1,6 +1,6 @@
 // Dependency vulnerability gate (OWASP A03:2025 Software Supply Chain Failures).
 // Fails on any high/critical advisory that is not in security/audit-allowlist.json,
-// and on allowlist entries past their review date. Run: npm run security:audit
+// and on allowlist entries past their review date. Run: pnpm security:audit
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
@@ -8,9 +8,9 @@ const BLOCKING = new Set(["high", "critical"]);
 
 function runAudit() {
   try {
-    return execFileSync("npm", ["audit", "--json"], { encoding: "utf8", shell: process.platform === "win32" });
+    return execFileSync("pnpm", ["audit", "--json"], { encoding: "utf8", shell: process.platform === "win32" });
   } catch (error) {
-    // npm audit exits non-zero when it finds anything; the JSON is still on stdout.
+    // pnpm audit exits non-zero when it finds anything; the JSON is still on stdout.
     if (error.stdout) return error.stdout;
     throw error;
   }
@@ -22,12 +22,9 @@ const allowed = new Map(allowlist.map((entry) => [entry.id, entry]));
 const today = new Date().toISOString().slice(0, 10);
 
 const advisories = new Map();
-for (const vulnerability of Object.values(report.vulnerabilities ?? {})) {
-  for (const via of vulnerability.via) {
-    if (typeof via === "string") continue;
-    const id = via.url.split("/").pop();
-    advisories.set(id, { id, package: via.name, severity: via.severity, title: via.title, url: via.url });
-  }
+for (const advisory of Object.values(report.advisories ?? {})) {
+  const id = advisory.github_advisory_id;
+  advisories.set(id, { id, package: advisory.module_name, severity: advisory.severity, title: advisory.title, url: advisory.url });
 }
 
 const problems = [];

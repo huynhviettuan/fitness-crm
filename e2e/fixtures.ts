@@ -2,7 +2,7 @@
 // never from @playwright/test, and never construct page objects themselves.
 import { randomUUID } from "node:crypto";
 import { test as base, expect, type APIRequestContext } from "@playwright/test";
-import type { Role } from "../src/lib/permissions";
+import type { Role } from "../apps/web/src/lib/permissions";
 import { AppShell } from "./pages/app-shell";
 import { CalendarPage, CustomerBookingsTab, SessionsPage, TrainersPage } from "./pages/bookings";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";

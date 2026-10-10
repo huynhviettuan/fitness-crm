@@ -2,9 +2,9 @@
 // they assert on what the UI shows.
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
-import { PrismaClient } from "../../src/generated/prisma/client";
-import { createUserWithPassword } from "../../src/modules/users/user.repository";
-import type { Role } from "../../src/lib/permissions";
+import { PrismaClient } from "../../apps/web/src/generated/prisma/client";
+import { createUserWithPassword } from "../../apps/web/src/modules/users/user.repository";
+import type { Role } from "../../apps/web/src/lib/permissions";
 
 export function e2eDatabaseUrl(): string {
   const url = process.env.E2E_DATABASE_URL;

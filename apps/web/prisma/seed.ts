@@ -1,5 +1,5 @@
 // Creates the first admin account so someone can sign in and create other users.
-// Run with: npm run db:seed. Safe to run more than once.
+// Run with: pnpm db:seed. Safe to run more than once.
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";

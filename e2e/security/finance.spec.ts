@@ -4,7 +4,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { createContractViaApi, createCustomerViaApi, gymToday, recordPaymentViaApi } from "../support/data";
-import type { Role } from "../../src/lib/permissions";
+import type { Role } from "../../apps/web/src/lib/permissions";
 
 const PAYMENT = { amount: "1.000.000", method: "CASH", paidOn: gymToday().date };
 

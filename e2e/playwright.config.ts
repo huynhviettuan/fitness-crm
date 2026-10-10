@@ -1,18 +1,20 @@
+import path from "node:path";
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
 
-loadEnv({ quiet: true });
+// E2E_DATABASE_URL lives with the app's other settings.
+loadEnv({ path: path.join(import.meta.dirname, "..", "apps", "web", ".env"), quiet: true });
 
 const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: ".",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
-  globalSetup: "./e2e/support/global-setup.ts",
+  globalSetup: "./support/global-setup.ts",
   use: {
     baseURL,
     // The UI language is pinned so labels can be read from messages/vi.json (docs/13).
@@ -35,11 +37,12 @@ export default defineConfig({
       dependencies: ["chromium"],
     },
   ],
-  // Tests run against a production build (`npm run test:e2e` builds first): it behaves
+  // Tests run against a production build (`pnpm test:e2e` builds first): it behaves
   // like the deployed app (CSP without 'unsafe-eval', rate limiting) and does not
   // collide with a developer's own `next dev` (Next.js allows one per folder).
   webServer: {
-    command: `npx next start --port ${PORT}`,
+    command: `pnpm exec next start --port ${PORT}`,
+    cwd: path.join(import.meta.dirname, "..", "apps", "web"),
     url: `${baseURL}/login`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

@@ -3,8 +3,8 @@
 // payments and income/expenses. It goes through the services, so codes, business rules,
 // and audit events are real. Dates are relative to today in the gym timezone.
 //
-// Run after `npm run db:seed` with: npm run db:seed:demo
-// Local databases only. Runs once; to start over: npx prisma migrate reset
+// Run after `pnpm db:seed` with: pnpm db:seed:demo
+// Local databases only. Runs once; to start over: pnpm --filter web exec prisma migrate reset
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 
@@ -20,7 +20,7 @@ async function main() {
   }
 
   // Imported after dotenv so the app's environment check sees .env. `server-only` is an
-  // empty module under --conditions=react-server (see the npm script).
+  // empty module under --conditions=react-server (see the package script).
   const { prisma } = await import("@/lib/db/prisma");
   try {
     await seed(prisma);
@@ -45,9 +45,9 @@ async function seed(prisma: typeof import("@/lib/db/prisma").prisma) {
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   const admin = adminEmail ? await prisma.user.findUnique({ where: { email: adminEmail } }) : null;
-  if (!admin || !password) throw new Error("Run `npm run db:seed` first (SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD in .env).");
+  if (!admin || !password) throw new Error("Run `pnpm db:seed` first (SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD in .env).");
   if (await prisma.user.findUnique({ where: { email: DEMO_MANAGER_EMAIL } })) {
-    console.log("Demo data is already loaded; nothing to do. To start over: npx prisma migrate reset");
+    console.log("Demo data is already loaded; nothing to do. To start over: pnpm --filter web exec prisma migrate reset");
     return;
   }
 

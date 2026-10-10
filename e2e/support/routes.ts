@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-const API_ROOT = path.join(import.meta.dirname, "..", "..", "src", "app", "api", "v1");
+const API_ROOT = path.join(import.meta.dirname, "..", "..", "apps", "web", "src", "app", "api", "v1");
 const METHOD_EXPORT = /export\s+(?:const|async\s+function|function)\s+(GET|POST|PUT|PATCH|DELETE)\b/g;
 
 export type ApiRoute = {

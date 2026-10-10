@@ -1,5 +1,5 @@
 {
-  "$comment": "Advisories accepted after triage (OWASP A03). Each entry needs a reason it is not exploitable here and a date to re-check. `npm run security:audit` fails on any other high/critical advisory and on expired entries. See docs/24_SECURITY_TESTING.md.",
+  "$comment": "Advisories accepted after triage (OWASP A03). Each entry needs a reason it is not exploitable here and a date to re-check. `pnpm security:audit` fails on any other high/critical advisory and on expired entries. See docs/24_SECURITY_TESTING.md.",
   "advisories": [
     {
       "id": "GHSA-vfj7-8cjw-p6xm",
