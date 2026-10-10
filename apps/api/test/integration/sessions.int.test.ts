@@ -60,7 +60,7 @@ describe("completeSession", () => {
     expect(result.contract).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
     expect(await remaining(scenario)).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: scenario.booking.id, action: "booking.completed" } });
-    expect(audit).toMatchObject({ actorUserId: scenario.manager.id, metadata: { remainingSessions: 23 } });
+    expect(audit).toMatchObject({ actorUserId: scenario.manager.id, after: { status: "COMPLETED" }, metadata: { remainingSessions: 23 } });
   });
 
   it("a repeated completion returns the same state and consumes nothing more (BR-007)", async () => {

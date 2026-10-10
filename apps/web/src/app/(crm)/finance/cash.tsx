@@ -12,16 +12,15 @@ import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
-import { ChosenOptionText, OptionSelect, useChosenOptionText } from "@/components/option-select";
+import { ChosenOptionText, OptionSelect } from "@/components/option-select";
 import { Money } from "@/components/money";
 import { notify } from "@/components/notify";
-import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
 import { CASH_TRANSACTION_TYPES, cashTransactionInputSchema, type CashTransactionInput } from "@flow/shared/finance";
 import type { ChosenOption } from "@flow/shared/options";
-import { recordCashTransactionAction, voidCashTransactionAction } from "./actions";
-import { VoidDialog } from "./void-dialog";
+import { deleteCashTransactionAction, recordCashTransactionAction } from "./actions";
+import { DeleteDialog } from "./delete-dialog";
 
 export type CashRow = {
   id: string;
@@ -31,19 +30,24 @@ export type CashRow = {
   description: string | null;
   reference: string | null;
   occurredOn: Date;
-  status: "CONFIRMED" | "VOIDED";
   createdBy: string;
-  voidedBy: string | null;
-  voidReason: ChosenOption | null;
 };
 
-/** Income and expense entries (FR-CASH-001). Corrected by voiding and recording again (A-009). */
-export function CashTable({ transactions, label, empty, footer }: { transactions: CashRow[]; label: string; empty: ReactNode; footer?: ReactNode }) {
+type CashTableProps = {
+  transactions: CashRow[];
+  /** cash.delete (09_RBAC.md). */
+  canDelete: boolean;
+  label: string;
+  empty: ReactNode;
+  footer?: ReactNode;
+};
+
+/** Income and expense entries (FR-CASH-001). Corrected by deleting to the trash and recording again (D-035). */
+export function CashTable({ transactions, canDelete, label, empty, footer }: CashTableProps) {
   const t = useTranslations("finance");
   const locale = useLocale();
   const router = useRouter();
-  const [voiding, setVoiding] = useState<CashRow | null>(null);
-  const chosenText = useChosenOptionText();
+  const [deleting, setDeleting] = useState<CashRow | null>(null);
 
   const columns: DataTableColumn<CashRow>[] = [
     { id: "occurredOn", header: t("fields.occurredOn"), cell: ({ row }) => <DateTime value={row.original.occurredOn} format="dateOnly" /> },
@@ -64,30 +68,16 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
     {
       id: "amount",
       header: t("fields.amount"),
-      cell: ({ row }) => <Money amount={row.original.amount} struck={row.original.status === "VOIDED"} />,
-    },
-    {
-      id: "status",
-      header: t("fields.status"),
-      cell: ({ row }) => (
-        <div className="space-y-1">
-          <StatusBadge entity="cashTransaction" status={row.original.status} />
-          {row.original.voidReason && (
-            <p className="max-w-56 text-xs whitespace-normal text-muted-foreground">
-              {t("voidedBy", { name: row.original.voidedBy ?? "", reason: chosenText(row.original.voidReason) })}
-            </p>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => <Money amount={row.original.amount} />,
     },
     { id: "createdBy", header: t("fields.createdBy"), cell: ({ row }) => row.original.createdBy },
     {
       id: "actions",
-      header: () => <span className="sr-only">{t("void")}</span>,
+      header: () => <span className="sr-only">{t("delete")}</span>,
       cell: ({ row }) =>
-        row.original.status === "CONFIRMED" && (
-          <Button variant="ghost" size="sm" onClick={() => setVoiding(row.original)}>
-            {t("void")}
+        canDelete && (
+          <Button variant="ghost" size="sm" onClick={() => setDeleting(row.original)}>
+            {t("delete")}
           </Button>
         ),
     },
@@ -96,14 +86,14 @@ export function CashTable({ transactions, label, empty, footer }: { transactions
   return (
     <>
       <DataTable columns={columns} data={transactions} label={label} empty={empty} footer={footer} getRowId={(row) => row.id} />
-      <VoidDialog
-        open={voiding !== null}
-        onOpenChange={(open) => !open && setVoiding(null)}
-        title={t("voidCashTitle", { amount: voiding ? formatMoney(voiding.amount, locale) : "" })}
-        description={t("voidCashBody")}
-        onVoid={(input) => voidCashTransactionAction(voiding!.id, input)}
-        onVoided={() => {
-          setVoiding(null);
+      <DeleteDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={t("deleteCashTitle", { amount: deleting ? formatMoney(deleting.amount, locale) : "" })}
+        description={t("deleteCashBody")}
+        onDelete={(input) => deleteCashTransactionAction(deleting!.id, input)}
+        onDeleted={() => {
+          setDeleting(null);
           router.refresh();
         }}
       />

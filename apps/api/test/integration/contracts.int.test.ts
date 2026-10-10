@@ -182,8 +182,9 @@ describe("editing (OQ-015 interim: drafts only)", () => {
 
     expect(updated).toMatchObject({ totalSessions: 12, contractValue: 6_000_000, contractCode: contract.contractCode });
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { entityId: contract.id, action: "contract.updated" } });
-    expect(audit.metadata).toEqual({
-      changes: { contractValue: { from: "12000000", to: "6000000" }, totalSessions: { from: 24, to: 12 } },
+    expect(audit).toMatchObject({
+      before: { contractValue: "12000000", totalSessions: 24 },
+      after: { contractValue: "6000000", totalSessions: 12 },
     });
   });
 

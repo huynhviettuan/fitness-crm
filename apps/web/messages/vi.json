@@ -16,7 +16,9 @@
     "roles": "Vai trò và phân quyền",
     "branches": "Chi nhánh",
     "options": "Danh mục lựa chọn",
-    "parameters": "Tham số hệ thống"
+    "parameters": "Tham số hệ thống",
+    "trash": "Thùng rác",
+    "audit": "Lịch sử thao tác"
   },
   "status": {
     "customer": {
@@ -43,14 +45,6 @@
     "trainer": {
       "ACTIVE": "Đang làm việc",
       "INACTIVE": "Ngừng làm việc"
-    },
-    "payment": {
-      "CONFIRMED": "Đã xác nhận",
-      "VOIDED": "Đã hủy bỏ"
-    },
-    "cashTransaction": {
-      "CONFIRMED": "Đã xác nhận",
-      "VOIDED": "Đã hủy bỏ"
     },
     "branch": {
       "ACTIVE": "Đang hoạt động",
@@ -475,14 +469,6 @@
     "recordCash": "Ghi nhận thu / chi",
     "recordCashDescription": "Để sửa một khoản đã ghi, hãy hủy bỏ và ghi nhận lại.",
     "cashRecorded": "Đã ghi nhận",
-    "void": "Hủy bỏ",
-    "voidPaymentTitle": "Hủy bỏ khoản thanh toán {amount}?",
-    "voidPaymentBody": "Khoản này không còn được tính vào số đã thanh toán, nhưng vẫn được lưu lại. Không thể khôi phục.",
-    "voidCashTitle": "Hủy bỏ khoản {amount}?",
-    "voidCashBody": "Khoản này không còn được tính vào tổng thu chi, nhưng vẫn được lưu lại. Ghi nhận khoản mới nếu cần sửa.",
-    "voided": "Đã hủy bỏ",
-    "voidReason": "Lý do",
-    "voidedBy": "Hủy bỏ bởi {name}: {reason}",
     "datePlaceholder": "dd/mm/yyyy",
     "amountPlaceholder": "1.000.000",
     "types": {
@@ -503,7 +489,14 @@
       "reference": "Số chứng từ",
       "description": "Diễn giải",
       "branch": "Chi nhánh"
-    }
+    },
+    "delete": "Xóa",
+    "deletePaymentTitle": "Xóa khoản thanh toán {amount}?",
+    "deletePaymentBody": "Khoản này chuyển vào thùng rác và không còn được tính vào số đã thanh toán và công nợ. Không thể khôi phục; ghi nhận lại nếu cần.",
+    "deleteCashTitle": "Xóa khoản {amount}?",
+    "deleteCashBody": "Khoản này chuyển vào thùng rác và không còn được tính vào tổng thu chi. Không thể khôi phục; ghi nhận lại nếu cần.",
+    "deleted": "Đã xóa và chuyển vào thùng rác",
+    "deleteReason": "Lý do xóa"
   },
   "permissions": {
     "groups": {
@@ -513,7 +506,8 @@
       "schedule": "Lịch PT và buổi tập",
       "employees": "Nhân sự",
       "cashbook": "Sổ quỹ",
-      "configuration": "Cấu hình"
+      "configuration": "Cấu hình",
+      "history": "Lịch sử và thùng rác"
     },
     "labels": {
       "user": {
@@ -550,13 +544,20 @@
       "payment": {
         "view": "Xem thanh toán và công nợ",
         "record": "Ghi nhận thanh toán",
-        "void": "Hủy thanh toán"
+        "delete": "Xóa phiếu thu (vào thùng rác)"
       },
       "cash": {
-        "manage": "Thu chi khác (xem, ghi, hủy)"
+        "manage": "Thu chi khác (xem, ghi)",
+        "delete": "Xóa khoản thu chi (vào thùng rác)"
       },
       "config": {
         "manage": "Quản lý danh mục lựa chọn và tham số hệ thống"
+      },
+      "audit": {
+        "view": "Xem lịch sử thao tác"
+      },
+      "trash": {
+        "view": "Xem thùng rác"
       }
     },
     "resources": {
@@ -679,5 +680,94 @@
       "trainerCodePrefix": "Mã huấn luyện viên"
     },
     "saved": "Đã lưu tham số"
+  },
+  "trash": {
+    "title": "Thùng rác",
+    "description": "Dữ liệu đã xóa được giữ vĩnh viễn cùng người xóa, thời điểm và lý do. Không ai có thể xóa hẳn hay khôi phục.",
+    "filters": "Bộ lọc",
+    "type": "Loại",
+    "allTypes": "Tất cả",
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "apply": "Lọc",
+    "types": {
+      "payment": "Phiếu thu",
+      "cash_transaction": "Khoản thu chi"
+    },
+    "fields": {
+      "type": "Loại",
+      "record": "Nội dung",
+      "amount": "Số tiền",
+      "branch": "Chi nhánh",
+      "deletedBy": "Người xóa",
+      "deletedAt": "Thời điểm xóa",
+      "reason": "Lý do"
+    },
+    "view": "Xem",
+    "viewLabel": "Xem {name}",
+    "detailTitle": "{type} đã xóa",
+    "detailDescription": "Dữ liệu như lúc bị xóa.",
+    "empty": "Thùng rác trống."
+  },
+  "audit": {
+    "title": "Lịch sử thao tác",
+    "description": "Mọi thay đổi trong hệ thống: ai làm, lúc nào, trên bản ghi nào, giá trị trước và sau.",
+    "filters": "Bộ lọc",
+    "entity": "Loại dữ liệu",
+    "allEntities": "Tất cả",
+    "actor": "Người thực hiện",
+    "allActors": "Tất cả",
+    "recordId": "Mã bản ghi",
+    "recordIdHint": "Dán mã (UUID) của một bản ghi để xem toàn bộ lịch sử của nó.",
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "apply": "Lọc",
+    "system": "Hệ thống",
+    "entities": {
+      "user": "Người dùng",
+      "role": "Vai trò",
+      "branch": "Chi nhánh",
+      "option": "Lựa chọn",
+      "parameter": "Tham số",
+      "customer": "Khách hàng",
+      "contract": "Hợp đồng",
+      "trainer": "Huấn luyện viên",
+      "booking": "Lịch tập",
+      "payment": "Phiếu thu",
+      "cash_transaction": "Khoản thu chi"
+    },
+    "verbs": {
+      "created": "Tạo mới",
+      "updated": "Sửa",
+      "deleted": "Xóa",
+      "activated": "Kích hoạt",
+      "cancelled": "Hủy",
+      "checked_in": "Check-in",
+      "completed": "Hoàn thành",
+      "no_show": "Khách không đến",
+      "rescheduled": "Đổi giờ",
+      "reordered": "Đổi thứ tự",
+      "cloned": "Nhân bản",
+      "role_changed": "Đổi vai trò",
+      "disabled": "Vô hiệu hóa",
+      "enabled": "Kích hoạt lại",
+      "branches_changed": "Đổi chi nhánh",
+      "overrides_changed": "Đổi quyền riêng",
+      "access_hours_changed": "Đổi giờ đăng nhập",
+      "password_reset": "Đặt lại mật khẩu"
+    },
+    "fields": {
+      "at": "Thời điểm",
+      "actor": "Người thực hiện",
+      "action": "Thao tác",
+      "record": "Bản ghi",
+      "changes": "Thay đổi"
+    },
+    "field": "Trường",
+    "before": "Trước",
+    "after": "Sau",
+    "context": "Thông tin thêm",
+    "copyId": "Lọc theo bản ghi này",
+    "empty": "Không có thao tác nào khớp bộ lọc."
   }
 }

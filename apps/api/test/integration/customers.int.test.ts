@@ -65,7 +65,7 @@ describe("updateCustomer", () => {
     await updateCustomer(actor, customer.id, { phone: "0911 222 333", fullName: validCustomer.fullName });
 
     const updated = await prisma.auditEvent.findFirstOrThrow({ where: { action: "customer.updated" } });
-    expect(updated.metadata).toEqual({ changes: { phone: { from: "0909123456", to: "0911222333" } } });
+    expect(updated).toMatchObject({ before: { phone: "0909123456" }, after: { phone: "0911222333" } });
   });
 
   it("writes no audit event when nothing changed", async () => {

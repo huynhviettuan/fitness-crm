@@ -16,7 +16,9 @@
     "roles": "Roles and permissions",
     "branches": "Branches",
     "options": "Option lists",
-    "parameters": "System parameters"
+    "parameters": "System parameters",
+    "trash": "Trash",
+    "audit": "Action history"
   },
   "status": {
     "customer": {
@@ -43,14 +45,6 @@
     "trainer": {
       "ACTIVE": "Active",
       "INACTIVE": "Inactive"
-    },
-    "payment": {
-      "CONFIRMED": "Confirmed",
-      "VOIDED": "Voided"
-    },
-    "cashTransaction": {
-      "CONFIRMED": "Confirmed",
-      "VOIDED": "Voided"
     },
     "branch": {
       "ACTIVE": "Active",
@@ -475,14 +469,6 @@
     "recordCash": "Record income or expense",
     "recordCashDescription": "To correct an entry, void it and record a new one.",
     "cashRecorded": "Recorded",
-    "void": "Void",
-    "voidPaymentTitle": "Void the payment of {amount}?",
-    "voidPaymentBody": "It stops counting toward the paid amount but stays on record. It can't be reinstated.",
-    "voidCashTitle": "Void the entry of {amount}?",
-    "voidCashBody": "It stops counting in the totals but stays on record. Record a new entry if it needs correcting.",
-    "voided": "Voided",
-    "voidReason": "Reason",
-    "voidedBy": "Voided by {name}: {reason}",
     "datePlaceholder": "dd/mm/yyyy",
     "amountPlaceholder": "1,000,000",
     "types": {
@@ -503,7 +489,14 @@
       "reference": "Reference",
       "description": "Description",
       "branch": "Branch"
-    }
+    },
+    "delete": "Delete",
+    "deletePaymentTitle": "Delete the payment of {amount}?",
+    "deletePaymentBody": "It goes to the trash and no longer counts toward the paid amount and debt. It cannot be restored; record it again if needed.",
+    "deleteCashTitle": "Delete the entry of {amount}?",
+    "deleteCashBody": "It goes to the trash and no longer counts toward the totals. It cannot be restored; record it again if needed.",
+    "deleted": "Deleted and moved to the trash",
+    "deleteReason": "Reason for deleting"
   },
   "permissions": {
     "groups": {
@@ -513,7 +506,8 @@
       "schedule": "PT schedule and sessions",
       "employees": "Staff",
       "cashbook": "Cash book",
-      "configuration": "Configuration"
+      "configuration": "Configuration",
+      "history": "History and trash"
     },
     "labels": {
       "user": {
@@ -550,13 +544,20 @@
       "payment": {
         "view": "View payments and debt",
         "record": "Record payments",
-        "void": "Void payments"
+        "delete": "Delete receipts (to the trash)"
       },
       "cash": {
-        "manage": "Other income and expenses (view, record, void)"
+        "manage": "Other income and expenses (view, record)",
+        "delete": "Delete income and expenses (to the trash)"
       },
       "config": {
         "manage": "Manage option lists and system parameters"
+      },
+      "audit": {
+        "view": "View the action history"
+      },
+      "trash": {
+        "view": "View the trash"
       }
     },
     "resources": {
@@ -679,5 +680,94 @@
       "trainerCodePrefix": "Trainer code"
     },
     "saved": "Parameters saved"
+  },
+  "trash": {
+    "title": "Trash",
+    "description": "Deleted records are kept forever with who deleted them, when, and why. Nobody can purge or restore them.",
+    "filters": "Filters",
+    "type": "Kind",
+    "allTypes": "All",
+    "from": "From",
+    "to": "To",
+    "apply": "Filter",
+    "types": {
+      "payment": "Receipt",
+      "cash_transaction": "Income or expense"
+    },
+    "fields": {
+      "type": "Kind",
+      "record": "Record",
+      "amount": "Amount",
+      "branch": "Branch",
+      "deletedBy": "Deleted by",
+      "deletedAt": "Deleted at",
+      "reason": "Reason"
+    },
+    "view": "View",
+    "viewLabel": "View {name}",
+    "detailTitle": "Deleted {type}",
+    "detailDescription": "The record as it was when deleted.",
+    "empty": "The trash is empty."
+  },
+  "audit": {
+    "title": "Action history",
+    "description": "Every change in the system: who made it, when, on which record, and the values before and after.",
+    "filters": "Filters",
+    "entity": "Kind of record",
+    "allEntities": "All",
+    "actor": "Made by",
+    "allActors": "Anyone",
+    "recordId": "Record id",
+    "recordIdHint": "Paste a record's id (UUID) to see its whole history.",
+    "from": "From",
+    "to": "To",
+    "apply": "Filter",
+    "system": "System",
+    "entities": {
+      "user": "User",
+      "role": "Role",
+      "branch": "Branch",
+      "option": "Option",
+      "parameter": "Parameter",
+      "customer": "Customer",
+      "contract": "Contract",
+      "trainer": "Trainer",
+      "booking": "Booking",
+      "payment": "Receipt",
+      "cash_transaction": "Income or expense"
+    },
+    "verbs": {
+      "created": "Created",
+      "updated": "Edited",
+      "deleted": "Deleted",
+      "activated": "Activated",
+      "cancelled": "Cancelled",
+      "checked_in": "Checked in",
+      "completed": "Completed",
+      "no_show": "No-show",
+      "rescheduled": "Rescheduled",
+      "reordered": "Reordered",
+      "cloned": "Cloned",
+      "role_changed": "Role changed",
+      "disabled": "Disabled",
+      "enabled": "Enabled",
+      "branches_changed": "Branches changed",
+      "overrides_changed": "Own permissions changed",
+      "access_hours_changed": "Sign-in hours changed",
+      "password_reset": "Password reset"
+    },
+    "fields": {
+      "at": "When",
+      "actor": "Made by",
+      "action": "Action",
+      "record": "Record",
+      "changes": "Changes"
+    },
+    "field": "Field",
+    "before": "Before",
+    "after": "After",
+    "context": "Details",
+    "copyId": "Filter by this record",
+    "empty": "No actions match the filters."
   }
 }

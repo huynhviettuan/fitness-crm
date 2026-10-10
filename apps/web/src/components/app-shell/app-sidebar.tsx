@@ -10,11 +10,13 @@ import {
   ClipboardCheckIcon,
   DumbbellIcon,
   FileTextIcon,
+  HistoryIcon,
   IdCardIcon,
   KeyRoundIcon,
   ListChecksIcon,
   LayoutDashboardIcon,
   SlidersHorizontalIcon,
+  Trash2Icon,
   ShieldUserIcon,
   UsersIcon,
 } from "lucide-react";
@@ -46,6 +48,8 @@ const NAV_ITEMS = {
   branches: { href: "/admin/branches", icon: Building2Icon },
   options: { href: "/admin/options", icon: ListChecksIcon },
   parameters: { href: "/admin/parameters", icon: SlidersHorizontalIcon },
+  audit: { href: "/admin/audit", icon: HistoryIcon },
+  trash: { href: "/admin/trash", icon: Trash2Icon },
 } as const;
 
 export type NavItemKey = keyof typeof NAV_ITEMS;

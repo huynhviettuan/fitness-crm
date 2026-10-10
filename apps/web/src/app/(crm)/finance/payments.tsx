@@ -13,33 +13,30 @@ import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
 import { TextField, applyFieldErrors } from "@/components/form-fields";
-import { ChosenOptionText, OptionSelect, useChosenOptionText } from "@/components/option-select";
+import { ChosenOptionText, OptionSelect } from "@/components/option-select";
 import { Money } from "@/components/money";
 import { notify } from "@/components/notify";
-import { StatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
 import { paymentInputSchema, type PaymentInput } from "@flow/shared/finance";
 import type { ChosenOption } from "@flow/shared/options";
-import { recordPaymentAction, voidPaymentAction } from "./actions";
-import { VoidDialog } from "./void-dialog";
+import { deletePaymentAction, recordPaymentAction } from "./actions";
+import { DeleteDialog } from "./delete-dialog";
 
 export type PaymentRow = {
   id: string;
   amount: number;
   method: ChosenOption;
   paidOn: Date;
-  status: "CONFIRMED" | "VOIDED";
   createdBy: string;
   contract: { id: string; contractCode: string; packageName: string };
   customer: { id: string; customerCode: string; fullName: string };
-  voidedBy: string | null;
-  voidReason: ChosenOption | null;
 };
 
 type PaymentsTableProps = {
   payments: PaymentRow[];
-  canVoid: boolean;
+  /** payment.delete (09_RBAC.md). */
+  canDelete: boolean;
   label: string;
   /** Hide columns the page already shows. */
   hide?: { contract?: boolean; customer?: boolean };
@@ -47,20 +44,19 @@ type PaymentsTableProps = {
   footer?: ReactNode;
 };
 
-/** Payment history (FR-PAY-002). A voided payment stays listed, struck through, with its reason. */
-export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, footer }: PaymentsTableProps) {
+/** Payment history (FR-PAY-002). A deleted payment leaves the list for the trash (D-035). */
+export function PaymentsTable({ payments, canDelete, label, hide = {}, empty, footer }: PaymentsTableProps) {
   const t = useTranslations("finance");
   const locale = useLocale();
   const router = useRouter();
-  const [voiding, setVoiding] = useState<PaymentRow | null>(null);
-  const chosenText = useChosenOptionText();
+  const [deleting, setDeleting] = useState<PaymentRow | null>(null);
 
   const columns: DataTableColumn<PaymentRow>[] = [
     { id: "paidOn", header: t("fields.paidOn"), cell: ({ row }) => <DateTime value={row.original.paidOn} format="dateOnly" /> },
     {
       id: "amount",
       header: t("fields.amount"),
-      cell: ({ row }) => <Money amount={row.original.amount} struck={row.original.status === "VOIDED"} />,
+      cell: ({ row }) => <Money amount={row.original.amount} />,
     },
     { id: "method", header: t("fields.method"), cell: ({ row }) => <ChosenOptionText option={row.original.method} /> },
     ...(hide.customer
@@ -89,29 +85,14 @@ export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, foot
             ),
           } satisfies DataTableColumn<PaymentRow>,
         ]),
-    {
-      id: "status",
-      header: t("fields.status"),
-      cell: ({ row }) => (
-        <div className="space-y-1">
-          <StatusBadge entity="payment" status={row.original.status} />
-          {row.original.voidReason && (
-            <p className="max-w-56 text-xs whitespace-normal text-muted-foreground">
-              {t("voidedBy", { name: row.original.voidedBy ?? "", reason: chosenText(row.original.voidReason) })}
-            </p>
-          )}
-        </div>
-      ),
-    },
     { id: "createdBy", header: t("fields.createdBy"), cell: ({ row }) => row.original.createdBy },
     {
       id: "actions",
-      header: () => <span className="sr-only">{t("void")}</span>,
+      header: () => <span className="sr-only">{t("delete")}</span>,
       cell: ({ row }) =>
-        canVoid &&
-        row.original.status === "CONFIRMED" && (
-          <Button variant="ghost" size="sm" onClick={() => setVoiding(row.original)}>
-            {t("void")}
+        canDelete && (
+          <Button variant="ghost" size="sm" onClick={() => setDeleting(row.original)}>
+            {t("delete")}
           </Button>
         ),
     },
@@ -120,14 +101,14 @@ export function PaymentsTable({ payments, canVoid, label, hide = {}, empty, foot
   return (
     <>
       <DataTable columns={columns} data={payments} label={label} empty={empty} footer={footer} getRowId={(row) => row.id} />
-      <VoidDialog
-        open={voiding !== null}
-        onOpenChange={(open) => !open && setVoiding(null)}
-        title={t("voidPaymentTitle", { amount: voiding ? formatMoney(voiding.amount, locale) : "" })}
-        description={t("voidPaymentBody")}
-        onVoid={(input) => voidPaymentAction(voiding!.id, input)}
-        onVoided={() => {
-          setVoiding(null);
+      <DeleteDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={t("deletePaymentTitle", { amount: deleting ? formatMoney(deleting.amount, locale) : "" })}
+        description={t("deletePaymentBody")}
+        onDelete={(input) => deletePaymentAction(deleting!.id, input)}
+        onDeleted={() => {
+          setDeleting(null);
           router.refresh();
         }}
       />

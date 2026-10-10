@@ -147,7 +147,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           <TabsContent value="payments">
             <PaymentsTable
               payments={payments.items}
-              canVoid={can(user, "payment.void")}
+              canDelete={can(user, "payment.delete")}
               label={t("tabs.payments")}
               hide={{ customer: true }}
               empty={<EmptyState icon={BanknoteIcon} title={tc("paymentHistoryEmpty")} />}

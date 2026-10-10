@@ -40,7 +40,7 @@ export async function createTrainer(actor: Actor, input: unknown): Promise<Train
         entityType: "trainer",
         entityId: trainer.id,
         action: "trainer.created",
-        metadata: { trainerCode: trainer.trainerCode, fullName: trainer.fullName, userId: trainer.userId },
+        after: { trainerCode: trainer.trainerCode, fullName: trainer.fullName, userId: trainer.userId, branchId: trainer.branch.id },
       });
       return toView(trainer);
     }),
@@ -62,8 +62,8 @@ export async function updateTrainer(actor: Actor, id: string, input: unknown): P
 
       const after = await repo.updateTrainer(tx, id, { ...data, branchId });
       const changes = diffFields(before, after, AUDITED_FIELDS);
-      if (Object.keys(changes).length > 0) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "trainer", entityId: id, action: "trainer.updated", metadata: { changes } });
+      if (changes) {
+        await recordAudit(tx, { actorUserId: actor.id, entityType: "trainer", entityId: id, action: "trainer.updated", ...changes });
       }
       return toView(after);
     }),

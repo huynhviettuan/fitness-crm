@@ -5,6 +5,10 @@
   "description": "Zod schemas, response shapes, permission keys, error codes, and pure domain rules shared by the API and the web app.",
   "type": "module",
   "exports": {
+    "./audit": {
+      "types": "./dist/audit/index.d.ts",
+      "default": "./dist/audit/index.js"
+    },
     "./bookings": {
       "types": "./dist/bookings/index.d.ts",
       "default": "./dist/bookings/index.js"
@@ -48,6 +52,10 @@
     "./trainers": {
       "types": "./dist/trainers/index.d.ts",
       "default": "./dist/trainers/index.js"
+    },
+    "./trash": {
+      "types": "./dist/trash/index.d.ts",
+      "default": "./dist/trash/index.js"
     },
     "./users": {
       "types": "./dist/users/index.d.ts",

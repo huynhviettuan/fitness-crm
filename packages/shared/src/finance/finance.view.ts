@@ -4,14 +4,7 @@ import { contractSchema } from "../contracts/contract.view.js";
 import { customerRefSchema } from "../customers/customer.view.js";
 import { instant, pageOf } from "../validation/index.js";
 import { chosenOptionSchema } from "../options/option.schema.js";
-import { CASH_TRANSACTION_TYPES, MONEY_RECORD_STATUSES } from "./finance.schema.js";
-
-/** Who voided a record, when, and why (A-008, A-009). */
-const voidFacts = {
-  voidedAt: instant.nullable(),
-  voidedBy: z.string().nullable(),
-  voidReason: chosenOptionSchema.nullable(),
-};
+import { CASH_TRANSACTION_TYPES } from "./finance.schema.js";
 
 export const paymentSchema = z
   .object({
@@ -20,19 +13,17 @@ export const paymentSchema = z
     method: chosenOptionSchema,
     /** The gym day the money was received (T-039). */
     paidOn: instant,
-    status: z.enum(MONEY_RECORD_STATUSES),
     createdAt: instant,
     createdBy: z.string(),
     contract: z.object({ id: z.uuid(), contractCode: z.string(), packageName: z.string() }),
     customer: customerRefSchema,
-    ...voidFacts,
   })
   .meta({ id: "Payment" });
 
 export const paymentPageSchema = pageOf(paymentSchema).meta({ id: "PaymentPage" });
 
 /**
- * Confirmed payments received in a period (D-011: no opening balances). Null when the
+ * Payments received in a period, deleted ones left out (D-011: no opening balances). Null when the
  * role has receipt totals hidden (D-017).
  */
 export const collectedSchema = z.object({ total: z.int().nullable() }).meta({ id: "Collected" });
@@ -51,10 +42,8 @@ export const cashTransactionSchema = z
     reference: z.string().nullable(),
     /** The gym day it happened (T-039). */
     occurredOn: instant,
-    status: z.enum(MONEY_RECORD_STATUSES),
     createdAt: instant,
     createdBy: z.string(),
-    ...voidFacts,
   })
   .meta({ id: "CashTransaction" });
 

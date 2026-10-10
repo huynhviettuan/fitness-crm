@@ -131,7 +131,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
           </div>
           <PaymentsTable
             payments={payments.items}
-            canVoid={can(user, "payment.void")}
+            canDelete={can(user, "payment.delete")}
             label={t("paymentHistory")}
             hide={{ contract: true, customer: true }}
             empty={<EmptyState icon={BanknoteIcon} title={t("paymentHistoryEmpty")} />}

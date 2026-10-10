@@ -13,8 +13,8 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Branches (one gym → multi-branch) | Built (M1 slice 2) | M1 |
 | Approval engine and approval matrix (D-018) | New | M1 |
 | Option lists with "Khác", system parameters, status rules (D-015, D-016, T-049) | Built (M1 slice 3) except status rules (M5) | M1 |
-| Audit log (exists for critical actions → before/after for everything, T-048) | Partly | M1 |
-| Trash and soft delete (D-035) | New | M1 |
+| Audit log (exists for critical actions → before/after for everything, T-048) | Built (M1 slice 4) | M1 |
+| Trash and soft delete (D-035) | Built (M1 slice 4) for receipts and cash entries; other records join as their modules are built | M1 |
 | Employees, PT working schedules | New | M1 |
 | In-app notifications and Tasks (D-037) | New | M1 |
 | Leads, consulting journey, re-care, scripts (D-019, D-020) | New | M2 |

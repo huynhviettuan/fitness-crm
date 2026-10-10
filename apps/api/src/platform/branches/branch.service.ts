@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { branchInputSchema, type Branch } from "@flow/shared/branches";
-import { recordAudit } from "../audit/audit.repository.js";
+import { diffFields, recordAudit } from "../audit/audit.repository.js";
 import type { Actor } from "../auth/session.js";
 import { isUniqueViolation } from "../db/errors.js";
 import { prisma } from "../db/prisma.js";
@@ -24,7 +24,7 @@ export async function createBranch(actor: Actor, input: unknown): Promise<Branch
   return withNameConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
       const branch = await tx.branch.create({ data, select: branchSelect });
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "branch", entityId: branch.id, action: "branch.created", metadata: { after: data } });
+      await recordAudit(tx, { actorUserId: actor.id, entityType: "branch", entityId: branch.id, action: "branch.created", after: data });
       return branch;
     }),
   );
@@ -39,7 +39,7 @@ export async function updateBranch(actor: Actor, id: string, input: unknown): Pr
       const before = await tx.branch.findUnique({ where: { id }, select: branchSelect });
       if (!before) throw new AppError("NOT_FOUND");
       const after = await tx.branch.update({ where: { id }, data, select: branchSelect });
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "branch", entityId: id, action: "branch.updated", metadata: { before, after } });
+      await recordAudit(tx, { actorUserId: actor.id, entityType: "branch", entityId: id, action: "branch.updated", ...diffFields(before, after, ["name", "address", "active"]) });
       return after;
     }),
   );

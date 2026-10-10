@@ -4,7 +4,7 @@ import { prisma } from "../../src/platform/db/prisma.js";
 import { createOption, listOptions, otherNotes, reorderOptions, updateOption } from "../../src/platform/options/option.service.js";
 import { readParameters, updateParameters } from "../../src/platform/parameters/parameter.service.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
-import { recordPayment, voidPayment } from "../../src/modules/finance/payment.service.js";
+import { deletePayment, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { PARAMETER_DEFAULTS } from "@flow/shared/parameters";
 import { resetDatabase } from "../support/database.js";
 import { createTestUser, optionId } from "../support/factories.js";
@@ -50,7 +50,8 @@ describe("option lists (FR-PLT-005, D-016)", () => {
 
     expect(after).toMatchObject({ labelVi: "Quẹt thẻ", active: false });
     expect(await prisma.auditEvent.findFirst({ where: { entityId: card, action: "option.updated" } })).toMatchObject({
-      metadata: { changes: { labelVi: { from: "Thẻ", to: "Quẹt thẻ" }, active: { from: true, to: false } } },
+      before: { labelVi: "Thẻ", active: true },
+      after: { labelVi: "Quẹt thẻ", active: false },
     });
     await expect(
       updateOption(admin, "paymentMethods", await optionId("paymentMethods", "Khác"), { labelVi: "Khác", labelEn: "Other", active: false }),
@@ -81,7 +82,7 @@ describe("option lists (FR-PLT-005, D-016)", () => {
       await recordPayment(manager, contract.id, { amount: 1, methodId: other, methodNote: note, paidOn: "05/10/2026" }, randomUUID());
     }
     const { payment } = await recordPayment(manager, contract.id, { amount: 1, methodId: other, methodNote: "Séc", paidOn: "05/10/2026" }, randomUUID());
-    await voidPayment(admin, payment.id, { reasonId: await optionId("deleteReasons", "Khác"), reasonNote: "Nhập trùng" });
+    await deletePayment(admin, payment.id, { reasonId: await optionId("deleteReasons", "Khác"), reasonNote: "Nhập trùng" });
 
     const notes = await otherNotes(admin, "paymentMethods");
 
@@ -127,7 +128,7 @@ describe("system parameters (FR-PLT-006, T-049)", () => {
     expect(after.calendarDayStart).toBe("05:30");
     const audits = await prisma.auditEvent.findMany({ where: { action: "parameter.updated" } });
     expect(audits).toHaveLength(1);
-    expect(audits[0].metadata).toEqual({ key: "calendarDayStart", changes: { value: { from: "05:00", to: "05:30" } } });
+    expect(audits[0]).toMatchObject({ before: { calendarDayStart: "05:00" }, after: { calendarDayStart: "05:30" } });
     await expect(updateParameters(admin, { ...PARAMETER_DEFAULTS, calendarDayEnd: "04:00" })).rejects.toMatchObject({
       fieldErrors: { calendarDayEnd: ["endTimeNotAfterStart"] },
     });

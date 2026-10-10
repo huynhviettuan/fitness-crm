@@ -59,7 +59,7 @@ export async function createUser(actor: Actor, input: unknown): Promise<User> {
         entityType: "user",
         entityId: user.id,
         action: "user.created",
-        metadata: { email: user.email, roleId: user.role.id, allBranches: data.allBranches, branchIds: data.branchIds },
+        after: { name: user.name, email: user.email, roleId: user.role.id, allBranches: data.allBranches, branchIds: data.branchIds },
       });
       return toUser(user);
     });
@@ -84,7 +84,8 @@ export async function changeUserRole(actor: Actor, input: unknown): Promise<User
       entityType: "user",
       entityId: after.id,
       action: "user.role_changed",
-      metadata: { changes: { role: { from: before.role.id, to: after.role.id } } },
+      before: { roleId: before.role.id },
+      after: { roleId: after.role.id },
     });
     return toUser(after);
   });
@@ -107,7 +108,7 @@ export async function setUserStatus(actor: Actor, input: unknown): Promise<User>
       entityType: "user",
       entityId: after.id,
       action: data.status === "DISABLED" ? "user.disabled" : "user.enabled",
-      metadata: { changes: diffFields(before, after, ["status"]) },
+      ...diffFields(before, after, ["status"]),
     });
     return toUser(after);
   });
@@ -128,10 +129,8 @@ export async function setUserBranches(actor: Actor, input: unknown): Promise<Use
       entityType: "user",
       entityId: data.userId,
       action: "user.branches_changed",
-      metadata: {
-        before: { allBranches: before.allBranches, branchIds: before.branches.map((b) => b.branch.id) },
-        after: { allBranches: data.allBranches, branchIds: data.branchIds },
-      },
+      before: { allBranches: before.allBranches, branchIds: before.branches.map((b) => b.branch.id) },
+      after: { allBranches: data.allBranches, branchIds: data.branchIds },
     });
     return toUser(after);
   });
@@ -152,7 +151,8 @@ export async function setUserOverrides(actor: Actor, input: unknown): Promise<Us
       entityType: "user",
       entityId: data.userId,
       action: "user.overrides_changed",
-      metadata: { before: before.overrides, after: data.overrides },
+      before: { overrides: before.overrides },
+      after: { overrides: data.overrides },
     });
   });
   return getUser(actor, data.userId);
@@ -173,7 +173,8 @@ export async function setUserAccessWindows(actor: Actor, input: unknown): Promis
       entityType: "user",
       entityId: data.userId,
       action: "user.access_hours_changed",
-      metadata: { before: before.accessWindows, after: data.windows },
+      before: { windows: before.accessWindows },
+      after: { windows: data.windows },
     });
   });
   return getUser(actor, data.userId);

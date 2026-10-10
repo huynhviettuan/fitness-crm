@@ -65,6 +65,7 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
       <p className="mb-6 text-xs text-muted-foreground">{t("summaryNote")}</p>
       <CashTable
         transactions={result.items}
+        canDelete={can(user, "cash.delete")}
         label={t("tabs.cash")}
         empty={<EmptyState icon={ReceiptTextIcon} title={t("cashEmpty")} />}
         footer={

@@ -41,7 +41,7 @@ export async function createRole(actor: Actor, input: unknown): Promise<Role> {
     prisma.$transaction(async (tx) => {
       const role = await tx.role.create({ data: { name: data.name, description: data.description } });
       await writeConfiguration(tx, role.id, data);
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "role", entityId: role.id, action: "role.created", metadata: { after: data } });
+      await recordAudit(tx, { actorUserId: actor.id, entityType: "role", entityId: role.id, action: "role.created", after: data });
       return toRole(await findOrThrow(tx, role.id));
     }),
   );
@@ -73,7 +73,8 @@ export async function updateRole(actor: Actor, id: string, input: unknown): Prom
         entityType: "role",
         entityId: id,
         action: "role.updated",
-        metadata: { before: configurationOf(before), after: configurationOf(after) },
+        before: configurationOf(before),
+        after: configurationOf(after),
       });
       return after;
     }),
@@ -94,7 +95,8 @@ export async function cloneRole(actor: Actor, id: string, input: unknown): Promi
         entityType: "role",
         entityId: role.id,
         action: "role.cloned",
-        metadata: { from: source.id, after: configurationOf(source) },
+        after: configurationOf(source),
+        context: { clonedFrom: source.id },
       });
       return toRole(await findOrThrow(tx, role.id));
     }),

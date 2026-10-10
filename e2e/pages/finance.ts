@@ -59,7 +59,7 @@ export class CashDialog {
   }
 }
 
-/** A table of payments or cash transactions, with the void action. */
+/** A table of payments or cash transactions, with the delete action. */
 export class PaymentsTable {
   constructor(
     private readonly page: Page,
@@ -71,38 +71,39 @@ export class PaymentsTable {
     return texts.reduce((rows, text) => rows.filter({ hasText: text }), this.root.getByRole("row"));
   }
 
-  voidButton(...rowTexts: string[]): Locator {
-    return this.row(...rowTexts).getByRole("button", { name: labels.finance.void, exact: true });
+  deleteButton(...rowTexts: string[]): Locator {
+    return this.row(...rowTexts).getByRole("button", { name: labels.finance.delete, exact: true });
   }
 
-  /** Opens the void dialog of a row. */
-  async openVoid(...rowTexts: string[]): Promise<VoidDialog> {
-    await this.voidButton(...rowTexts).click();
-    return new VoidDialog(this.page, this.page.getByRole("alertdialog"));
+  /** Opens the delete dialog of a row. */
+  async openDelete(...rowTexts: string[]): Promise<DeleteDialog> {
+    await this.deleteButton(...rowTexts).click();
+    return new DeleteDialog(this.page, this.page.getByRole("alertdialog"));
   }
 
-  /** Voids a row with `reason` from the list, and its note when there is one. */
-  async void(reason: { option: string; note?: string }, ...rowTexts: string[]): Promise<void> {
-    const dialog = await this.openVoid(...rowTexts);
+  /** Deletes a row to the trash with `reason` from the list, and its note when there is one. */
+  async delete(reason: { option: string; note?: string }, ...rowTexts: string[]): Promise<void> {
+    const dialog = await this.openDelete(...rowTexts);
     await dialog.choose(reason.option, reason.note);
     await dialog.confirm();
   }
 }
 
-/** The void confirmation, which asks for a reason from the list (A-008, D-016). */
-export class VoidDialog {
+/** The delete confirmation, which asks for a reason from the list (D-035, D-016). */
+export class DeleteDialog {
   constructor(
     private readonly page: Page,
     readonly root: Locator,
   ) {}
 
   async choose(option: string, note?: string): Promise<void> {
-    await choose(this.page, this.root, labels.finance.voidReason, option);
+    await choose(this.page, this.root, labels.finance.deleteReason, option);
     if (note !== undefined) await this.root.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
   }
 
   async confirm(): Promise<void> {
-    await this.root.getByRole("button", { name: labels.finance.void, exact: true }).click();
+    await this.root.getByRole("button", { name: labels.finance.delete, exact: true }).click();
+    await this.root.waitFor({ state: "hidden" });
   }
 
   get fieldErrors(): Locator {

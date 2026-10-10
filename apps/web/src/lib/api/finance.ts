@@ -9,9 +9,9 @@ import {
   paymentSchema,
   type CashTransactionInput,
   type PaymentInput,
-  type VoidInput,
 } from "@flow/shared/finance";
-import { api, query, read } from "./client";
+import type { DeleteInput } from "@flow/shared/trash";
+import { api, done, query, read } from "./client";
 
 /** First and last gym day, inclusive (dd/MM/yyyy). */
 type Period = { from: string; to: string };
@@ -22,7 +22,7 @@ export async function listPayments(params: PaymentQuery) {
   return read(paymentPageSchema, (await api()).GET("/api/v1/payments", { params: { query: query(params) } }));
 }
 
-/** Confirmed payments received in the period (D-011: no opening balances). */
+/** Payments received in the period, deleted ones left out (D-011: no opening balances). */
 export async function collectedBetween(period: Period) {
   const { total } = await read(collectedSchema, (await api()).GET("/api/v1/payments/collected", { params: { query: period } }));
   return total;
@@ -39,8 +39,9 @@ export async function recordPayment(contractId: string, input: PaymentInput, ide
   );
 }
 
-export async function voidPayment(id: string, input: VoidInput) {
-  return read(paymentSchema, (await api()).POST("/api/v1/payments/{id}/void", { params: { path: { id } }, body: input }));
+/** D-035: moves the payment to the trash. */
+export async function deletePayment(id: string, input: DeleteInput) {
+  return done((await api()).DELETE("/api/v1/payments/{id}", { params: { path: { id } }, body: input }));
 }
 
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
@@ -66,9 +67,7 @@ export async function recordCashTransaction(input: CashTransactionInput, idempot
   );
 }
 
-export async function voidCashTransaction(id: string, input: VoidInput) {
-  return read(
-    cashTransactionSchema,
-    (await api()).POST("/api/v1/cash-transactions/{id}/void", { params: { path: { id } }, body: input }),
-  );
+/** D-035: moves the entry to the trash. */
+export async function deleteCashTransaction(id: string, input: DeleteInput) {
+  return done((await api()).DELETE("/api/v1/cash-transactions/{id}", { params: { path: { id } }, body: input }));
 }

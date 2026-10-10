@@ -231,8 +231,9 @@ describe("rescheduleBooking", () => {
 
     expect(moved.scheduledStart).toEqual(new Date("2026-10-15T11:30:00Z"));
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: booking.id, action: "booking.rescheduled" } });
-    expect(audit?.metadata).toMatchObject({
-      changes: { scheduledStart: { from: "2026-10-15T11:00:00.000Z", to: "2026-10-15T11:30:00.000Z" } },
+    expect(audit).toMatchObject({
+      before: { scheduledStart: "2026-10-15T11:00:00.000Z" },
+      after: { scheduledStart: "2026-10-15T11:30:00.000Z" },
     });
   });
 

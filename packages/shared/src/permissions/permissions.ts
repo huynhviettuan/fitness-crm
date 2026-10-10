@@ -7,11 +7,13 @@
 export const PERMISSION_GROUPS = {
   system: ["user.manage", "role.manage", "branch.manage"],
   configuration: ["config.manage"],
+  history: ["audit.view", "trash.view"],
   customers: ["customer.view", "customer.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
   employees: ["trainer.view", "trainer.manage"],
-  cashbook: ["payment.view", "payment.record", "payment.void", "cash.manage"],
+  // Deleting vouchers is its own permission (09_RBAC.md, D-035).
+  cashbook: ["payment.view", "payment.record", "payment.delete", "cash.manage", "cash.delete"],
 } as const;
 
 export type PermissionGroup = keyof typeof PERMISSION_GROUPS;

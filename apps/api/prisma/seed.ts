@@ -31,7 +31,8 @@ async function main() {
         entityType: "user",
         entityId: user.id,
         action: "user.created",
-        metadata: { email, roleId: role.id, source: "seed" },
+        after: { name, email, roleId: role.id },
+        context: { source: "seed" },
       });
     });
     console.log(`Created admin ${email}.`);

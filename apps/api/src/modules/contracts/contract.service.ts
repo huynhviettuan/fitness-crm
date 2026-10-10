@@ -13,7 +13,7 @@ import { diffFields, recordAudit } from "../../platform/audit/audit.repository.j
 import { findCustomer } from "../customers/customer.repository.js";
 import { ownCustomers, visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import * as bookingRepo from "../bookings/booking.repository.js";
-import { confirmedPaidByContract } from "../finance/payment.repository.js";
+import { validPaidByContract } from "../finance/payment.repository.js";
 import * as repo from "./contract.repository.js";
 import {
   canActivate,
@@ -108,7 +108,7 @@ export async function createContract(
         entityType: "contract",
         entityId: contract.id,
         action: "contract.created",
-        metadata: {
+        after: {
           contractCode,
           customerId,
           packageName: data.packageName,
@@ -141,8 +141,8 @@ export async function updateContract(actor: Actor, id: string, input: unknown): 
 
     const after = await getOrThrow(tx, actor, id);
     const changes = diffFields(before, after, AUDITED_FIELDS);
-    if (Object.keys(changes).length > 0) {
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "contract", entityId: id, action: "contract.updated", metadata: { changes } });
+    if (changes) {
+      await recordAudit(tx, { actorUserId: actor.id, entityType: "contract", entityId: id, action: "contract.updated", ...changes });
     }
     return presentOne(tx, after, today);
   });
@@ -169,7 +169,8 @@ export async function activateContract(actor: Actor, id: string): Promise<Contra
       entityType: "contract",
       entityId: id,
       action: "contract.activated",
-      metadata: { from, to: "ACTIVE" },
+      before: { status: from },
+      after: { status: "ACTIVE" },
     });
     return presentOne(tx, await getOrThrow(tx, actor, id), today);
   });
@@ -203,7 +204,9 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
         entityType: "booking",
         entityId: bookingId,
         action: "booking.cancelled",
-        metadata: { from: "BOOKED", to: "CANCELLED", reason: "contract.cancelled", contractId: id },
+        before: { status: "BOOKED" },
+        after: { status: "CANCELLED" },
+        context: { reason: "contract.cancelled", contractId: id },
       });
     }
     await repo.moveStatus(tx, id, before.status, "CANCELLED");
@@ -212,7 +215,9 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
       entityType: "contract",
       entityId: id,
       action: "contract.cancelled",
-      metadata: { from, to: "CANCELLED", cancelledBookings: cancelledBookingIds.length },
+      before: { status: from },
+      after: { status: "CANCELLED" },
+      context: { cancelledBookings: cancelledBookingIds.length },
     });
     return presentOne(tx, await getOrThrow(tx, actor, id), today);
   }, LOCKING_TRANSACTION);
@@ -242,7 +247,7 @@ async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.Contra
 
 /** Contract views with their confirmed payments (BR-013), read with `db`. */
 async function present(db: Db, contracts: repo.ContractRecord[], today: Date): Promise<ContractView[]> {
-  const paid = await confirmedPaidByContract(db, contracts.map((c) => c.id));
+  const paid = await validPaidByContract(db, contracts.map((c) => c.id));
   return contracts.map((contract) => toView(contract, today, paid.get(contract.id) ?? 0));
 }
 

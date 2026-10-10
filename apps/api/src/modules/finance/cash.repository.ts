@@ -6,9 +6,7 @@ import { chosenSelect } from "../../platform/options/option.service.js";
 const cashInclude = {
   branch: { select: { id: true, name: true } },
   category: { select: chosenSelect },
-  voidReason: { select: chosenSelect },
   createdBy: { select: { name: true } },
-  voidedBy: { select: { name: true } },
 } as const satisfies Prisma.CashTransactionInclude;
 
 export type CashTransactionRecord = Prisma.CashTransactionGetPayload<{ include: typeof cashInclude }>;
@@ -25,39 +23,41 @@ export function findCashTransaction(
   id: string,
   visibility: Prisma.CashTransactionWhereInput = {},
 ): Promise<CashTransactionRecord | null> {
-  return db.cashTransaction.findFirst({ where: { AND: [{ id }, visibility] }, include: cashInclude });
+  return db.cashTransaction.findFirst({ where: { AND: [{ id, deletedAt: null }, visibility] }, include: cashInclude });
 }
 
 export function findCashTransactionByIdempotencyKey(db: Db, idempotencyKey: string): Promise<CashTransactionRecord | null> {
   return db.cashTransaction.findUnique({ where: { idempotencyKey }, include: cashInclude });
 }
 
-/** Voids the transaction only if it is still CONFIRMED. Returns rows changed. */
-export async function voidCashTransaction(
+/** Marks the transaction deleted only if it is not already (D-035). Returns rows changed. */
+export async function markCashTransactionDeleted(
   db: Db,
   id: string,
-  data: { voidedAt: Date; voidedById: string; voidReasonId: string; voidReasonNote: string | null },
+  data: { deletedAt: Date; deletedById: string; deleteReasonId: string; deleteReasonNote: string | null },
 ): Promise<number> {
-  const { count } = await db.cashTransaction.updateMany({ where: { id, status: "CONFIRMED" }, data: { ...data, status: "VOIDED" } });
+  const { count } = await db.cashTransaction.updateMany({ where: { id, deletedAt: null }, data });
   return count;
 }
 
 export async function listCashTransactions(db: Db, where: Prisma.CashTransactionWhereInput, options: { skip: number; take: number }) {
+  // Deleted records are in the trash, not in lists (D-035).
+  const valid = { AND: [where, { deletedAt: null }] };
   const [items, total] = await Promise.all([
     db.cashTransaction.findMany({
-      where,
+      where: valid,
       include: cashInclude,
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
       skip: options.skip,
       take: options.take,
     }),
-    db.cashTransaction.count({ where }),
+    db.cashTransaction.count({ where: valid }),
   ]);
   return { items, total };
 }
 
-/** SUM of CONFIRMED transactions of one type between two days, inclusive, within `visibility`. */
-export async function sumConfirmedCash(
+/** SUM of the transactions of one type between two days, inclusive, within `visibility`, deleted ones left out. */
+export async function sumValidCash(
   db: Db,
   type: CashTransactionType,
   from: Date,
@@ -65,7 +65,7 @@ export async function sumConfirmedCash(
   visibility: Prisma.CashTransactionWhereInput,
 ): Promise<number> {
   const { _sum } = await db.cashTransaction.aggregate({
-    where: { AND: [visibility, { type, status: "CONFIRMED", occurredOn: { gte: from, lte: to } }] },
+    where: { AND: [visibility, { type, deletedAt: null, occurredOn: { gte: from, lte: to } }] },
     _sum: { amount: true },
   });
   return Number(_sum.amount ?? 0);

@@ -11,6 +11,9 @@ import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import { moveToTrash } from "../../platform/trash/trash.service.js";
+import { encode } from "../../platform/http/encode.js";
+import { deleteSchema } from "@flow/shared/trash";
 import type { ChosenOption } from "@flow/shared/options";
 import { findContract, lockContract } from "../contracts/contract.repository.js";
 import { contractViewsByIds, contractsVisibleTo, type ContractView } from "../contracts/contract.service.js";
@@ -22,8 +25,8 @@ import {
   debtListSchema,
   listPaymentsSchema,
   paymentInputSchema,
+  paymentSchema,
   periodSchema,
-  voidSchema,
   type PaymentData,
 } from "@flow/shared/finance";
 
@@ -33,14 +36,10 @@ export type PaymentView = {
   amount: number;
   method: ChosenOption;
   paidOn: Date;
-  status: "CONFIRMED" | "VOIDED";
   createdAt: Date;
   createdBy: string;
   contract: { id: string; contractCode: string; packageName: string };
   customer: { id: string; customerCode: string; fullName: string };
-  voidedAt: Date | null;
-  voidedBy: string | null;
-  voidReason: ChosenOption | null;
 };
 
 export type PaymentPage = { items: PaymentView[]; total: number; page: number; pageSize: number };
@@ -52,7 +51,6 @@ export async function listPayments(actor: Actor, rawQuery: unknown): Promise<Pay
     AND: [
       paymentsVisibleTo(actor),
       {
-        status: query.status,
         contractId: query.contractId,
         contract: query.customerId ? { customerId: query.customerId } : undefined,
         paidOn: { gte: query.from, lte: query.to },
@@ -75,7 +73,7 @@ export async function collectedBetween(actor: Actor, rawPeriod: unknown): Promis
   assertCan(actor, "payment.view");
   const { from, to } = parseInput(periodSchema, rawPeriod);
   if (isMasked(actor, "receipts.totals")) return null;
-  return repo.sumConfirmedPayments(prisma, { AND: [paymentsVisibleTo(actor), { paidOn: { gte: from, lte: to } }] });
+  return repo.sumValidPayments(prisma, { AND: [paymentsVisibleTo(actor), { paidOn: { gte: from, lte: to } }] });
 }
 
 /**
@@ -126,7 +124,7 @@ export async function recordPayment(
       if (!contract) throw new AppError("NOT_FOUND");
       // OQ-013 interim: nothing new is collected on a cancelled contract.
       if (contract.status === "CANCELLED") throw new AppError("PAYMENT_CONTRACT_CANCELLED");
-      const confirmedPaidAmount = await repo.sumConfirmedPayments(tx, { contractId });
+      const confirmedPaidAmount = await repo.sumValidPayments(tx, { contractId });
       const figures = {
         contractValue: Number(contract.contractValue),
         openingPaidAmount: Number(contract.openingPaidAmount),
@@ -150,7 +148,7 @@ export async function recordPayment(
         entityType: "payment",
         entityId: payment.id,
         action: "payment.created",
-        metadata: {
+        after: {
           contractId,
           amount: data.amount,
           method: { optionId: method.optionId, note: method.note },
@@ -169,32 +167,48 @@ export async function recordPayment(
 }
 
 /**
- * A-008: voids a payment with a reason from the list (D-016). It stops counting toward
- * the paid amount and is never reinstated. Repeating the void returns the current state.
+ * Deletes a payment to the trash with a reason from the list (D-035, D-016). It leaves
+ * lists and stops counting toward the paid amount and debt at once, and is never
+ * reinstated. Runs under the contract lock (T-040), so it cannot interleave with a new
+ * payment's check against the contract value; a payment already deleted is NOT_FOUND.
  */
-export async function voidPayment(actor: Actor, id: string, input: unknown): Promise<PaymentView> {
-  assertCan(actor, "payment.void");
-  const { reasonId, reasonNote } = parseInput(voidSchema, input);
+export async function deletePayment(actor: Actor, id: string, input: unknown): Promise<void> {
+  assertCan(actor, "payment.delete");
+  const { reasonId, reasonNote } = parseInput(deleteSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
-  return prisma.$transaction(async (tx) => {
-    const payment = await repo.findPayment(tx, id, paymentsVisibleTo(actor));
+  await prisma.$transaction(async (tx) => {
+    const found = await repo.findPayment(tx, id, paymentsVisibleTo(actor));
+    if (!found) throw new AppError("NOT_FOUND");
+    // Lock order: contract, then the payment (T-040).
+    await lockContract(tx, found.contractId);
+    const payment = await repo.findPayment(tx, id);
     if (!payment) throw new AppError("NOT_FOUND");
-    await lockContract(tx, payment.contractId);
-    if (payment.status === "VOIDED") return toView(payment);
 
     const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
-    const voided = { voidedAt: new Date(), voidedById: actor.id, voidReasonId: reason.optionId, voidReasonNote: reason.note };
-    if ((await repo.voidPayment(tx, id, voided)) === 1) {
-      await recordAudit(tx, {
-        actorUserId: actor.id,
+    const deletedAt = new Date();
+    const marked = await repo.markPaymentDeleted(tx, id, {
+      deletedAt,
+      deletedById: actor.id,
+      deleteReasonId: reason.optionId,
+      deleteReasonNote: reason.note,
+    });
+    if (marked !== 1) throw new AppError("NOT_FOUND");
+    const view = toView(payment);
+    await moveToTrash(
+      tx,
+      actor,
+      {
         entityType: "payment",
         entityId: id,
-        action: "payment.voided",
-        metadata: { contractId: payment.contractId, amount: Number(payment.amount), reason: { optionId: reason.optionId, note: reason.note } },
-      });
-    }
-    return toView((await repo.findPayment(tx, id))!);
+        branchId: payment.branchId,
+        title: `${view.contract.contractCode} · ${view.customer.fullName}`,
+        amount: view.amount,
+        snapshot: encode(paymentSchema, view) as Record<string, unknown>,
+      },
+      reason,
+      deletedAt,
+    );
   }, LOCKING_TRANSACTION);
 }
 
@@ -234,14 +248,10 @@ function toView(payment: repo.PaymentRecord): PaymentView {
     amount: Number(payment.amount),
     method: chosen(payment.method, payment.methodNote),
     paidOn: payment.paidOn,
-    status: payment.status,
     createdAt: payment.createdAt,
     createdBy: payment.createdBy.name,
     contract,
     customer,
-    voidedAt: payment.voidedAt,
-    voidedBy: payment.voidedBy?.name ?? null,
-    voidReason: payment.voidReason ? chosen(payment.voidReason, payment.voidReasonNote) : null,
   };
 }
 

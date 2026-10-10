@@ -11,16 +11,19 @@ import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import { moveToTrash } from "../../platform/trash/trash.service.js";
+import { encode } from "../../platform/http/encode.js";
+import { deleteSchema } from "@flow/shared/trash";
 import { idempotencyKeySchema } from "@flow/shared/contracts";
 import * as repo from "./cash.repository.js";
-import { sumConfirmedPayments } from "./payment.repository.js";
+import { sumValidPayments } from "./payment.repository.js";
 import { paymentsVisibleTo } from "./payment.service.js";
 import {
   isFutureDay,
   cashTransactionInputSchema,
   listCashTransactionsSchema,
+  cashTransactionSchema,
   periodSchema,
-  voidSchema,
   type CashTransaction,
   type CashTransactionData,
 } from "@flow/shared/finance";
@@ -39,7 +42,7 @@ export async function listCashTransactions(actor: Actor, rawQuery: unknown): Pro
   assertCan(actor, "cash.manage");
   const query = parseInput(listCashTransactionsSchema, rawQuery);
   const where: Prisma.CashTransactionWhereInput = {
-    AND: [cashVisibleTo(actor), { type: query.type, status: query.status, occurredOn: { gte: query.from, lte: query.to } }],
+    AND: [cashVisibleTo(actor), { type: query.type, occurredOn: { gte: query.from, lte: query.to } }],
   };
   const { items, total } = await repo.listCashTransactions(prisma, where, {
     skip: (query.page - 1) * query.pageSize,
@@ -55,9 +58,9 @@ export async function financeSummary(actor: Actor, rawPeriod: unknown): Promise<
   if (isMasked(actor, "receipts.totals")) return { contractPayments: null, otherIncome: null, expense: null };
   const visible = cashVisibleTo(actor);
   const [contractPayments, otherIncome, expense] = await Promise.all([
-    sumConfirmedPayments(prisma, { AND: [paymentsVisibleTo(actor), { paidOn: { gte: from, lte: to } }] }),
-    repo.sumConfirmedCash(prisma, "INCOME", from, to, visible),
-    repo.sumConfirmedCash(prisma, "EXPENSE", from, to, visible),
+    sumValidPayments(prisma, { AND: [paymentsVisibleTo(actor), { paidOn: { gte: from, lte: to } }] }),
+    repo.sumValidCash(prisma, "INCOME", from, to, visible),
+    repo.sumValidCash(prisma, "EXPENSE", from, to, visible),
   ]);
   return { contractPayments, otherIncome, expense };
 }
@@ -98,7 +101,7 @@ export async function recordCashTransaction(
         entityType: "cash_transaction",
         entityId: transaction.id,
         action: "cash_transaction.created",
-        metadata: {
+        after: {
           type: data.type,
           category: { optionId: category.optionId, note: category.note },
           amount: data.amount,
@@ -118,31 +121,43 @@ export async function recordCashTransaction(
 }
 
 /**
- * A-009: corrected by voiding with a reason from the list (D-016) and recording a new
- * one. Repeating returns the current state.
+ * Deletes an income or expense entry to the trash with a reason from the list (D-035,
+ * D-016); a mistake is corrected by deleting it and recording it again. Deleting
+ * vouchers is its own permission (09_RBAC.md). An entry already deleted is NOT_FOUND.
  */
-export async function voidCashTransaction(actor: Actor, id: string, input: unknown): Promise<CashTransactionView> {
-  assertCan(actor, "cash.manage");
-  const { reasonId, reasonNote } = parseInput(voidSchema, input);
+export async function deleteCashTransaction(actor: Actor, id: string, input: unknown): Promise<void> {
+  assertCan(actor, "cash.delete");
+  const { reasonId, reasonNote } = parseInput(deleteSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
 
-  return prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const transaction = await repo.findCashTransaction(tx, id, cashVisibleTo(actor));
     if (!transaction) throw new AppError("NOT_FOUND");
-    if (transaction.status === "VOIDED") return toView(transaction);
 
     const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
-    const voided = { voidedAt: new Date(), voidedById: actor.id, voidReasonId: reason.optionId, voidReasonNote: reason.note };
-    if ((await repo.voidCashTransaction(tx, id, voided)) === 1) {
-      await recordAudit(tx, {
-        actorUserId: actor.id,
+    const deletedAt = new Date();
+    const marked = await repo.markCashTransactionDeleted(tx, id, {
+      deletedAt,
+      deletedById: actor.id,
+      deleteReasonId: reason.optionId,
+      deleteReasonNote: reason.note,
+    });
+    if (marked !== 1) throw new AppError("NOT_FOUND");
+    const view = toView(transaction);
+    await moveToTrash(
+      tx,
+      actor,
+      {
         entityType: "cash_transaction",
         entityId: id,
-        action: "cash_transaction.voided",
-        metadata: { type: transaction.type, amount: Number(transaction.amount), reason: { optionId: reason.optionId, note: reason.note } },
-      });
-    }
-    return toView((await repo.findCashTransaction(tx, id))!);
+        branchId: transaction.branchId,
+        title: view.category.note ? `${view.category.labelVi}: ${view.category.note}` : view.category.labelVi,
+        amount: view.amount,
+        snapshot: encode(cashTransactionSchema, view) as Record<string, unknown>,
+      },
+      reason,
+      deletedAt,
+    );
   });
 }
 
@@ -172,12 +187,8 @@ function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
     description: transaction.description,
     reference: transaction.reference,
     occurredOn: transaction.occurredOn,
-    status: transaction.status,
     createdAt: transaction.createdAt,
     createdBy: transaction.createdBy.name,
-    voidedAt: transaction.voidedAt,
-    voidedBy: transaction.voidedBy?.name ?? null,
-    voidReason: transaction.voidReason ? chosen(transaction.voidReason, transaction.voidReasonNote) : null,
   };
 }
 

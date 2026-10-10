@@ -59,12 +59,6 @@ enum BookingStatus {
   NO_SHOW
 }
 
-// A-008, A-009: money records are created CONFIRMED and corrected only by voiding.
-enum MoneyRecordStatus {
-  CONFIRMED
-  VOIDED
-}
-
 enum CashTransactionType {
   INCOME
   EXPENSE
@@ -99,9 +93,10 @@ model User {
   sessionsCheckedIn Session[]                @relation("SessionCheckedInBy")
   sessionsCompleted Session[]                @relation("SessionCompletedBy")
   paymentsRecorded  Payment[]                @relation("PaymentCreatedBy")
-  paymentsVoided    Payment[]                @relation("PaymentVoidedBy")
+  paymentsDeleted   Payment[]                @relation("PaymentDeletedBy")
   cashRecorded      CashTransaction[]        @relation("CashTransactionCreatedBy")
-  cashVoided        CashTransaction[]        @relation("CashTransactionVoidedBy")
+  cashDeleted       CashTransaction[]        @relation("CashTransactionDeletedBy")
+  trashEntries      TrashEntry[]
   customersCreated  Customer[]
   branches          UserBranch[]
   overrides         UserPermissionOverride[]
@@ -132,6 +127,7 @@ model Branch {
   bookings         Booking[]
   payments         Payment[]
   cashTransactions CashTransaction[]
+  trashEntries     TrashEntry[]
 
   @@map("branches")
 }
@@ -256,10 +252,11 @@ model Option {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  paymentMethods     Payment[]         @relation("PaymentMethod")
-  paymentVoidReasons Payment[]         @relation("PaymentVoidReason")
-  cashCategories     CashTransaction[] @relation("CashCategory")
-  cashVoidReasons    CashTransaction[] @relation("CashVoidReason")
+  paymentMethods       Payment[]         @relation("PaymentMethod")
+  paymentDeleteReasons Payment[]         @relation("PaymentDeleteReason")
+  cashCategories       CashTransaction[] @relation("CashCategory")
+  cashDeleteReasons    CashTransaction[] @relation("CashDeleteReason")
+  trashEntries         TrashEntry[]
 
   @@unique([listKey, labelVi])
   @@index([listKey, sortOrder])
@@ -344,11 +341,42 @@ model AuditEvent {
   entityType  String   @map("entity_type")
   entityId    String   @map("entity_id") @db.Uuid
   action      String
+  // T-048: the record's values before and after the change; null for a create
+  // (before) or a delete (after). Updates hold the changed fields only.
+  before      Json?
+  after       Json?
+  // What else explains the change, e.g. a reason or the contract it belongs to.
   metadata    Json     @default("{}")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@index([createdAt])
   @@map("audit_events")
+}
+
+// The trash (D-035, T-047): one entry per deleted record, kept forever with the
+// record as it was. The application has no path to change or remove an entry.
+model TrashEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id") @db.Uuid
+  branchId    String   @map("branch_id") @db.Uuid
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  // A short name and amount for lists; the full record is in the snapshot.
+  title       String
+  amount      Decimal? @db.Decimal(14, 0)
+  snapshot    Json
+  reasonId    String   @map("reason_option_id") @db.Uuid
+  reason      Option   @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+  reasonNote  String?  @map("reason_note")
+  deletedById String   @map("deleted_by") @db.Uuid
+  deletedBy   User     @relation(fields: [deletedById], references: [id], onDelete: Restrict)
+  deletedAt   DateTime @map("deleted_at") @db.Timestamptz(3)
+
+  @@unique([entityType, entityId])
+  @@index([deletedAt])
+  @@map("trash_entries")
 }
 
 // ---------------------------------------------------------------------------
@@ -493,69 +521,69 @@ model Session {
 }
 
 // ---------------------------------------------------------------------------
-// Finance (Phase 4). Paid amount and debt are derived from CONFIRMED payments
-// (BR-013); records are voided with a reason, never edited or deleted (A-008,
-// A-009). Amount > 0 and the void facts are CHECKs in migration SQL.
+// Finance (Phase 4). Paid amount and debt are derived from payments that are not
+// deleted (BR-013, D-034). Records are never edited; a mistake is deleted to the
+// trash with a reason (D-035, T-047). Amount > 0 and the deletion facts are CHECKs in
+// migration SQL.
 // ---------------------------------------------------------------------------
 
 model Payment {
-  id             String            @id @default(uuid()) @db.Uuid
-  branchId       String            @map("branch_id") @db.Uuid
-  branch         Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  contractId     String            @map("contract_id") @db.Uuid
-  contract       Contract          @relation(fields: [contractId], references: [id], onDelete: Restrict)
-  amount         Decimal           @db.Decimal(14, 0)
+  id               String    @id @default(uuid()) @db.Uuid
+  branchId         String    @map("branch_id") @db.Uuid
+  branch           Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  contractId       String    @map("contract_id") @db.Uuid
+  contract         Contract  @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  amount           Decimal   @db.Decimal(14, 0)
   // D-016, D-034: from the "paymentMethods" option list.
-  methodId       String            @map("method_option_id") @db.Uuid
-  method         Option            @relation("PaymentMethod", fields: [methodId], references: [id], onDelete: Restrict)
-  methodNote     String?           @map("method_note")
+  methodId         String    @map("method_option_id") @db.Uuid
+  method           Option    @relation("PaymentMethod", fields: [methodId], references: [id], onDelete: Restrict)
+  methodNote       String?   @map("method_note")
   // The gym day the money was received (T-039).
-  paidOn         DateTime          @map("paid_on") @db.Date
-  status         MoneyRecordStatus @default(CONFIRMED)
+  paidOn           DateTime  @map("paid_on") @db.Date
   // T-015: replaying a create with the same key returns this payment.
-  idempotencyKey String            @unique @map("idempotency_key")
-  createdById    String            @map("created_by") @db.Uuid
-  createdBy      User              @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  voidedAt       DateTime?         @map("voided_at") @db.Timestamptz(3)
-  voidedById     String?           @map("voided_by") @db.Uuid
-  voidedBy       User?             @relation("PaymentVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
+  idempotencyKey   String    @unique @map("idempotency_key")
+  createdById      String    @map("created_by") @db.Uuid
+  createdBy        User      @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  // Deleted to the trash (D-035, T-047): left out of lists, totals, and debt.
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
+  deletedById      String?   @map("deleted_by") @db.Uuid
+  deletedBy        User?     @relation("PaymentDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
   // From the "deleteReasons" option list (D-016, D-035).
-  voidReasonId   String?           @map("void_reason_option_id") @db.Uuid
-  voidReason     Option?           @relation("PaymentVoidReason", fields: [voidReasonId], references: [id], onDelete: Restrict)
-  voidReasonNote String?           @map("void_reason_note")
+  deleteReasonId   String?   @map("delete_reason_option_id") @db.Uuid
+  deleteReason     Option?   @relation("PaymentDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
+  deleteReasonNote String?   @map("delete_reason_note")
 
-  @@index([contractId, status])
+  @@index([contractId])
   @@index([paidOn])
   @@index([branchId])
   @@map("payments")
 }
 
 model CashTransaction {
-  id             String              @id @default(uuid()) @db.Uuid
-  branchId       String              @map("branch_id") @db.Uuid
-  branch         Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  type           CashTransactionType
+  id               String              @id @default(uuid()) @db.Uuid
+  branchId         String              @map("branch_id") @db.Uuid
+  branch           Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  type             CashTransactionType
   // From "incomeCategories" or "expenseTypes", by type (D-016, D-034).
-  categoryId     String              @map("category_option_id") @db.Uuid
-  category       Option              @relation("CashCategory", fields: [categoryId], references: [id], onDelete: Restrict)
-  categoryNote   String?             @map("category_note")
-  amount         Decimal             @db.Decimal(14, 0)
-  description    String?
-  reference      String?
+  categoryId       String              @map("category_option_id") @db.Uuid
+  category         Option              @relation("CashCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryNote     String?             @map("category_note")
+  amount           Decimal             @db.Decimal(14, 0)
+  description      String?
+  reference        String?
   // The gym day it happened (T-039).
-  occurredOn     DateTime            @map("occurred_on") @db.Date
-  status         MoneyRecordStatus   @default(CONFIRMED)
-  idempotencyKey String              @unique @map("idempotency_key")
-  createdById    String              @map("created_by") @db.Uuid
-  createdBy      User                @relation("CashTransactionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
-  voidedAt       DateTime?           @map("voided_at") @db.Timestamptz(3)
-  voidedById     String?             @map("voided_by") @db.Uuid
-  voidedBy       User?               @relation("CashTransactionVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
-  voidReasonId   String?             @map("void_reason_option_id") @db.Uuid
-  voidReason     Option?             @relation("CashVoidReason", fields: [voidReasonId], references: [id], onDelete: Restrict)
-  voidReasonNote String?             @map("void_reason_note")
+  occurredOn       DateTime            @map("occurred_on") @db.Date
+  idempotencyKey   String              @unique @map("idempotency_key")
+  createdById      String              @map("created_by") @db.Uuid
+  createdBy        User                @relation("CashTransactionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedAt        DateTime?           @map("deleted_at") @db.Timestamptz(3)
+  deletedById      String?             @map("deleted_by") @db.Uuid
+  deletedBy        User?               @relation("CashTransactionDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+  deleteReasonId   String?             @map("delete_reason_option_id") @db.Uuid
+  deleteReason     Option?             @relation("CashDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
+  deleteReasonNote String?             @map("delete_reason_note")
 
   @@index([occurredOn])
   @@index([branchId])

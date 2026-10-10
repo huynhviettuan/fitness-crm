@@ -7,6 +7,8 @@ import { BranchesController } from "./platform/branches/branches.controller.js";
 import { RolesController } from "./platform/roles/roles.controller.js";
 import { OptionListsController } from "./platform/options/options.controller.js";
 import { ParametersController } from "./platform/parameters/parameters.controller.js";
+import { AuditEventsController } from "./platform/audit/audit.controller.js";
+import { TrashController } from "./platform/trash/trash.controller.js";
 import { ErrorFilter } from "./platform/http/error.filter.js";
 import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
@@ -34,6 +36,8 @@ import { UsersController } from "./modules/users/users.controller.js";
     BranchesController,
     OptionListsController,
     ParametersController,
+    AuditEventsController,
+    TrashController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

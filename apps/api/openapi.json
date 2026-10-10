@@ -1741,14 +1741,6 @@
             }
           },
           {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "contractId",
             "required": false,
             "in": "query",
@@ -1858,9 +1850,9 @@
         "x-permission": "payment.view"
       }
     },
-    "/api/v1/payments/{id}/void": {
-      "post": {
-        "operationId": "PaymentsController_void",
+    "/api/v1/payments/{id}": {
+      "delete": {
+        "operationId": "PaymentsController_delete",
         "parameters": [
           {
             "name": "id",
@@ -1896,15 +1888,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Payment"
-                }
-              }
-            }
+          "204": {
+            "description": "Deleted to the trash"
           },
           "default": {
             "description": "Error (docs/07 error contract)",
@@ -1920,7 +1905,7 @@
         "tags": [
           "finance"
         ],
-        "x-permission": "payment.void"
+        "x-permission": "payment.delete"
       }
     },
     "/api/v1/debts": {
@@ -1994,14 +1979,6 @@
           },
           {
             "name": "type",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
             "required": false,
             "in": "query",
             "schema": {
@@ -2224,9 +2201,9 @@
         "x-permission": "cash.manage"
       }
     },
-    "/api/v1/cash-transactions/{id}/void": {
-      "post": {
-        "operationId": "CashTransactionsController_void",
+    "/api/v1/cash-transactions/{id}": {
+      "delete": {
+        "operationId": "CashTransactionsController_delete",
         "parameters": [
           {
             "name": "id",
@@ -2262,15 +2239,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CashTransaction"
-                }
-              }
-            }
+          "204": {
+            "description": "Deleted to the trash"
           },
           "default": {
             "description": "Error (docs/07 error contract)",
@@ -2286,7 +2256,7 @@
         "tags": [
           "finance"
         ],
-        "x-permission": "cash.manage"
+        "x-permission": "cash.delete"
       }
     },
     "/api/v1/users": {
@@ -2659,6 +2629,8 @@
                             "role.manage",
                             "branch.manage",
                             "config.manage",
+                            "audit.view",
+                            "trash.view",
                             "customer.view",
                             "customer.manage",
                             "contract.view",
@@ -2673,8 +2645,9 @@
                             "trainer.manage",
                             "payment.view",
                             "payment.record",
-                            "payment.void",
-                            "cash.manage"
+                            "payment.delete",
+                            "cash.manage",
+                            "cash.delete"
                           ]
                         },
                         "granted": {
@@ -3024,6 +2997,8 @@
                         "role.manage",
                         "branch.manage",
                         "config.manage",
+                        "audit.view",
+                        "trash.view",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -3038,8 +3013,9 @@
                         "trainer.manage",
                         "payment.view",
                         "payment.record",
-                        "payment.void",
-                        "cash.manage"
+                        "payment.delete",
+                        "cash.manage",
+                        "cash.delete"
                       ]
                     }
                   },
@@ -3210,6 +3186,8 @@
                         "role.manage",
                         "branch.manage",
                         "config.manage",
+                        "audit.view",
+                        "trash.view",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -3224,8 +3202,9 @@
                         "trainer.manage",
                         "payment.view",
                         "payment.record",
-                        "payment.void",
-                        "cash.manage"
+                        "payment.delete",
+                        "cash.manage",
+                        "cash.delete"
                       ]
                     }
                   },
@@ -3939,6 +3918,168 @@
         ],
         "x-permission": "config.manage"
       }
+    },
+    "/api/v1/audit-events": {
+      "get": {
+        "operationId": "AuditEventsController_list",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "audit"
+        ],
+        "x-permission": "audit.view"
+      }
+    },
+    "/api/v1/trash": {
+      "get": {
+        "operationId": "TrashController_list",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "trash"
+        ],
+        "x-permission": "trash.view"
+      }
     }
   },
   "info": {
@@ -4047,6 +4188,8 @@
                 "role.manage",
                 "branch.manage",
                 "config.manage",
+                "audit.view",
+                "trash.view",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -4061,8 +4204,9 @@
                 "trainer.manage",
                 "payment.view",
                 "payment.record",
-                "payment.void",
-                "cash.manage"
+                "payment.delete",
+                "cash.manage",
+                "cash.delete"
               ]
             }
           },
@@ -4423,13 +4567,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "CONFIRMED",
-              "VOIDED"
-            ]
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4459,23 +4596,6 @@
           },
           "customer": {
             "$ref": "#/components/schemas/CustomerRef"
-          },
-          "voidedAt": {
-            "nullable": true,
-            "type": "string",
-            "format": "date-time"
-          },
-          "voidedBy": {
-            "nullable": true,
-            "type": "string"
-          },
-          "voidReason": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ChosenOption"
-              }
-            ]
           }
         },
         "required": [
@@ -4483,14 +4603,10 @@
           "amount",
           "method",
           "paidOn",
-          "status",
           "createdAt",
           "createdBy",
           "contract",
-          "customer",
-          "voidedAt",
-          "voidedBy",
-          "voidReason"
+          "customer"
         ]
       },
       "ChosenOption": {
@@ -4904,36 +5020,12 @@
             "type": "string",
             "format": "date-time"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "CONFIRMED",
-              "VOIDED"
-            ]
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           },
           "createdBy": {
             "type": "string"
-          },
-          "voidedAt": {
-            "nullable": true,
-            "type": "string",
-            "format": "date-time"
-          },
-          "voidedBy": {
-            "nullable": true,
-            "type": "string"
-          },
-          "voidReason": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ChosenOption"
-              }
-            ]
           }
         },
         "required": [
@@ -4945,12 +5037,8 @@
           "description",
           "reference",
           "occurredOn",
-          "status",
           "createdAt",
-          "createdBy",
-          "voidedAt",
-          "voidedBy",
-          "voidReason"
+          "createdBy"
         ]
       },
       "FinanceSummary": {
@@ -5100,6 +5188,8 @@
                     "role.manage",
                     "branch.manage",
                     "config.manage",
+                    "audit.view",
+                    "trash.view",
                     "customer.view",
                     "customer.manage",
                     "contract.view",
@@ -5114,8 +5204,9 @@
                     "trainer.manage",
                     "payment.view",
                     "payment.record",
-                    "payment.void",
-                    "cash.manage"
+                    "payment.delete",
+                    "cash.manage",
+                    "cash.delete"
                   ]
                 },
                 "granted": {
@@ -5314,6 +5405,8 @@
                 "role.manage",
                 "branch.manage",
                 "config.manage",
+                "audit.view",
+                "trash.view",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -5328,8 +5421,9 @@
                 "trainer.manage",
                 "payment.view",
                 "payment.record",
-                "payment.void",
-                "cash.manage"
+                "payment.delete",
+                "cash.manage",
+                "cash.delete"
               ]
             }
           },
@@ -5526,6 +5620,179 @@
           "customerCodePrefix",
           "contractCodePrefix",
           "trainerCodePrefix"
+        ]
+      },
+      "AuditPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "AuditEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "before": {
+            "nullable": true,
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "after": {
+            "nullable": true,
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "actor",
+          "entityType",
+          "entityId",
+          "action",
+          "before",
+          "after",
+          "context"
+        ]
+      },
+      "TrashPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrashEntry"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "TrashEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "cash_transaction"
+            ]
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "amount": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedBy": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChosenOption"
+          },
+          "snapshot": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "entityType",
+          "entityId",
+          "branch",
+          "title",
+          "amount",
+          "deletedAt",
+          "deletedBy",
+          "reason",
+          "snapshot"
         ]
       }
     }

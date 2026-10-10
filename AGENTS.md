@@ -97,8 +97,8 @@ apps/
 ├── web/                      # Next.js: routes, components, i18n messages
 │   └── src/lib/api/          # typed API client (generated from apps/api/openapi.json) and one module per area
 └── api/                      # NestJS
-    ├── src/platform/         # auth, http (guards, errors, OpenAPI), db, permissions, roles, branches, options, parameters, audit; later
-    │                         # approvals, trash, notifications, files, jobs
+    ├── src/platform/         # auth, http (guards, errors, OpenAPI), db, permissions, roles, branches, options, parameters, audit, trash; later
+    │                         # approvals, notifications, files, jobs
     ├── src/modules/          # leads, consulting, customers, services, contracts, contract-changes,
     │                         # schedule, classes, workouts, cashbook, tasks, mail, employees, reports
     ├── test/                 # integration tests against PostgreSQL

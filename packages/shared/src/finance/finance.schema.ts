@@ -6,7 +6,6 @@ import { calendarDate, vndAmount, hasNoControlCharacters } from "../validation/i
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 
 export const CASH_TRANSACTION_TYPES = ["INCOME", "EXPENSE"] as const;
-export const MONEY_RECORD_STATUSES = ["CONFIRMED", "VOIDED"] as const;
 
 // Form inputs send "" for an empty optional field; it is stored as null.
 const emptyToNull = (value: string) => (value === "" ? null : value);
@@ -38,12 +37,6 @@ export const cashTransactionInputSchema = z.object({
   description: text(500).transform(emptyToNull).prefault(""),
 });
 
-/** A-008, A-009: voiding requires a reason from the "deleteReasons" list (D-016, D-035). */
-export const voidSchema = z.object({
-  reasonId: optionChoice,
-  reasonNote: optionNote,
-});
-
 const optionalDate = z.union([z.literal(""), calendarDate]).optional().transform((value) => value || undefined);
 const paging = {
   page: z.coerce.number().int().min(1).optional().default(1),
@@ -54,7 +47,6 @@ export const listPaymentsSchema = z.object({
   /** First and last gym day, inclusive (dd/MM/yyyy). */
   from: optionalDate,
   to: optionalDate,
-  status: z.enum(MONEY_RECORD_STATUSES).optional(),
   contractId: z.uuid().optional(),
   customerId: z.uuid().optional(),
   ...paging,
@@ -64,7 +56,6 @@ export const listCashTransactionsSchema = z.object({
   from: optionalDate,
   to: optionalDate,
   type: z.enum(CASH_TRANSACTION_TYPES).optional(),
-  status: z.enum(MONEY_RECORD_STATUSES).optional(),
   ...paging,
 });
 
@@ -76,4 +67,3 @@ export type PaymentInput = z.input<typeof paymentInputSchema>;
 export type PaymentData = z.output<typeof paymentInputSchema>;
 export type CashTransactionInput = z.input<typeof cashTransactionInputSchema>;
 export type CashTransactionData = z.output<typeof cashTransactionInputSchema>;
-export type VoidInput = z.input<typeof voidSchema>;

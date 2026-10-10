@@ -49,7 +49,7 @@ export async function createCustomer(actor: Actor, input: unknown): Promise<Cust
       entityType: "customer",
       entityId: customer.id,
       action: "customer.created",
-      metadata: { customerCode: customer.customerCode, branchId },
+      after: { customerCode: customer.customerCode, fullName: customer.fullName, branchId },
     });
     return present(actor, customer);
   });
@@ -68,13 +68,13 @@ export async function updateCustomer(actor: Actor, id: string, input: unknown): 
 
     const after = await repo.updateCustomer(tx, id, data);
     const changes = diffFields(before, after, AUDITED_FIELDS);
-    if (Object.keys(changes).length > 0) {
+    if (changes) {
       await recordAudit(tx, {
         actorUserId: actor.id,
         entityType: "customer",
         entityId: id,
         action: "customer.updated",
-        metadata: { changes },
+        ...changes,
       });
     }
     return present(actor, after);

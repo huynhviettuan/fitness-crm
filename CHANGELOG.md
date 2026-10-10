@@ -1,5 +1,14 @@
 # Documentation Changelog
 
+## 2026-10-10 — M1 slice 4: audit and trash
+
+- Action history (T-048): every change is recorded with its values before and after, in columns of their own; earlier events were converted. **Administration → Action history** searches by kind of record, record, user, and day (`audit.view`).
+- Trash (D-035): payments and cash entries are deleted to the trash with a reason from the list instead of being voided. They leave lists, totals, and debt; the trash keeps them forever with who, when, why, and the record as it was. **Administration → Trash** is read-only (`trash.view`). Earlier voided records are in the trash with their reason.
+- API: `DELETE /payments/:id` and `DELETE /cash-transactions/:id` with `{ reasonId, reasonNote }` replace the void endpoints; new `GET /trash` and `GET /audit-events`. Payments and cash entries no longer have a status.
+- Permissions: `payment.void` → `payment.delete`; new `cash.delete`, `audit.view`, `trash.view`. The Fitness Manager no longer deletes cash entries (A-036).
+- Tests: unit (shared 83, web 215, API 72), integration 185, E2E and security 207.
+- Docs: 07, 09, 13, 16, 18 (T-056, A-036; T-047, A-008, A-009 notes), 24, 25, AGENTS.md.
+
 ## 2026-10-10 — M1 slice 3: configuration
 
 - Option lists (D-016): payment methods, income categories, expense types, and delete reasons are admin lists with "Khác", which needs a note. Admin adds, renames, reorders, and switches options off on **Administration → Option lists**, which also lists the notes written with "Khác". Switched-off options stay on old records. The migration keeps every existing method, category, and void reason (A-035).

@@ -7,10 +7,10 @@ import { createContractViaApi, createCustomerViaApi, gymToday, recordPaymentViaA
 import { createOptionViaApi, otherOptionId } from "../support/options";
 import type { Role } from "../support/db";
 
-// Payment methods and void reasons come from option lists (D-016); "Khác" with a note fits any test.
+// Payment methods and delete reasons come from option lists (D-016); "Khác" with a note fits any test.
 const PAYMENT = { amount: "1.000.000", methodNote: "E2E", paidOn: gymToday().date };
 const payment = async (api: import("@playwright/test").APIRequestContext) => ({ ...PAYMENT, methodId: await otherOptionId(api, "paymentMethods") });
-const voidReason = async (api: import("@playwright/test").APIRequestContext) => ({ reasonId: await otherOptionId(api, "deleteReasons"), reasonNote: "Kiểm tra" });
+const deleteReason = async (api: import("@playwright/test").APIRequestContext) => ({ reasonId: await otherOptionId(api, "deleteReasons"), reasonNote: "Kiểm tra" });
 
 async function activeContract(apiAs: (role: Role) => Promise<import("@playwright/test").APIRequestContext>, tag: string) {
   const reception = await apiAs("RECEPTIONIST");
@@ -37,18 +37,20 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
     });
   }
 
-  const voidExpectations: [Role, number][] = [
+  // 09_RBAC.md: deleting vouchers is Admin's (and the custom Kế toán role's).
+  const deleteExpectations: [Role, number][] = [
     ["RECEPTIONIST", 403],
-    // E2E-009 (part 2): a trainer cannot void payments.
+    // E2E-009 (part 2): a trainer cannot delete payments.
     ["PT", 403],
-    ["ACCOUNTANT", 200],
+    ["FITNESS_MANAGER", 403],
+    ["ACCOUNTANT", 204],
   ];
-  for (const [role, status] of voidExpectations) {
-    test(`${role} voiding a payment gets ${status}`, async ({ apiAs, testTag }) => {
+  for (const [role, status] of deleteExpectations) {
+    test(`${role} deleting a payment gets ${status}`, async ({ apiAs, testTag }) => {
       const contract = await activeContract(apiAs, testTag);
       const recorded = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
 
-      const response = await (await apiAs(role)).post(`/api/v1/payments/${recorded.id}/void`, { data: await voidReason(await apiAs("ADMIN")) });
+      const response = await (await apiAs(role)).delete(`/api/v1/payments/${recorded.id}`, { data: await deleteReason(await apiAs("ADMIN")) });
       expect(response.status()).toBe(status);
     });
   }
@@ -88,11 +90,12 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
 
     const response = await reception.post(`/api/v1/contracts/${contract.id}/payments`, {
       headers: { "idempotency-key": randomUUID() },
-      data: { ...(await payment(reception)), status: "VOIDED", contractId: other.id, createdById: randomUUID(), voidReasonId: randomUUID() },
+      data: { ...(await payment(reception)), deletedAt: new Date().toISOString(), contractId: other.id, createdById: randomUUID(), deleteReasonId: randomUUID() },
     });
 
     expect(response.status()).toBe(201);
-    expect(await response.json()).toMatchObject({ status: "CONFIRMED", contract: { id: contract.id }, voidReason: null });
+    expect(await response.json()).toMatchObject({ contract: { id: contract.id } });
+    expect((await (await reception.get(`/api/v1/contracts/${contract.id}`)).json()).paidAmount).toBe(1_000_000);
     expect((await (await reception.get(`/api/v1/contracts/${other.id}`)).json()).paidAmount).toBe(0);
   });
 });
@@ -167,7 +170,7 @@ test.describe("A10 finance input errors", () => {
     expect(await (await send({ ...valid, paidOn: tomorrowText })).json()).toMatchObject({ details: { fieldErrors: { paidOn: ["futureDate"] } } });
     expect(await (await send({ ...valid, methodNote: " " })).json()).toMatchObject({ details: { fieldErrors: { methodNote: ["otherNeedsNote"] } } });
     // An option of another list, or none at all, is not a method.
-    const reason = (await voidReason(reception)).reasonId;
+    const reason = (await deleteReason(reception)).reasonId;
     for (const methodId of [reason, randomUUID()]) {
       expect(await (await send({ ...valid, methodId })).json()).toMatchObject({ details: { fieldErrors: { methodId: ["invalidChoice"] } } });
     }
@@ -190,20 +193,22 @@ test.describe("A10 finance input errors", () => {
     expect(await cancelled.json()).toMatchObject({ code: "PAYMENT_CONTRACT_CANCELLED" });
   });
 
-  test("a void needs a reason, and unknown ids are 404", async ({ apiAs, testTag }) => {
+  test("a deletion needs a reason; a deleted or unknown record is 404", async ({ apiAs, testTag }) => {
     const contract = await activeContract(apiAs, testTag);
     const recorded = await recordPaymentViaApi(await apiAs("RECEPTIONIST"), contract.id, "1.000.000");
     const accountant = await apiAs("ACCOUNTANT");
-    const reason = await voidReason(accountant);
+    const reason = await deleteReason(accountant);
 
-    const noReason = await accountant.post(`/api/v1/payments/${recorded.id}/void`, { data: { reasonId: " " } });
+    const noReason = await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: { reasonId: " " } });
     expect(noReason.status()).toBe(400);
     expect(await noReason.json()).toMatchObject({ details: { fieldErrors: { reasonId: ["required"] } } });
-    const noNote = await accountant.post(`/api/v1/payments/${recorded.id}/void`, { data: { ...reason, reasonNote: "" } });
+    const noNote = await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: { ...reason, reasonNote: "" } });
     expect(await noNote.json()).toMatchObject({ details: { fieldErrors: { reasonNote: ["otherNeedsNote"] } } });
+    expect((await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: reason })).status()).toBe(204);
+    expect((await accountant.delete(`/api/v1/payments/${recorded.id}`, { data: reason })).status()).toBe(404);
     for (const id of [randomUUID(), "not-a-uuid"]) {
-      expect((await accountant.post(`/api/v1/payments/${id}/void`, { data: reason })).status()).toBe(404);
-      expect((await accountant.post(`/api/v1/cash-transactions/${id}/void`, { data: reason })).status()).toBe(404);
+      expect((await accountant.delete(`/api/v1/payments/${id}`, { data: reason })).status()).toBe(404);
+      expect((await accountant.delete(`/api/v1/cash-transactions/${id}`, { data: reason })).status()).toBe(404);
     }
   });
 });

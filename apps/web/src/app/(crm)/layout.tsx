@@ -22,6 +22,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "role.manage")) adminItems.push("roles");
   if (can(user, "branch.manage")) adminItems.push("branches");
   if (can(user, "config.manage")) adminItems.push("options", "parameters");
+  if (can(user, "audit.view")) adminItems.push("audit");
+  if (can(user, "trash.view")) adminItems.push("trash");
 
   return (
     <SidebarProvider>

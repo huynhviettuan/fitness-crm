@@ -43,14 +43,13 @@ test.describe("finance as a receptionist", () => {
       await dialog.fill({ amount, method });
       await dialog.save();
       await expect(toasts.getByText(fin.paymentRecorded).first()).toBeVisible();
-      await expect(contractDetailPage.payments.row(amount)).toContainText(labels.status.payment.CONFIRMED);
       await expect(contractDetailPage.payments.row(amount)).toContainText(method);
     }
 
     await expect(contractDetailPage.figure(cf.paidAmount)).toHaveText(/8\.000\.000/);
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/4\.000\.000/);
-    // docs/09: a receptionist records payments but cannot void them.
-    await expect(contractDetailPage.payments.voidButton("5.000.000")).toHaveCount(0);
+    // docs/09: a receptionist records payments but cannot delete them.
+    await expect(contractDetailPage.payments.deleteButton("5.000.000")).toHaveCount(0);
   });
 
   test("a payment above what is still owed is refused (OQ-003 interim)", async ({ page, apiAs, testTag, contractDetailPage }) => {
@@ -84,7 +83,7 @@ test.describe("finance as a receptionist", () => {
 test.describe("finance as an accountant", () => {
   test.use(signedInAs("ACCOUNTANT"));
 
-  test("E2E-103/AC-04: voiding a payment asks for a reason, Khác only with a note, and puts the amount back into the debt (A-008)", async ({
+  test("E2E-103/AC-04: deleting a payment asks for a reason, Khác only with a note, and puts the amount back into the debt (D-035)", async ({
     page,
     apiAs,
     testTag,
@@ -96,18 +95,19 @@ test.describe("finance as an accountant", () => {
 
     await contractDetailPage.goto(contract.id);
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/7\.000\.000/);
-    const dialog = await contractDetailPage.payments.openVoid("5.000.000");
-    await dialog.confirm();
+    const dialog = await contractDetailPage.payments.openDelete("5.000.000");
+    const confirm = dialog.root.getByRole("button", { name: fin.delete, exact: true });
+    await confirm.click();
     await expect(dialog.fieldErrors).toHaveText(labels.validation.required);
     await dialog.choose(OTHER_OPTION_LABEL, "");
-    await dialog.confirm();
+    await confirm.click();
     await expect(dialog.fieldErrors).toHaveText(labels.validation.otherNeedsNote);
     await dialog.choose(OTHER_OPTION_LABEL, "Ghi nhầm hợp đồng");
     await dialog.confirm();
 
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(fin.voided)).toBeVisible();
-    await expect(contractDetailPage.payments.row("5.000.000")).toContainText(labels.status.payment.VOIDED);
-    await expect(contractDetailPage.payments.row("5.000.000")).toContainText("Ghi nhầm hợp đồng");
+    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(fin.deleted)).toBeVisible();
+    // Deleted records leave the list for the trash (D-035).
+    await expect(contractDetailPage.payments.row("5.000.000")).toHaveCount(0);
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/12\.000\.000/);
   });
 
@@ -137,8 +137,8 @@ test.describe("finance as an accountant", () => {
     await expect(financePage.total(fin.expense)).toContainText("1.500.000");
     await expect(financePage.total(fin.contractPayments)).toContainText(/^\D*0\D*$/);
 
-    await financePage.table(fin.tabs.cash).void({ option: OTHER_OPTION_LABEL, note: "Nhập sai số tiền" }, `Điện nước ${testTag}`);
-    await expect(financePage.table(fin.tabs.cash).row(`Điện nước ${testTag}`)).toContainText(labels.status.cashTransaction.VOIDED);
+    await financePage.table(fin.tabs.cash).delete({ option: OTHER_OPTION_LABEL, note: "Nhập sai số tiền" }, `Điện nước ${testTag}`);
+    await expect(financePage.table(fin.tabs.cash).row(`Điện nước ${testTag}`)).toHaveCount(0);
     await expect(financePage.total(fin.expense)).not.toContainText("1.500.000");
   });
 });

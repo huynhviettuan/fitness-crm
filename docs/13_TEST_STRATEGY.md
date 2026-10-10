@@ -30,7 +30,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-103 | "Khác" without note refused; option deactivated stays on old record (`e2e/configuration.spec.ts`, `e2e/finance.spec.ts`) | AC-03, AC-04 |
 | E2E-104 | Contract with any session count → tier price, end date, name; exception price stays pending; booking refused until approved | AC-10, AC-11 |
 | E2E-105 | Approved contract cannot be edited by admin | AC-11 |
-| E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash | AC-12, AC-13 |
+| E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash (receipts part: `e2e/history.spec.ts`, M1 slice 4; contracts in M4) | AC-12, AC-13 |
 | E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |
 | E2E-108 | Đã tập and no-show consume 1 and credit PT; Hủy lịch and delete do not; colors | AC-15 |
 | E2E-109 | Đã tập locked; delete from history → refund 1, credit −1, email sent, adjustment in next period | AC-16, AC-17 |

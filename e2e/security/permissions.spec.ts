@@ -32,10 +32,17 @@ test.describe("A01 permissions on every endpoint (T-046)", () => {
     }
   });
 
-  test("a Fitness Manager cannot manage users, roles, branches, or configuration (09_RBAC.md)", async ({ apiAs }) => {
+  test("a Fitness Manager cannot manage users, roles, branches, or configuration, nor see the trash or history (09_RBAC.md)", async ({ apiAs }) => {
     const manager = await apiAs("FITNESS_MANAGER");
 
-    for (const path of ["/api/v1/users", "/api/v1/roles", "/api/v1/branches", "/api/v1/option-lists/paymentMethods/other-notes"]) {
+    for (const path of [
+      "/api/v1/users",
+      "/api/v1/roles",
+      "/api/v1/branches",
+      "/api/v1/option-lists/paymentMethods/other-notes",
+      "/api/v1/trash",
+      "/api/v1/audit-events",
+    ]) {
       expect((await manager.get(path)).status(), path).toBe(403);
     }
     // Configuration is admin's (09_RBAC.md); reading it is open to forms.

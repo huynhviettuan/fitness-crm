@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Req, Res } from "@nestjs/common";
+import { ApiNoContentResponse } from "@nestjs/swagger";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import {
@@ -9,19 +10,18 @@ import {
   debtPageSchema,
   financeSummarySchema,
   paymentPageSchema,
-  paymentSchema,
-  voidSchema,
 } from "@flow/shared/finance";
+import { deleteSchema } from "@flow/shared/trash";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
-import { financeSummary, listCashTransactions, recordCashTransaction, voidCashTransaction } from "./cash.service.js";
-import { collectedBetween, listDebts, listPayments, voidPayment } from "./payment.service.js";
+import { deleteCashTransaction, financeSummary, listCashTransactions, recordCashTransaction } from "./cash.service.js";
+import { collectedBetween, deletePayment, listDebts, listPayments } from "./payment.service.js";
 
-const PAYMENT_FILTERS = ["from", "to", "status", "contractId", "customerId", "page", "pageSize"] as const;
-const CASH_FILTERS = ["from", "to", "type", "status", "page", "pageSize"] as const;
+const PAYMENT_FILTERS = ["from", "to", "contractId", "customerId", "page", "pageSize"] as const;
+const CASH_FILTERS = ["from", "to", "type", "page", "pageSize"] as const;
 
 @ApiTags("finance")
 @ApiErrors()
@@ -45,13 +45,13 @@ export class PaymentsController {
     return encode(collectedSchema, { total: await collectedBetween(actor, queryOf(request, ["from", "to"])) });
   }
 
-  /** A-008: the body carries the reason; a repeat returns the voided payment. */
-  @Post(":id/void")
-  @RequirePermission("payment.void")
-  @HttpCode(200)
-  @ApiResult(paymentSchema)
-  async void(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: voidSchema }) body: unknown) {
-    return encode(paymentSchema, await voidPayment(actor, id, body));
+  /** D-035: the body carries the reason; the payment moves to the trash. */
+  @Delete(":id")
+  @RequirePermission("payment.delete")
+  @HttpCode(204)
+  @ApiNoContentResponse({ description: "Deleted to the trash" })
+  async delete(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: deleteSchema }) body: unknown): Promise<void> {
+    await deletePayment(actor, id, body);
   }
 }
 
@@ -107,12 +107,12 @@ export class CashTransactionsController {
     return encode(financeSummarySchema, await financeSummary(actor, queryOf(request, ["from", "to"])));
   }
 
-  /** A-009: the body carries the reason; a repeat returns the voided transaction. */
-  @Post(":id/void")
-  @RequirePermission("cash.manage")
-  @HttpCode(200)
-  @ApiResult(cashTransactionSchema)
-  async void(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: voidSchema }) body: unknown) {
-    return encode(cashTransactionSchema, await voidCashTransaction(actor, id, body));
+  /** D-035: the body carries the reason; the entry moves to the trash. */
+  @Delete(":id")
+  @RequirePermission("cash.delete")
+  @HttpCode(204)
+  @ApiNoContentResponse({ description: "Deleted to the trash" })
+  async delete(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: deleteSchema }) body: unknown): Promise<void> {
+    await deleteCashTransaction(actor, id, body);
   }
 }

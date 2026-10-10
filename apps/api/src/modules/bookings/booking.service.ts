@@ -130,7 +130,7 @@ export async function createBooking(actor: Actor, input: unknown): Promise<Booki
         entityType: "booking",
         entityId: booking.id,
         action: "booking.created",
-        metadata: {
+        after: {
           contractId: contract.id,
           trainerId: slot.trainerId,
           scheduledStart: slot.scheduledStart.toISOString(),
@@ -163,8 +163,8 @@ export async function rescheduleBooking(actor: Actor, id: string, input: unknown
         { trainerId: after.trainer.id, scheduledStart: after.scheduledStart, scheduledEnd: after.scheduledEnd },
         ["trainerId", "scheduledStart", "scheduledEnd"],
       );
-      if (Object.keys(changes).length > 0) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "booking", entityId: id, action: "booking.rescheduled", metadata: { changes } });
+      if (changes) {
+        await recordAudit(tx, { actorUserId: actor.id, entityType: "booking", entityId: id, action: "booking.rescheduled", ...changes });
       }
       return after;
     }),
@@ -208,7 +208,9 @@ export async function transitionBooking(
       entityType: "booking",
       entityId: id,
       action: options.action,
-      metadata: { from: before.status, to: options.to, contractId: before.contractId },
+      before: { status: before.status },
+      after: { status: options.to },
+      context: { contractId: before.contractId },
     });
     return bookingView(tx, actor, id);
   });

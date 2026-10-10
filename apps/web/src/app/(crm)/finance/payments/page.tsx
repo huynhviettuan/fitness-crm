@@ -48,7 +48,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
       </p>
       <PaymentsTable
         payments={result.items}
-        canVoid={can(user, "payment.void")}
+        canDelete={can(user, "payment.delete")}
         label={t("tabs.payments")}
         empty={<EmptyState icon={BanknoteIcon} title={t("paymentsEmpty")} />}
         footer={

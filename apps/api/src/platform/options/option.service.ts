@@ -57,7 +57,7 @@ export async function createOption(actor: Actor, rawKey: string, input: unknown)
         data: { ...data, listKey, sortOrder: (last._max.sortOrder ?? 0) + 1 },
         select: optionSelect,
       });
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "option", entityId: option.id, action: "option.created", metadata: { after: option } });
+      await recordAudit(tx, { actorUserId: actor.id, entityType: "option", entityId: option.id, action: "option.created", after: option });
       return option as Option;
     }),
   );
@@ -77,8 +77,8 @@ export async function updateOption(actor: Actor, rawKey: string, id: string, inp
       await assertLabelFree(tx, listKey, data.labelVi, id);
       const after = await tx.option.update({ where: { id }, data, select: optionSelect });
       const changes = diffFields(before, after, ["labelVi", "labelEn", "active"]);
-      if (Object.keys(changes).length > 0) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "option", entityId: id, action: "option.updated", metadata: { changes } });
+      if (changes) {
+        await recordAudit(tx, { actorUserId: actor.id, entityType: "option", entityId: id, action: "option.updated", ...changes });
       }
       return after as Option;
     }),
@@ -104,7 +104,8 @@ export async function reorderOptions(actor: Actor, rawKey: string, input: unknow
         entityType: "option",
         entityId: id,
         action: "option.reordered",
-        metadata: { changes: { sortOrder: { from, to: index + 1 } } },
+        before: { sortOrder: from },
+        after: { sortOrder: index + 1 },
       });
     }
   });
@@ -125,8 +126,8 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     paymentMethods: Prisma.sql`SELECT "method_note" AS note, "created_at" AS at FROM "payments" WHERE "method_option_id" = ${id}::uuid`,
     incomeCategories: Prisma.sql`SELECT "category_note" AS note, "created_at" AS at FROM "cash_transactions" WHERE "category_option_id" = ${id}::uuid`,
     expenseTypes: Prisma.sql`SELECT "category_note" AS note, "created_at" AS at FROM "cash_transactions" WHERE "category_option_id" = ${id}::uuid`,
-    deleteReasons: Prisma.sql`SELECT "void_reason_note" AS note, "voided_at" AS at FROM "payments" WHERE "void_reason_option_id" = ${id}::uuid
-      UNION ALL SELECT "void_reason_note", "voided_at" FROM "cash_transactions" WHERE "void_reason_option_id" = ${id}::uuid`,
+    // Every deletion, whatever the record, is in the trash with its reason (D-035).
+    deleteReasons: Prisma.sql`SELECT "reason_note" AS note, "deleted_at" AS at FROM "trash_entries" WHERE "reason_option_id" = ${id}::uuid`,
   };
   const rows = await prisma.$queryRaw<{ note: string; count: number; lastUsedAt: Date }[]>`
     SELECT MIN(btrim(note)) AS note, COUNT(*)::int AS count, MAX(at) AS "lastUsedAt"

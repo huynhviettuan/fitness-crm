@@ -4,7 +4,7 @@ import { prisma } from "../../src/platform/db/prisma.js";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
 import { cancelContract, createContract, getContract, listContracts } from "../../src/modules/contracts/contract.service.js";
-import { collectedBetween, listDebts, listPayments, recordPayment, voidPayment } from "../../src/modules/finance/payment.service.js";
+import { collectedBetween, deletePayment, listDebts, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestOption, createTestUser, optionId } from "../support/factories.js";
 import { activeContract, CONTRACT } from "../support/bookings.js";
@@ -39,10 +39,10 @@ describe("recordPayment", () => {
     await pay(reception, contract.id, 3_000_000);
 
     expect(replayed).toBe(false);
-    expect(payment).toMatchObject({ status: "CONFIRMED", amount: 5_000_000, method: { id: CASH, labelVi: "Tiền mặt", note: null }, createdBy: "RECEPTIONIST test user" });
+    expect(payment).toMatchObject({ amount: 5_000_000, method: { id: CASH, labelVi: "Tiền mặt", note: null }, createdBy: "RECEPTIONIST test user" });
     expect(await getContract(reception, contract.id)).toMatchObject({ confirmedPaidAmount: 8_000_000, paidAmount: 8_000_000, debt: 4_000_000 });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: payment.id } });
-    expect(audit).toMatchObject({ action: "payment.created", metadata: { amount: 5_000_000, paidOn: "2026-10-05" } });
+    expect(audit).toMatchObject({ action: "payment.created", after: { amount: 5_000_000, paidOn: "2026-10-05" } });
   });
 
   it("needs an idempotency key", async () => {
@@ -176,35 +176,53 @@ describe("recordPayment", () => {
   });
 });
 
-describe("voidPayment (A-008)", () => {
-  it("needs a reason, removes the payment from the paid amount, and keeps it on record", async () => {
+describe("deletePayment (D-035)", () => {
+  it("needs a reason from the list, then leaves lists and the paid amount and goes to the trash", async () => {
     const { reception, contract } = await setup();
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await expect(voidPayment(accountant, payment.id, { reasonId: "" })).rejects.toMatchObject({ fieldErrors: { reasonId: ["required"] } });
-    await expect(voidPayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: " " })).rejects.toMatchObject({
+    await expect(deletePayment(accountant, payment.id, { reasonId: "" })).rejects.toMatchObject({ fieldErrors: { reasonId: ["required"] } });
+    await expect(deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: " " })).rejects.toMatchObject({
       fieldErrors: { reasonNote: ["otherNeedsNote"] },
     });
-    const voided = await voidPayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Ghi nhầm hợp đồng" });
+    await deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Ghi nhầm hợp đồng" });
 
-    expect(voided).toMatchObject({ status: "VOIDED", voidReason: { id: OTHER_REASON, labelVi: "Khác", note: "Ghi nhầm hợp đồng" }, voidedBy: "ACCOUNTANT test user", amount: 5_000_000 });
     expect(await getContract(reception, contract.id)).toMatchObject({ paidAmount: 0, debt: 12_000_000 });
-    expect(await prisma.auditEvent.findFirst({ where: { entityId: payment.id, action: "payment.voided" } })).toMatchObject({
-      metadata: { reason: { optionId: OTHER_REASON, note: "Ghi nhầm hợp đồng" }, amount: 5_000_000 },
+    expect((await listPayments(reception, { contractId: contract.id })).total).toBe(0);
+    expect(await prisma.trashEntry.findFirst({ where: { entityId: payment.id } })).toMatchObject({
+      entityType: "payment",
+      title: `${contract.contractCode} · Nguyễn Văn An`,
+      reasonId: OTHER_REASON,
+      reasonNote: "Ghi nhầm hợp đồng",
+      deletedById: accountant.id,
+      snapshot: { id: payment.id, amount: 5_000_000, paidOn: "2026-10-05T00:00:00.000Z", createdBy: "RECEPTIONIST test user" },
+    });
+    expect(await prisma.auditEvent.findFirst({ where: { entityId: payment.id, action: "payment.deleted" } })).toMatchObject({
+      before: { id: payment.id, amount: 5_000_000 },
+      after: null,
+      metadata: { reason: { optionId: OTHER_REASON, note: "Ghi nhầm hợp đồng" } },
     });
   });
 
-  it("a repeat returns the current state and keeps the first reason", async () => {
+  it("a deleted payment is gone: deleting again, even at once, is NOT_FOUND and leaves one trash entry", async () => {
     const { reception, contract } = await setup();
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await voidPayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Lần một" });
-    const again = await voidPayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Lần hai" });
+    const results = await Promise.allSettled(
+      Array.from({ length: 5 }, () => deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" })),
+    );
 
-    expect(again).toMatchObject({ status: "VOIDED", voidReason: { note: "Lần một" } });
-    expect(await prisma.auditEvent.count({ where: { entityId: payment.id, action: "payment.voided" } })).toBe(1);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((r) => r.status === "rejected").map((r) => (r as PromiseRejectedResult).reason.code)).toEqual([
+      "NOT_FOUND",
+      "NOT_FOUND",
+      "NOT_FOUND",
+      "NOT_FOUND",
+    ]);
+    expect(await prisma.trashEntry.count({ where: { entityId: payment.id } })).toBe(1);
+    expect(await prisma.auditEvent.count({ where: { entityId: payment.id, action: "payment.deleted" } })).toBe(1);
   });
 
   // 09_RBAC.md: deleting vouchers is Admin's (and the custom Kế toán role's).
@@ -213,30 +231,30 @@ describe("voidPayment (A-008)", () => {
     const { actor } = await createTestUser(role);
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await expect(voidPayment(actor, payment.id, { reasonId: OTHER_REASON, reasonNote: "x" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(deletePayment(actor, payment.id, { reasonId: OTHER_REASON, reasonNote: "x" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("the database refuses a voided payment without its reason, and a non-positive amount", async () => {
+  it("the database refuses a deletion without who and why, and a non-positive amount", async () => {
     const { reception, contract } = await setup();
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await expect(prisma.payment.update({ where: { id: payment.id }, data: { status: "VOIDED" } })).rejects.toThrow(/payments_void_complete/);
+    await expect(prisma.payment.update({ where: { id: payment.id }, data: { deletedAt: new Date() } })).rejects.toThrow(/payments_delete_complete/);
     await expect(prisma.payment.update({ where: { id: payment.id }, data: { amount: 0 } })).rejects.toThrow(/payments_amount_positive/);
   });
 });
 
 describe("reading", () => {
-  it("lists payments by contract, customer, status, and day; totals what was collected", async () => {
+  it("lists payments by contract, customer, and day, deleted ones left out; totals what was collected", async () => {
     const { reception, customer, contract } = await setup();
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const a = await pay(reception, contract.id, 1_000_000, randomUUID(), "01/10/2026");
     const b = await pay(reception, contract.id, 2_000_000, randomUUID(), "05/10/2026");
-    await voidPayment(accountant, a.payment.id, { reasonId: OTHER_REASON, reasonNote: "Sai" });
+    const c = await pay(reception, contract.id, 3_000_000, randomUUID(), "03/10/2026");
+    await deletePayment(accountant, c.payment.id, { reasonId: OTHER_REASON, reasonNote: "Sai" });
 
     expect((await listPayments(reception, { customerId: customer.id })).items.map((p) => p.id)).toEqual([b.payment.id, a.payment.id]);
-    expect((await listPayments(reception, { status: "VOIDED" })).items.map((p) => p.id)).toEqual([a.payment.id]);
     expect((await listPayments(reception, { from: "02/10/2026", to: "31/10/2026" })).total).toBe(1);
-    expect(await collectedBetween(reception, { from: "01/10/2026", to: "31/10/2026" })).toBe(2_000_000);
+    expect(await collectedBetween(reception, { from: "01/10/2026", to: "31/10/2026" })).toBe(3_000_000);
   });
 
   it("the debt list shows owing contracts, largest first, without drafts (A-022)", async () => {

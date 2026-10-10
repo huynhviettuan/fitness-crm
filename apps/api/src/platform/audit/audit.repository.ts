@@ -1,18 +1,13 @@
 import type { Db } from "../db/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
+import type { AuditEntityType } from "@flow/shared/audit";
 
-export type AuditEntityType =
-  | "user"
-  | "role"
-  | "branch"
-  | "option"
-  | "parameter"
-  | "customer"
-  | "contract"
-  | "trainer"
-  | "booking"
-  | "payment"
-  | "cash_transaction";
+export type { AuditEntityType };
+
+type JsonScalar = string | number | boolean | null;
+
+/** A record's values, as JSON: all its fields for a create or delete, the changed ones for an update. */
+export type AuditValues = Record<string, unknown>;
 
 export type AuditEntry = {
   /** null only for system actions such as the initial seed. */
@@ -20,10 +15,15 @@ export type AuditEntry = {
   entityType: AuditEntityType;
   entityId: string;
   action: string;
-  metadata?: Prisma.InputJsonValue;
+  /** T-048: the values before the change; none for a create. */
+  before?: AuditValues | null;
+  /** The values after the change; none for a delete. */
+  after?: AuditValues | null;
+  /** What else explains the change, e.g. a reason or the contract it belongs to. */
+  context?: Prisma.InputJsonValue;
 };
 
-/** Must be called with the transaction that makes the change (T-022). */
+/** Must be called with the transaction that makes the change (T-022, T-048). */
 export async function recordAudit(db: Db, entry: AuditEntry): Promise<void> {
   await db.auditEvent.create({
     data: {
@@ -31,23 +31,45 @@ export async function recordAudit(db: Db, entry: AuditEntry): Promise<void> {
       entityType: entry.entityType,
       entityId: entry.entityId,
       action: entry.action,
-      metadata: entry.metadata ?? {},
+      before: toJson(entry.before),
+      after: toJson(entry.after),
+      metadata: entry.context ?? {},
     },
   });
 }
 
-type JsonScalar = string | number | boolean | null;
-type Changes = Record<string, { from: JsonScalar; to: JsonScalar }>;
-
-/** The fields whose value differs, as { field: { from, to } } for audit metadata. */
-export function diffFields<T extends object>(before: T, after: T, fields: readonly (keyof T)[]): Changes {
-  const changes: Changes = {};
+/**
+ * The fields whose value differs, as the `before` and `after` of an update; null when
+ * nothing changed, so the caller writes no event.
+ */
+export function diffFields<T extends object>(
+  before: T,
+  after: T,
+  fields: readonly (keyof T)[],
+): { before: AuditValues; after: AuditValues } | null {
+  const changed: { before: AuditValues; after: AuditValues } = { before: {}, after: {} };
   for (const field of fields) {
     const from = toJsonScalar(before[field]);
     const to = toJsonScalar(after[field]);
-    if (from !== to) changes[field as string] = { from, to };
+    if (from === to) continue;
+    changed.before[field as string] = from;
+    changed.after[field as string] = to;
   }
-  return changes;
+  return Object.keys(changed.after).length > 0 ? changed : null;
+}
+
+/** Values as stored: dates as ISO strings, decimals as numbers (JSON has neither). */
+function toJson(values: AuditValues | null | undefined): Prisma.InputJsonValue | undefined {
+  if (!values) return undefined;
+  // The replacer sees a decimal after its own toJSON (a string), so it looks at the raw value.
+  const json = JSON.stringify(values, function (this: Record<string, unknown>, key: string, value: unknown) {
+    return isDecimal(this[key]) ? Number(this[key]) : value;
+  });
+  return JSON.parse(json) as Prisma.InputJsonValue;
+}
+
+function isDecimal(value: unknown): boolean {
+  return typeof value === "object" && value !== null && "toFixed" in value && "d" in value;
 }
 
 function toJsonScalar(value: unknown): JsonScalar {

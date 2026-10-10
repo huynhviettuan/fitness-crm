@@ -7,9 +7,7 @@ const paymentInclude = {
     select: { id: true, contractCode: true, packageName: true, customer: { select: { id: true, customerCode: true, fullName: true } } },
   },
   method: { select: chosenSelect },
-  voidReason: { select: chosenSelect },
   createdBy: { select: { name: true } },
-  voidedBy: { select: { name: true } },
 } as const satisfies Prisma.PaymentInclude;
 
 export type PaymentRecord = Prisma.PaymentGetPayload<{ include: typeof paymentInclude }>;
@@ -30,50 +28,53 @@ export function createPayment(
   return db.payment.create({ data, include: paymentInclude });
 }
 
+/** A payment that is not deleted (D-035). */
 export function findPayment(db: Db, id: string, visibility: Prisma.PaymentWhereInput = {}): Promise<PaymentRecord | null> {
-  return db.payment.findFirst({ where: { AND: [{ id }, visibility] }, include: paymentInclude });
+  return db.payment.findFirst({ where: { AND: [{ id, deletedAt: null }, visibility] }, include: paymentInclude });
 }
 
 export function findPaymentByIdempotencyKey(db: Db, idempotencyKey: string): Promise<PaymentRecord | null> {
   return db.payment.findUnique({ where: { idempotencyKey }, include: paymentInclude });
 }
 
-/** Voids the payment only if it is still CONFIRMED. Returns rows changed. */
-export async function voidPayment(
+/** Marks the payment deleted only if it is not already (D-035). Returns rows changed. */
+export async function markPaymentDeleted(
   db: Db,
   id: string,
-  data: { voidedAt: Date; voidedById: string; voidReasonId: string; voidReasonNote: string | null },
+  data: { deletedAt: Date; deletedById: string; deleteReasonId: string; deleteReasonNote: string | null },
 ): Promise<number> {
-  const { count } = await db.payment.updateMany({ where: { id, status: "CONFIRMED" }, data: { ...data, status: "VOIDED" } });
+  const { count } = await db.payment.updateMany({ where: { id, deletedAt: null }, data });
   return count;
 }
 
 export async function listPayments(db: Db, where: Prisma.PaymentWhereInput, options: { skip: number; take: number }) {
+  // Deleted records are in the trash, not in lists (D-035).
+  const valid = { AND: [where, { deletedAt: null }] };
   const [items, total] = await Promise.all([
     db.payment.findMany({
-      where,
+      where: valid,
       include: paymentInclude,
       orderBy: [{ paidOn: "desc" }, { createdAt: "desc" }],
       skip: options.skip,
       take: options.take,
     }),
-    db.payment.count({ where }),
+    db.payment.count({ where: valid }),
   ]);
   return { items, total };
 }
 
-/** SUM of CONFIRMED payments matching `where` (BR-013, BR-014). */
-export async function sumConfirmedPayments(db: Db, where: Prisma.PaymentWhereInput): Promise<number> {
-  const { _sum } = await db.payment.aggregate({ where: { AND: [where, { status: "CONFIRMED" }] }, _sum: { amount: true } });
+/** SUM of the payments matching `where` that are not deleted (BR-013, BR-014, D-035). */
+export async function sumValidPayments(db: Db, where: Prisma.PaymentWhereInput): Promise<number> {
+  const { _sum } = await db.payment.aggregate({ where: { AND: [where, { deletedAt: null }] }, _sum: { amount: true } });
   return Number(_sum.amount ?? 0);
 }
 
-/** Confirmed paid amount per contract, for a page of contracts. */
-export async function confirmedPaidByContract(db: Db, contractIds: string[]): Promise<Map<string, number>> {
+/** Paid amount per contract from payments that are not deleted, for a page of contracts. */
+export async function validPaidByContract(db: Db, contractIds: string[]): Promise<Map<string, number>> {
   if (contractIds.length === 0) return new Map();
   const rows = await db.payment.groupBy({
     by: ["contractId"],
-    where: { contractId: { in: contractIds }, status: "CONFIRMED" },
+    where: { contractId: { in: contractIds }, deletedAt: null },
     _sum: { amount: true },
   });
   return new Map(rows.map((row) => [row.contractId, Number(row._sum.amount ?? 0)]));
@@ -106,7 +107,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
     db.$queryRaw<{ id: string }[]>`
       SELECT c.id
       FROM contracts c
-      LEFT JOIN payments p ON p.contract_id = c.id AND p.status = 'CONFIRMED'
+      LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL
       WHERE c.status <> 'DRAFT' AND ${where}
       GROUP BY c.id
       HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
@@ -116,7 +117,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
       SELECT COUNT(*) AS total FROM (
         SELECT c.id
         FROM contracts c
-        LEFT JOIN payments p ON p.contract_id = c.id AND p.status = 'CONFIRMED'
+        LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL
         WHERE c.status <> 'DRAFT' AND ${where}
         GROUP BY c.id
         HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0

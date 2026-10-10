@@ -70,7 +70,9 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
       entityType: "booking",
       entityId: bookingId,
       action: "booking.completed",
-      metadata: { from: "CHECKED_IN", to: "COMPLETED", contractId: contract.id, remainingSessions: remaining - 1 },
+      before: { status: "CHECKED_IN" },
+      after: { status: "COMPLETED" },
+      context: { contractId: contract.id, remainingSessions: remaining - 1 },
     });
     return result();
   });

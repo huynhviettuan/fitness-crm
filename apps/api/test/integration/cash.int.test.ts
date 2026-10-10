@@ -7,7 +7,7 @@ import {
   financeSummary,
   listCashTransactions,
   recordCashTransaction,
-  voidCashTransaction,
+  deleteCashTransaction,
 } from "../../src/modules/finance/cash.service.js";
 import { recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
@@ -31,13 +31,13 @@ beforeEach(async () => {
 const record = (actor: Actor, input: object = expense, key = randomUUID()) => recordCashTransaction(actor, input, key);
 
 describe("recordCashTransaction", () => {
-  it("records a CONFIRMED entry, stores blank optional text as null, and audits", async () => {
+  it("records an entry, stores blank optional text as null, and audits", async () => {
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
 
     const { transaction, replayed } = await record(accountant, { ...expense, reference: "", description: "  " });
 
     expect(replayed).toBe(false);
-    expect(transaction).toMatchObject({ type: "EXPENSE", amount: 1_500_000, status: "CONFIRMED", reference: null, description: null });
+    expect(transaction).toMatchObject({ type: "EXPENSE", amount: 1_500_000, reference: null, description: null });
     expect(await prisma.auditEvent.findFirst({ where: { entityId: transaction.id } })).toMatchObject({ action: "cash_transaction.created" });
   });
 
@@ -82,35 +82,53 @@ describe("recordCashTransaction", () => {
   });
 });
 
-describe("voidCashTransaction (A-009)", () => {
-  it("voids with a reason, and a repeat returns the current state", async () => {
+describe("deleteCashTransaction (D-035)", () => {
+  it("moves the entry to the trash with its reason; it leaves the list, and deleting again is NOT_FOUND", async () => {
+    const { actor: accountant } = await createTestUser("ACCOUNTANT");
+    const { transaction } = await record(accountant);
+
+    await deleteCashTransaction(accountant, transaction.id, { reasonId: OTHER_REASON, reasonNote: "Nhập sai số tiền" });
+
+    expect((await listCashTransactions(accountant, {})).total).toBe(0);
+    expect(await prisma.trashEntry.findFirst({ where: { entityId: transaction.id } })).toMatchObject({
+      entityType: "cash_transaction",
+      title: "Điện nước",
+      reasonNote: "Nhập sai số tiền",
+      snapshot: { id: transaction.id, type: "EXPENSE", amount: 1_500_000 },
+    });
+    await expect(deleteCashTransaction(accountant, transaction.id, { reasonId: OTHER_REASON, reasonNote: "Lần hai" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(await prisma.auditEvent.count({ where: { entityId: transaction.id, action: "cash_transaction.deleted" } })).toBe(1);
+  });
+
+  // 09_RBAC.md: a Fitness Manager records income and expenses but does not delete vouchers.
+  it("refuses a FITNESS_MANAGER", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { transaction } = await record(manager);
 
-    const voided = await voidCashTransaction(manager, transaction.id, { reasonId: OTHER_REASON, reasonNote: "Nhập sai số tiền" });
-    const again = await voidCashTransaction(manager, transaction.id, { reasonId: OTHER_REASON, reasonNote: "Khác" });
-
-    expect(voided).toMatchObject({ status: "VOIDED", voidReason: { note: "Nhập sai số tiền" }, voidedBy: "FITNESS_MANAGER test user" });
-    expect(again.voidReason?.note).toBe("Nhập sai số tiền");
-    expect(await prisma.auditEvent.count({ where: { entityId: transaction.id, action: "cash_transaction.voided" } })).toBe(1);
+    await expect(deleteCashTransaction(manager, transaction.id, { reasonId: OTHER_REASON, reasonNote: "x" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
 describe("financeSummary (FR-CASH-002, OQ-007 interim)", () => {
-  it("totals confirmed income, expenses, and contract payments as separate lines for the period", async () => {
+  it("totals income, expenses, and contract payments as separate lines for the period, deleted ones left out", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const { actor: admin } = await createTestUser("ADMIN");
     const customer = await createCustomer(manager, { fullName: "Nguyễn Văn An", phone: "0909123456" });
     const contract = await activeContract(manager, customer.id);
     await recordPayment(manager, contract.id, { amount: "5.000.000", methodId: await optionId("paymentMethods", "Chuyển khoản"), paidOn: "02/10/2026" }, randomUUID());
     await record(manager, { type: "INCOME", categoryId: sales, amount: "300.000", occurredOn: "04/10/2026" });
     await record(manager, expense);
     const voided = await record(manager, { ...expense, amount: "9.000.000" });
-    await voidCashTransaction(manager, voided.transaction.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" });
+    await deleteCashTransaction(admin, voided.transaction.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" });
     await record(manager, { ...expense, occurredOn: "30/09/2026" }); // previous month
 
     const summary = await financeSummary(manager, { from: "01/10/2026", to: "31/10/2026" });
 
     expect(summary).toEqual({ contractPayments: 5_000_000, otherIncome: 300_000, expense: 1_500_000 });
-    expect((await listCashTransactions(manager, { from: "01/10/2026", to: "31/10/2026", type: "EXPENSE" })).total).toBe(2);
+    expect((await listCashTransactions(manager, { from: "01/10/2026", to: "31/10/2026", type: "EXPENSE" })).total).toBe(1);
   });
 });

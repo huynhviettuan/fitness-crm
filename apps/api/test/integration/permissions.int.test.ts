@@ -53,7 +53,7 @@ describe("roles (FR-PLT-002)", () => {
 
     await expect(createCustomer(await actorOf(actor.id), { fullName: "A", phone: "0909000001" })).resolves.toBeDefined();
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { entityId: role.id, action: "role.updated" } });
-    expect(audit.metadata).toMatchObject({ before: { permissions: ["customer.view"] }, after: { permissions: ["customer.manage", "customer.view"] } });
+    expect(audit).toMatchObject({ before: { permissions: ["customer.view"] }, after: { permissions: ["customer.manage", "customer.view"] } });
   });
 
   it("a clone copies permissions, scopes, and masks under a new name", async () => {

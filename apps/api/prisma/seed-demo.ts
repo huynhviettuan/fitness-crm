@@ -37,8 +37,8 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const { activateContract, cancelContract, createContract } = await import("../src/modules/contracts/contract.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");
   const { checkIn, completeSession } = await import("../src/modules/sessions/session.service.js");
-  const { recordPayment, voidPayment } = await import("../src/modules/finance/payment.service.js");
-  const { recordCashTransaction, voidCashTransaction } = await import("../src/modules/finance/cash.service.js");
+  const { recordPayment, deletePayment } = await import("../src/modules/finance/payment.service.js");
+  const { recordCashTransaction, deleteCashTransaction } = await import("../src/modules/finance/cash.service.js");
   const { loadCurrentUser } = await import("../src/platform/auth/actor.js");
   type Actor = import("../src/platform/auth/session.js").Actor;
   const actorOf = async (userId: string): Promise<Actor> => (await loadCurrentUser(prisma, userId))!;
@@ -251,7 +251,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   await pay(c4, "2.000.000", "OTHER", -2, "Ví MoMo");
   await pay(c5, "3.000.000", "CASH", -10);
   const wrong = await pay(c5, "3.250.000", "CASH", -9);
-  await voidPayment(accountant, wrong.payment.id, { reasonId: wrongAmount, reasonNote: "Khách chỉ trả 3.000.000" });
+  await deletePayment(accountant, wrong.payment.id, { reasonId: wrongAmount, reasonNote: "Khách chỉ trả 3.000.000" });
   await pay(c8, "10.000.000", "BANK_TRANSFER", -199);
   await pay(c9, "2.000.000", "CASH", -5);
   await pay(c10, "1.000.000", "CASH", -7);
@@ -268,7 +268,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   await cash("INCOME", "Phí gửi xe", "300.000", -3);
   await cash("EXPENSE", "Tiền điện", "3.200.000", -5, "EVN-0921");
   const duplicate = await cash("EXPENSE", "Tiền điện", "3.200.000", -5, "EVN-0921");
-  await voidCashTransaction(accountant, duplicate.transaction.id, { reasonId: enteredTwice });
+  await deleteCashTransaction(accountant, duplicate.transaction.id, { reasonId: enteredTwice });
   await cash("EXPENSE", "Tiền nước", "650.000", -5);
   await cash("EXPENSE", "Mua khăn tập", "800.000", -8);
   await cash("INCOME", "Bán nước uống", "520.000", -33);

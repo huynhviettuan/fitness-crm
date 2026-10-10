@@ -62,7 +62,7 @@ describe("createUser", () => {
     expect(session?.permissions.has("contract.create")).toBe(false);
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { entityId: user.id } });
     expect(audit.action).toBe("user.created");
-    expect(JSON.stringify(audit.metadata)).not.toContain(input.password);
+    expect(JSON.stringify(audit)).not.toContain(input.password);
   });
 
   it("rejects an email that is already used, even when two admins submit at once", async () => {
@@ -155,7 +155,7 @@ describe("roles, overrides, and passwords (D-017)", () => {
     expect(session?.role.id).toBe(managerRole);
     expect(session?.permissions.has("contract.approve")).toBe(true);
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { action: "user.role_changed" } });
-    expect(audit.metadata).toEqual({ changes: { role: { from: await roleId("RECEPTIONIST"), to: managerRole } } });
+    expect(audit).toMatchObject({ before: { roleId: await roleId("RECEPTIONIST") }, after: { roleId: managerRole } });
   });
 
   it("an override switches one permission on or off for one user, on their next request (FR-PLT-003)", async () => {

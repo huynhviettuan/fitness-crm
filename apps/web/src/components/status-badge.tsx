@@ -11,9 +11,6 @@ const STATUS_VARIANTS = {
   contract: { DRAFT: "muted", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted" },
   trainer: { ACTIVE: "success", INACTIVE: "muted" },
   booking: { BOOKED: "info", CHECKED_IN: "warning", COMPLETED: "success", CANCELLED: "muted", NO_SHOW: "destructive" },
-  // A voided amount is also struck through (Money `struck`).
-  payment: { CONFIRMED: "success", VOIDED: "muted" },
-  cashTransaction: { CONFIRMED: "success", VOIDED: "muted" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },
   option: { ACTIVE: "success", INACTIVE: "muted" },
   login: { SUCCESS: "success", FAILED: "destructive" },

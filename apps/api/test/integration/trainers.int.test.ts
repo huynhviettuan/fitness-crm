@@ -97,9 +97,7 @@ describe("updateTrainer", () => {
 
     expect(updated).toMatchObject({ status: "INACTIVE", user: null });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: trainer.id, action: "trainer.updated" } });
-    expect(audit?.metadata).toEqual({
-      changes: { status: { from: "ACTIVE", to: "INACTIVE" }, userId: { from: user.id, to: null } },
-    });
+    expect(audit).toMatchObject({ before: { status: "ACTIVE", userId: user.id }, after: { status: "INACTIVE", userId: null } });
   });
 
   it("keeping a trainer's own login is not a conflict", async () => {

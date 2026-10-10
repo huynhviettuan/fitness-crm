@@ -36,7 +36,8 @@ export async function updateParameters(actor: Actor, input: unknown): Promise<Pa
         entityType: "parameter",
         entityId: row.id,
         action: "parameter.updated",
-        metadata: { key, changes: { value: { from: before[key], to: data[key] } } },
+        before: { [key]: before[key] },
+        after: { [key]: data[key] },
       });
     }
     return readParameters(tx);

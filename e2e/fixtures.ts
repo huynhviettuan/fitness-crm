@@ -6,6 +6,7 @@ import type { Role } from "./support/db";
 import { BranchesPage, RolesPage, UserDetailPage } from "./pages/admin";
 import { AppShell } from "./pages/app-shell";
 import { OptionListsPage, ParametersPage } from "./pages/configuration";
+import { AuditPage, TrashPage } from "./pages/history";
 import { CalendarPage, CustomerBookingsTab, SessionsPage, TrainersPage } from "./pages/bookings";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
@@ -31,6 +32,8 @@ type Fixtures = {
   userDetailPage: UserDetailPage;
   optionListsPage: OptionListsPage;
   parametersPage: ParametersPage;
+  trashPage: TrashPage;
+  auditPage: AuditPage;
   /**
    * For a test that changes system parameters (T-049): they are global, so teardown
    * puts back exactly what was there before the test.
@@ -70,6 +73,8 @@ export const test = base.extend<Fixtures>({
   userDetailPage: async ({ page }, use) => use(new UserDetailPage(page)),
   optionListsPage: async ({ page }, use) => use(new OptionListsPage(page)),
   parametersPage: async ({ page }, use) => use(new ParametersPage(page)),
+  trashPage: async ({ page }, use) => use(new TrashPage(page)),
+  auditPage: async ({ page }, use) => use(new AuditPage(page)),
 
   restoresParameters: async ({}, use) => {
     const prisma = connect();
@@ -142,6 +147,8 @@ export const test = base.extend<Fixtures>({
       );
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
+      // Teardown removes test data outright, outside the trash rules (docs/13).
+      await prisma.trashEntry.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds] } } });
       await prisma.payment.deleteMany({ where: { id: { in: paymentIds } } });
       await prisma.cashTransaction.deleteMany({ where: { id: { in: cashIds } } });
       const audited = [...customerIds, ...contractIds, ...bookingIds, ...trainerIds, ...paymentIds, ...cashIds];

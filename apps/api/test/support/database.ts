@@ -7,7 +7,7 @@ import { DEFAULT_BRANCH_ID, SEEDED_OPTIONS } from "./factories.js";
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "audit_events", "payments", "cash_transactions", "sessions", "bookings", "trainers", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "audit_events", "trash_entries", "payments", "cash_transactions", "sessions", "bookings", "trainers", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Roles and branches the tests created; the migration's defaults stay.

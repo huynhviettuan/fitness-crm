@@ -1,8 +1,9 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { recordCashTransaction, voidCashTransaction, recordPayment, voidPayment } from "@/lib/api/finance";
-import type { CashTransactionInput, PaymentInput, VoidInput } from "@flow/shared/finance";
+import { deleteCashTransaction, deletePayment, recordCashTransaction, recordPayment } from "@/lib/api/finance";
+import type { CashTransactionInput, PaymentInput } from "@flow/shared/finance";
+import type { DeleteInput } from "@flow/shared/trash";
 
 /** `idempotencyKey` is generated when the form opens, so a double submit reuses it (T-015). */
 export async function recordPaymentAction(contractId: string, input: PaymentInput, idempotencyKey: string): Promise<ActionResult> {
@@ -11,9 +12,9 @@ export async function recordPaymentAction(contractId: string, input: PaymentInpu
   });
 }
 
-export async function voidPaymentAction(id: string, input: VoidInput): Promise<ActionResult> {
+export async function deletePaymentAction(id: string, input: DeleteInput): Promise<ActionResult> {
   return runAction(async () => {
-    await voidPayment(id, input);
+    await deletePayment(id, input);
   });
 }
 
@@ -23,8 +24,8 @@ export async function recordCashTransactionAction(input: CashTransactionInput, i
   });
 }
 
-export async function voidCashTransactionAction(id: string, input: VoidInput): Promise<ActionResult> {
+export async function deleteCashTransactionAction(id: string, input: DeleteInput): Promise<ActionResult> {
   return runAction(async () => {
-    await voidCashTransaction(id, input);
+    await deleteCashTransaction(id, input);
   });
 }
