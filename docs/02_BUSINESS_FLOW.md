@@ -51,7 +51,7 @@ Refused, No response, and No show are never closed; they wait in the re-care que
 
 ## Flow 3 — Consulting checklist (brief §4.1, D-020)
 
-Each lead gets a checklist. The system creates a task with a deadline for the person in charge and records who completed each step and when. Results are drop-downs. Timers and steps are configuration; changes apply to new leads only.
+Each lead gets a checklist. The system creates a task with a deadline for the person in charge and records who completed each step and when. Results are drop-downs. Timers and steps are configuration; changes apply to new leads only. As built (T-063): steps appear in "Việc hôm nay"; step 4 is done by booking the visit (A-057); step 1 is due 60 minutes after assignment (A-055).
 
 | Step | Task created when | Result (initial options) |
 |---|---|---|

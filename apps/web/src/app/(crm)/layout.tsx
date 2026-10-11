@@ -14,7 +14,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   const user = await requirePageUser();
 
   const mainItems: NavItemKey[] = ["dashboard"];
-  if (can(user, "lead.view")) mainItems.push("leads");
+  if (can(user, "lead.view")) mainItems.push("leads", "leadsToday");
   if (can(user, "customer.view")) mainItems.push("customers");
   if (can(user, "contract.view")) mainItems.push("contracts");
   if (can(user, "booking.view")) mainItems.push("calendar", "sessions");
@@ -26,7 +26,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "user.manage")) adminItems.push("users");
   if (can(user, "role.manage")) adminItems.push("roles");
   if (can(user, "branch.manage")) adminItems.push("branches");
-  if (can(user, "config.manage")) adminItems.push("options", "parameters");
+  if (can(user, "config.manage")) adminItems.push("options", "parameters", "checklist");
   if (can(user, "audit.view")) adminItems.push("audit");
   if (can(user, "trash.view")) adminItems.push("trash");
   if (can(user, "approval.manage")) adminItems.push("approvalRules");

@@ -83,8 +83,8 @@ erDiagram
 | `lead_status_history` (built as `lead_status_changes`, T-062) | person_id, from_status (null at creation), to_status, appointment_at, reason_option_id, reason_note, note, by (null: the system), at |
 | `lead_assignments` (T-062) | person_id, from_user_id, to_user_id, by (null: round-robin), at |
 | `lead_round_robin` (T-062) | branch_id, last_user_id: the branch's last receiver of a new lead |
-| `consulting_checklists` / `consulting_step_templates` | versioned checklist; step key, order, label, trigger, delay, required, result list |
-| `consulting_steps` | person_id, template_step_id, due_at, done_at, done_by, result_option_id, note, timing (ON_TIME, LATE, SKIPPED) |
+| `consulting_checklists` / `consulting_step_templates` (T-063) | version, created_by (no foreign key); step key, order, labels, trigger (ASSIGNED, STATUS, APPOINTMENT, AFTER_STEP, RECARE), trigger status or step, offset minutes, required, auto_complete, results (labels) |
+| `consulting_steps` (built as `lead_steps`, T-063) | person_id, template_step_id, opened_at, due_at, due_notified_at, done_at, done_by, result_index, note, timing (ON_TIME, LATE; SKIPPED in M3) |
 | `appointments` | person_id, at, assessment_type_option_id, confirmation_1, confirmation_2, outcome (SHOW, NO_SHOW) |
 | `recare_queue` | person_id, contact_on, reason, resolved_at |
 | `consulting_audits` | person_id, auto_score, compliance_pct, manager_result (PASS, FAIL), manager_note, ai_suggestion (json), audited_by |

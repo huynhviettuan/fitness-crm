@@ -16,6 +16,7 @@ import { BookingsController, ScheduleController } from "./modules/bookings/booki
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
 import { CustomersController } from "./modules/customers/customers.controller.js";
 import { LeadsController } from "./modules/leads/leads.controller.js";
+import { ChecklistController } from "./modules/leads/checklist.controller.js";
 import {
   CashTransactionsController,
   DebtsController,
@@ -32,6 +33,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
   controllers: [
     MeController,
     LeadsController,
+    ChecklistController,
     CustomersController,
     ContractsController,
     EmployeesController,

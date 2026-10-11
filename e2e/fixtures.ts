@@ -12,6 +12,7 @@ import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/booking
 import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage } from "./pages/leads";
+import { ChecklistAdminPage, TodayPage } from "./pages/checklist";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
 import { CustomerDetailPage, CustomersPage } from "./pages/customers";
@@ -33,6 +34,8 @@ type Fixtures = {
   tasksPage: TasksPage;
   leadsPage: LeadsPage;
   leadPage: LeadPage;
+  todayPage: TodayPage;
+  checklistAdminPage: ChecklistAdminPage;
   taskPage: TaskPage;
   notificationsPage: NotificationsPage;
   employeePage: EmployeePage;
@@ -51,6 +54,11 @@ type Fixtures = {
    * puts back exactly what was there before the test.
    */
   restoresParameters: void;
+  /**
+   * For a test that saves the consulting checklist (D-020). Versions are never changed,
+   * so teardown saves the checklist as it was as the newest version again.
+   */
+  restoresChecklist: void;
   /** Like restoresParameters, for a test that edits the approval matrix (D-018). */
   restoresApprovalRules: void;
   /**
@@ -85,6 +93,8 @@ export const test = base.extend<Fixtures>({
   tasksPage: async ({ page }, use) => use(new TasksPage(page)),
   leadsPage: async ({ page }, use) => use(new LeadsPage(page)),
   leadPage: async ({ page }, use) => use(new LeadPage(page)),
+  todayPage: async ({ page }, use) => use(new TodayPage(page)),
+  checklistAdminPage: async ({ page }, use) => use(new ChecklistAdminPage(page)),
   taskPage: async ({ page }, use) => use(new TaskPage(page)),
   notificationsPage: async ({ page }, use) => use(new NotificationsPage(page)),
   employeePage: async ({ page }, use) => use(new EmployeePage(page)),
@@ -112,6 +122,41 @@ export const test = base.extend<Fixtures>({
         await prisma.approvalRuleRole.deleteMany({ where: { actionType: rule.actionType } });
         await prisma.approvalRuleRole.createMany({
           data: rule.approvers.map((a) => ({ actionType: a.actionType, roleId: a.roleId })),
+        });
+      }
+    } finally {
+      await prisma.$disconnect();
+    }
+  },
+
+  restoresChecklist: async ({}, use) => {
+    const prisma = connect();
+    try {
+      const latest = () =>
+        prisma.consultingChecklist.findFirstOrThrow({ orderBy: { version: "desc" }, include: { steps: true } });
+      const before = await latest();
+      await use();
+      const after = await latest();
+      if (after.version !== before.version) {
+        await prisma.consultingChecklist.create({
+          data: {
+            version: after.version + 1,
+            steps: {
+              create: before.steps.map((step) => ({
+                sortOrder: step.sortOrder,
+                key: step.key,
+                labelVi: step.labelVi,
+                labelEn: step.labelEn,
+                trigger: step.trigger,
+                triggerStatus: step.triggerStatus,
+                triggerStepKey: step.triggerStepKey,
+                offsetMinutes: step.offsetMinutes,
+                required: step.required,
+                autoComplete: step.autoComplete,
+                results: step.results ?? [],
+              })),
+            },
+          },
         });
       }
     } finally {
@@ -205,6 +250,7 @@ export const test = base.extend<Fixtures>({
       // Notifications about tagged leads (their name), and the leads' journey (D-020).
       await prisma.notification.deleteMany({ where: { params: { path: ["name"], string_contains: tag } } });
       await prisma.leadStatusChange.deleteMany({ where: { customerId: { in: customerIds } } });
+      await prisma.leadStep.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.leadAssignment.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
@@ -233,6 +279,7 @@ export const test = base.extend<Fixtures>({
       // Their part in other leads' journeys (restricted), and the round-robin's memory of them.
       const asUser = { in: userIds };
       await prisma.leadStatusChange.updateMany({ where: { changedById: asUser }, data: { changedById: null } });
+      await prisma.leadStep.updateMany({ where: { doneById: asUser }, data: { doneById: null } });
       await prisma.leadAssignment.deleteMany({
         where: { OR: [{ fromUserId: asUser }, { toUserId: asUser }, { assignedById: asUser }] },
       });

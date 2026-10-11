@@ -13,12 +13,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
-import { getLead, getLeadTimeline, listLeadAssignees } from "@/lib/api/leads";
+import { getLead, getLeadChecklist, getLeadTimeline, listLeadAssignees } from "@/lib/api/leads";
 import { isRecareStatus } from "@flow/shared/leads";
 import type { ChosenOption } from "@flow/shared/options";
 import { EditLeadButton } from "../lead-form";
 import { AssignLeadButton, ChangeStatusButton } from "../lead-journey";
 import { LeadTimeline } from "../lead-timeline";
+import { ChecklistSteps } from "../lead-checklist";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;
@@ -39,16 +40,17 @@ export async function generateMetadata({ params }: PageProps<"/leads/[id]">): Pr
   return { title: `${lead.leadCode} · ${lead.fullName}` };
 }
 
-/** One lead (FR-LEAD-006): its journey and history, profile, and need. The checklist arrives in M2 slice 3. */
+/** One lead (FR-LEAD-004, FR-LEAD-006): its journey and history, consulting checklist, profile, and need. */
 export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
   const user = await requirePageUser();
   if (!can(user, "lead.view")) return <ForbiddenState />;
 
   const t = await getTranslations("leads");
   const lead = await loadLead((await params).id);
-  const [timeline, assignees] = await Promise.all([
+  const [timeline, assignees, checklist] = await Promise.all([
     getLeadTimeline(lead.id),
     can(user, "lead.assign") ? listLeadAssignees(lead.id) : null,
+    getLeadChecklist(lead.id),
   ]);
   const chosen = (option: ChosenOption | null) => {
     if (!option) return null;
@@ -152,6 +154,14 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
           </CardHeader>
           <CardContent>
             <LeadTimeline entries={timeline.items} />
+          </CardContent>
+        </Card>
+        <Card role="region" aria-label={t("checklist")} className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t("checklist")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChecklistSteps leadId={lead.id} steps={checklist.items} canComplete={can(user, "lead.manage")} />
           </CardContent>
         </Card>
         <Card role="region" aria-label={t("profile")}>

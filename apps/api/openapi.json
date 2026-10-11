@@ -406,6 +406,47 @@
         "x-permission": "lead.view"
       }
     },
+    "/api/v1/leads/today": {
+      "get": {
+        "operationId": "LeadsController_today",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodaySteps"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
     "/api/v1/leads/{id}": {
       "get": {
         "operationId": "LeadsController_get",
@@ -846,6 +887,300 @@
           "leads"
         ],
         "x-permission": "lead.assign"
+      }
+    },
+    "/api/v1/leads/{id}/steps": {
+      "get": {
+        "operationId": "LeadsController_steps",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadChecklist"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
+    "/api/v1/leads/{id}/steps/{stepId}/complete": {
+      "post": {
+        "operationId": "LeadsController_completeStep",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stepId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resultIndex": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "note": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "resultIndex"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadChecklist"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.manage"
+      }
+    },
+    "/api/v1/consulting-checklist": {
+      "get": {
+        "operationId": "ChecklistController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingChecklist"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "config.manage"
+      },
+      "post": {
+        "operationId": "ChecklistController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "steps": {
+                    "minItems": 1,
+                    "maxItems": 30,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9][a-z0-9-]{0,39}$"
+                        },
+                        "labelVi": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "labelEn": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "trigger": {
+                          "type": "string",
+                          "enum": [
+                            "ASSIGNED",
+                            "STATUS",
+                            "APPOINTMENT",
+                            "AFTER_STEP",
+                            "RECARE"
+                          ]
+                        },
+                        "triggerStatus": {
+                          "default": "",
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "CONSULTING",
+                            "CONSIDERING",
+                            "NO_RESPONSE",
+                            "BOOKED",
+                            "SHOWED",
+                            "NO_SHOW",
+                            "REFUSED",
+                            "CONTRACTED"
+                          ]
+                        },
+                        "triggerStepKey": {
+                          "default": "",
+                          "type": "string"
+                        },
+                        "offsetValue": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 999
+                        },
+                        "offsetUnit": {
+                          "type": "string",
+                          "enum": [
+                            "MINUTES",
+                            "HOURS",
+                            "DAYS"
+                          ]
+                        },
+                        "required": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "autoComplete": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "results": {
+                          "minItems": 1,
+                          "maxItems": 10,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "labelVi": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "labelEn": {
+                                "type": "string",
+                                "maxLength": 60
+                              }
+                            },
+                            "required": [
+                              "labelVi",
+                              "labelEn"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "labelVi",
+                        "labelEn",
+                        "trigger",
+                        "offsetValue",
+                        "offsetUnit",
+                        "results"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "steps"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingChecklist"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "config.manage"
       }
     },
     "/api/v1/customers": {
@@ -7063,6 +7398,253 @@
           "columns"
         ]
       },
+      "TodaySteps": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "step": {
+                  "$ref": "#/components/schemas/LeadStep"
+                },
+                "lead": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leadCode": {
+                      "type": "string"
+                    },
+                    "fullName": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "NEW",
+                        "CONSULTING",
+                        "CONSIDERING",
+                        "NO_RESPONSE",
+                        "BOOKED",
+                        "SHOWED",
+                        "NO_SHOW",
+                        "REFUSED",
+                        "CONTRACTED"
+                      ]
+                    },
+                    "pic": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "leadCode",
+                    "fullName",
+                    "status",
+                    "pic"
+                  ]
+                }
+              },
+              "required": [
+                "step",
+                "lead"
+              ]
+            }
+          },
+          "overdue": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "overdue"
+        ]
+      },
+      "LeadStep": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "labelVi": {
+            "type": "string"
+          },
+          "labelEn": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "STATUS",
+              "APPOINTMENT",
+              "AFTER_STEP",
+              "RECARE"
+            ]
+          },
+          "triggerStatus": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "NEW",
+              "CONSULTING",
+              "CONSIDERING",
+              "NO_RESPONSE",
+              "BOOKED",
+              "SHOWED",
+              "NO_SHOW",
+              "REFUSED",
+              "CONTRACTED"
+            ]
+          },
+          "triggerStepKey": {
+            "nullable": true,
+            "type": "string"
+          },
+          "offsetMinutes": {
+            "type": "integer"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "autoComplete": {
+            "type": "boolean"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "labelVi": {
+                  "type": "string"
+                },
+                "labelEn": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "labelVi",
+                "labelEn"
+              ]
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "OPEN",
+              "DONE"
+            ]
+          },
+          "openedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "doneAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "doneBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "result": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "labelVi": {
+                "type": "string"
+              },
+              "labelEn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "labelVi",
+              "labelEn"
+            ]
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          },
+          "timing": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "ON_TIME",
+              "LATE"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "labelVi",
+          "labelEn",
+          "trigger",
+          "triggerStatus",
+          "triggerStepKey",
+          "offsetMinutes",
+          "required",
+          "autoComplete",
+          "results",
+          "id",
+          "state",
+          "openedAt",
+          "dueAt",
+          "overdue",
+          "doneAt",
+          "doneBy",
+          "result",
+          "note",
+          "timing"
+        ]
+      },
       "LeadTimeline": {
         "type": "object",
         "properties": {
@@ -7273,6 +7855,150 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "LeadChecklist": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeadStep"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "items"
+        ]
+      },
+      "ConsultingChecklist": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "labelVi": {
+                  "type": "string"
+                },
+                "labelEn": {
+                  "type": "string"
+                },
+                "trigger": {
+                  "type": "string",
+                  "enum": [
+                    "ASSIGNED",
+                    "STATUS",
+                    "APPOINTMENT",
+                    "AFTER_STEP",
+                    "RECARE"
+                  ]
+                },
+                "triggerStatus": {
+                  "nullable": true,
+                  "type": "string",
+                  "enum": [
+                    "NEW",
+                    "CONSULTING",
+                    "CONSIDERING",
+                    "NO_RESPONSE",
+                    "BOOKED",
+                    "SHOWED",
+                    "NO_SHOW",
+                    "REFUSED",
+                    "CONTRACTED"
+                  ]
+                },
+                "triggerStepKey": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "offsetMinutes": {
+                  "type": "integer"
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "autoComplete": {
+                  "type": "boolean"
+                },
+                "results": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "labelVi": {
+                        "type": "string"
+                      },
+                      "labelEn": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "labelVi",
+                      "labelEn"
+                    ]
+                  }
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "key",
+                "labelVi",
+                "labelEn",
+                "trigger",
+                "triggerStatus",
+                "triggerStepKey",
+                "offsetMinutes",
+                "required",
+                "autoComplete",
+                "results",
+                "id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "version",
+          "createdAt",
+          "createdBy",
+          "steps"
         ]
       },
       "CustomerPage": {
@@ -9797,7 +10523,8 @@
               "approvalDecided",
               "approvalOverdue",
               "leadNew",
-              "leadAssigned"
+              "leadAssigned",
+              "leadStepDue"
             ]
           },
           "params": {

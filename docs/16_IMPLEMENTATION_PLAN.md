@@ -34,7 +34,8 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M1 | All slices built; next: the owner checks AC-01 to AC-05 and AC-13 on staging | — |
 | M2 | 1. One person record and lead intake: the customers table gains the stage, lead code, lead status, and lead profile; quick form (phone-first), lead list and page; five option lists with the brief's values; one phone per person (T-061, A-049 to A-051) | **Done** 2026-10-11 |
 | M2 | 2. Assignment and statuses: round-robin to the branch's consultants, reassignment by managers, notifications; the status flow with appointment, refusal reason, and contact-again day; timeline; Kanban (T-062, A-052 to A-054) | **Done** 2026-10-11 |
-| M2 | Next: 3 consulting checklist, 4 appointment and Show, 5 re-care and merge, 6 scripts and customer profile | Not started |
+| M2 | 3. Consulting checklist: versioned steps with triggers, delays, results, and required flags; admin editor; a lead's checklist with deadlines, results, on time or late; "Việc hôm nay"; reminders when a step comes due (T-063, A-055 to A-058) | **Done** 2026-10-11 |
+| M2 | Next: 4 appointment, Báo Studio, and Show; 5 re-care and merge; 6 scripts and customer profile | Not started |
 
 ## Open questions per milestone
 

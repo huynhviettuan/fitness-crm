@@ -20,6 +20,8 @@ export const NOTIFICATION_KINDS = [
   // Leads (brief §4.1): managers hear of new leads, consultants of leads given to them.
   "leadNew",
   "leadAssigned",
+  // A consulting step's deadline has come (FR-LEAD-004).
+  "leadStepDue",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

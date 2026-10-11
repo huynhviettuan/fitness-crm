@@ -57,6 +57,20 @@ enum LeadStatus {
   CONTRACTED
 }
 
+// What opens a consulting step (D-020, packages/shared/src/leads/checklist.schema.ts).
+enum StepTrigger {
+  ASSIGNED
+  STATUS
+  APPOINTMENT
+  AFTER_STEP
+  RECARE
+}
+
+enum StepTiming {
+  ON_TIME
+  LATE
+}
+
 enum SourceType {
   ORGANIC
   PAID
@@ -175,6 +189,7 @@ model User {
   leadAssignedTo     LeadAssignment[]         @relation("LeadAssignmentTo")
   leadAssignedBy     LeadAssignment[]         @relation("LeadAssignmentBy")
   leadRoundRobins    LeadRoundRobin[]
+  leadStepsDone      LeadStep[]
 
   @@index([roleId])
   @@map("users")
@@ -534,69 +549,73 @@ model ApprovalRequest {
 // A person: a lead until Show, then a customer, in this one record (D-019, T-061). The
 // table keeps its name; checks in the migration tie the codes and phone to the stage.
 model Customer {
-  id                  String            @id @default(uuid()) @db.Uuid
-  branchId            String            @map("branch_id") @db.Uuid
-  branch              Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  stage               PersonStage       @default(CUSTOMER)
+  id                  String               @id @default(uuid()) @db.Uuid
+  branchId            String               @map("branch_id") @db.Uuid
+  branch              Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  stage               PersonStage          @default(CUSTOMER)
   // From lead_code_seq (D-038); only people who came in as leads have one. Never updated.
-  leadCode            String?           @unique @map("lead_code")
+  leadCode            String?              @unique @map("lead_code")
   // From customer_code_seq (T-019), given at Show. Never updated.
-  customerCode        String?           @unique @map("customer_code")
+  customerCode        String?              @unique @map("customer_code")
   // The lead journey (D-020); null for customers who never were leads.
-  leadStatus          LeadStatus?       @map("lead_status")
-  fullName            String            @map("full_name")
+  leadStatus          LeadStatus?          @map("lead_status")
+  fullName            String               @map("full_name")
   // fullName lowercased without Vietnamese diacritics, for accent-insensitive search.
-  searchName          String            @map("search_name")
+  searchName          String               @map("search_name")
   // Required of customers; a lead may not have one yet.
   phone               String?
   email               String?
-  dateOfBirth         DateTime?         @map("date_of_birth") @db.Date
+  dateOfBirth         DateTime?            @map("date_of_birth") @db.Date
   gender              Gender?
   // The lead profile (brief §4.1): choices from option lists, "Khác" with a note (D-016).
-  channelId           String?           @map("channel_option_id") @db.Uuid
-  channel             Option?           @relation("PersonChannel", fields: [channelId], references: [id], onDelete: Restrict)
-  channelNote         String?           @map("channel_note")
-  sourceId            String?           @map("source_option_id") @db.Uuid
-  source              Option?           @relation("PersonSource", fields: [sourceId], references: [id], onDelete: Restrict)
-  sourceNote          String?           @map("source_note")
-  sourceType          SourceType?       @map("source_type")
-  sourceDetail        String?           @map("source_detail")
-  nationalityGroup    NationalityGroup? @map("nationality_group")
-  needGroupId         String?           @map("need_group_option_id") @db.Uuid
-  needGroup           Option?           @relation("PersonNeedGroup", fields: [needGroupId], references: [id], onDelete: Restrict)
-  needGroupNote       String?           @map("need_group_note")
-  needDetail          String?           @map("need_detail")
-  painStatusId        String?           @map("pain_status_option_id") @db.Uuid
-  painStatus          Option?           @relation("PersonPainStatus", fields: [painStatusId], references: [id], onDelete: Restrict)
-  painStatusNote      String?           @map("pain_status_note")
-  assessmentTypeId    String?           @map("assessment_type_option_id") @db.Uuid
-  assessmentType      Option?           @relation("PersonAssessmentType", fields: [assessmentTypeId], references: [id], onDelete: Restrict)
-  assessmentTypeNote  String?           @map("assessment_type_note")
+  channelId           String?              @map("channel_option_id") @db.Uuid
+  channel             Option?              @relation("PersonChannel", fields: [channelId], references: [id], onDelete: Restrict)
+  channelNote         String?              @map("channel_note")
+  sourceId            String?              @map("source_option_id") @db.Uuid
+  source              Option?              @relation("PersonSource", fields: [sourceId], references: [id], onDelete: Restrict)
+  sourceNote          String?              @map("source_note")
+  sourceType          SourceType?          @map("source_type")
+  sourceDetail        String?              @map("source_detail")
+  nationalityGroup    NationalityGroup?    @map("nationality_group")
+  needGroupId         String?              @map("need_group_option_id") @db.Uuid
+  needGroup           Option?              @relation("PersonNeedGroup", fields: [needGroupId], references: [id], onDelete: Restrict)
+  needGroupNote       String?              @map("need_group_note")
+  needDetail          String?              @map("need_detail")
+  painStatusId        String?              @map("pain_status_option_id") @db.Uuid
+  painStatus          Option?              @relation("PersonPainStatus", fields: [painStatusId], references: [id], onDelete: Restrict)
+  painStatusNote      String?              @map("pain_status_note")
+  assessmentTypeId    String?              @map("assessment_type_option_id") @db.Uuid
+  assessmentType      Option?              @relation("PersonAssessmentType", fields: [assessmentTypeId], references: [id], onDelete: Restrict)
+  assessmentTypeNote  String?              @map("assessment_type_note")
   // The person in charge (PIC), given round-robin or by a manager (BR-203).
-  picUserId           String?           @map("pic_user_id") @db.Uuid
-  pic                 User?             @relation("PersonPic", fields: [picUserId], references: [id], onDelete: Restrict)
+  picUserId           String?              @map("pic_user_id") @db.Uuid
+  pic                 User?                @relation("PersonPic", fields: [picUserId], references: [id], onDelete: Restrict)
   // When the lead entered its status (D-020); null for customers who never were leads.
-  leadStatusChangedAt DateTime?         @map("lead_status_changed_at") @db.Timestamptz(3)
+  leadStatusChangedAt DateTime?            @map("lead_status_changed_at") @db.Timestamptz(3)
   // Appointment booked: when they are expected.
-  appointmentAt       DateTime?         @map("appointment_at") @db.Timestamptz(3)
+  appointmentAt       DateTime?            @map("appointment_at") @db.Timestamptz(3)
   // No response, Refused, No show: the gym day to contact them again (BR-204).
-  contactAgainOn      DateTime?         @map("contact_again_on") @db.Date
+  contactAgainOn      DateTime?            @map("contact_again_on") @db.Date
   // Refused: why, from "leadRefuseReasons" (BR-204).
-  refuseReasonId      String?           @map("refuse_reason_option_id") @db.Uuid
-  refuseReason        Option?           @relation("PersonRefuseReason", fields: [refuseReasonId], references: [id], onDelete: Restrict)
-  refuseReasonNote    String?           @map("refuse_reason_note")
-  status              CustomerStatus    @default(ACTIVE)
+  refuseReasonId      String?              @map("refuse_reason_option_id") @db.Uuid
+  refuseReason        Option?              @relation("PersonRefuseReason", fields: [refuseReasonId], references: [id], onDelete: Restrict)
+  refuseReasonNote    String?              @map("refuse_reason_note")
+  // The checklist version the lead started with; later versions apply to new leads only (D-020).
+  checklistId         String?              @map("checklist_id") @db.Uuid
+  checklist           ConsultingChecklist? @relation(fields: [checklistId], references: [id], onDelete: Restrict)
+  status              CustomerStatus       @default(ACTIVE)
   notes               String?
   // D-017 data scope "own" (A-029); null for customers created before it was recorded.
-  createdById         String?           @map("created_by") @db.Uuid
-  createdBy           User?             @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById         String?              @map("created_by") @db.Uuid
+  createdBy           User?                @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   contracts         Contract[]
   bookings          Booking[]
   leadStatusChanges LeadStatusChange[]
   leadAssignments   LeadAssignment[]
+  leadSteps         LeadStep[]
 
   @@index([phone])
   @@index([searchName])
@@ -644,6 +663,68 @@ model LeadAssignment {
 
   @@index([customerId, assignedAt])
   @@map("lead_assignments")
+}
+
+// The consulting checklist (D-020). Saving it makes a new version; versions and their
+// steps are never changed, so a lead's steps can point at them.
+model ConsultingChecklist {
+  id          String                   @id @default(uuid()) @db.Uuid
+  version     Int                      @unique
+  // Who saved it; no foreign key, so clearing test accounts never takes the seeded version with them.
+  createdById String?                  @map("created_by") @db.Uuid
+  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  steps       ConsultingStepTemplate[]
+  leads       Customer[]
+
+  @@map("consulting_checklists")
+}
+
+model ConsultingStepTemplate {
+  id             String              @id @default(uuid()) @db.Uuid
+  checklistId    String              @map("checklist_id") @db.Uuid
+  checklist      ConsultingChecklist @relation(fields: [checklistId], references: [id], onDelete: Restrict)
+  sortOrder      Int                 @map("sort_order")
+  key            String
+  labelVi        String              @map("label_vi")
+  labelEn        String              @map("label_en")
+  trigger        StepTrigger
+  triggerStatus  LeadStatus?         @map("trigger_status")
+  triggerStepKey String?             @map("trigger_step_key")
+  // Minutes after the trigger; negative: before the appointment.
+  offsetMinutes  Int                 @map("offset_minutes")
+  required       Boolean
+  // What opens the step also does it (done with the first result, on time).
+  autoComplete   Boolean             @default(false) @map("auto_complete")
+  // [{ labelVi, labelEn }]; a step's result is its index here.
+  results        Json
+  leadSteps      LeadStep[]
+
+  @@unique([checklistId, key])
+  @@unique([checklistId, sortOrder])
+  @@map("consulting_step_templates")
+}
+
+// A lead's step (FR-LEAD-004): waiting (no deadline), open (deadline), or done.
+model LeadStep {
+  id            String                 @id @default(uuid()) @db.Uuid
+  customerId    String                 @map("customer_id") @db.Uuid
+  customer      Customer               @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  templateId    String                 @map("template_id") @db.Uuid
+  template      ConsultingStepTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  openedAt      DateTime?              @map("opened_at") @db.Timestamptz(3)
+  dueAt         DateTime?              @map("due_at") @db.Timestamptz(3)
+  // The person in charge was told it is due (once per deadline).
+  dueNotifiedAt DateTime?              @map("due_notified_at") @db.Timestamptz(3)
+  doneAt        DateTime?              @map("done_at") @db.Timestamptz(3)
+  doneById      String?                @map("done_by") @db.Uuid
+  doneBy        User?                  @relation(fields: [doneById], references: [id], onDelete: Restrict)
+  resultIndex   Int?                   @map("result_index")
+  note          String?
+  timing        StepTiming?
+
+  @@unique([customerId, templateId])
+  @@index([dueAt])
+  @@map("lead_steps")
 }
 
 // Per branch, who got the last lead of the round-robin (BR-203).

@@ -7,9 +7,12 @@ import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS } from "./fact
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "notifications", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "trash_entries", "approval_requests", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "notifications", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "trash_entries", "approval_requests", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
+  // Checklist versions the tests saved; version 1 is the migration's (D-020).
+  await prisma.consultingStepTemplate.deleteMany({ where: { checklist: { version: { gt: 1 } } } });
+  await prisma.consultingChecklist.deleteMany({ where: { version: { gt: 1 } } });
   // Roles and branches the tests created; the migration's defaults stay.
   await prisma.role.deleteMany({ where: { code: null } });
   await prisma.branch.deleteMany({ where: { id: { not: DEFAULT_BRANCH_ID } } });

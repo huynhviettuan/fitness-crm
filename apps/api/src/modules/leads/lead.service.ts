@@ -13,6 +13,7 @@ import { visibleTo as customersVisibleTo } from "../customers/customer.service.j
 import * as repo from "./lead.repository.js";
 import { present, visibleLead } from "./lead.present.js";
 import { startJourney } from "./lead-journey.service.js";
+import { startChecklist } from "./checklist.service.js";
 import {
   BOARD_STATUSES,
   leadBoardQuerySchema,
@@ -120,6 +121,7 @@ export async function createLead(actor: Actor, input: unknown, now: Date = new D
       action: "lead.created",
       after: { leadCode: created.leadCode, ...pick(created, AUDITED_FIELDS), branchId },
     });
+    await startChecklist(tx, created.id);
     return present(actor, await startJourney(tx, actor, created, now));
   });
 }

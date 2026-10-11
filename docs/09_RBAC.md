@@ -100,7 +100,7 @@ The model above runs in the API (T-054) for the resources that exist today. Scre
 | PT schedule | `booking.view`, `booking.manage`, `session.checkIn`, `session.complete` |
 | Employees | `employee.view`, `employee.manage` (profiles and working schedules, M1 slice 6; were `trainer.*`) |
 | Cash book | `payment.view`, `payment.record`, `payment.delete`, `cash.manage`, `cash.delete` |
-| Configuration | `config.manage` (option lists and system parameters; Admin only, M1 slice 3) |
+| Configuration | `config.manage` (option lists, system parameters, and the consulting checklist; Admin only, M1 slice 3 and M2 slice 3) |
 | History | `audit.view` (action history), `trash.view` (Admin only, M1 slice 4) |
 | Tasks | `task.view` (see and work on tasks), `task.create` (give tasks); every role (M1 slice 7) |
 | System | `approval.manage`: the approval matrix (Admin, M1 slice 5). Deciding a request needs no permission of its own: the matrix names the approver roles (D-018) |

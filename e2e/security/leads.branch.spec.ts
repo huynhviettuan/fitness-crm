@@ -45,6 +45,20 @@ test.describe("A01 leads between consultants", () => {
     };
     expect(board.columns.flatMap((column) => column.items)).toEqual([]);
     expect((await admin.get(`/api/v1/customers/${lead.id}`)).status()).toBe(404);
+    // Nor its consulting checklist (FR-LEAD-004).
+    const steps = (await (await admin.get(`/api/v1/leads/${lead.id}/steps`)).json()) as { items: { id: string }[] };
+    expect((await consulting.get(`/api/v1/leads/${lead.id}/steps`)).status()).toBe(404);
+    expect(
+      (
+        await consulting.post(`/api/v1/leads/${lead.id}/steps/${steps.items[0].id}/complete`, {
+          data: { resultIndex: 0 },
+        })
+      ).status(),
+    ).toBe(404);
+    const today = (await (await consulting.get("/api/v1/leads/today?scope=all")).json()) as {
+      items: { lead: { id: string } }[];
+    };
+    expect(today.items.map((item) => item.lead.id)).not.toContain(lead.id);
   });
 
   test("a duplicate phone names the existing record only to someone who may see it (D-019)", async ({

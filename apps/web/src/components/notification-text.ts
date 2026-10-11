@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { APPROVAL_STATUSES, type ApprovalStatus } from "@flow/shared/approvals";
 import type { Notification } from "@flow/shared/notifications";
 
@@ -11,6 +11,7 @@ import type { Notification } from "@flow/shared/notifications";
 export function useNotificationText(): (notification: Pick<Notification, "kind" | "params">) => string {
   const t = useTranslations("notifications.kinds");
   const tStatus = useTranslations("status.approval");
+  const locale = useLocale();
   return ({ kind, params }) => {
     const values: Record<string, string> = { title: "", by: "", due: "", status: "", code: "", name: "", ...params };
     if (kind === "approvalDecided") {
@@ -19,6 +20,9 @@ export function useNotificationText(): (notification: Pick<Notification, "kind" 
         : values.status;
       return t(kind, { ...values, status });
     }
+    // A consulting step's name is kept in both languages (leadStepDue).
+    if (kind === "leadStepDue")
+      return t(kind, { ...values, step: (locale === "vi" ? values.stepVi : values.stepEn) ?? "" });
     return t(kind, values);
   };
 }

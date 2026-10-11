@@ -1,5 +1,10 @@
 import "server-only";
 import {
+  checklistSchema,
+  leadChecklistSchema,
+  todayStepsSchema,
+  type ChecklistInput,
+  type StepCompleteInput,
   leadAssigneesSchema,
   leadBoardSchema,
   leadPageSchema,
@@ -70,4 +75,33 @@ export async function listLeadAssignees(id: string) {
 
 export async function assignLead(id: string, input: LeadAssignInput) {
   return read(leadSchema, (await api()).POST("/api/v1/leads/{id}/assign", { params: { path: { id } }, body: input }));
+}
+
+/** The lead's consulting checklist (FR-LEAD-004). */
+export async function getLeadChecklist(id: string) {
+  return read(leadChecklistSchema, (await api()).GET("/api/v1/leads/{id}/steps", { params: { path: { id } } }));
+}
+
+export async function completeLeadStep(id: string, stepId: string, input: StepCompleteInput) {
+  return read(
+    leadChecklistSchema,
+    (await api()).POST("/api/v1/leads/{id}/steps/{stepId}/complete", {
+      params: { path: { id, stepId } },
+      body: input as never,
+    }),
+  );
+}
+
+/** "Việc hôm nay" (FR-LEAD-005). */
+export async function getTodaySteps(scope: "mine" | "all") {
+  return read(todayStepsSchema, (await api()).GET("/api/v1/leads/today", { params: { query: { scope } } }));
+}
+
+/** The checklist new leads get (D-020); configuration. */
+export async function getChecklist() {
+  return read(checklistSchema, (await api()).GET("/api/v1/consulting-checklist"));
+}
+
+export async function saveChecklist(input: ChecklistInput) {
+  return read(checklistSchema, (await api()).POST("/api/v1/consulting-checklist", { body: input as never }));
 }

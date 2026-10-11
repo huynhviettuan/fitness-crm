@@ -19,6 +19,7 @@ import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { notify } from "../../platform/notifications/notification.service.js";
 import * as repo from "./lead.repository.js";
 import { lockedLead, present, visibleLead } from "./lead.present.js";
+import { applyJourneyEvent } from "./checklist.service.js";
 
 // The lead journey (brief §3, §4.1; D-020): round-robin assignment, reassignment by
 // managers, and status changes, each kept with who and when. Daily work, so no approval
@@ -126,6 +127,8 @@ export async function changeLeadStatus(
       reasonNote: reason.note,
       note: change.note,
     });
+    // The consulting steps that wait for this status, the appointment, or re-care (D-020).
+    await applyJourneyEvent(tx, after, { kind: "STATUS", at: now, by: actor.id });
     await recordAudit(tx, {
       actorUserId: actor.id,
       entityType: "lead",
@@ -210,7 +213,7 @@ async function assign(
     assignedById: by,
     assignedAt: now,
   });
-  if (starts)
+  if (starts) {
     await repo.addStatusChange(db, {
       customerId: lead.id,
       fromStatus: "NEW",
@@ -218,6 +221,9 @@ async function assign(
       changedById: by,
       changedAt: now,
     });
+  }
+  await applyJourneyEvent(db, after, { kind: "ASSIGNED", at: now, by });
+  if (starts) await applyJourneyEvent(db, after, { kind: "STATUS", at: now, by });
   await recordAudit(db, {
     actorUserId: actor.id,
     entityType: "lead",

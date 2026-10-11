@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   BanknoteIcon,
   Building2Icon,
+  CalendarCheckIcon,
   CalendarDaysIcon,
   ClipboardCheckIcon,
   ListTodoIcon,
@@ -17,6 +18,7 @@ import {
   IdCardIcon,
   KeyRoundIcon,
   ListChecksIcon,
+  ListOrderedIcon,
   LayoutDashboardIcon,
   SlidersHorizontalIcon,
   Trash2Icon,
@@ -41,6 +43,7 @@ import {
 const NAV_ITEMS = {
   dashboard: { href: "/dashboard", icon: LayoutDashboardIcon },
   leads: { href: "/leads", icon: MegaphoneIcon },
+  leadsToday: { href: "/leads/today", icon: CalendarCheckIcon },
   customers: { href: "/customers", icon: UsersIcon },
   contracts: { href: "/contracts", icon: FileTextIcon },
   calendar: { href: "/calendar", icon: CalendarDaysIcon },
@@ -53,6 +56,7 @@ const NAV_ITEMS = {
   branches: { href: "/admin/branches", icon: Building2Icon },
   options: { href: "/admin/options", icon: ListChecksIcon },
   parameters: { href: "/admin/parameters", icon: SlidersHorizontalIcon },
+  checklist: { href: "/admin/checklist", icon: ListOrderedIcon },
   audit: { href: "/admin/audit", icon: HistoryIcon },
   trash: { href: "/admin/trash", icon: Trash2Icon },
   approvalRules: { href: "/admin/approvals", icon: ClipboardListIcon },
@@ -90,6 +94,10 @@ export function AppSidebar({ mainItems, adminItems }: AppSidebarProps) {
 function NavGroup({ label, items }: { label: string; items: NavItemKey[] }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
+  // The most specific item that contains the page: /leads/today is "Việc hôm nay", not "Lead".
+  const current = items
+    .filter((key) => pathname === NAV_ITEMS[key].href || pathname.startsWith(`${NAV_ITEMS[key].href}/`))
+    .sort((a, b) => NAV_ITEMS[b].href.length - NAV_ITEMS[a].href.length)[0];
 
   return (
     <SidebarGroup>
@@ -98,7 +106,7 @@ function NavGroup({ label, items }: { label: string; items: NavItemKey[] }) {
         <SidebarMenu>
           {items.map((key) => {
             const { href, icon: Icon } = NAV_ITEMS[key];
-            const active = pathname === href || pathname.startsWith(`${href}/`);
+            const active = key === current;
             return (
               <SidebarMenuItem key={key}>
                 <SidebarMenuButton asChild isActive={active} tooltip={t(key)}>

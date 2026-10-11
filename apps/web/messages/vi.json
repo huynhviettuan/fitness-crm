@@ -22,7 +22,9 @@
     "trash": "Thùng rác",
     "audit": "Lịch sử thao tác",
     "approvalRules": "Ma trận phê duyệt",
-    "notifications": "Thông báo"
+    "notifications": "Thông báo",
+    "leadsToday": "Việc hôm nay",
+    "checklist": "Checklist tư vấn"
   },
   "status": {
     "customer": {
@@ -90,6 +92,15 @@
       "NO_SHOW": "No show",
       "REFUSED": "Từ chối",
       "CONTRACTED": "Đã ký hợp đồng"
+    },
+    "leadStep": {
+      "WAITING": "Chờ",
+      "OPEN": "Đang mở",
+      "DONE": "Đã xong"
+    },
+    "stepTiming": {
+      "ON_TIME": "Đúng hạn",
+      "LATE": "Trễ hạn"
     }
   },
   "common": {
@@ -246,7 +257,8 @@
       "reason": "Lý do: {reason}",
       "roundRobin": "Tự động chia lượt",
       "system": "Hệ thống"
-    }
+    },
+    "checklist": "Checklist tư vấn"
   },
   "people": {
     "duplicateLead": "Số điện thoại này đã thuộc lead {code} · {name}. Mỗi người chỉ có một hồ sơ.",
@@ -449,7 +461,8 @@
     "oneAssigneeOnly": "Chỉ chọn một người hoặc một phòng ban.",
     "phoneAlreadyUsed": "Số điện thoại đã thuộc một hồ sơ khác.",
     "notInFuture": "Giờ hẹn phải sau thời điểm hiện tại.",
-    "daysOutOfRange": "Nhập số ngày từ 1 đến 365."
+    "daysOutOfRange": "Nhập số ngày từ 1 đến 365.",
+    "invalidKey": "Mã bước không hợp lệ."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -995,7 +1008,8 @@
       "cash_transaction": "Khoản thu chi",
       "approval_request": "Yêu cầu duyệt",
       "approval_rule": "Ma trận phê duyệt",
-      "task": "Công việc"
+      "task": "Công việc",
+      "consulting_checklist": "Checklist tư vấn"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1026,7 +1040,8 @@
       "started": "Bắt đầu làm",
       "commented": "Bình luận",
       "status_changed": "Đổi trạng thái",
-      "assigned": "Phân công"
+      "assigned": "Phân công",
+      "step_completed": "Hoàn thành bước tư vấn"
     },
     "fields": {
       "at": "Thời điểm",
@@ -1219,7 +1234,91 @@
       "approvalDecided": "Yêu cầu \"{title}\": {status}",
       "approvalOverdue": "Yêu cầu chờ duyệt đã quá hạn: {title}",
       "leadNew": "Lead mới {code} · {name}",
-      "leadAssigned": "Bạn được giao lead {code} · {name}"
+      "leadAssigned": "Bạn được giao lead {code} · {name}",
+      "leadStepDue": "Đến hạn: {step} · lead {code} · {name}"
     }
+  },
+  "checklist": {
+    "required": "Bắt buộc",
+    "due": "Hạn",
+    "overdue": "Quá hạn",
+    "complete": "Hoàn thành",
+    "completeLabel": "Hoàn thành bước {step}",
+    "completeDescription": "Chọn kết quả của bước. Ghi chú không bắt buộc và không thay cho kết quả.",
+    "result": "Kết quả",
+    "note": "Ghi chú (không bắt buộc)",
+    "save": "Lưu kết quả",
+    "completed": "Đã ghi nhận bước",
+    "units": {
+      "MINUTES": "{count} phút",
+      "HOURS": "{count} giờ",
+      "DAYS": "{count} ngày"
+    },
+    "triggers": {
+      "assigned": "Mở {delay} sau khi được phân công",
+      "assignedNow": "Mở khi được phân công",
+      "status": "Mở {delay} sau khi chuyển sang {status}",
+      "statusNow": "Mở khi chuyển sang {status}",
+      "beforeAppointment": "Mở khi đặt lịch; hạn {delay} trước giờ hẹn",
+      "atAppointment": "Mở khi đặt lịch; hạn đúng giờ hẹn",
+      "afterStep": "Mở {delay} sau bước \"{step}\"",
+      "afterStepNow": "Mở ngay sau bước \"{step}\"",
+      "recare": "Mở khi vào tái chăm sóc; hạn vào ngày liên hệ lại"
+    }
+  },
+  "today": {
+    "title": "Việc hôm nay",
+    "description": "Các bước tư vấn đến hạn trong hôm nay và các bước đã quá hạn.",
+    "scopes": "Phạm vi",
+    "scope": {
+      "mine": "Của tôi",
+      "all": "Tất cả"
+    },
+    "summary": "{count} việc, {overdue} quá hạn",
+    "overdue": "Quá hạn",
+    "noPic": "Chưa phân công",
+    "emptyTitle": "Không có việc nào hôm nay",
+    "emptyBody": "Các bước tư vấn đến hạn sẽ hiện ở đây."
+  },
+  "checklistAdmin": {
+    "title": "Checklist tư vấn",
+    "description": "Các bước mỗi lead mới phải đi qua. Lưu sẽ tạo phiên bản mới cho lead mới; lead đang chạy giữ phiên bản cũ.",
+    "version": "Phiên bản {version}",
+    "stepLegend": "Bước {number}",
+    "moveUp": "Đưa lên",
+    "moveDown": "Đưa xuống",
+    "remove": "Xóa bước",
+    "addStep": "Thêm bước",
+    "save": "Lưu phiên bản mới",
+    "saved": "Đã lưu phiên bản {version}",
+    "labelVi": "Tên bước (tiếng Việt)",
+    "labelEn": "Tên bước (tiếng Anh)",
+    "trigger": "Mở khi",
+    "triggerStatus": "Trạng thái",
+    "triggerStep": "Sau bước",
+    "offset": "Hạn sau",
+    "offsetBefore": "Hạn trước giờ hẹn",
+    "unit": "Đơn vị",
+    "recareHint": "Hạn là ngày liên hệ lại, theo tham số \"Tái chăm sóc sau\".",
+    "required": "Bước bắt buộc",
+    "results": "Kết quả để chọn",
+    "resultVi": "Kết quả {number} (tiếng Việt)",
+    "resultEn": "Kết quả {number} (tiếng Anh)",
+    "removeResult": "Xóa kết quả {number}",
+    "addResult": "Thêm kết quả",
+    "triggerKinds": {
+      "ASSIGNED": "Lead được phân công",
+      "STATUS": "Lead chuyển trạng thái",
+      "APPOINTMENT": "Có lịch hẹn",
+      "AFTER_STEP": "Xong một bước trước",
+      "RECARE": "Vào tái chăm sóc"
+    },
+    "unitNames": {
+      "MINUTES": "Phút",
+      "HOURS": "Giờ",
+      "DAYS": "Ngày"
+    },
+    "autoComplete": "Tự hoàn thành khi mở",
+    "autoCompleteHint": "Việc mở bước cũng là làm bước, ví dụ đặt lịch là xong \"Đặt lịch\". Ghi nhận kết quả đầu tiên, đúng hạn."
   }
 }

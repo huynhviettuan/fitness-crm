@@ -22,7 +22,9 @@
     "trash": "Trash",
     "audit": "Action history",
     "approvalRules": "Approval matrix",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "leadsToday": "Today's tasks",
+    "checklist": "Consulting checklist"
   },
   "status": {
     "customer": {
@@ -90,6 +92,15 @@
       "NO_SHOW": "No show",
       "REFUSED": "Refused",
       "CONTRACTED": "Contracted"
+    },
+    "leadStep": {
+      "WAITING": "Waiting",
+      "OPEN": "Open",
+      "DONE": "Done"
+    },
+    "stepTiming": {
+      "ON_TIME": "On time",
+      "LATE": "Late"
     }
   },
   "common": {
@@ -246,7 +257,8 @@
       "reason": "Reason: {reason}",
       "roundRobin": "Round-robin",
       "system": "System"
-    }
+    },
+    "checklist": "Consulting checklist"
   },
   "people": {
     "duplicateLead": "This phone already belongs to lead {code} · {name}. Each person has one record.",
@@ -449,7 +461,8 @@
     "oneAssigneeOnly": "Choose one person or one department, not both.",
     "phoneAlreadyUsed": "This phone belongs to another record.",
     "notInFuture": "The appointment must be later than now.",
-    "daysOutOfRange": "Enter a number of days from 1 to 365."
+    "daysOutOfRange": "Enter a number of days from 1 to 365.",
+    "invalidKey": "Invalid step key."
   },
   "contracts": {
     "title": "Contracts",
@@ -995,7 +1008,8 @@
       "cash_transaction": "Income or expense",
       "approval_request": "Approval request",
       "approval_rule": "Approval matrix",
-      "task": "Task"
+      "task": "Task",
+      "consulting_checklist": "Consulting checklist"
     },
     "verbs": {
       "created": "Created",
@@ -1026,7 +1040,8 @@
       "started": "Started",
       "commented": "Commented",
       "status_changed": "Status changed",
-      "assigned": "Assigned"
+      "assigned": "Assigned",
+      "step_completed": "Consulting step completed"
     },
     "fields": {
       "at": "When",
@@ -1219,7 +1234,91 @@
       "approvalDecided": "Request \"{title}\": {status}",
       "approvalOverdue": "A request waiting for approval is overdue: {title}",
       "leadNew": "New lead {code} · {name}",
-      "leadAssigned": "Lead {code} · {name} was assigned to you"
+      "leadAssigned": "Lead {code} · {name} was assigned to you",
+      "leadStepDue": "Due: {step} · lead {code} · {name}"
     }
+  },
+  "checklist": {
+    "required": "Required",
+    "due": "Due",
+    "overdue": "Overdue",
+    "complete": "Complete",
+    "completeLabel": "Complete step {step}",
+    "completeDescription": "Choose the step's result. A note is optional and never replaces the result.",
+    "result": "Result",
+    "note": "Note (optional)",
+    "save": "Save result",
+    "completed": "Step recorded",
+    "units": {
+      "MINUTES": "{count} min",
+      "HOURS": "{count} h",
+      "DAYS": "{count, plural, one {# day} other {# days}}"
+    },
+    "triggers": {
+      "assigned": "Opens {delay} after assignment",
+      "assignedNow": "Opens on assignment",
+      "status": "Opens {delay} after the lead becomes {status}",
+      "statusNow": "Opens when the lead becomes {status}",
+      "beforeAppointment": "Opens when booked; due {delay} before the appointment",
+      "atAppointment": "Opens when booked; due at the appointment",
+      "afterStep": "Opens {delay} after \"{step}\"",
+      "afterStepNow": "Opens right after \"{step}\"",
+      "recare": "Opens with re-care; due on the contact-again day"
+    }
+  },
+  "today": {
+    "title": "Today's tasks",
+    "description": "Consulting steps due today, and those overdue.",
+    "scopes": "Scope",
+    "scope": {
+      "mine": "Mine",
+      "all": "All"
+    },
+    "summary": "{count} tasks, {overdue} overdue",
+    "overdue": "Overdue",
+    "noPic": "Not assigned",
+    "emptyTitle": "Nothing due today",
+    "emptyBody": "Consulting steps that come due show here."
+  },
+  "checklistAdmin": {
+    "title": "Consulting checklist",
+    "description": "The steps every new lead goes through. Saving makes a new version for new leads; leads already started keep theirs.",
+    "version": "Version {version}",
+    "stepLegend": "Step {number}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove step",
+    "addStep": "Add step",
+    "save": "Save new version",
+    "saved": "Version {version} saved",
+    "labelVi": "Step name (Vietnamese)",
+    "labelEn": "Step name (English)",
+    "trigger": "Opens when",
+    "triggerStatus": "Status",
+    "triggerStep": "After step",
+    "offset": "Due after",
+    "offsetBefore": "Due before the appointment",
+    "unit": "Unit",
+    "recareHint": "Due on the contact-again day, from the parameter \"Re-care after\".",
+    "required": "Required step",
+    "results": "Results to choose from",
+    "resultVi": "Result {number} (Vietnamese)",
+    "resultEn": "Result {number} (English)",
+    "removeResult": "Remove result {number}",
+    "addResult": "Add result",
+    "triggerKinds": {
+      "ASSIGNED": "The lead is assigned",
+      "STATUS": "The lead changes status",
+      "APPOINTMENT": "An appointment is booked",
+      "AFTER_STEP": "An earlier step is done",
+      "RECARE": "The lead enters re-care"
+    },
+    "unitNames": {
+      "MINUTES": "Minutes",
+      "HOURS": "Hours",
+      "DAYS": "Days"
+    },
+    "autoComplete": "Done when it opens",
+    "autoCompleteHint": "What opens the step also does it, e.g. booking the visit completes \"Book the visit\". Records the first result, on time."
   }
 }

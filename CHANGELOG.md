@@ -1,5 +1,15 @@
 # Documentation Changelog
 
+## 2026-10-11 — M2 slice 3: consulting checklist
+
+- **Checklist per lead** (brief §4.1, D-020): every new lead gets the brief's ten steps. A step opens, with a deadline, when its moment comes: the lead is assigned, goes to No response, gets an appointment (reminders 3 hours and 60 minutes before), an earlier step is done (Báo Studio), or enters re-care. The consultant records each step with a result from its own list and an optional note; it is marked on time or late, with who and when. "Đặt lịch" is done by booking the visit itself (A-057).
+- **Việc hôm nay** (FR-LEAD-005): a new menu item lists the steps due today and the overdue ones, mine or all, with a "Hoàn thành" button on each; it works on a phone. The person in charge gets a notification when a step comes due.
+- **Administration → Checklist tư vấn**: admin adds, removes, renames, and reorders steps, sets what opens each one and its delay, its results, whether it is required, and whether it completes itself. Saving makes a new version for new leads; leads already started keep theirs.
+- Báo Studio, Show / No show, and re-care results are recorded now; creating the coach manager's task, converting to a customer, and re-care follow in slices 4 and 5.
+- API: `/leads/:id/steps`, `/leads/:id/steps/:stepId/complete`, `/leads/today`, `/consulting-checklist`; notification `leadStepDue`.
+- Tests: unit (shared 122, web 278, API 113), integration 275, E2E and security 322.
+- Docs: 02, 04, 07, 09, 13, 16, 18 (T-063, A-055 to A-058), 24, 25.
+
 ## 2026-10-11 — Code style: Prettier and ESLint readability rules
 
 - **Prettier** formats the whole repository: 120-character lines, double quotes, semicolons, trailing commas, and Tailwind classes in their canonical order (`prettier.config.mjs`). Markdown, generated files, and the customer's brief are left as written (`.prettierignore`). `pnpm format` formats; CI runs `pnpm format:check`.

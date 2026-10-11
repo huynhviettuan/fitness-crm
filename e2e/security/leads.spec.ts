@@ -139,6 +139,145 @@ test.describe("A01 lead journey (D-020)", () => {
   });
 });
 
+/** A lead's open step, by its key in checklist version 1. */
+async function stepOf(api: APIRequestContext, leadId: string, key: string): Promise<{ id: string; state: string }> {
+  const { items } = (await (await api.get(`/api/v1/leads/${leadId}/steps`)).json()) as {
+    items: { id: string; key: string; state: string }[];
+  };
+  return items.find((item) => item.key === key)!;
+}
+
+test.describe("A01 consulting checklist (D-020, FR-LEAD-004)", () => {
+  const readers: [Role, number][] = [
+    ["ADMIN", 200],
+    ["FITNESS_MANAGER", 403],
+    ["CONSULTING", 403],
+    ["RECEPTIONIST", 403],
+    ["PT", 403],
+    ["ACCOUNTANT", 403],
+  ];
+  for (const [role, status] of readers) {
+    test(`${role} reading the checklist's configuration gets ${status} (config.manage)`, async ({ apiAs }) => {
+      expect((await (await apiAs(role)).get("/api/v1/consulting-checklist")).status()).toBe(status);
+    });
+  }
+
+  test("only config.manage saves a new version", async ({ apiAs }) => {
+    const steps = (
+      (await (await (await apiAs("ADMIN")).get("/api/v1/consulting-checklist")).json()) as { steps: unknown[] }
+    ).steps;
+    const response = await (await apiAs("FITNESS_MANAGER")).post("/api/v1/consulting-checklist", { data: { steps } });
+    expect(response.status()).toBe(403);
+  });
+
+  const completers: [Role, number][] = [
+    ["ADMIN", 200],
+    ["FITNESS_MANAGER", 200],
+    ["CONSULTING", 200],
+    ["RECEPTIONIST", 200],
+    ["PT", 403],
+    ["ACCOUNTANT", 403],
+  ];
+  for (const [role, status] of completers) {
+    test(`${role} completing a step gets ${status} (09_RBAC.md)`, async ({ apiAs, testTag }) => {
+      // The lead goes to the E2E consultant, so its first step is open.
+      const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
+      const step = await stepOf(await apiAs("ADMIN"), lead.id, "tu-van");
+      const response = await (
+        await apiAs(role)
+      ).post(`/api/v1/leads/${lead.id}/steps/${step.id}/complete`, { data: { resultIndex: 0 } });
+      expect(response.status()).toBe(status);
+    });
+  }
+
+  test("who did a step, when, and whether on time come from the server (mass assignment)", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
+    const admin = await apiAs("ADMIN");
+    const adminId = (await (await admin.get("/api/v1/me")).json()).id;
+    const step = await stepOf(admin, lead.id, "tu-van");
+
+    const response = await (
+      await apiAs("CONSULTING")
+    ).post(`/api/v1/leads/${lead.id}/steps/${step.id}/complete`, {
+      data: { resultIndex: 0, doneById: adminId, doneAt: "2020-01-01T00:00:00Z", timing: "LATE", state: "WAITING" },
+    });
+
+    expect(response.status()).toBe(200);
+    const done = (
+      (await response.json()) as { items: { id: string; doneBy: { id: string }; doneAt: string; timing: string }[] }
+    ).items.find((item) => item.id === step.id)!;
+    expect(done.doneBy.id).not.toBe(adminId);
+    expect(done.timing).toBe("ON_TIME");
+    expect(new Date(done.doneAt).getFullYear()).toBeGreaterThan(2020);
+  });
+});
+
+test.describe("A10 consulting step input errors", () => {
+  test("a result outside the step's list is 400; a waiting or done step is 409; another lead's step is 404", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const manager = await apiAs("FITNESS_MANAGER");
+    const lead = await createLeadViaApi(reception, { fullName: `Lead ${testTag}` });
+    const other = await createLeadViaApi(reception, { fullName: `Lead 2 ${testTag}` });
+    const open = await stepOf(manager, lead.id, "tu-van");
+    const waiting = await stepOf(manager, lead.id, "nhac-1");
+    const complete = (leadId: string, stepId: string, data: unknown) =>
+      manager.post(`/api/v1/leads/${leadId}/steps/${stepId}/complete`, { data });
+
+    const outside = await complete(lead.id, open.id, { resultIndex: 5 });
+    expect(outside.status()).toBe(400);
+    expect((await outside.json()).details.fieldErrors).toEqual({ resultIndex: ["invalidChoice"] });
+    const malformed = await complete(lead.id, open.id, { resultIndex: "x", note: "a\u0000b" });
+    expect(malformed.status()).toBe(400);
+    expect((await malformed.json()).details.fieldErrors).toMatchObject({
+      resultIndex: ["required"],
+      note: ["invalidCharacters"],
+    });
+    expect((await complete(lead.id, waiting.id, { resultIndex: 0 })).status()).toBe(409);
+    expect((await complete(other.id, open.id, { resultIndex: 0 })).status()).toBe(404);
+    expect((await complete(lead.id, "not-a-uuid", { resultIndex: 0 })).status()).toBe(404);
+    expect((await complete(lead.id, open.id, { resultIndex: 0 })).status()).toBe(200);
+    expect((await complete(lead.id, open.id, { resultIndex: 0 })).status()).toBe(409);
+    expect((await manager.get("/api/v1/leads/today?scope=team")).status()).toBe(400);
+  });
+
+  test("a checklist that waits on a missing step, or repeats a key, is 400", async ({ apiAs }) => {
+    const admin = await apiAs("ADMIN");
+    const response = await admin.post("/api/v1/consulting-checklist", {
+      data: {
+        steps: [
+          {
+            key: "a",
+            labelVi: "A",
+            labelEn: "A",
+            trigger: "AFTER_STEP",
+            triggerStepKey: "b",
+            offsetValue: 0,
+            offsetUnit: "MINUTES",
+            results: [{ labelVi: "Done", labelEn: "Done" }],
+          },
+          {
+            key: "a",
+            labelVi: "B",
+            labelEn: "B",
+            trigger: "ASSIGNED",
+            offsetValue: 1000,
+            offsetUnit: "WEEKS",
+            results: [],
+          },
+        ],
+      },
+    });
+    expect(response.status()).toBe(400);
+    expect((await response.json()).details.fieldErrors).toHaveProperty("steps");
+  });
+});
+
 test.describe("A10 lead input errors", () => {
   test("invalid fields are 400 with field errors; unknown or malformed ids are 404", async ({ apiAs }) => {
     const manager = await apiAs("FITNESS_MANAGER");

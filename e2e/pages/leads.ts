@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { fill, labels } from "../support/labels";
 import { AppShell } from "./app-shell";
+import { openCompleteStep, type CompleteStepDialog } from "./checklist";
 
 const l = labels.leads;
 
@@ -163,6 +164,19 @@ export class LeadPage {
 
   private get journey(): Locator {
     return this.shell.main.getByRole("region", { name: l.journey });
+  }
+
+  private get checklist(): Locator {
+    return this.shell.main.getByRole("region", { name: l.checklist });
+  }
+
+  /** One step of the consulting checklist (FR-LEAD-004), by its name. */
+  checklistStep(name: string): Locator {
+    return this.checklist.getByRole("listitem").filter({ has: this.page.getByText(name, { exact: true }) });
+  }
+
+  async completeStep(name: string): Promise<CompleteStepDialog> {
+    return openCompleteStep(this.page, this.checklistStep(name), name);
   }
 
   /** The status change and assignment history, newest first (D-020). */

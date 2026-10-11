@@ -2,6 +2,9 @@ import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from "@nestj
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import {
+  leadChecklistSchema,
+  stepCompleteSchema,
+  todayStepsSchema,
   leadAssignSchema,
   leadAssigneesSchema,
   leadBoardSchema,
@@ -19,6 +22,7 @@ import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/open
 import { queryOf } from "../../platform/http/query.js";
 import { createLead, getLead, leadBoard, listLeads, updateLead } from "./lead.service.js";
 import { assignLead, changeLeadStatus, leadAssignees, leadTimeline } from "./lead-journey.service.js";
+import { completeLeadStep, leadChecklist, todaySteps } from "./checklist.service.js";
 
 const FILTERS = ["q", "status", "channelId", "sourceId", "needGroupId", "page", "pageSize"] as const;
 const BOARD_FILTERS = ["q", "channelId", "sourceId", "needGroupId"] as const;
@@ -43,6 +47,15 @@ export class LeadsController {
   @ApiResult(leadBoardSchema)
   async board(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(leadBoardSchema, await leadBoard(actor, queryOf(request, BOARD_FILTERS)));
+  }
+
+  /** "Việc hôm nay" (FR-LEAD-005): open consulting steps due by the end of the gym's day; `scope` mine (default) or all. */
+  @Get("today")
+  @RequirePermission("lead.view")
+  @ApiOptionalQuery("scope")
+  @ApiResult(todayStepsSchema)
+  async today(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(todayStepsSchema, await todaySteps(actor, queryOf(request, ["scope"] as const)));
   }
 
   /** A phone that is already someone's is PHONE_ALREADY_USED, naming that record when visible (D-019). */
@@ -115,5 +128,27 @@ export class LeadsController {
     @Body({ schema: leadAssignSchema }) body: unknown,
   ) {
     return encode(leadSchema, await assignLead(actor, id, body));
+  }
+
+  /** The lead's consulting checklist (FR-LEAD-004), in the version it started with. */
+  @Get(":id/steps")
+  @RequirePermission("lead.view")
+  @ApiResult(leadChecklistSchema)
+  async steps(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(leadChecklistSchema, await leadChecklist(actor, id));
+  }
+
+  /** Records an open step's result; a step not open, or already done, is INVALID_STATUS_TRANSITION. */
+  @Post(":id/steps/:stepId/complete")
+  @RequirePermission("lead.manage")
+  @HttpCode(200)
+  @ApiResult(leadChecklistSchema)
+  async completeStep(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Param("stepId") stepId: string,
+    @Body({ schema: stepCompleteSchema }) body: unknown,
+  ) {
+    return encode(leadChecklistSchema, await completeLeadStep(actor, id, stepId, body));
   }
 }

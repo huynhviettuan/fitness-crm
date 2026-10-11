@@ -19,6 +19,9 @@ const STATUS_VARIANTS = {
     REFUSED: "muted",
     CONTRACTED: "success",
   },
+  // FR-LEAD-004: a step waits for its trigger, is open with a deadline, or is done.
+  leadStep: { WAITING: "muted", OPEN: "info", DONE: "success" },
+  stepTiming: { ON_TIME: "success", LATE: "destructive" },
   user: { ACTIVE: "success", DISABLED: "muted" },
   contract: { DRAFT: "muted", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted" },
   employee: { ACTIVE: "success", INACTIVE: "muted" },

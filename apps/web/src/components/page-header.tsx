@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 type PageHeaderProps = {
   title: string;
-  description?: string;
+  description?: ReactNode;
   /** The page's primary action, e.g. "Add customer". */
   actions?: ReactNode;
 };
