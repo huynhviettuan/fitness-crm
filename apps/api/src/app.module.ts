@@ -16,7 +16,7 @@ import { BookingsController, ScheduleController } from "./modules/bookings/booki
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
 import { CustomersController } from "./modules/customers/customers.controller.js";
 import { CashTransactionsController, DebtsController, PaymentsController } from "./modules/finance/finance.controller.js";
-import { TrainersController } from "./modules/trainers/trainers.controller.js";
+import { EmployeesController } from "./modules/employees/employees.controller.js";
 import { UsersController } from "./modules/users/users.controller.js";
 
 // Controllers stay thin: they read the request, call a service, and encode the result
@@ -26,7 +26,7 @@ import { UsersController } from "./modules/users/users.controller.js";
     MeController,
     CustomersController,
     ContractsController,
-    TrainersController,
+    EmployeesController,
     BookingsController,
     ScheduleController,
     PaymentsController,

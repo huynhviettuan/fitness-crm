@@ -29,6 +29,10 @@
       "types": "./dist/customers/index.d.ts",
       "default": "./dist/customers/index.js"
     },
+    "./employees": {
+      "types": "./dist/employees/index.d.ts",
+      "default": "./dist/employees/index.js"
+    },
     "./errors": {
       "types": "./dist/errors/index.d.ts",
       "default": "./dist/errors/index.js"
@@ -52,10 +56,6 @@
     "./roles": {
       "types": "./dist/roles/index.d.ts",
       "default": "./dist/roles/index.js"
-    },
-    "./trainers": {
-      "types": "./dist/trainers/index.d.ts",
-      "default": "./dist/trainers/index.js"
     },
     "./trash": {
       "types": "./dist/trash/index.d.ts",

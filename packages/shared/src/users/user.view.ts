@@ -55,8 +55,8 @@ export const meSchema = z
     email: z.string(),
     role: roleRefSchema,
     locale: z.enum(LOCALES),
-    /** The trainer record this login acts as (A-010), if any. */
-    trainerId: z.uuid().nullable(),
+    /** The employee this login belongs to (brief §8.4), if any. */
+    employeeId: z.uuid().nullable(),
     /** Effective permissions: the role's, with this user's overrides applied. */
     permissions: z.array(z.enum(PERMISSION_KEYS)),
     /** ALL or OWN per resource (D-017), e.g. a PT books only for themselves. */

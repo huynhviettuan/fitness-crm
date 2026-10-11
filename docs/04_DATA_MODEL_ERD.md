@@ -50,8 +50,9 @@ erDiagram
 | Table | Key fields |
 |---|---|
 | `branches` | name, address, active |
-| `employees` | code (prefix NV), full_name, birth_date, gender, phone, email, id_document (encrypted), department_option_id, team, title, branch_id, work_status |
-| `pt_schedules` | employee_id, weekday or date, start_time, end_time, kind (shift, day off) |
+| `employees` | employee_code (prefix parameter, initially NV; trainer codes kept), full_name, search_name, birth_date, gender, phone, email, department_option_id + department_note, team, title_option_id + title_note, branch_id, status (ACTIVE, INACTIVE), is_trainer, user_id (unique). ID document (encrypted) arrives in M2 (A-041). Built in M1 slice 6 from `trainers` (T-058) |
+| `employee_shifts` | employee_id, weekday (ISO 1–7), start_minute, end_minute (end exclusive, up to 1440); exclusion constraint: no overlap per employee and weekday |
+| `employee_days_off` | employee_id, date (unique per employee), note |
 | `user_accounts` | username, email, employee_id (unique), role_id, all_branches, active; Better Auth `auth_*` tables keep sessions and password hashes |
 | `user_branches` | user_id, branch_id |
 | `user_access_windows` | user_id, weekdays (ISO 1–7), start_time, end_time (`HH:mm`, half-open, gym timezone); no rows = any time |

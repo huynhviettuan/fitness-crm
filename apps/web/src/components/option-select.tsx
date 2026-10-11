@@ -35,13 +35,18 @@ type OptionSelectProps<T extends FieldValues> = {
   noteName: Path<T>;
   listKey: OptionListKey | null;
   label: string;
+  /** For an optional field: the label of a first choice meaning "none", sent as NO_OPTION. */
+  noneLabel?: string;
 };
+
+/** The value of the "none" choice of an optional OptionSelect; the form sends "" for it. */
+export const NO_OPTION = "none";
 
 /**
  * A drop-down from an option list (D-016, docs/23 §8). Choosing "Khác" shows the note,
  * which is then required; the API refuses "Khác" without it (AC-04).
  */
-export function OptionSelect<T extends FieldValues>({ control, name, noteName, listKey, label }: OptionSelectProps<T>) {
+export function OptionSelect<T extends FieldValues>({ control, name, noteName, listKey, label, noneLabel }: OptionSelectProps<T>) {
   const t = useTranslations("options");
   const locale = useLocale();
   const options = useOptions(listKey);
@@ -55,7 +60,10 @@ export function OptionSelect<T extends FieldValues>({ control, name, noteName, l
         name={name}
         label={label}
         placeholder={options ? t("choose") : t("loading")}
-        options={(options ?? []).map((option) => ({ value: option.id, label: optionLabel(option, locale) }))}
+        options={[
+          ...(noneLabel ? [{ value: NO_OPTION, label: noneLabel }] : []),
+          ...(options ?? []).map((option) => ({ value: option.id, label: optionLabel(option, locale) })),
+        ]}
       />
       {chosen?.isOther && (
         <TextField control={control} name={noteName} label={t("otherNote")} description={t("otherNoteHint")} multiline />

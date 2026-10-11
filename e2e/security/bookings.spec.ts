@@ -1,28 +1,14 @@
 // OWASP A01 (access control, mass assignment), A06 (concurrency abuse), A10 (input
-// errors) for the trainer, booking, and session routes added in Phase 3. Route-level
+// errors) for the booking and session routes added in Phase 3 (employees: employees.spec.ts). Route-level
 // 401s are covered by the route inventory in access-control.spec.ts.
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
-import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi } from "../support/data";
+import { BOOKING_DAY, bookingSetup, createBookingViaApi } from "../support/data";
 import type { Role } from "../support/db";
 
 const SLOT = { date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" };
 
 test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => {
-  const trainerExpectations: [Role, number][] = [
-    ["ADMIN", 201],
-    ["FITNESS_MANAGER", 201],
-    ["RECEPTIONIST", 403],
-    ["PT", 403],
-    ["ACCOUNTANT", 403],
-  ];
-  for (const [role, status] of trainerExpectations) {
-    test(`${role} creating a trainer gets ${status}`, async ({ apiAs, testTag }) => {
-      const response = await (await apiAs(role)).post("/api/v1/trainers", { data: { fullName: `PT ${testTag}` } });
-      expect(response.status()).toBe(status);
-    });
-  }
-
   const bookingExpectations: [Role, number][] = [
     ["ADMIN", 201],
     ["FITNESS_MANAGER", 201],
@@ -105,15 +91,6 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
     expect(moved).toMatchObject({ customer: { id: refs.customerId }, contract: { id: refs.contractId } });
   });
 
-  test("a trainer's login link cannot be pointed at a non-trainer account", async ({ apiAs, testTag }) => {
-    const admin = await apiAs("ADMIN");
-    const { id: adminId } = await (await admin.get("/api/v1/me")).json();
-
-    const response = await admin.post("/api/v1/trainers", { data: { fullName: `PT ${testTag}`, userId: adminId } });
-
-    expect(response.status()).toBe(400);
-    expect(await response.json()).toMatchObject({ details: { fieldErrors: { userId: ["userNotTrainer"] } } });
-  });
 });
 
 test.describe("A06 concurrency abuse over HTTP", () => {
@@ -189,12 +166,4 @@ test.describe("A10 booking input errors", () => {
     }
   });
 
-  test("a trainer update with an unknown id is 404, and invalid fields are 400", async ({ apiAs, testTag }) => {
-    const manager = await apiAs("FITNESS_MANAGER");
-    const trainer = await createTrainerViaApi(manager, testTag);
-
-    expect((await manager.patch(`/api/v1/trainers/${randomUUID()}`, { data: { fullName: "X" } })).status()).toBe(404);
-    const invalid = await manager.patch(`/api/v1/trainers/${trainer.id}`, { data: { fullName: "", status: "FIRED" } });
-    expect(invalid.status()).toBe(400);
-  });
 });

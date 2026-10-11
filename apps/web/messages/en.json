@@ -11,7 +11,7 @@
     "contracts": "Contracts",
     "calendar": "PT Calendar",
     "sessions": "Sessions",
-    "trainers": "Trainers",
+    "employees": "Employees",
     "finance": "Finance",
     "roles": "Roles and permissions",
     "branches": "Branches",
@@ -43,9 +43,9 @@
       "CANCELLED": "Cancelled",
       "NO_SHOW": "No-show"
     },
-    "trainer": {
-      "ACTIVE": "Active",
-      "INACTIVE": "Inactive"
+    "employee": {
+      "ACTIVE": "Working",
+      "INACTIVE": "Left"
     },
     "branch": {
       "ACTIVE": "Active",
@@ -276,7 +276,8 @@
     "PAYMENT_CONTRACT_CANCELLED": "Payments can't be recorded on a cancelled contract.",
     "APPROVAL_OWN_REQUEST": "You cannot approve a request you submitted.",
     "APPROVAL_NOT_PENDING": "This request has already been decided.",
-    "APPROVAL_ALREADY_PENDING": "A request for this record is already waiting for approval."
+    "APPROVAL_ALREADY_PENDING": "A request for this record is already waiting for approval.",
+    "BOOKING_OUTSIDE_WORKING_HOURS": "That time is outside the trainer's working hours, or on their day off."
   },
   "validation": {
     "required": "Required.",
@@ -293,9 +294,8 @@
     "invalidTime": "Enter a time as hh:mm, for example 18:30.",
     "endTimeNotAfterStart": "The end time must be after the start time.",
     "invalidChoice": "Choose an option from the list.",
-    "trainerUnavailable": "This trainer isn't taking new bookings.",
-    "userNotTrainer": "Only logins whose role sees only its own schedule (such as PT) can be linked.",
-    "userAlreadyLinked": "This login is already linked to another trainer.",
+    "trainerUnavailable": "This employee doesn't teach PT or has left.",
+    "userAlreadyLinked": "This login already belongs to another employee.",
     "amountNotPositive": "Enter an amount greater than 0.",
     "futureDate": "The date can't be later than today.",
     "nameAlreadyUsed": "This name is already used.",
@@ -305,7 +305,9 @@
     "notOnHalfHour": "Use a full or half hour, for example 05:00 or 05:30.",
     "invalidCodePrefix": "Use 1 to 5 letters without accents, for example KH.",
     "approverRequired": "Choose at least one approver role.",
-    "outOfRange": "Enter a number from 1 to 720."
+    "outOfRange": "Enter a number from 1 to 720.",
+    "shiftsOverlap": "Shifts on the same day can't overlap.",
+    "dayOffExists": "That day is already a day off."
   },
   "contracts": {
     "title": "Contracts",
@@ -360,25 +362,88 @@
     "paymentHistory": "Payment history",
     "paymentHistoryEmpty": "No payments yet"
   },
-  "trainers": {
-    "title": "Trainers",
-    "description": "Personal trainers and their logins.",
-    "create": "Add trainer",
-    "createDescription": "The trainer code is generated automatically.",
-    "edit": "Edit trainer",
-    "editDescription": "An inactive trainer takes no new bookings; existing bookings stay.",
-    "created": "Trainer {code} added",
+  "employees": {
+    "title": "Employees",
+    "description": "Staff profiles, sign-in logins, and PT working schedules.",
+    "create": "Add employee",
+    "createDescription": "The employee code is generated. Each employee has one sign-in login.",
+    "edit": "Edit details",
+    "editDescription": "An employee who has left takes no new bookings; existing ones stay as they are.",
+    "created": "Employee {code} added",
     "updated": "Changes saved",
-    "emptyTitle": "No trainers yet",
-    "emptyBody": "Add trainers so customers can book sessions with them.",
+    "emptyTitle": "No employees yet",
+    "emptyBody": "Add employees and link each one's sign-in login.",
+    "noResultsTitle": "No employees found",
+    "noResultsBody": "No employee matches these filters.",
+    "searchPlaceholder": "Search by code, name, or phone",
+    "filters": "Filters",
+    "apply": "Apply",
+    "allStatuses": "All",
+    "allDepartments": "All",
+    "trainersOnly": "PT only",
+    "allEmployees": "All employees",
+    "onlyTrainers": "Employees who teach PT",
     "noLogin": "No login",
-    "loginDescription": "A login with the Trainer role. Once linked, the trainer can see and run their own sessions.",
+    "noOption": "None",
+    "loginDescription": "A login belongs to one employee only. The employee signs in with it.",
+    "isTrainerDescription": "Shown on the PT calendar and bookable during working hours.",
+    "trainer": "PT",
+    "open": "Open {name}",
+    "backToList": "Employee list",
+    "profile": "Profile",
+    "birthDatePlaceholder": "dd/MM/yyyy",
+    "genders": {
+      "MALE": "Male",
+      "FEMALE": "Female",
+      "OTHER": "Other"
+    },
     "fields": {
-      "trainerCode": "Code",
+      "employeeCode": "Code",
       "fullName": "Full name",
-      "status": "Status",
-      "login": "Login",
+      "birthDate": "Date of birth",
+      "gender": "Gender",
+      "phone": "Phone",
+      "email": "Email",
+      "department": "Department",
+      "team": "Team",
+      "title": "Job title",
+      "status": "Working status",
+      "isTrainer": "Teaches PT",
+      "login": "Sign-in login",
       "branch": "Branch"
+    },
+    "schedule": {
+      "title": "Working schedule",
+      "description": "Weekly shifts. PT sessions can be booked only during working hours; other times are grey on the PT calendar.",
+      "notTrainer": "This employee does not teach PT, so they are not on the PT calendar. The schedule is still kept.",
+      "weekdays": {
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday",
+        "7": "Sunday"
+      },
+      "dayOffWeekly": "Off",
+      "addShift": "Add a shift on {day}",
+      "removeShift": "Remove shift {number} on {day}",
+      "shiftStart": "{day}, shift {number}: start",
+      "shiftEnd": "{day}, shift {number}: end",
+      "save": "Save schedule",
+      "saved": "Schedule saved",
+      "hint": "Times follow 30-minute cells, e.g. 05:30. A shift may end at 24:00. Bookings already made are not changed.",
+      "daysOff": "Days off",
+      "daysOffDescription": "Days without work whatever the weekly shifts say. Shown from today on.",
+      "noDaysOff": "No upcoming days off.",
+      "date": "Date",
+      "note": "Note",
+      "addDayOff": "Add day off",
+      "dayOffAdded": "Day off {date} added",
+      "removeDayOff": "Remove day off {date}",
+      "removeDayOffTitle": "Remove the day off on {date}?",
+      "removeDayOffBody": "The employee works their weekly shifts on that day.",
+      "dayOffRemoved": "Day off {date} removed"
     }
   },
   "bookings": {
@@ -429,9 +494,9 @@
     "addAt": "Add booking for {trainer} at {time}",
     "schedule": "Schedule for {date}",
     "noTrainersTitle": "No trainers yet",
-    "noTrainersBody": "A manager needs to add trainers before sessions can be booked.",
-    "trainerNotLinkedTitle": "Your login isn't linked to a trainer",
-    "trainerNotLinkedBody": "Ask a manager to link your login so you can see your schedule.",
+    "noTrainersBody": "A manager needs to add employees who teach PT before sessions can be booked.",
+    "trainerNotLinkedTitle": "Your login doesn't belong to an employee",
+    "trainerNotLinkedBody": "Ask a manager to link your login to your employee profile so you can see your schedule.",
     "emptyTitle": "No sessions here",
     "customerEmptyTitle": "This customer has no bookings",
     "views": {
@@ -552,9 +617,9 @@
         "checkIn": "Check in sessions",
         "complete": "Complete sessions"
       },
-      "trainer": {
-        "view": "View trainers",
-        "manage": "Add and edit trainers"
+      "employee": {
+        "view": "View employees and working schedules",
+        "manage": "Add and edit employees and working schedules"
       },
       "payment": {
         "view": "View payments and debt",
@@ -582,7 +647,8 @@
       "customers": "Customers",
       "contracts": "Contracts",
       "schedule": "PT schedule",
-      "vouchers": "Receipts and expenses"
+      "vouchers": "Receipts and expenses",
+      "staff": "Staff"
     },
     "scopes": {
       "ALL": "Everything in their branches",
@@ -617,7 +683,7 @@
       "description": "Description",
       "permissions": "Permissions",
       "dataScopes": "Data scope",
-      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered.",
+      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered. Staff \"only mine\": one's own profile and working schedule.",
       "fieldMasks": "Hidden fields",
       "fieldMasksHint": "Hidden on every screen, and not searchable.",
       "users": "Users"
@@ -651,7 +717,9 @@
       "incomeCategories": "Income categories",
       "expenseTypes": "Expense types",
       "deleteReasons": "Reasons for deleting or voiding",
-      "rejectReasons": "Reasons for rejecting"
+      "rejectReasons": "Reasons for rejecting",
+      "departments": "Departments",
+      "jobTitles": "Job titles"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -696,7 +764,7 @@
       "calendarDayEnd": "End time",
       "customerCodePrefix": "Customer code",
       "contractCodePrefix": "Contract code",
-      "trainerCodePrefix": "Trainer code"
+      "employeeCodePrefix": "Employee code"
     },
     "saved": "Parameters saved"
   },
@@ -750,7 +818,7 @@
       "parameter": "Parameter",
       "customer": "Customer",
       "contract": "Contract",
-      "trainer": "Trainer",
+      "employee": "Employee",
       "booking": "Booking",
       "payment": "Receipt",
       "cash_transaction": "Income or expense",
@@ -778,7 +846,10 @@
       "password_reset": "Password reset",
       "submitted": "Submitted",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "shifts_changed": "Shifts changed",
+      "day_off_added": "Day off added",
+      "day_off_removed": "Day off removed"
     },
     "fields": {
       "at": "When",

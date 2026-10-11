@@ -16,7 +16,7 @@ export const PARAMETER_DEFAULTS = {
   /** Prefixes of generated codes (D-038); the number after them never repeats. */
   customerCodePrefix: "KH",
   contractCodePrefix: "HD",
-  trainerCodePrefix: "PT",
+  employeeCodePrefix: "NV",
 } as const;
 
 export type ParameterKey = keyof typeof PARAMETER_DEFAULTS;
@@ -37,7 +37,7 @@ export const parametersInputSchema = z
     calendarDayEnd: calendarTime,
     customerCodePrefix: codePrefix,
     contractCodePrefix: codePrefix,
-    trainerCodePrefix: codePrefix,
+    employeeCodePrefix: codePrefix,
   })
   .refine((value) => value.calendarDayEnd > value.calendarDayStart, { path: ["calendarDayEnd"], error: "endTimeNotAfterStart" });
 
@@ -47,7 +47,7 @@ export const parametersSchema = z
     calendarDayEnd: z.string(),
     customerCodePrefix: z.string(),
     contractCodePrefix: z.string(),
-    trainerCodePrefix: z.string(),
+    employeeCodePrefix: z.string(),
   })
   .meta({ id: "Parameters" });
 

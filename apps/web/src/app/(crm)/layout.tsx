@@ -18,7 +18,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "booking.view")) mainItems.push("calendar", "sessions");
   if (can(user, "payment.view")) mainItems.push("finance");
   const adminItems: NavItemKey[] = [];
-  if (can(user, "trainer.manage")) adminItems.push("trainers");
+  // A PT sees their own profile and working schedule here (staff scope "only mine").
+  if (can(user, "employee.view")) adminItems.push("employees");
   if (can(user, "user.manage")) adminItems.push("users");
   if (can(user, "role.manage")) adminItems.push("roles");
   if (can(user, "branch.manage")) adminItems.push("branches");

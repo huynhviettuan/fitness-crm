@@ -11,7 +11,7 @@
     "contracts": "Hợp đồng",
     "calendar": "Lịch PT",
     "sessions": "Buổi tập",
-    "trainers": "Huấn luyện viên",
+    "employees": "Nhân viên",
     "finance": "Tài chính",
     "roles": "Vai trò và phân quyền",
     "branches": "Chi nhánh",
@@ -43,9 +43,9 @@
       "CANCELLED": "Đã hủy",
       "NO_SHOW": "Vắng mặt"
     },
-    "trainer": {
+    "employee": {
       "ACTIVE": "Đang làm việc",
-      "INACTIVE": "Ngừng làm việc"
+      "INACTIVE": "Đã nghỉ việc"
     },
     "branch": {
       "ACTIVE": "Đang hoạt động",
@@ -276,7 +276,8 @@
     "PAYMENT_CONTRACT_CANCELLED": "Không ghi nhận thanh toán cho hợp đồng đã hủy.",
     "APPROVAL_OWN_REQUEST": "Bạn không thể tự duyệt yêu cầu do chính mình gửi.",
     "APPROVAL_NOT_PENDING": "Yêu cầu này đã được xử lý.",
-    "APPROVAL_ALREADY_PENDING": "Đã có một yêu cầu đang chờ duyệt cho dữ liệu này."
+    "APPROVAL_ALREADY_PENDING": "Đã có một yêu cầu đang chờ duyệt cho dữ liệu này.",
+    "BOOKING_OUTSIDE_WORKING_HOURS": "Ngoài giờ làm việc của huấn luyện viên, hoặc là ngày nghỉ của họ."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -293,9 +294,8 @@
     "invalidTime": "Giờ không hợp lệ. Nhập theo dạng hh:mm, ví dụ 18:30.",
     "endTimeNotAfterStart": "Giờ kết thúc phải sau giờ bắt đầu.",
     "invalidChoice": "Hãy chọn một mục trong danh sách.",
-    "trainerUnavailable": "Huấn luyện viên này không nhận lịch mới.",
-    "userNotTrainer": "Chỉ liên kết được tài khoản có vai trò chỉ xem lịch của mình (như PT).",
-    "userAlreadyLinked": "Tài khoản này đã liên kết với một huấn luyện viên khác.",
+    "trainerUnavailable": "Nhân viên này không dạy PT hoặc đã nghỉ việc.",
+    "userAlreadyLinked": "Tài khoản này đã gắn với một nhân viên khác.",
     "amountNotPositive": "Số tiền phải lớn hơn 0.",
     "futureDate": "Ngày không được sau hôm nay.",
     "nameAlreadyUsed": "Tên này đã được dùng.",
@@ -305,7 +305,9 @@
     "notOnHalfHour": "Chọn giờ tròn hoặc giờ rưỡi, ví dụ 05:00 hoặc 05:30.",
     "invalidCodePrefix": "Tiền tố gồm 1 đến 5 chữ cái không dấu, ví dụ KH.",
     "approverRequired": "Chọn ít nhất một vai trò được duyệt.",
-    "outOfRange": "Nhập một số từ 1 đến 720."
+    "outOfRange": "Nhập một số từ 1 đến 720.",
+    "shiftsOverlap": "Các ca trong cùng một ngày không được chồng lên nhau.",
+    "dayOffExists": "Ngày này đã là ngày nghỉ."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -360,25 +362,88 @@
     "paymentHistory": "Lịch sử thanh toán",
     "paymentHistoryEmpty": "Chưa có khoản thanh toán nào"
   },
-  "trainers": {
-    "title": "Huấn luyện viên",
-    "description": "Huấn luyện viên cá nhân và tài khoản đăng nhập của họ.",
-    "create": "Thêm huấn luyện viên",
-    "createDescription": "Mã huấn luyện viên được tạo tự động.",
-    "edit": "Sửa huấn luyện viên",
-    "editDescription": "Huấn luyện viên ngừng làm việc không nhận lịch mới; lịch cũ vẫn giữ nguyên.",
-    "created": "Đã thêm huấn luyện viên {code}",
+  "employees": {
+    "title": "Nhân viên",
+    "description": "Hồ sơ nhân viên, tài khoản đăng nhập và lịch làm việc của PT.",
+    "create": "Thêm nhân viên",
+    "createDescription": "Mã nhân viên được tạo tự động. Mỗi nhân viên gắn với một tài khoản đăng nhập.",
+    "edit": "Sửa thông tin",
+    "editDescription": "Nhân viên đã nghỉ việc không nhận lịch mới; lịch cũ vẫn giữ nguyên.",
+    "created": "Đã thêm nhân viên {code}",
     "updated": "Đã lưu thay đổi",
-    "emptyTitle": "Chưa có huấn luyện viên",
-    "emptyBody": "Thêm huấn luyện viên để đặt lịch tập cho khách.",
+    "emptyTitle": "Chưa có nhân viên",
+    "emptyBody": "Thêm nhân viên và gắn tài khoản đăng nhập cho từng người.",
+    "noResultsTitle": "Không tìm thấy nhân viên",
+    "noResultsBody": "Không có nhân viên nào khớp bộ lọc.",
+    "searchPlaceholder": "Tìm theo mã, tên hoặc SĐT",
+    "filters": "Bộ lọc",
+    "apply": "Lọc",
+    "allStatuses": "Tất cả",
+    "allDepartments": "Tất cả",
+    "trainersOnly": "Chỉ PT",
+    "allEmployees": "Tất cả nhân viên",
+    "onlyTrainers": "Chỉ nhân viên dạy PT",
     "noLogin": "Không có tài khoản",
-    "loginDescription": "Tài khoản có vai trò Huấn luyện viên. Khi liên kết, huấn luyện viên xem và thực hiện được các buổi tập của mình.",
+    "noOption": "Không chọn",
+    "loginDescription": "Mỗi tài khoản chỉ gắn với một nhân viên. Nhân viên đăng nhập bằng tài khoản này.",
+    "isTrainerDescription": "Hiện trên lịch PT và nhận lịch tập trong giờ làm việc.",
+    "trainer": "PT",
+    "open": "Xem {name}",
+    "backToList": "Danh sách nhân viên",
+    "profile": "Hồ sơ",
+    "birthDatePlaceholder": "dd/MM/yyyy",
+    "genders": {
+      "MALE": "Nam",
+      "FEMALE": "Nữ",
+      "OTHER": "Khác"
+    },
     "fields": {
-      "trainerCode": "Mã HLV",
+      "employeeCode": "Mã NV",
       "fullName": "Họ và tên",
-      "status": "Trạng thái",
+      "birthDate": "Ngày sinh",
+      "gender": "Giới tính",
+      "phone": "Số điện thoại",
+      "email": "Email",
+      "department": "Phòng ban",
+      "team": "Nhóm",
+      "title": "Chức danh",
+      "status": "Trạng thái làm việc",
+      "isTrainer": "Dạy PT",
       "login": "Tài khoản đăng nhập",
       "branch": "Chi nhánh"
+    },
+    "schedule": {
+      "title": "Lịch làm việc",
+      "description": "Ca làm việc hằng tuần. Chỉ đặt được lịch PT trong giờ làm việc; ngoài giờ là ô xám trên lịch PT.",
+      "notTrainer": "Nhân viên này không dạy PT nên không có trên lịch PT. Lịch làm việc vẫn được lưu.",
+      "weekdays": {
+        "1": "Thứ 2",
+        "2": "Thứ 3",
+        "3": "Thứ 4",
+        "4": "Thứ 5",
+        "5": "Thứ 6",
+        "6": "Thứ 7",
+        "7": "Chủ nhật"
+      },
+      "dayOffWeekly": "Nghỉ",
+      "addShift": "Thêm ca {day}",
+      "removeShift": "Xóa ca {number} {day}",
+      "shiftStart": "{day}, ca {number}: bắt đầu",
+      "shiftEnd": "{day}, ca {number}: kết thúc",
+      "save": "Lưu lịch làm việc",
+      "saved": "Đã lưu lịch làm việc",
+      "hint": "Giờ theo ô 30 phút, ví dụ 05:30. Ca có thể kết thúc lúc 24:00. Các lịch đã đặt không bị thay đổi.",
+      "daysOff": "Ngày nghỉ",
+      "daysOffDescription": "Những ngày không làm việc dù có ca trong tuần. Hiện các ngày từ hôm nay.",
+      "noDaysOff": "Chưa có ngày nghỉ sắp tới.",
+      "date": "Ngày",
+      "note": "Ghi chú",
+      "addDayOff": "Thêm ngày nghỉ",
+      "dayOffAdded": "Đã thêm ngày nghỉ {date}",
+      "removeDayOff": "Bỏ ngày nghỉ {date}",
+      "removeDayOffTitle": "Bỏ ngày nghỉ {date}?",
+      "removeDayOffBody": "Nhân viên sẽ làm việc theo ca hằng tuần vào ngày này.",
+      "dayOffRemoved": "Đã bỏ ngày nghỉ {date}"
     }
   },
   "bookings": {
@@ -429,9 +494,9 @@
     "addAt": "Thêm lịch hẹn cho {trainer} lúc {time}",
     "schedule": "Lịch ngày {date}",
     "noTrainersTitle": "Chưa có huấn luyện viên",
-    "noTrainersBody": "Quản lý cần thêm huấn luyện viên trước khi đặt lịch.",
-    "trainerNotLinkedTitle": "Tài khoản chưa liên kết với huấn luyện viên",
-    "trainerNotLinkedBody": "Nhờ quản lý liên kết tài khoản của bạn để xem lịch của mình.",
+    "noTrainersBody": "Quản lý cần thêm nhân viên dạy PT trước khi đặt lịch.",
+    "trainerNotLinkedTitle": "Tài khoản chưa gắn với nhân viên",
+    "trainerNotLinkedBody": "Nhờ quản lý gắn tài khoản của bạn với hồ sơ nhân viên để xem lịch của mình.",
     "emptyTitle": "Không có buổi tập nào",
     "customerEmptyTitle": "Khách hàng chưa có lịch hẹn",
     "views": {
@@ -552,9 +617,9 @@
         "checkIn": "Check-in buổi tập",
         "complete": "Hoàn thành buổi tập"
       },
-      "trainer": {
-        "view": "Xem huấn luyện viên",
-        "manage": "Thêm và sửa huấn luyện viên"
+      "employee": {
+        "view": "Xem nhân viên và lịch làm việc",
+        "manage": "Thêm, sửa nhân viên và lịch làm việc"
       },
       "payment": {
         "view": "Xem thanh toán và công nợ",
@@ -582,7 +647,8 @@
       "customers": "Khách hàng",
       "contracts": "Hợp đồng",
       "schedule": "Lịch PT",
-      "vouchers": "Phiếu thu chi"
+      "vouchers": "Phiếu thu chi",
+      "staff": "Nhân viên"
     },
     "scopes": {
       "ALL": "Tất cả trong chi nhánh được giao",
@@ -617,7 +683,7 @@
       "description": "Mô tả",
       "permissions": "Quyền",
       "dataScopes": "Phạm vi dữ liệu",
-      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi.",
+      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi. Nhân viên \"chỉ của mình\": hồ sơ và lịch làm việc của chính mình.",
       "fieldMasks": "Thông tin bị ẩn",
       "fieldMasksHint": "Ẩn trên mọi màn hình và không tìm kiếm được.",
       "users": "Người dùng"
@@ -651,7 +717,9 @@
       "incomeCategories": "Loại thu",
       "expenseTypes": "Loại chi",
       "deleteReasons": "Lý do xóa, hủy phiếu",
-      "rejectReasons": "Lý do từ chối duyệt"
+      "rejectReasons": "Lý do từ chối duyệt",
+      "departments": "Phòng ban",
+      "jobTitles": "Chức danh"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -696,7 +764,7 @@
       "calendarDayEnd": "Giờ kết thúc",
       "customerCodePrefix": "Mã khách hàng",
       "contractCodePrefix": "Mã hợp đồng",
-      "trainerCodePrefix": "Mã huấn luyện viên"
+      "employeeCodePrefix": "Mã nhân viên"
     },
     "saved": "Đã lưu tham số"
   },
@@ -750,7 +818,7 @@
       "parameter": "Tham số",
       "customer": "Khách hàng",
       "contract": "Hợp đồng",
-      "trainer": "Huấn luyện viên",
+      "employee": "Nhân viên",
       "booking": "Lịch tập",
       "payment": "Phiếu thu",
       "cash_transaction": "Khoản thu chi",
@@ -778,7 +846,10 @@
       "password_reset": "Đặt lại mật khẩu",
       "submitted": "Gửi duyệt",
       "approved": "Duyệt",
-      "rejected": "Từ chối"
+      "rejected": "Từ chối",
+      "shifts_changed": "Đổi ca làm việc",
+      "day_off_added": "Thêm ngày nghỉ",
+      "day_off_removed": "Bỏ ngày nghỉ"
     },
     "fields": {
       "at": "Thời điểm",

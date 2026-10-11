@@ -13,7 +13,7 @@ import { diffFields, recordAudit } from "../../platform/audit/audit.repository.j
 import * as contractRepo from "../contracts/contract.repository.js";
 import { effectiveStatus } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
-import { findTrainer } from "../trainers/trainer.repository.js";
+import { assertWithinWorkingHours, findBookableTrainer } from "../employees/employee.service.js";
 import * as repo from "./booking.repository.js";
 import {
   OPEN_BOOKING_STATUSES,
@@ -41,7 +41,7 @@ export type BookingView = {
   createdAt: Date;
   customer: { id: string; customerCode: string; fullName: string };
   contract: { id: string; contractCode: string; packageName: string; remainingSessions: number };
-  trainer: { id: string; trainerCode: string; fullName: string };
+  trainer: { id: string; employeeCode: string; fullName: string };
   /** Fulfillment facts, from check-in on (T-011). */
   session: { checkedInAt: Date; checkedInBy: string; completedAt: Date | null; completedBy: string | null } | null;
 };
@@ -248,7 +248,7 @@ export async function bookingView(db: Db, actor: Actor, id: string): Promise<Boo
  */
 export function bookingsVisibleTo(actor: Actor): Prisma.BookingWhereInput {
   const own: Prisma.BookingWhereInput = {
-    OR: [...(actor.trainerId ? [{ trainerId: actor.trainerId }] : []), { customer: { createdById: actor.id } }],
+    OR: [...(actor.employeeId ? [{ trainerId: actor.employeeId }] : []), { customer: { createdById: actor.id } }],
   };
   return { AND: [inBranches(actor), isOwnOnly(actor, "schedule") ? own : {}] };
 }
@@ -259,8 +259,8 @@ export function sessionDay(scheduledStart: Date): Date {
 }
 
 /**
- * BR-003, BR-012, BR-010: the contract is active and covers the day, the trainer takes
- * bookings, and the trainer is free.
+ * BR-003, BR-012, BR-010, D-030: the contract is active and covers the day, the trainer
+ * teaches PT and still works here, the slot is inside their working hours, and they are free.
  */
 async function assertBookable(
   tx: Prisma.TransactionClient,
@@ -272,21 +272,21 @@ async function assertBookable(
   if (!isWithinContractPeriod(sessionDay(slot.scheduledStart), contract)) {
     throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
   }
-  const trainer = await findTrainer(tx, slot.trainerId);
-  if (trainer?.status !== "ACTIVE") {
+  if (!(await findBookableTrainer(tx, slot.trainerId))) {
     throw new AppError("VALIDATION_FAILED", { fieldErrors: { trainerId: ["trainerUnavailable"] } });
   }
+  await assertWithinWorkingHours(tx, slot.trainerId, slot.scheduledStart, slot.scheduledEnd);
   if (await repo.findOverlappingBooking(tx, slot, excludeBookingId)) throw new AppError("BOOKING_TRAINER_OVERLAP");
 }
 
 /**
- * With "own" schedule scope (the PT role), a user books only for the trainer record their
- * login is linked to, and must be linked to one (D-017, A-010).
+ * With "own" schedule scope (the PT role), a user books only as the trainer: the employee
+ * their login belongs to, and it must belong to one (D-017, brief §8.4).
  */
 function assertOwnTrainer(actor: Actor, trainerId: string): void {
   if (!isOwnOnly(actor, "schedule")) return;
-  if (!actor.trainerId) throw forbidden(actor, "booking.manage", "login not linked to a trainer record");
-  if (actor.trainerId !== trainerId) throw forbidden(actor, "booking.manage", "booking for another trainer");
+  if (!actor.employeeId) throw forbidden(actor, "booking.manage", "login not linked to an employee");
+  if (actor.employeeId !== trainerId) throw forbidden(actor, "booking.manage", "booking for another trainer");
 }
 
 /** Two overlapping bookings that passed the pre-check together: the constraint decides (T-014). */

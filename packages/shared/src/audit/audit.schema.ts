@@ -10,7 +10,7 @@ export const AUDIT_ENTITY_TYPES = [
   "parameter",
   "customer",
   "contract",
-  "trainer",
+  "employee",
   "booking",
   "payment",
   "cash_transaction",

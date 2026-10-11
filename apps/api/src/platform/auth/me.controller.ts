@@ -28,7 +28,7 @@ export class MeController {
       email: user.email,
       role: user.role,
       locale: user.locale,
-      trainerId: user.trainerId,
+      employeeId: user.employeeId,
       permissions: PERMISSION_KEYS.filter((permission) => user.permissions.has(permission)),
       dataScopes: user.scopes,
       allBranches: user.allBranches,

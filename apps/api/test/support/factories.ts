@@ -46,12 +46,11 @@ export async function createTestUser(
 
 /** The options the migration creates (D-016, brief §8.1), as they are initially. */
 export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sortOrder: number; active: boolean }[] = [
-  ...[1, 2, 3, 4].map((n) => ({ id: `c0000000-0000-4000-8000-00000000000${n}`, labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true })),
+  ...[1, 2, 3, 4, 5, 6, 7].map((n) => ({ id: `c0000000-0000-4000-8000-00000000000${n}`, labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true })),
   { id: "c0000000-0000-4000-8000-000000000011", labelVi: "Tiền mặt", labelEn: "Cash", sortOrder: 1, active: true },
   { id: "c0000000-0000-4000-8000-000000000012", labelVi: "Chuyển khoản", labelEn: "Bank transfer", sortOrder: 2, active: true },
   { id: "c0000000-0000-4000-8000-000000000013", labelVi: "Thẻ", labelEn: "Card", sortOrder: 3, active: true },
   { id: "c0000000-0000-4000-8000-000000000014", labelVi: "Ví điện tử", labelEn: "E-wallet", sortOrder: 4, active: false },
-  { id: "c0000000-0000-4000-8000-000000000005", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
 ];
 
 /** The approval matrix the migration creates (09_RBAC.md). */

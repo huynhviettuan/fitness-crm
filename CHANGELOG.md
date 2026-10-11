@@ -1,5 +1,15 @@
 # Documentation Changelog
 
+## 2026-10-11 — M1 slice 6: employees and PT working schedules
+
+- Trainers became **employees** (brief §8.4), keeping their ids, codes, logins, and bookings: profile with birth date, gender, phone, email, department and job title from new option lists, team, branch, working status, "teaches PT", and one linked login. New codes use the employee prefix (initially NV). Administration → **Employees** replaces Trainers: list with filters and search, detail page, add and edit.
+- **Working schedules** (D-030): weekly shifts and days off on the employee's page. A booking or reschedule must fall inside the trainer's working hours and not on a day off; the PT calendar greys every other cell. Existing trainers got 05:00–22:00 every day so nothing changed for them (A-042).
+- Permissions `employee.view` and `employee.manage` replace `trainer.*`; new data scope "staff": a PT sees their own profile and schedule, read-only. Master, Receptionist, and Kế toán no longer read staff profiles (A-043).
+- ID documents wait for field encryption in M2 (A-041).
+- API: `/employees` (and `/logins`, `/:id/schedule`, `/:id/shifts`, `/:id/days-off`), `/schedule/trainers?date=`; `/trainers` removed; `GET /me` has `employeeId` instead of `trainerId`; error `BOOKING_OUTSIDE_WORKING_HOURS`.
+- Tests: unit (shared 93, web 233, API 84), integration 214, E2E and security 230.
+- Docs: 04, 07, 09, 13, 16, 18 (T-058, A-041 to A-043; A-030 superseded), 24, 25.
+
 ## 2026-10-11 — M1 slice 5: approvals
 
 - Maker-checker (D-018): receipts, income and expenses, deletions to the trash, and changes of a customer's name, phone, or email wait for approval as the matrix says; until then they have no effect. Nobody approves their own request. Rejections take a reason from the new "rejectReasons" list.

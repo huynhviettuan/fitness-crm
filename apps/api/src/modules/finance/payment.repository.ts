@@ -103,14 +103,14 @@ export async function validPaidByContract(db: Db, contractIds: string[]): Promis
 }
 
 /** Which contracts a debt list may show: branches and "own" scope (D-014, D-017, A-029). */
-export type DebtScope = { branchIds: string[] | "ALL"; ownBy: { userId: string; trainerId: string | null } | null };
+export type DebtScope = { branchIds: string[] | "ALL"; ownBy: { userId: string; employeeId: string | null } | null };
 
 function debtScopeSql(scope: DebtScope): Prisma.Sql {
   const branch = scope.branchIds === "ALL" ? Prisma.sql`TRUE` : Prisma.sql`c.branch_id = ANY(${scope.branchIds}::uuid[])`;
   if (!scope.ownBy) return branch;
-  const { userId, trainerId } = scope.ownBy;
-  const viaTrainer = trainerId
-    ? Prisma.sql`OR EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id = c.customer_id AND b.trainer_id = ${trainerId}::uuid)`
+  const { userId, employeeId } = scope.ownBy;
+  const viaTrainer = employeeId
+    ? Prisma.sql`OR EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id = c.customer_id AND b.trainer_id = ${employeeId}::uuid)`
     : Prisma.empty;
   return Prisma.sql`${branch} AND (
     c.created_by = ${userId}::uuid

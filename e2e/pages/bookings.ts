@@ -216,27 +216,3 @@ export class CustomerBookingsTab {
     return bookingForm(this.page);
   }
 }
-
-/** Trainer management. */
-export class TrainersPage {
-  private readonly shell: AppShell;
-
-  constructor(private readonly page: Page) {
-    this.shell = new AppShell(page);
-  }
-
-  async goto(): Promise<void> {
-    await this.page.goto("/trainers");
-  }
-
-  get table(): Locator {
-    return this.shell.main.getByRole("table", { name: labels.trainers.title });
-  }
-
-  async add(fullName: string): Promise<void> {
-    await this.shell.main.getByRole("button", { name: labels.trainers.create, exact: true }).click();
-    const dialog = this.page.getByRole("dialog", { name: labels.trainers.create });
-    await dialog.getByLabel(labels.trainers.fields.fullName, { exact: true }).fill(fullName);
-    await dialog.getByRole("button", { name: labels.common.save }).click();
-  }
-}

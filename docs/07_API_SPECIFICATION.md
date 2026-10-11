@@ -23,7 +23,7 @@ The API is the NestJS app `apps/api`, under `/api/v1`, described by **OpenAPI** 
 |---|---|
 | Me and auth | `/api/auth/*` (Better Auth), `GET /me`, `PATCH /me/locale` |
 | Platform | `/users`, `/roles` (clone), `/permissions` (tree), `/users/:id/overrides`, `/branches`, `/option-lists/:key/options`, `/parameters`, `/session-status-rules`, `/approval-rules`, `/approvals` (inbox, approve, reject), `/audit-events`, `/trash`, `/notifications`, `/files` (signed upload and download) |
-| Employees | `/employees`, `/employees/:id/schedules` |
+| Employees | `/employees`, `/employees/:id`, `/employees/:id/schedule`, `/employees/:id/shifts`, `/employees/:id/days-off`; `/schedule/trainers?date=` |
 | Leads | `/leads` (create, list, kanban counts), `/leads/:id`, `/leads/:id/assign`, `/leads/:id/status`, `/leads/:id/steps/:stepId` (complete with result), `/leads/:id/appointments`, `/leads/:id/show`, `/leads/:id/convert`, `/leads/duplicates?phone=`, `/leads/:id/merge`, `/recare`, `/my-day`, `/consulting-scripts`, `/leads/:id/audit` |
 | Customers | `/customers`, `/customers/:id` and its tabs (`/contracts`, `/receipts`, `/plans`, `/session-logs`, `/progress`, `/consulting-history`, `/emails`) |
 | Services | `/services`, `/services/:id/tiers` (versions), `/services/:id/quick-packages`, `/promotions`, `/price-quote` (service + sessions → unit price, total, end date, name) |
@@ -71,6 +71,7 @@ The API is the NestJS app `apps/api`, under `/api/v1`, described by **OpenAPI** 
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Body not JSON |
 | `PAYMENT_EXCEEDS_CONTRACT_VALUE` | 422 | Receipt above the remaining value (OQ-003 interim) |
 | `BOOKING_OUTSIDE_CONTRACT_PERIOD` | 422 | Session day outside the contract dates (OQ-001) |
+| `BOOKING_OUTSIDE_WORKING_HOURS` | 422 | Outside the trainer's working hours of the day, or on their day off (D-030, T-058) |
 | `INTERNAL_ERROR` | 500 | Unexpected; details only in server logs |
 
 Codes from Phases 0–4 that map to these: `BOOKING_TRAINER_OVERLAP` → `TRAINER_OVERLAP`, `CONTRACT_NOT_ACTIVE` → `CONTRACT_NOT_APPROVED` / `CONTRACT_EXPIRED` / `CONTRACT_FROZEN`, `CONTRACT_NOT_EDITABLE` → `CONTRACT_LOCKED`, `PAYMENT_CONTRACT_CANCELLED` (kept), `CONTRACT_HAS_CHECKED_IN_BOOKING` (retired with check-in, D-026), `EMAIL_ALREADY_USED`, `CANNOT_CHANGE_OWN_ACCESS` (kept).
@@ -81,10 +82,10 @@ Since M1 slice 1 the API is the NestJS app; its OpenAPI document is `apps/api/op
 
 | Area | Endpoints |
 |---|---|
-| Me | `GET /me` (user, role, `trainerId`, effective `permissions`, `dataScopes`, `allBranches`, usable `branches`, `maskedFields`), `PATCH /me/locale` |
+| Me | `GET /me` (user, role, `employeeId`, effective `permissions`, `dataScopes`, `allBranches`, usable `branches`, `maskedFields`), `PATCH /me/locale` |
 | Customers | `/customers` (`?search=&page=&pageSize=`), `/customers/:id`, `/customers/:id/contracts` (list; create with `Idempotency-Key`) |
 | Contracts | `/contracts` (`?q=&customerId=`), `/contracts/:id`, `/contracts/:id/activate`, `/contracts/:id/cancel`, `/contracts/:id/payments` (list; record with `Idempotency-Key`) |
-| Trainers | `/trainers` (`?activeOnly=`), `/trainers/:id`, `/trainers/logins` |
+| Employees | `/employees` (`?q=&status=&departmentId=&trainersOnly=&page=&pageSize=`; create), `/employees/logins`, `/employees/:id` (get, `PATCH` all fields), `/employees/:id/schedule` (weekly shifts and days off from today), `/employees/:id/shifts` (`PUT` the whole week), `/employees/:id/days-off` (add), `/employees/:id/days-off/:dayOffId` (`DELETE`); `/schedule/trainers?date=` (active trainers and their working hours that day, `booking.view`). `/trainers` was replaced in M1 slice 6 (T-058) |
 | Bookings | `/bookings` (filters), `/bookings/:id` (get, reschedule), `/bookings/:id/cancel`, `/no-show`, `/check-in`, `/complete`; `/schedule?date=&trainerId=` (one gym day) |
 | Money | `/payments` (filters), `/payments/collected?from=&to=`, `/payments/:id` (`DELETE`), `/debts`, `/cash-transactions` (list; record with `Idempotency-Key`), `/cash-transactions/summary?from=&to=`, `/cash-transactions/:id` (`DELETE`) |
 | History | `/trash` (`?entityType=&from=&to=`), `/audit-events` (`?entityType=&entityId=&actorUserId=&from=&to=`); both read-only |

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
 import { activateContract, createContract } from "../../src/modules/contracts/contract.service.js";
-import { createTrainer } from "../../src/modules/trainers/trainer.service.js";
+import { createEmployee, replaceShifts } from "../../src/modules/employees/employee.service.js";
 import { createBooking } from "../../src/modules/bookings/booking.service.js";
 import { actorOf, createTestUser } from "./factories.js";
 
@@ -36,7 +36,17 @@ export async function activeContract(actor: Actor, customerId: string, overrides
   return activateContract(approver, contract.id);
 }
 
-/** A PT login linked to a new trainer record (A-010), as the API sees it after the link. */
+/**
+ * An employee who teaches PT and works every day around the clock, so the tests' slots
+ * are inside working hours unless a test narrows them (D-030).
+ */
+export async function createTrainer(actor: Actor, input: { fullName: string; userId?: string }) {
+  const trainer = await createEmployee(actor, { ...input, isTrainer: true });
+  await replaceShifts(actor, trainer.id, { shifts: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "00:00", end: "24:00" })) });
+  return trainer;
+}
+
+/** A PT login and the trainer employee it belongs to, as the API sees it after the link. */
 export async function linkedTrainer(manager: Actor, fullName = "PT Linh") {
   const { user } = await createTestUser("PT");
   const trainer = await createTrainer(manager, { fullName, userId: user.id });

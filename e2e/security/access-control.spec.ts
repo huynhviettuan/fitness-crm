@@ -114,13 +114,13 @@ test.describe("A04 responses never expose secrets", () => {
       "branches",
       "dataScopes",
       "email",
+      "employeeId",
       "id",
       "locale",
       "maskedFields",
       "name",
       "permissions",
       "role",
-      "trainerId",
     ]);
     for (const path of ["/api/v1/me", "/api/v1/customers"]) {
       expect(await (await api.get(path)).text()).not.toMatch(FORBIDDEN_KEYS);

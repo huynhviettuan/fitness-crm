@@ -15,6 +15,8 @@ import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
 import { checkIn, completeSession } from "../sessions/session.service.js";
+import { trainersOfDay } from "../employees/employee.service.js";
+import { trainerDayListSchema } from "@flow/shared/employees";
 import {
   cancelBooking,
   createBooking,
@@ -113,5 +115,17 @@ export class ScheduleController {
   @ApiResult(bookingListSchema)
   async day(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(bookingListSchema, { items: await listDayBookings(actor, queryOf(request, ["date", "trainerId"])) });
+  }
+
+  /**
+   * The calendar's trainers for one day and when each can be booked (D-030): active
+   * trainers of the user's branches, or only themselves with "own" schedule scope.
+   */
+  @Get("trainers")
+  @RequirePermission("booking.view")
+  @ApiOptionalQuery("date")
+  @ApiResult(trainerDayListSchema)
+  async trainers(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(trainerDayListSchema, { items: await trainersOfDay(actor, queryOf(request, ["date"])) });
   }
 }

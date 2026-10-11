@@ -24,8 +24,8 @@ export type Actor = {
   branches: "ALL" | readonly string[];
   scopes: Readonly<Record<DataScopeResource, DataScope>>;
   masks: ReadonlySet<MaskableField>;
-  /** The trainer record this login acts as (A-010), for "own" schedule scope. */
-  trainerId: string | null;
+  /** The employee this login belongs to (brief §8.4): their own bookings and profile under "own" scope. */
+  employeeId: string | null;
 };
 
 /** The signed-in user: the actor plus what the screens show about them. */
@@ -62,7 +62,7 @@ export async function loadCurrentUser(db: Db, userId: string): Promise<CurrentUs
       overrides: { select: { permission: true, granted: true } },
       branches: { select: { branchId: true } },
       accessWindows: { select: { weekdays: true, startTime: true, endTime: true } },
-      trainer: { select: { id: true } },
+      employee: { select: { id: true } },
     },
   });
   if (!user) return null;
@@ -97,7 +97,7 @@ export async function loadCurrentUser(db: Db, userId: string): Promise<CurrentUs
     branches: user.allBranches ? "ALL" : user.branches.map((b) => b.branchId),
     scopes,
     masks,
-    trainerId: user.trainer?.id ?? null,
+    employeeId: user.employee?.id ?? null,
     accessWindows: user.accessWindows,
   };
 }

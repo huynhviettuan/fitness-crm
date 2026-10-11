@@ -129,6 +129,8 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     // Every deletion, whatever the record, is in the trash with its reason (D-035).
     deleteReasons: Prisma.sql`SELECT "reason_note" AS note, "deleted_at" AS at FROM "trash_entries" WHERE "reason_option_id" = ${id}::uuid`,
     rejectReasons: Prisma.sql`SELECT "reject_reason_note" AS note, "decided_at" AS at FROM "approval_requests" WHERE "reject_reason_option_id" = ${id}::uuid`,
+    departments: Prisma.sql`SELECT "department_note" AS note, "updated_at" AS at FROM "employees" WHERE "department_option_id" = ${id}::uuid`,
+    jobTitles: Prisma.sql`SELECT "title_note" AS note, "updated_at" AS at FROM "employees" WHERE "title_option_id" = ${id}::uuid`,
   };
   const rows = await prisma.$queryRaw<{ note: string; count: number; lastUsedAt: Date }[]>`
     SELECT MIN(btrim(note)) AS note, COUNT(*)::int AS count, MAX(at) AS "lastUsedAt"

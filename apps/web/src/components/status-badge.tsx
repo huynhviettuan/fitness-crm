@@ -9,7 +9,7 @@ const STATUS_VARIANTS = {
   customer: { ACTIVE: "success", INACTIVE: "muted" },
   user: { ACTIVE: "success", DISABLED: "muted" },
   contract: { DRAFT: "muted", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted" },
-  trainer: { ACTIVE: "success", INACTIVE: "muted" },
+  employee: { ACTIVE: "success", INACTIVE: "muted" },
   booking: { BOOKED: "info", CHECKED_IN: "warning", COMPLETED: "success", CANCELLED: "muted", NO_SHOW: "destructive" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },
   option: { ACTIVE: "success", INACTIVE: "muted" },

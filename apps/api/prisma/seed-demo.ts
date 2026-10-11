@@ -32,7 +32,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const { env } = await import("../src/platform/env.js");
   const { calendarDateInTimeZone } = await import("@flow/shared/validation");
   const { createUser } = await import("../src/modules/users/user.service.js");
-  const { createTrainer, updateTrainer } = await import("../src/modules/trainers/trainer.service.js");
+  const { createEmployee, replaceShifts, updateEmployee } = await import("../src/modules/employees/employee.service.js");
   const { createCustomer, updateCustomer } = await import("../src/modules/customers/customer.service.js");
   const { activateContract, cancelContract, createContract } = await import("../src/modules/contracts/contract.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");
@@ -79,12 +79,23 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   }
   const { FITNESS_MANAGER: manager, RECEPTIONIST: reception, ACCOUNTANT: accountant } = staff;
 
-  // --- Trainers: Khoa signs in as the demo trainer; Nam has left.
-  const khoa = await createTrainer(manager, { fullName: "Trần Minh Khoa", userId: staff.PT.id });
-  const ha = await createTrainer(manager, { fullName: "Lê Thu Hà" });
-  const anh = await createTrainer(manager, { fullName: "Phạm Đức Anh" });
-  const nam = await createTrainer(manager, { fullName: "Nguyễn Hoàng Nam" });
-  await updateTrainer(manager, nam.id, { fullName: nam.fullName, status: "INACTIVE" });
+  // --- Employees (brief §8.4): each staff account has one; Khoa signs in as the demo
+  // trainer, Hà and Anh teach without signing in yet, and Nam has left.
+  for (const code of ["FITNESS_MANAGER", "RECEPTIONIST", "ACCOUNTANT", "CONSULTING"] as const) {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: staff[code].id }, select: { name: true } });
+    await createEmployee(manager, { fullName: user.name, userId: staff[code].id });
+  }
+  const trainer = async (fullName: string, userId = "") => {
+    const created = await createEmployee(manager, { fullName, userId, isTrainer: true });
+    // Every day 05:00–22:00, like the calendar; admin narrows it on the schedule screen.
+    await replaceShifts(manager, created.id, { shifts: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "05:00", end: "22:00" })) });
+    return created;
+  };
+  const khoa = await trainer("Trần Minh Khoa", staff.PT.id);
+  const ha = await trainer("Lê Thu Hà");
+  const anh = await trainer("Phạm Đức Anh");
+  const nam = await trainer("Nguyễn Hoàng Nam");
+  await updateEmployee(manager, nam.id, { fullName: nam.fullName, isTrainer: true, status: "INACTIVE" });
 
   // --- Customers
   const people: [string, string, string?][] = [

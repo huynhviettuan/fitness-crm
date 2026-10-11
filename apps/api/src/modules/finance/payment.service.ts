@@ -294,7 +294,7 @@ export async function listDebts(
   const query = parseInput(debtListSchema, rawQuery);
   const scope: repo.DebtScope = {
     branchIds: actor.branches === "ALL" ? "ALL" : [...actor.branches],
-    ownBy: isOwnOnly(actor, "contracts") ? { userId: actor.id, trainerId: actor.trainerId } : null,
+    ownBy: isOwnOnly(actor, "contracts") ? { userId: actor.id, employeeId: actor.employeeId } : null,
   };
   const { ids, total } = await repo.contractsWithDebt(prisma, scope, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
   return { items: await contractViewsByIds(actor, ids), total, page: query.page, pageSize: query.pageSize };

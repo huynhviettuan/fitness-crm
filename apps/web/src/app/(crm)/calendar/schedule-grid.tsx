@@ -9,6 +9,8 @@ import { formatTime } from "@/lib/format";
 import { BookingFormDialog, type BookingPreset } from "../bookings/booking-form";
 import { BookingSheet } from "../bookings/booking-sheet";
 import type { BookingPermissions, BookingRow, TrainerOption } from "../bookings/booking-types";
+import type { WorkingHours } from "../bookings/booking-context";
+import { minutesOfTime } from "@flow/shared/employees";
 
 const SLOT_MINUTES = 30;
 // Height of one 30-minute row in pixels (h-12).
@@ -26,17 +28,20 @@ type TrainerScheduleGridProps = {
   /** The configured calendar hours, as minutes after midnight (D-030). */
   dayStart: number;
   dayEnd: number;
+  /** Each trainer's working hours that day (D-030); a trainer missing here has none. */
+  workingHours: Map<string, WorkingHours>;
   permissions: BookingPermissions;
   /** Trainers a booking can be given to, for the create and reschedule forms. */
   trainers: TrainerOption[];
 };
 
 /**
- * The PT calendar (docs/23 §9): one day, trainers as columns, 30-minute rows. Clicking
- * an empty slot opens the create dialog for that trainer and time; clicking a booking
- * opens its sheet. Hours outside the configured range appear when a booking needs them.
+ * The PT calendar (docs/23 §9): one day, trainers as columns, 30-minute rows. A cell
+ * inside the trainer's working hours (D-030) opens the create dialog for that trainer
+ * and time; other cells are grey. Clicking a booking opens its sheet. Hours outside the
+ * configured range appear when a booking needs them.
  */
-export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd, permissions, trainers }: TrainerScheduleGridProps) {
+export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd, workingHours, permissions, trainers }: TrainerScheduleGridProps) {
   const t = useTranslations();
   const timeZone = useTimeZone() ?? "UTC";
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -54,7 +59,10 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
     last = Math.max(last, Math.ceil(minutesOf(booking.scheduledEnd) / SLOT_MINUTES) * SLOT_MINUTES);
   }
   const slots = Array.from({ length: (last - first) / SLOT_MINUTES }, (_, i) => first + i * SLOT_MINUTES);
-  const bookable = (trainerId: string) => permissions.manage && trainers.some((tr) => tr.id === trainerId);
+  const working = (trainerId: string, minute: number) =>
+    (workingHours.get(trainerId) ?? []).some((hours) => minutesOfTime(hours.start) <= minute && minute + SLOT_MINUTES <= minutesOfTime(hours.end));
+  const bookable = (trainerId: string, minute: number) =>
+    permissions.manage && trainers.some((tr) => tr.id === trainerId) && working(trainerId, minute);
 
   return (
     <>
@@ -81,7 +89,7 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
           {columns.map((trainer) => (
             <div key={trainer.id} role="group" aria-label={trainer.fullName} className="relative border-l">
               {slots.map((minute) =>
-                bookable(trainer.id) ? (
+                bookable(trainer.id, minute) ? (
                   <button
                     key={minute}
                     type="button"
@@ -97,7 +105,8 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
                     }
                   />
                 ) : (
-                  <div key={minute} className="h-12 border-b" />
+                  // Outside working hours, or not for this user to book: grey when not working.
+                  <div key={minute} data-working={working(trainer.id, minute)} className={cn("h-12 border-b", !working(trainer.id, minute) && "bg-muted")} />
                 ),
               )}
               {bookings

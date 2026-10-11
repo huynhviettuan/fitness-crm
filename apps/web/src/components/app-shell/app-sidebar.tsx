@@ -43,7 +43,7 @@ const NAV_ITEMS = {
   calendar: { href: "/calendar", icon: CalendarDaysIcon },
   sessions: { href: "/sessions", icon: ClipboardCheckIcon },
   finance: { href: "/finance", icon: BanknoteIcon },
-  trainers: { href: "/trainers", icon: IdCardIcon },
+  employees: { href: "/employees", icon: IdCardIcon },
   users: { href: "/admin/users", icon: ShieldUserIcon },
   roles: { href: "/admin/roles", icon: KeyRoundIcon },
   branches: { href: "/admin/branches", icon: Building2Icon },

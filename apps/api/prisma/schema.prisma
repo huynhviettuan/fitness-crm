@@ -44,10 +44,17 @@ enum CustomerStatus {
   INACTIVE
 }
 
-// Inactive trainers keep their history but take no new bookings.
-enum TrainerStatus {
+// Working status (brief §8.4): an employee who left keeps their history but takes no
+// new bookings.
+enum EmployeeStatus {
   ACTIVE
   INACTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
 // The booking owns the single lifecycle status (T-011).
@@ -98,8 +105,8 @@ model User {
   accounts           AuthAccount[]
   auditEvents        AuditEvent[]
   contractsCreated   Contract[]
-  // A-010: a TRAINER user acts on bookings through this link.
-  trainer            Trainer?
+  // Brief §8.4: the employee this login belongs to, at most one.
+  employee           Employee?
   sessionsCheckedIn  Session[]                @relation("SessionCheckedInBy")
   sessionsCompleted  Session[]                @relation("SessionCompletedBy")
   paymentsRecorded   Payment[]                @relation("PaymentCreatedBy")
@@ -135,7 +142,7 @@ model Branch {
   users            UserBranch[]
   customers        Customer[]
   contracts        Contract[]
-  trainers         Trainer[]
+  employees        Employee[]
   bookings         Booking[]
   payments         Payment[]
   cashTransactions CashTransaction[]
@@ -272,6 +279,8 @@ model Option {
   cashDeleteReasons    CashTransaction[] @relation("CashDeleteReason")
   trashEntries         TrashEntry[]
   approvalRejections   ApprovalRequest[]
+  employeeDepartments  Employee[]        @relation("EmployeeDepartment")
+  employeeTitles       Employee[]        @relation("EmployeeTitle")
 
   @@unique([listKey, labelVi])
   @@index([listKey, sortOrder])
@@ -522,27 +531,73 @@ model Contract {
 }
 
 // ---------------------------------------------------------------------------
-// Trainers, bookings, and sessions (Phase 3).
+// Employees (M1 slice 6), bookings, and sessions (Phase 3).
 // ---------------------------------------------------------------------------
 
-model Trainer {
-  id          String        @id @default(uuid()) @db.Uuid
-  branchId    String        @map("branch_id") @db.Uuid
-  branch      Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  // Generated from the trainer_code_seq sequence (T-019, A-003). Never updated.
-  trainerCode String        @unique @map("trainer_code")
-  fullName    String        @map("full_name")
-  status      TrainerStatus @default(ACTIVE)
-  // A-010: optional login; one trainer record per user.
-  userId      String?       @unique @map("user_id") @db.Uuid
-  user        User?         @relation(fields: [userId], references: [id], onDelete: Restrict)
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+model Employee {
+  id             String         @id @default(uuid()) @db.Uuid
+  branchId       String         @map("branch_id") @db.Uuid
+  branch         Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  // Generated from the employee_code_seq sequence (T-019, D-038). Never updated.
+  employeeCode   String         @unique @map("employee_code")
+  fullName       String         @map("full_name")
+  // fullName lowercased without Vietnamese diacritics, for accent-insensitive search.
+  searchName     String         @map("search_name")
+  birthDate      DateTime?      @map("birth_date") @db.Date
+  gender         Gender?
+  phone          String?
+  email          String?
+  // D-016: from the "departments" and "jobTitles" lists; "Khác" with a note.
+  departmentId   String?        @map("department_option_id") @db.Uuid
+  department     Option?        @relation("EmployeeDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
+  departmentNote String?        @map("department_note")
+  team           String?
+  titleId        String?        @map("title_option_id") @db.Uuid
+  title          Option?        @relation("EmployeeTitle", fields: [titleId], references: [id], onDelete: Restrict)
+  titleNote      String?        @map("title_note")
+  status         EmployeeStatus @default(ACTIVE)
+  // Teaches PT: on the PT calendar and bookable inside the working schedule (D-030).
+  isTrainer      Boolean        @default(false) @map("is_trainer")
+  // Brief §8.4: the employee's login; one employee per user.
+  userId         String?        @unique @map("user_id") @db.Uuid
+  user           User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   bookings Booking[]
+  shifts   EmployeeShift[]
+  daysOff  EmployeeDayOff[]
 
   @@index([branchId])
-  @@map("trainers")
+  @@index([searchName])
+  @@map("employees")
+}
+
+// The weekly working pattern (brief §8.4, D-030): ISO weekday 1 (Monday) to 7, and
+// minutes after midnight, end exclusive (1440 is midnight). Checks in the migration.
+model EmployeeShift {
+  id          String   @id @default(uuid()) @db.Uuid
+  employeeId  String   @map("employee_id") @db.Uuid
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  weekday     Int      @db.SmallInt
+  startMinute Int      @map("start_minute") @db.SmallInt
+  endMinute   Int      @map("end_minute") @db.SmallInt
+
+  @@index([employeeId, weekday])
+  @@map("employee_shifts")
+}
+
+// A day the employee does not work, whatever the weekly pattern says.
+model EmployeeDayOff {
+  id         String   @id @default(uuid()) @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([employeeId, date])
+  @@map("employee_days_off")
 }
 
 // A schedule record, not proof that a session happened. Overlap per trainer is
@@ -556,8 +611,9 @@ model Booking {
   customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   contractId     String        @map("contract_id") @db.Uuid
   contract       Contract      @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  // The employee who teaches the session (D-030).
   trainerId      String        @map("trainer_id") @db.Uuid
-  trainer        Trainer       @relation(fields: [trainerId], references: [id], onDelete: Restrict)
+  trainer        Employee      @relation(fields: [trainerId], references: [id], onDelete: Restrict)
   scheduledStart DateTime      @map("scheduled_start") @db.Timestamptz(3)
   scheduledEnd   DateTime      @map("scheduled_end") @db.Timestamptz(3)
   status         BookingStatus @default(BOOKED)

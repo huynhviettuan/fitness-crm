@@ -83,7 +83,7 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
       ),
     },
     { label: f("fields.remainingSessions"), value: <span className="tabular-nums">{booking.contract.remainingSessions}</span> },
-    { label: f("fields.trainer"), value: `${booking.trainer.fullName} · ${booking.trainer.trainerCode}` },
+    { label: f("fields.trainer"), value: `${booking.trainer.fullName} · ${booking.trainer.employeeCode}` },
     ...(booking.session ? [{ label: f("fields.checkedIn"), value: by(booking.session.checkedInAt, booking.session.checkedInBy) }] : []),
     ...(booking.session?.completedAt && booking.session.completedBy
       ? [{ label: f("fields.completed"), value: by(booking.session.completedAt, booking.session.completedBy) }]

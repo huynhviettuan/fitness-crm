@@ -39,10 +39,31 @@ export async function createContractViaApi(
   return contract;
 }
 
-export async function createTrainerViaApi(api: APIRequestContext, tag: string, options: { userId?: string } = {}) {
-  const response = await api.post("/api/v1/trainers", { data: { fullName: `PT ${tag}`, userId: options.userId ?? "" } });
-  if (response.status() !== 201) throw new Error(`Trainer setup failed: ${response.status()}`);
-  return response.json() as Promise<{ id: string; trainerCode: string; fullName: string }>;
+/** Every day around the clock, so a test's slots are inside working hours (D-030). */
+export const ALL_DAY_SHIFTS = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "00:00", end: "24:00" }));
+
+/**
+ * An employee who teaches PT, named `PT <tag>`, working the given shifts (default:
+ * every day around the clock).
+ */
+export async function createTrainerViaApi(
+  api: APIRequestContext,
+  tag: string,
+  options: { userId?: string; shifts?: { weekday: number; start: string; end: string }[] } = {},
+) {
+  const response = await api.post("/api/v1/employees", { data: { fullName: `PT ${tag}`, isTrainer: true, userId: options.userId ?? "" } });
+  if (response.status() !== 201) throw new Error(`Trainer setup failed: ${response.status()} ${await response.text()}`);
+  const trainer = (await response.json()) as { id: string; employeeCode: string; fullName: string };
+  const shifts = await api.put(`/api/v1/employees/${trainer.id}/shifts`, { data: { shifts: options.shifts ?? ALL_DAY_SHIFTS } });
+  if (!shifts.ok()) throw new Error(`Shift setup failed: ${shifts.status()} ${await shifts.text()}`);
+  return trainer;
+}
+
+/** The ISO weekday (1 Monday … 7 Sunday) of a dd/MM/yyyy day. */
+export function isoWeekdayOf(date: string): number {
+  const [d, m, y] = date.split("/").map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return day === 0 ? 7 : day;
 }
 
 export type BookingSlot = { date: string; startTime: string; endTime: string };

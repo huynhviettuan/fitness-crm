@@ -35,7 +35,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   const params = await searchParams;
   const today = calendarDateInTimeZone(env.GYM_TIMEZONE);
   const day = parseUrlDay(params.date) ?? today;
-  const context = await bookingContext(user);
+  const context = await bookingContext(user, formatDateOnly(day));
   const header = (actions?: React.ReactNode) => (
     <PageHeader title={t("calendarTitle")} description={t("calendarDescription")} actions={actions} />
   );
@@ -73,6 +73,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
           bookings={bookings}
           dayStart={minutesOfDay(parameters.calendarDayStart)}
           dayEnd={minutesOfDay(parameters.calendarDayEnd)}
+          workingHours={context.workingHours}
           permissions={context.permissions}
           trainers={context.trainers}
         />

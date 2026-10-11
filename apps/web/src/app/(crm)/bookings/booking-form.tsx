@@ -101,7 +101,7 @@ function BookingForm(props: BookingFormDialogProps) {
 
   // A booking keeps its trainer in the list even if the trainer has since stopped taking bookings.
   const trainerOptions = [...props.trainers, ...(booking && !props.trainers.some((tr) => tr.id === booking.trainer.id) ? [booking.trainer] : [])].map(
-    (trainer) => ({ value: trainer.id, label: `${trainer.fullName} · ${trainer.trainerCode}` }),
+    (trainer) => ({ value: trainer.id, label: `${trainer.fullName} · ${trainer.employeeCode}` }),
   );
 
   const submit = (values: BookingFormValues): Promise<ActionResult> =>

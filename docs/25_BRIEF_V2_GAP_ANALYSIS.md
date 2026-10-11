@@ -15,7 +15,7 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Option lists with "Khác", system parameters, status rules (D-015, D-016, T-049) | Built (M1 slice 3) except status rules (M5) | M1 |
 | Audit log (exists for critical actions → before/after for everything, T-048) | Built (M1 slice 4) | M1 |
 | Trash and soft delete (D-035) | Built (M1 slice 4) for receipts and cash entries; other records join as their modules are built | M1 |
-| Employees, PT working schedules | New | M1 |
+| Employees, PT working schedules | Built (M1 slice 6, T-058); ID documents in M2 (A-041); calendar rows per PT and week view in M5 | M1 |
 | In-app notifications and Tasks (D-037) | New | M1 |
 | Leads, consulting journey, re-care, scripts (D-019, D-020) | New | M2 |
 | Consulting audit and dashboard (D-045) | New | M3 |
@@ -58,8 +58,8 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Contract DRAFT → ACTIVE → CANCELLED; drafts editable; free contract value | Pending approval → approved (locked); price from tiers; exception price; statuses incl. Frozen and On hold; delete to trash (D-021–D-023) | New contract model and screens; existing contracts migrate as approved, with their value as an exception price flagged "imported". | M4 |
 | Contract cancel cascades to bookings (D-010) | Cancellation is a change voucher with fee and refund (D-024) | Rework cancel into the change-voucher flow; keep the cascade (OQ-030 interim). | M8 (M4 keeps the current cancel until then) |
 | Booking BOOKED → CHECKED_IN → COMPLETED; no-show and cancel consume nothing | Booked, Đã tập, Hủy lịch, no-show, deleted; no-show consumes and credits the PT; rules configurable (D-025, D-026, T-050) | Replace the booking status enum with configurable statuses; store consume/credit flags per session; remove the separate check-in; "Đã tập" admin-only and locked; add delete-with-refund and Burn Show. | M5 |
-| Trainer overlap only | Trainer and customer overlap; PT working schedules (D-030) | Second exclusion constraint on customer; schedules table; grid shading. | M5 |
-| Trainers as a separate table with an optional login | Employees with accounts; PTs are employees (brief §8.4) | Merge trainers into employees (keep codes). | M1 |
+| Trainer overlap only | Trainer and customer overlap; PT working schedules (D-030) | Working schedules, the booking check, and grid shading done in M1 slice 6 (T-058); customer overlap remains. | M5 |
+| Trainers as a separate table with an optional login | Employees with accounts; PTs are employees (brief §8.4) | Done in M1 slice 6: trainers became employees in place, codes kept (T-058). | M1 |
 | Payments CONFIRMED/VOIDED with void reason | Receipts with approval, deleted to trash; receipt date edit permission (D-034, D-035) | Payments become receipts; voided payments migrate as deleted receipts with their reason. | M4 |
 | Cash transactions INCOME/EXPENSE; payments reported separately (OQ-007 interim) | Cash book with receipts and expense vouchers, balances per method and branch (D-034) | Income entries become receipts without a contract; expenses become expense vouchers; cash-book report. | M4 |
 | Fixed code prefixes KH/HD/PT | Configurable prefixes, legacy codes kept (D-038) | Prefix settings; import keeps old codes. | M1, M9 |

@@ -34,12 +34,12 @@ export const E2E_USERS: Record<Role, { name: string; email: string }> = {
 /** The branch the migration creates; every E2E record goes there. */
 export const E2E_BRANCH_ID = "b0000000-0000-4000-8000-000000000001";
 
-/** The trainer record the E2E PT login is linked to (A-010). */
+/** The employee the E2E PT login belongs to (brief §8.4); teaches PT every day, all day. */
 export const E2E_TRAINER_NAME = "E2E PT Huấn luyện";
 
 export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "audit_events", "payments", "cash_transactions", "sessions", "bookings", "trainers", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Roles and branches the specs created; the migration's defaults stay.
@@ -54,13 +54,16 @@ export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
       passwordHash,
     );
     if (role === "PT") {
-      const [{ value }] = await prisma.$queryRaw<{ value: bigint }[]>`SELECT nextval('trainer_code_seq') AS value`;
-      await prisma.trainer.create({
+      const [{ value }] = await prisma.$queryRaw<{ value: bigint }[]>`SELECT nextval('employee_code_seq') AS value`;
+      await prisma.employee.create({
         data: {
-          trainerCode: `PT${value.toString().padStart(3, "0")}`,
+          employeeCode: `NV${value.toString().padStart(3, "0")}`,
           fullName: E2E_TRAINER_NAME,
+          searchName: "e2e pt huan luyen",
+          isTrainer: true,
           userId: created.id,
           branchId: E2E_BRANCH_ID,
+          shifts: { create: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, startMinute: 0, endMinute: 24 * 60 })) },
         },
       });
     }

@@ -97,13 +97,13 @@ The model above runs in the API (T-054) for the resources that exist today. Scre
 | Customers | `customer.view`, `customer.manage` |
 | Contract operations | `contract.view`, `contract.create`, `contract.approve`, `contract.cancel` |
 | PT schedule | `booking.view`, `booking.manage`, `session.checkIn`, `session.complete` |
-| Employees | `trainer.view`, `trainer.manage` |
+| Employees | `employee.view`, `employee.manage` (profiles and working schedules, M1 slice 6; were `trainer.*`) |
 | Cash book | `payment.view`, `payment.record`, `payment.delete`, `cash.manage`, `cash.delete` |
 | Configuration | `config.manage` (option lists and system parameters; Admin only, M1 slice 3) |
 | History | `audit.view` (action history), `trash.view` (Admin only, M1 slice 4) |
 | System | `approval.manage`: the approval matrix (Admin, M1 slice 5). Deciding a request needs no permission of its own: the matrix names the approver roles (D-018) |
 
-Data-scope resources: customers, contracts, schedule, vouchers (*only mine* per A-029). Hideable fields: customer phone, customer email, receipt totals.
+Data-scope resources: customers, contracts, schedule, vouchers (*only mine* per A-029), staff (*only mine*: one's own employee profile and schedule, T-058). Hideable fields: customer phone, customer email, receipt totals.
 
 Seeded roles (initial configuration, editable): Admin (everything), Fitness Manager (everything except deleting vouchers, the trash and history, and the System group), Master (view only), Consulting (*only mine*; customers, contract create, receipts), PT (*only mine*; schedule and session actions), Receptionist (customers, schedule, check-in, receipts; no contract create), Marketing (no permissions; phone and email hidden), and the custom role "Kế toán" migrated from the old Accountant (A-032). The rest of the tree (leads, approvals, status rules and other configuration, trash, reports, sensitive session actions) is added by the milestone that builds each module.
 

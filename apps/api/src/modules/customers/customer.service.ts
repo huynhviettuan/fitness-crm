@@ -138,11 +138,11 @@ type PendingIdentity = { approvalId: string } & IdentityChange;
 
 /**
  * The customers an actor is responsible for (A-029): ones they created, and ones with a
- * booking with the trainer record they act as. Until M2 adds lead owners.
+ * booking with them as the trainer. Until M2 adds lead owners.
  */
-export function ownCustomers(actor: Pick<Actor, "id" | "trainerId">): Prisma.CustomerWhereInput {
+export function ownCustomers(actor: Pick<Actor, "id" | "employeeId">): Prisma.CustomerWhereInput {
   return {
-    OR: [{ createdById: actor.id }, ...(actor.trainerId ? [{ bookings: { some: { trainerId: actor.trainerId } } }] : [])],
+    OR: [{ createdById: actor.id }, ...(actor.employeeId ? [{ bookings: { some: { trainerId: actor.employeeId } } }] : [])],
   };
 }
 

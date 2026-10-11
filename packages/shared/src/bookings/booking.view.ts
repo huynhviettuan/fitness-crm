@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { contractSchema } from "../contracts/contract.view.js";
 import { customerRefSchema } from "../customers/customer.view.js";
-import { trainerRefSchema } from "../trainers/trainer.view.js";
+import { employeeRefSchema } from "../employees/employee.view.js";
 import { instant, listOf, pageOf } from "../validation/index.js";
 import { BOOKING_STATUSES } from "./booking.domain.js";
 
@@ -14,7 +14,8 @@ export const bookingSchema = z
     createdAt: instant,
     customer: customerRefSchema,
     contract: z.object({ id: z.uuid(), contractCode: z.string(), packageName: z.string(), remainingSessions: z.int() }),
-    trainer: trainerRefSchema,
+    /** The employee who teaches the session (D-030). */
+    trainer: employeeRefSchema,
     /** Fulfillment facts, from check-in on (T-011). */
     session: z
       .object({

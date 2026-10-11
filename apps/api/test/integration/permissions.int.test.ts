@@ -41,7 +41,7 @@ describe("roles (FR-PLT-002)", () => {
       ["ACCOUNTANT", "ADMIN", "CONSULTING", "FITNESS_MANAGER", "MARKETING", "MASTER", "PT", "RECEPTIONIST"],
     );
     const pt = roles.find((r) => r.code === "PT")!;
-    expect(pt.dataScopes).toEqual({ customers: "OWN", contracts: "OWN", schedule: "OWN", vouchers: "OWN" });
+    expect(pt.dataScopes).toEqual({ customers: "OWN", contracts: "OWN", schedule: "OWN", vouchers: "OWN", staff: "OWN" });
     expect(roles.find((r) => r.code === "MARKETING")!.fieldMasks).toEqual(["customer.email", "customer.phone"]);
   });
 

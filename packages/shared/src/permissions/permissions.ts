@@ -11,7 +11,8 @@ export const PERMISSION_GROUPS = {
   customers: ["customer.view", "customer.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
-  employees: ["trainer.view", "trainer.manage"],
+  // Employee profiles and working schedules (brief §8.4).
+  employees: ["employee.view", "employee.manage"],
   // Deleting vouchers is its own permission (09_RBAC.md, D-035).
   cashbook: ["payment.view", "payment.record", "payment.delete", "cash.manage", "cash.delete"],
 } as const;
@@ -29,7 +30,7 @@ export function isPermission(value: string): value is Permission {
  * Data scope (D-017): per resource, a role sees ALL records in the user's branches or
  * only its OWN — the ones the user is responsible for (A-029).
  */
-export const DATA_SCOPE_RESOURCES = ["customers", "contracts", "schedule", "vouchers"] as const;
+export const DATA_SCOPE_RESOURCES = ["customers", "contracts", "schedule", "vouchers", "staff"] as const;
 export type DataScopeResource = (typeof DATA_SCOPE_RESOURCES)[number];
 export const DATA_SCOPES = ["ALL", "OWN"] as const;
 export type DataScope = (typeof DATA_SCOPES)[number];

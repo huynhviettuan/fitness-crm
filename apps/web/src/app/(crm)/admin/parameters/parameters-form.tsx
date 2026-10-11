@@ -57,7 +57,7 @@ export function ParametersForm({ parameters }: { parameters: Parameters }) {
         <CardContent className="grid gap-4 sm:grid-cols-3">
           {field("customerCodePrefix")}
           {field("contractCodePrefix")}
-          {field("trainerCodePrefix")}
+          {field("employeeCodePrefix")}
         </CardContent>
       </Card>
       <div className="flex justify-end">

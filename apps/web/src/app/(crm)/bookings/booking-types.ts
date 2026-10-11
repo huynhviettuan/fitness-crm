@@ -4,7 +4,8 @@ import type { BookingStatus } from "@flow/shared/bookings";
 
 export type BookingPermissions = { manage: boolean; checkIn: boolean; complete: boolean };
 
-export type TrainerOption = { id: string; trainerCode: string; fullName: string };
+/** An employee who teaches PT (D-030). */
+export type TrainerOption = { id: string; employeeCode: string; fullName: string };
 
 export type BookingRow = {
   id: string;

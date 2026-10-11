@@ -958,12 +958,52 @@
         "x-permission": "payment.record"
       }
     },
-    "/api/v1/trainers": {
+    "/api/v1/employees": {
       "get": {
-        "operationId": "TrainersController_list",
+        "operationId": "EmployeesController_list",
         "parameters": [
           {
-            "name": "activeOnly",
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "departmentId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trainersOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
             "required": false,
             "in": "query",
             "schema": {
@@ -977,7 +1017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrainerList"
+                  "$ref": "#/components/schemas/EmployeePage"
                 }
               }
             }
@@ -994,12 +1034,12 @@
           }
         },
         "tags": [
-          "trainers"
+          "employees"
         ],
-        "x-permission": "trainer.view"
+        "x-permission": "employee.view"
       },
       "post": {
-        "operationId": "TrainersController_create",
+        "operationId": "EmployeesController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1024,8 +1064,56 @@
                   },
                   "fullName": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 150
+                  },
+                  "birthDate": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "gender": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ]
+                  },
+                  "phone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "email": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "departmentId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "departmentNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "team": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "titleId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "titleNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
                   },
                   "status": {
                     "default": "ACTIVE",
@@ -1035,27 +1123,15 @@
                       "INACTIVE"
                     ]
                   },
+                  "isTrainer": {
+                    "default": false,
+                    "type": "boolean"
+                  },
                   "userId": {
                     "default": "",
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "nullable": true,
-                        "enum": [
-                          null
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "format": "uuid"
-                      }
-                    ]
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -1071,7 +1147,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Trainer"
+                  "$ref": "#/components/schemas/Employee"
                 }
               }
             }
@@ -1088,14 +1164,14 @@
           }
         },
         "tags": [
-          "trainers"
+          "employees"
         ],
-        "x-permission": "trainer.manage"
+        "x-permission": "employee.manage"
       }
     },
-    "/api/v1/trainers/logins": {
+    "/api/v1/employees/logins": {
       "get": {
-        "operationId": "TrainersController_logins",
+        "operationId": "EmployeesController_logins",
         "parameters": [],
         "responses": {
           "200": {
@@ -1103,7 +1179,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TrainerLoginList"
+                  "$ref": "#/components/schemas/EmployeeLoginList"
                 }
               }
             }
@@ -1120,14 +1196,53 @@
           }
         },
         "tags": [
-          "trainers"
+          "employees"
         ],
-        "x-permission": "trainer.manage"
+        "x-permission": "employee.manage"
       }
     },
-    "/api/v1/trainers/{id}": {
+    "/api/v1/employees/{id}": {
+      "get": {
+        "operationId": "EmployeesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "employees"
+        ],
+        "x-permission": "employee.view"
+      },
       "patch": {
-        "operationId": "TrainersController_update",
+        "operationId": "EmployeesController_update",
         "parameters": [
           {
             "name": "id",
@@ -1161,8 +1276,56 @@
                   },
                   "fullName": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 150
+                  },
+                  "birthDate": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "gender": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ]
+                  },
+                  "phone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "email": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "departmentId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "departmentNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "team": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "titleId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "titleNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
                   },
                   "status": {
                     "default": "ACTIVE",
@@ -1172,27 +1335,15 @@
                       "INACTIVE"
                     ]
                   },
+                  "isTrainer": {
+                    "default": false,
+                    "type": "boolean"
+                  },
                   "userId": {
                     "default": "",
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "nullable": true,
-                        "enum": [
-                          null
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "format": "uuid"
-                      }
-                    ]
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -1208,7 +1359,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Trainer"
+                  "$ref": "#/components/schemas/Employee"
                 }
               }
             }
@@ -1225,9 +1376,240 @@
           }
         },
         "tags": [
-          "trainers"
+          "employees"
         ],
-        "x-permission": "trainer.manage"
+        "x-permission": "employee.manage"
+      }
+    },
+    "/api/v1/employees/{id}/schedule": {
+      "get": {
+        "operationId": "EmployeesController_schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSchedule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "employees"
+        ],
+        "x-permission": "employee.view"
+      }
+    },
+    "/api/v1/employees/{id}/shifts": {
+      "put": {
+        "operationId": "EmployeesController_shifts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "shifts": {
+                    "maxItems": 70,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "weekday": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 7
+                        },
+                        "start": {
+                          "type": "string",
+                          "pattern": "^(([01]\\d|2[0-3]):[0-5]\\d|24:00)$"
+                        },
+                        "end": {
+                          "type": "string",
+                          "pattern": "^(([01]\\d|2[0-3]):[0-5]\\d|24:00)$"
+                        }
+                      },
+                      "required": [
+                        "weekday",
+                        "start",
+                        "end"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "shifts"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSchedule"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "employees"
+        ],
+        "x-permission": "employee.manage"
+      }
+    },
+    "/api/v1/employees/{id}/days-off": {
+      "post": {
+        "operationId": "EmployeesController_addDayOff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "note": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DayOff"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "employees"
+        ],
+        "x-permission": "employee.manage"
+      }
+    },
+    "/api/v1/employees/{id}/days-off/{dayOffId}": {
+      "delete": {
+        "operationId": "EmployeesController_removeDayOff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dayOffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The employee works that day again"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "employees"
+        ],
+        "x-permission": "employee.manage"
       }
     },
     "/api/v1/bookings": {
@@ -1719,6 +2101,47 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookingList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "bookings"
+        ],
+        "x-permission": "booking.view"
+      }
+    },
+    "/api/v1/schedule/trainers": {
+      "get": {
+        "operationId": "ScheduleController_trainers",
+        "parameters": [
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainerDayList"
                 }
               }
             }
@@ -2692,8 +3115,8 @@
                             "booking.manage",
                             "session.checkIn",
                             "session.complete",
-                            "trainer.view",
-                            "trainer.manage",
+                            "employee.view",
+                            "employee.manage",
                             "payment.view",
                             "payment.record",
                             "payment.delete",
@@ -3061,8 +3484,8 @@
                         "booking.manage",
                         "session.checkIn",
                         "session.complete",
-                        "trainer.view",
-                        "trainer.manage",
+                        "employee.view",
+                        "employee.manage",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -3101,13 +3524,21 @@
                           "ALL",
                           "OWN"
                         ]
+                      },
+                      "staff": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
                       }
                     },
                     "required": [
                       "customers",
                       "contracts",
                       "schedule",
-                      "vouchers"
+                      "vouchers",
+                      "staff"
                     ]
                   },
                   "fieldMasks": {
@@ -3251,8 +3682,8 @@
                         "booking.manage",
                         "session.checkIn",
                         "session.complete",
-                        "trainer.view",
-                        "trainer.manage",
+                        "employee.view",
+                        "employee.manage",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -3291,13 +3722,21 @@
                           "ALL",
                           "OWN"
                         ]
+                      },
+                      "staff": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
                       }
                     },
                     "required": [
                       "customers",
                       "contracts",
                       "schedule",
-                      "vouchers"
+                      "vouchers",
+                      "staff"
                     ]
                   },
                   "fieldMasks": {
@@ -3928,7 +4367,7 @@
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
                   },
-                  "trainerCodePrefix": {
+                  "employeeCodePrefix": {
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
                   }
@@ -3938,7 +4377,7 @@
                   "calendarDayEnd",
                   "customerCodePrefix",
                   "contractCodePrefix",
-                  "trainerCodePrefix"
+                  "employeeCodePrefix"
                 ]
               }
             }
@@ -4474,6 +4913,7 @@
               "UNSUPPORTED_MEDIA_TYPE",
               "BOOKING_CUSTOMER_CONTRACT_MISMATCH",
               "BOOKING_OUTSIDE_CONTRACT_PERIOD",
+              "BOOKING_OUTSIDE_WORKING_HOURS",
               "PAYMENT_EXCEEDS_CONTRACT_VALUE",
               "INTERNAL_ERROR"
             ]
@@ -4525,7 +4965,7 @@
               "en"
             ]
           },
-          "trainerId": {
+          "employeeId": {
             "nullable": true,
             "type": "string",
             "format": "uuid"
@@ -4552,8 +4992,8 @@
                 "booking.manage",
                 "session.checkIn",
                 "session.complete",
-                "trainer.view",
-                "trainer.manage",
+                "employee.view",
+                "employee.manage",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -4575,7 +5015,8 @@
               "customers",
               "contracts",
               "schedule",
-              "vouchers"
+              "vouchers",
+              "staff"
             ]
           },
           "allBranches": {
@@ -4605,7 +5046,7 @@
           "email",
           "role",
           "locale",
-          "trainerId",
+          "employeeId",
           "permissions",
           "dataScopes",
           "allBranches",
@@ -5024,28 +5465,40 @@
           "note"
         ]
       },
-      "TrainerList": {
+      "EmployeePage": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Trainer"
+              "$ref": "#/components/schemas/Employee"
             }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
           }
         },
         "required": [
-          "items"
+          "items",
+          "total",
+          "page",
+          "pageSize"
         ]
       },
-      "Trainer": {
+      "Employee": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "trainerCode": {
+          "employeeCode": {
             "type": "string"
           },
           "branch": {
@@ -5054,12 +5507,57 @@
           "fullName": {
             "type": "string"
           },
+          "birthDate": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "gender": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string"
+          },
+          "email": {
+            "nullable": true,
+            "type": "string"
+          },
+          "department": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "team": {
+            "nullable": true,
+            "type": "string"
+          },
+          "title": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
               "ACTIVE",
               "INACTIVE"
             ]
+          },
+          "isTrainer": {
+            "type": "boolean"
           },
           "user": {
             "nullable": true,
@@ -5085,20 +5583,28 @@
         },
         "required": [
           "id",
-          "trainerCode",
+          "employeeCode",
           "branch",
           "fullName",
+          "birthDate",
+          "gender",
+          "phone",
+          "email",
+          "department",
+          "team",
+          "title",
           "status",
+          "isTrainer",
           "user"
         ]
       },
-      "TrainerLoginList": {
+      "EmployeeLoginList": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TrainerLogin"
+              "$ref": "#/components/schemas/EmployeeLogin"
             }
           }
         },
@@ -5106,7 +5612,7 @@
           "items"
         ]
       },
-      "TrainerLogin": {
+      "EmployeeLogin": {
         "type": "object",
         "properties": {
           "id": {
@@ -5119,7 +5625,7 @@
           "email": {
             "type": "string"
           },
-          "linkedTrainerId": {
+          "linkedEmployeeId": {
             "nullable": true,
             "type": "string",
             "format": "uuid"
@@ -5129,7 +5635,69 @@
           "id",
           "name",
           "email",
-          "linkedTrainerId"
+          "linkedEmployeeId"
+        ]
+      },
+      "WorkSchedule": {
+        "type": "object",
+        "properties": {
+          "shifts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shift"
+            }
+          },
+          "daysOff": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayOff"
+            }
+          }
+        },
+        "required": [
+          "shifts",
+          "daysOff"
+        ]
+      },
+      "Shift": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "integer"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "weekday",
+          "start",
+          "end"
+        ]
+      },
+      "DayOff": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "note"
         ]
       },
       "BookingPage": {
@@ -5215,7 +5783,7 @@
             ]
           },
           "trainer": {
-            "$ref": "#/components/schemas/TrainerRef"
+            "$ref": "#/components/schemas/EmployeeRef"
           },
           "session": {
             "nullable": true,
@@ -5258,14 +5826,14 @@
           "session"
         ]
       },
-      "TrainerRef": {
+      "EmployeeRef": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "trainerCode": {
+          "employeeCode": {
             "type": "string"
           },
           "fullName": {
@@ -5274,7 +5842,7 @@
         },
         "required": [
           "id",
-          "trainerCode",
+          "employeeCode",
           "fullName"
         ]
       },
@@ -5305,6 +5873,54 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "TrainerDayList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrainerDay"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "TrainerDay": {
+        "type": "object",
+        "properties": {
+          "trainer": {
+            "$ref": "#/components/schemas/EmployeeRef"
+          },
+          "workingHours": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string"
+                },
+                "end": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ]
+            }
+          },
+          "dayOff": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "trainer",
+          "workingHours",
+          "dayOff"
         ]
       },
       "Collected": {
@@ -5623,8 +6239,8 @@
                     "booking.manage",
                     "session.checkIn",
                     "session.complete",
-                    "trainer.view",
-                    "trainer.manage",
+                    "employee.view",
+                    "employee.manage",
                     "payment.view",
                     "payment.record",
                     "payment.delete",
@@ -5841,8 +6457,8 @@
                 "booking.manage",
                 "session.checkIn",
                 "session.complete",
-                "trainer.view",
-                "trainer.manage",
+                "employee.view",
+                "employee.manage",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -5864,7 +6480,8 @@
               "customers",
               "contracts",
               "schedule",
-              "vouchers"
+              "vouchers",
+              "staff"
             ]
           },
           "fieldMasks": {
@@ -5960,7 +6577,9 @@
               "incomeCategories",
               "expenseTypes",
               "deleteReasons",
-              "rejectReasons"
+              "rejectReasons",
+              "departments",
+              "jobTitles"
             ]
           },
           "labelVi": {
@@ -6035,7 +6654,7 @@
           "contractCodePrefix": {
             "type": "string"
           },
-          "trainerCodePrefix": {
+          "employeeCodePrefix": {
             "type": "string"
           }
         },
@@ -6044,7 +6663,7 @@
           "calendarDayEnd",
           "customerCodePrefix",
           "contractCodePrefix",
-          "trainerCodePrefix"
+          "employeeCodePrefix"
         ]
       },
       "AuditPage": {

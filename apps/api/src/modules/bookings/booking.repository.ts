@@ -16,7 +16,7 @@ const bookingInclude = {
       _count: { select: { bookings: { where: { status: "COMPLETED" } } } },
     },
   },
-  trainer: { select: { id: true, trainerCode: true, fullName: true } },
+  trainer: { select: { id: true, employeeCode: true, fullName: true } },
   session: {
     select: {
       checkedInAt: true,

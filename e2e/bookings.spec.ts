@@ -224,7 +224,8 @@ test.describe("as a trainer on a phone", () => {
   }) => {
     const reception = await apiAs("RECEPTIONIST");
     const { customer, refs } = await bookingSetup(apiAs, testTag);
-    const { trainerId } = await (await (await apiAs("PT")).get("/api/v1/me")).json();
+    // The PT books as the employee their login belongs to.
+    const { employeeId: trainerId } = await (await (await apiAs("PT")).get("/api/v1/me")).json();
     const day = randomBookingDay();
     const booking = await createBookingViaApi(reception, { ...refs, trainerId }, { date: day.date, startTime: "10:00", endTime: "11:00" });
     await reception.post(`/api/v1/bookings/${booking.id}/check-in`);
@@ -240,22 +241,5 @@ test.describe("as a trainer on a phone", () => {
     await expect(sheet.detail(b.fields.status)).toHaveText(status.COMPLETED);
     await sheet.close();
     await expect(calendarPage.block(E2E_TRAINER_NAME, customer.fullName)).toContainText(status.COMPLETED);
-  });
-});
-
-test.describe("trainers as a manager", () => {
-  test.use(signedInAs("FITNESS_MANAGER"));
-
-  test("a manager adds a trainer, who then has a column in the PT calendar", async ({ page, testTag, trainersPage, calendarPage }) => {
-    const name = `PT ${testTag}`;
-
-    await trainersPage.goto();
-    await trainersPage.add(name);
-
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(/PT\d{3,}/)).toBeVisible();
-    await expect(trainersPage.table.getByRole("row").filter({ hasText: name })).toContainText(labels.status.trainer.ACTIVE);
-
-    await calendarPage.goto(BOOKING_DAY.url);
-    await expect(calendarPage.column(name)).toBeVisible();
   });
 });

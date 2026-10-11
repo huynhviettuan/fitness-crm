@@ -22,9 +22,9 @@ describe("system parameters (T-049)", () => {
 
   it("takes code prefixes of one to five letters, in capitals", () => {
     expect(parametersInputSchema.parse({ ...PARAMETER_DEFAULTS, customerCodePrefix: " hv " }).customerCodePrefix).toBe("HV");
-    expect(errors({ ...PARAMETER_DEFAULTS, contractCodePrefix: "HD-1", trainerCodePrefix: "" })).toEqual({
+    expect(errors({ ...PARAMETER_DEFAULTS, contractCodePrefix: "HD-1", employeeCodePrefix: "" })).toEqual({
       contractCodePrefix: ["invalidCodePrefix"],
-      trainerCodePrefix: ["invalidCodePrefix"],
+      employeeCodePrefix: ["invalidCodePrefix"],
     });
   });
 

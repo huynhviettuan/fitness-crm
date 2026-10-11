@@ -8,7 +8,8 @@ import { AppShell } from "./pages/app-shell";
 import { OptionListsPage, ParametersPage } from "./pages/configuration";
 import { AuditPage, TrashPage } from "./pages/history";
 import { ApprovalRulesPage, ApprovalsPage } from "./pages/approvals";
-import { CalendarPage, CustomerBookingsTab, SessionsPage, TrainersPage } from "./pages/bookings";
+import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/bookings";
+import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
 import { CustomerDetailPage, CustomersPage } from "./pages/customers";
@@ -26,7 +27,8 @@ type Fixtures = {
   customerBookingsTab: CustomerBookingsTab;
   calendarPage: CalendarPage;
   sessionsPage: SessionsPage;
-  trainersPage: TrainersPage;
+  employeesPage: EmployeesPage;
+  employeePage: EmployeePage;
   financePage: FinancePage;
   branchesPage: BranchesPage;
   rolesPage: RolesPage;
@@ -71,7 +73,8 @@ export const test = base.extend<Fixtures>({
   customerBookingsTab: async ({ page }, use) => use(new CustomerBookingsTab(page)),
   calendarPage: async ({ page }, use) => use(new CalendarPage(page)),
   sessionsPage: async ({ page }, use) => use(new SessionsPage(page)),
-  trainersPage: async ({ page }, use) => use(new TrainersPage(page)),
+  employeesPage: async ({ page }, use) => use(new EmployeesPage(page)),
+  employeePage: async ({ page }, use) => use(new EmployeePage(page)),
   financePage: async ({ page }, use) => use(new FinancePage(page)),
   branchesPage: async ({ page }, use) => use(new BranchesPage(page)),
   rolesPage: async ({ page }, use) => use(new RolesPage(page)),
@@ -145,7 +148,8 @@ export const test = base.extend<Fixtures>({
     try {
       const tagged = { fullName: { contains: tag } };
       const customerIds = ids(await prisma.customer.findMany({ where: tagged, select: { id: true } }));
-      const trainerIds = ids(await prisma.trainer.findMany({ where: tagged, select: { id: true } }));
+      // Employees, trainers among them; their shifts and days off go with them (cascade).
+      const trainerIds = ids(await prisma.employee.findMany({ where: tagged, select: { id: true } }));
       const contractIds = ids(await prisma.contract.findMany({ where: { customerId: { in: customerIds } }, select: { id: true } }));
       const bookingIds = ids(
         await prisma.booking.findMany({
@@ -178,7 +182,7 @@ export const test = base.extend<Fixtures>({
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: audited } } });
       await prisma.contract.deleteMany({ where: { id: { in: contractIds } } });
       await prisma.customer.deleteMany({ where: { id: { in: customerIds } } });
-      await prisma.trainer.deleteMany({ where: { id: { in: trainerIds } } });
+      await prisma.employee.deleteMany({ where: { id: { in: trainerIds } } });
 
       // Accounts, roles, and branches the test created. Their sign-ins, grants, and
       // overrides go with them (cascade); audit events they wrote first (restricted).
