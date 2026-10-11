@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { listApprovals } from "@/lib/api/approvals";
 import { APPROVAL_VIEWS } from "@flow/shared/approvals";
 import { ApprovalsTable } from "./approvals-table";
@@ -30,10 +31,8 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
   const params = await searchParams;
   const views = APPROVAL_VIEWS.filter((view) => view !== "all" || can(user, "approval.manage"));
   const view = views.find((v) => v === params.view) ?? "toDecide";
-  const page = Math.max(1, Number(params.page) || 1);
-  const result = await listApprovals({ view, page });
-  const hrefFor = (target: number) => `/approvals?view=${view}${target > 1 ? `&page=${target}` : ""}`;
-
+  const { page, pageSize } = readPaging(params);
+  const result = await listApprovals({ view, page, pageSize });
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
@@ -57,7 +56,13 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
         view={view}
         empty={<EmptyState icon={InboxIcon} title={t(`empty.${view}`)} />}
         footer={
-          <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+          <TablePagination
+            page={result.page}
+            pageSize={result.pageSize}
+            total={result.total}
+            path="/approvals"
+            params={params}
+          />
         }
       />
     </>

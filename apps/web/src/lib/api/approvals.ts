@@ -12,7 +12,7 @@ import { api, done, query, read } from "./client";
 
 // Approvals (D-018): the inbox, decisions, and the matrix.
 
-export async function listApprovals(params: { view?: string; status?: string; page?: number }) {
+export async function listApprovals(params: { view?: string; status?: string; page?: number; pageSize?: number }) {
   return read(approvalRequestPageSchema, (await api()).GET("/api/v1/approvals", { params: { query: query(params) } }));
 }
 

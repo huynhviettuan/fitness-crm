@@ -27,7 +27,7 @@ Each slice lists:
 
 ## M2 — Leads and consulting (remaining)
 
-### M2.5 Re-care queue and duplicate merge
+### M2.5 Re-care queue and duplicate merge (done 2026-10-12)
 
 - **Builds:** "Danh sách tái chăm sóc", sorted by contact-again day, with filters (status No response / Refused / No show, consultant, overdue) and scope mine/all. The re-care step's results do something: "Đặt lịch" asks for the appointment and books the lead again, which starts the pre-visit steps again; "Từ chối" asks for the reason and sets the next contact-again day. A phone that already belongs to a person no longer only blocks the quick form: it offers to merge. The new inquiry's channel, source, need, and note go onto the existing record as a new inquiry on its timeline. A lead in re-care goes back to the consultant, and the consultant and manager are notified. Managers can also merge two existing records of one person.
 - **Source:** brief §3 (flow rules, duplicate phones), §4.1 step 10 and screens; FR-LEAD-007, FR-LEAD-009; BR-202, BR-204; D-019; AC-07 (the 15-day part), AC-03.

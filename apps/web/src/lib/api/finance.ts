@@ -48,7 +48,7 @@ export async function deletePayment(id: string, input: DeleteInput) {
 }
 
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
-export async function listDebts(params: { page?: number }) {
+export async function listDebts(params: { page?: number; pageSize?: number }) {
   return read(debtPageSchema, (await api()).GET("/api/v1/debts", { params: { query: query(params) } }));
 }
 

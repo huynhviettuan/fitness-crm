@@ -447,6 +447,261 @@
         "x-permission": "lead.view"
       }
     },
+    "/api/v1/leads/recare": {
+      "get": {
+        "operationId": "LeadsController_recare",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "picUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "overdue",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecarePage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
+    "/api/v1/leads/intake": {
+      "post": {
+        "operationId": "LeadsController_intake",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "fullName": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "gender": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ]
+                  },
+                  "birthDate": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "email": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channelNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceType": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "ORGANIC",
+                      "PAID"
+                    ]
+                  },
+                  "sourceDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "nationalityGroup": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "VIETNAM",
+                      "FOREIGN"
+                    ]
+                  },
+                  "needGroupId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "needGroupNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "needDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "painStatusId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "painStatusNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "assessmentTypeId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assessmentTypeNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "fullName",
+                  "channelId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.create"
+      }
+    },
     "/api/v1/leads/{id}": {
       "get": {
         "operationId": "LeadsController_get",
@@ -1011,6 +1266,38 @@
                       "consent"
                     ]
                   },
+                  "book": {
+                    "type": "object",
+                    "properties": {
+                      "appointmentDate": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 10
+                      },
+                      "appointmentTime": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 5
+                      }
+                    }
+                  },
+                  "refuse": {
+                    "type": "object",
+                    "properties": {
+                      "refuseReasonId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "refuseReasonNote": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "refuseReasonId"
+                    ]
+                  },
                   "note": {
                     "default": "",
                     "type": "string",
@@ -1190,6 +1477,228 @@
         "x-permission": "lead.manage"
       }
     },
+    "/api/v1/persons/{id}/merge": {
+      "post": {
+        "operationId": "PersonsController_merge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mergedId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "mergedId",
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMerged"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "persons"
+        ],
+        "x-permission": "lead.merge"
+      }
+    },
+    "/api/v1/persons/{id}/inquiries": {
+      "post": {
+        "operationId": "PersonsController_addInquiry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "channelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channelNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceType": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "ORGANIC",
+                      "PAID"
+                    ]
+                  },
+                  "sourceDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "needGroupId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "needGroupNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "needDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "note": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "channelId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "persons"
+        ],
+        "x-permission": "lead.create"
+      }
+    },
+    "/api/v1/persons/{id}/intake-history": {
+      "get": {
+        "operationId": "PersonsController_intakeHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonIntakeHistory"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "persons"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
     "/api/v1/consulting-checklist": {
       "get": {
         "operationId": "ChecklistController_get",
@@ -1329,7 +1838,9 @@
                                 "type": "string",
                                 "enum": [
                                   "SHOW",
-                                  "NO_SHOW"
+                                  "NO_SHOW",
+                                  "BOOK",
+                                  "REFUSE"
                                 ]
                               }
                             },
@@ -4417,6 +4928,7 @@
                             "lead.manage",
                             "lead.assign",
                             "lead.receive",
+                            "lead.merge",
                             "customer.view",
                             "customer.manage",
                             "contract.view",
@@ -4793,6 +5305,7 @@
                         "lead.manage",
                         "lead.assign",
                         "lead.receive",
+                        "lead.merge",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -5016,6 +5529,7 @@
                         "lead.manage",
                         "lead.assign",
                         "lead.receive",
+                        "lead.merge",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -7072,6 +7586,9 @@
               "NOT_FOUND",
               "EMAIL_ALREADY_USED",
               "PHONE_ALREADY_USED",
+              "DUPLICATE_PHONE",
+              "MERGE_CUSTOMERS_UNSUPPORTED",
+              "PERSON_ALREADY_MERGED",
               "CANNOT_CHANGE_OWN_ACCESS",
               "INVALID_STATUS_TRANSITION",
               "CONTRACT_NOT_EDITABLE",
@@ -7188,6 +7705,7 @@
                 "lead.manage",
                 "lead.assign",
                 "lead.receive",
+                "lead.merge",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -7777,7 +8295,9 @@
                   "type": "string",
                   "enum": [
                     "SHOW",
-                    "NO_SHOW"
+                    "NO_SHOW",
+                    "BOOK",
+                    "REFUSE"
                   ]
                 }
               },
@@ -7886,6 +8406,126 @@
           "result",
           "note",
           "timing"
+        ]
+      },
+      "RecarePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecareRow"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "overdueTotal": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize",
+          "overdueTotal"
+        ]
+      },
+      "RecareRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "leadCode": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NO_RESPONSE",
+              "REFUSED",
+              "NO_SHOW"
+            ]
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contactAgainOn": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "refuseReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "pic": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "maskedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "phone"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "leadCode",
+          "fullName",
+          "phone",
+          "status",
+          "statusChangedAt",
+          "contactAgainOn",
+          "overdue",
+          "refuseReason",
+          "pic",
+          "branch",
+          "maskedFields"
         ]
       },
       "LeadTimeline": {
@@ -8064,6 +8704,12 @@
                     "from",
                     "to"
                   ]
+                },
+                {
+                  "$ref": "#/components/schemas/LeadInquiry"
+                },
+                {
+                  "$ref": "#/components/schemas/PersonMergeEntry"
                 }
               ]
             }
@@ -8071,6 +8717,154 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "LeadInquiry": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "inquiry"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ChosenOption"
+          },
+          "source": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "sourceType": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "ORGANIC",
+              "PAID"
+            ]
+          },
+          "sourceDetail": {
+            "nullable": true,
+            "type": "string"
+          },
+          "needGroup": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "needDetail": {
+            "nullable": true,
+            "type": "string"
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "at",
+          "by",
+          "channel",
+          "source",
+          "sourceType",
+          "sourceDetail",
+          "needGroup",
+          "needDetail",
+          "note"
+        ]
+      },
+      "PersonMergeEntry": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "merge"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "mergedLeadCode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "mergedCustomerCode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "mergedName": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChosenOption"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "at",
+          "by",
+          "mergedLeadCode",
+          "mergedCustomerCode",
+          "mergedName",
+          "reason"
         ]
       },
       "LeadAssignees": {
@@ -8129,6 +8923,102 @@
         },
         "required": [
           "customerId"
+        ]
+      },
+      "PersonMerged": {
+        "type": "object",
+        "properties": {
+          "survivorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mergedId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "CUSTOMER"
+            ]
+          }
+        },
+        "required": [
+          "survivorId",
+          "mergedId",
+          "stage"
+        ]
+      },
+      "InquiryResult": {
+        "type": "object",
+        "properties": {
+          "inquiry": {
+            "$ref": "#/components/schemas/LeadInquiry"
+          },
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "CUSTOMER"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "reopened": {
+            "type": "boolean"
+          },
+          "pic": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "inquiry",
+          "personId",
+          "stage",
+          "code",
+          "reopened",
+          "pic"
+        ]
+      },
+      "PersonIntakeHistory": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/LeadInquiry"
+                },
+                {
+                  "$ref": "#/components/schemas/PersonMergeEntry"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "ConsultingChecklist": {
@@ -8233,7 +9123,9 @@
                         "type": "string",
                         "enum": [
                           "SHOW",
-                          "NO_SHOW"
+                          "NO_SHOW",
+                          "BOOK",
+                          "REFUSE"
                         ]
                       }
                     },
@@ -9424,6 +10316,7 @@
                     "lead.manage",
                     "lead.assign",
                     "lead.receive",
+                    "lead.merge",
                     "customer.view",
                     "customer.manage",
                     "contract.view",
@@ -9649,6 +10542,7 @@
                 "lead.manage",
                 "lead.assign",
                 "lead.receive",
+                "lead.merge",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -10024,7 +10918,8 @@
             "type": "string",
             "enum": [
               "payment",
-              "cash_transaction"
+              "cash_transaction",
+              "person"
             ]
           },
           "entityId": {
@@ -10836,7 +11731,10 @@
               "approvalOverdue",
               "leadNew",
               "leadAssigned",
-              "leadStepDue"
+              "leadStepDue",
+              "leadRecare",
+              "leadInquiry",
+              "personMerged"
             ]
           },
           "params": {

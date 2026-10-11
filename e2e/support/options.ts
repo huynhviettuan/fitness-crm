@@ -1,7 +1,8 @@
 import type { APIRequestContext } from "@playwright/test";
 
 /** Option list keys (D-016); the same as `OPTION_LISTS` in packages/shared. */
-export type OptionListKey = "paymentMethods" | "incomeCategories" | "expenseTypes" | "deleteReasons";
+export type OptionListKey =
+  "paymentMethods" | "incomeCategories" | "expenseTypes" | "deleteReasons" | "leadRefuseReasons";
 
 type Option = { id: string; labelVi: string; active: boolean; isOther: boolean };
 

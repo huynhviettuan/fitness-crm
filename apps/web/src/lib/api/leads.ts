@@ -12,7 +12,13 @@ import {
   leadPageSchema,
   leadSchema,
   leadTimelineSchema,
+  inquiryResultSchema,
+  mergeResultSchema,
+  personIntakeHistorySchema,
+  recarePageSchema,
   type LeadAssignInput,
+  type LeadInquiryInput,
+  type MergeInput,
   type LeadInput,
   type LeadStatus,
   type LeadStatusChangeInput,
@@ -29,8 +35,9 @@ export type LeadQuery = {
   sourceId?: string;
   needGroupId?: string;
   page?: number;
+  pageSize?: number;
 };
-export type LeadBoardQuery = Omit<LeadQuery, "status" | "page">;
+export type LeadBoardQuery = Omit<LeadQuery, "status" | "page" | "pageSize">;
 
 export async function listLeads(params: LeadQuery) {
   return read(leadPageSchema, (await api()).GET("/api/v1/leads", { params: { query: query(params) } }));
@@ -40,8 +47,47 @@ export async function getLead(id: string) {
   return read(leadSchema, (await api()).GET("/api/v1/leads/{id}", { params: { path: { id } } }));
 }
 
+/** The quick intake form; a phone already in use answers DUPLICATE_PHONE with the existing record (BR-202). */
 export async function createLead(input: LeadInput) {
-  return read(leadSchema, (await api()).POST("/api/v1/leads", { body: input as never }));
+  return read(leadSchema, (await api()).POST("/api/v1/leads/intake", { body: input as never }));
+}
+
+export type RecareQuery = {
+  status?: "NO_RESPONSE" | "REFUSED" | "NO_SHOW";
+  picUserId?: string;
+  overdue?: boolean;
+  scope?: "mine" | "all";
+  page?: number;
+  pageSize?: number;
+};
+
+/** "Danh sách tái chăm sóc" (FR-LEAD-007). */
+export async function getRecare(params: RecareQuery) {
+  return read(recarePageSchema, (await api()).GET("/api/v1/leads/recare", { params: { query: query(params) } }));
+}
+
+/** The person wrote or came in again: adds an inquiry to the record they already have (BR-202). */
+export async function addInquiry(personId: string, input: LeadInquiryInput) {
+  return read(
+    inquiryResultSchema,
+    (await api()).POST("/api/v1/persons/{id}/inquiries", { params: { path: { id: personId } }, body: input as never }),
+  );
+}
+
+/** Merges two records of one person (A-064); the response says which one survived. */
+export async function mergePersons(id: string, input: MergeInput) {
+  return read(
+    mergeResultSchema,
+    (await api()).POST("/api/v1/persons/{id}/merge", { params: { path: { id } }, body: input as never }),
+  );
+}
+
+/** Inquiries and merges of a lead or customer, newest first. */
+export async function getIntakeHistory(personId: string) {
+  return read(
+    personIntakeHistorySchema,
+    (await api()).GET("/api/v1/persons/{id}/intake-history", { params: { path: { id: personId } } }),
+  );
 }
 
 export async function updateLead(id: string, input: LeadUpdateInput) {

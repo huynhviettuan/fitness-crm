@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   checklistInputSchema,
+  leadStatusChangeSchema,
   stepCompleteSchema,
   todayStepsQuerySchema,
   type Checklist,
@@ -21,8 +22,9 @@ import { notify } from "../../platform/notifications/notification.service.js";
 import { leadsVisibleTo } from "../customers/person.service.js";
 import * as repo from "./checklist.repository.js";
 import { lockedLead, visibleLead } from "./lead.present.js";
-import { applyJourneyEvent, finishStep, resultsOf } from "./checklist.engine.js";
+import { applyJourneyEvent, finishOutcomeStep, finishStep, resultsOf } from "./checklist.engine.js";
 import { convertLead, recordNoShow } from "./lead-outcome.service.js";
+import { moveLead } from "./lead-journey.service.js";
 
 // The consulting checklist (brief §4.1, D-020, FR-LEAD-004/005). Each lead has the steps
 // of the version it started with. A step waits until its trigger happens, then has a
@@ -97,6 +99,10 @@ export async function completeLeadStep(
       await recordNoShow(tx, actor, lead, now, { stepId: step.id, note: data.note });
       return checklistOf(tx, lead.id, now);
     }
+    if (result.effect === "BOOK" || result.effect === "REFUSE") {
+      await followStatusResult(tx, actor, lead, step, result.effect, data, now);
+      return checklistOf(tx, lead.id, now);
+    }
     const timing = now.getTime() <= step.dueAt.getTime() ? "ON_TIME" : "LATE";
     await finishStep(tx, step, { at: now, by: actor.id, resultIndex: data.resultIndex, note: data.note, timing });
     await recordAudit(tx, {
@@ -110,6 +116,56 @@ export async function completeLeadStep(
     await applyJourneyEvent(tx, lead, { kind: "STEP_DONE", key: step.template.key, at: now, by: actor.id });
     return checklistOf(tx, lead.id, now);
   });
+}
+
+/**
+ * Re-care results (brief §4.1 step 10): Đặt lịch books the lead again, Từ chối refuses it
+ * with the next contact-again day; both are the status change of the lead's own buttons
+ * (A-062). The step is finished first, because the new status would close it.
+ */
+async function followStatusResult(
+  tx: Db,
+  actor: Actor,
+  lead: Awaited<ReturnType<typeof lockedLead>>,
+  step: NonNullable<Awaited<ReturnType<typeof repo.findLeadStep>>>,
+  effect: "BOOK" | "REFUSE",
+  data: z.output<typeof stepCompleteSchema>,
+  now: Date,
+): Promise<void> {
+  if (effect === "BOOK" ? !data.book : !data.refuse) {
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { [effect === "BOOK" ? "book" : "refuse"]: ["required"] } });
+  }
+  const note = data.note ?? "";
+  const input =
+    effect === "BOOK"
+      ? { status: "BOOKED", ...data.book, note }
+      : { status: "REFUSED", ...data.refuse, refuseReasonNote: data.refuse?.refuseReasonNote ?? "", note };
+  const underStep = (error: unknown) => {
+    if (!(error instanceof AppError) || !error.fieldErrors) return error;
+    const prefix = effect === "BOOK" ? "book" : "refuse";
+    return new AppError(error.code, {
+      fieldErrors: Object.fromEntries(
+        Object.entries(error.fieldErrors).map(([field, messages]) => [
+          field === "note" ? field : `${prefix}.${field}`,
+          messages,
+        ]),
+      ),
+    });
+  };
+  let change;
+  try {
+    change = parseInput(leadStatusChangeSchema, input);
+  } catch (error) {
+    throw underStep(error);
+  }
+  const key = await finishOutcomeStep(tx, lead.id, effect, now, actor.id, step.id, data.note);
+  let after;
+  try {
+    after = await moveLead(tx, actor, lead, change, now, effect === "REFUSE");
+  } catch (error) {
+    throw underStep(error);
+  }
+  if (key) await applyJourneyEvent(tx, after, { kind: "STEP_DONE", key, at: now, by: actor.id });
 }
 
 /** "Việc hôm nay" (FR-LEAD-005): open steps due by the end of the gym's day, overdue first. */

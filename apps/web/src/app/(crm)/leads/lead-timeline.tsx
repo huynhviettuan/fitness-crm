@@ -29,6 +29,15 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
                   <StatusBadge entity="lead" status={entry.toStatus} />
                 </>
               )
+            ) : entry.kind === "inquiry" ? (
+              <span className="font-medium">{t("inquiry", { channel: chosen(entry.channel) })}</span>
+            ) : entry.kind === "merge" ? (
+              <span className="font-medium">
+                {t("mergedFrom", {
+                  code: entry.mergedLeadCode ?? entry.mergedCustomerCode ?? "",
+                  name: entry.mergedName,
+                })}
+              </span>
             ) : (
               <span className="font-medium">
                 {entry.from
@@ -48,6 +57,17 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
           {entry.kind === "status" && entry.note && (
             <p className="text-sm whitespace-pre-line text-muted-foreground">{entry.note}</p>
           )}
+          {entry.kind === "inquiry" && (entry.source || entry.needGroup || entry.needDetail) && (
+            <p className="text-sm">
+              {[entry.source && chosen(entry.source), entry.needGroup && chosen(entry.needGroup), entry.needDetail]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+          {entry.kind === "inquiry" && entry.note && (
+            <p className="text-sm whitespace-pre-line text-muted-foreground">{entry.note}</p>
+          )}
+          {entry.kind === "merge" && <p className="text-sm">{t("reason", { reason: chosen(entry.reason) })}</p>}
           <p className="text-xs text-muted-foreground">
             <DateTime value={entry.at} format="dateTime" /> ·{" "}
             {entry.by?.name ?? (entry.kind === "assignment" ? t("roundRobin") : t("system"))}

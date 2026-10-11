@@ -1,6 +1,6 @@
 // The composition root for E2E specs: specs import `test` and `expect` from here,
 // never from @playwright/test, and never construct page objects themselves.
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import { test as base, expect, type APIRequestContext } from "@playwright/test";
 import type { Role } from "./support/db";
 import { BranchesPage, RolesPage, UserDetailPage } from "./pages/admin";
@@ -11,7 +11,7 @@ import { ApprovalRulesPage, ApprovalsPage } from "./pages/approvals";
 import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/bookings";
 import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
-import { LeadPage, LeadsPage } from "./pages/leads";
+import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
 import { ChecklistAdminPage, TodayPage } from "./pages/checklist";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
@@ -34,6 +34,7 @@ type Fixtures = {
   tasksPage: TasksPage;
   leadsPage: LeadsPage;
   leadPage: LeadPage;
+  recarePage: RecarePage;
   todayPage: TodayPage;
   checklistAdminPage: ChecklistAdminPage;
   taskPage: TaskPage;
@@ -93,6 +94,7 @@ export const test = base.extend<Fixtures>({
   tasksPage: async ({ page }, use) => use(new TasksPage(page)),
   leadsPage: async ({ page }, use) => use(new LeadsPage(page)),
   leadPage: async ({ page }, use) => use(new LeadPage(page)),
+  recarePage: async ({ page }, use) => use(new RecarePage(page)),
   todayPage: async ({ page }, use) => use(new TodayPage(page)),
   checklistAdminPage: async ({ page }, use) => use(new ChecklistAdminPage(page)),
   taskPage: async ({ page }, use) => use(new TaskPage(page)),
@@ -195,7 +197,14 @@ export const test = base.extend<Fixtures>({
   apiSignedIn: async ({ playwright, baseURL }, use) => {
     const contexts: APIRequestContext[] = [];
     await use(async (email, password) => {
-      const context = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { origin: baseURL! } });
+      // The sign-in limit is per IP and the whole suite shares one, so each account made
+      // for a test signs in from its own address (the web app forwards X-Forwarded-For, T-053).
+      // The rate-limit spec, which needs the shared address, signs in through apiAs.
+      const address = `10.${randomInt(256)}.${randomInt(256)}.${1 + randomInt(254)}`;
+      const context = await playwright.request.newContext({
+        baseURL,
+        extraHTTPHeaders: { origin: baseURL!, "x-forwarded-for": address },
+      });
       contexts.push(context);
       const response = await context.post("/api/auth/sign-in/email", { data: { email, password } });
       if (!response.ok()) throw new Error(`Sign-in as ${email} failed: ${response.status()}`);
@@ -253,6 +262,16 @@ export const test = base.extend<Fixtures>({
       await prisma.leadStatusChange.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.leadStep.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.leadAssignment.deleteMany({ where: { customerId: { in: customerIds } } });
+      // Inquiries and merges (M2 slice 5): the merged records point at their survivors.
+      await prisma.leadInquiry.deleteMany({ where: { personId: { in: customerIds } } });
+      await prisma.personMerge.deleteMany({
+        where: { OR: [{ survivorId: { in: customerIds } }, { mergedId: { in: customerIds } }] },
+      });
+      await prisma.customer.updateMany({
+        where: { id: { in: customerIds }, mergedIntoId: { not: null } },
+        data: { mergedIntoId: null, mergedAt: null },
+      });
+      await prisma.trashEntry.deleteMany({ where: { entityType: "person", entityId: { in: customerIds } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).
@@ -279,6 +298,9 @@ export const test = base.extend<Fixtures>({
       });
       // Their part in other leads' journeys (restricted), and the round-robin's memory of them.
       const asUser = { in: userIds };
+      // Inquiries and merges the test's accounts made on other records.
+      await prisma.leadInquiry.deleteMany({ where: { createdById: asUser } });
+      await prisma.personMerge.deleteMany({ where: { mergedById: asUser } });
       await prisma.leadStatusChange.updateMany({ where: { changedById: asUser }, data: { changedById: null } });
       await prisma.leadStep.updateMany({ where: { doneById: asUser }, data: { doneById: null } });
       await prisma.leadAssignment.deleteMany({

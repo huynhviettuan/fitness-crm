@@ -184,7 +184,14 @@ export function ownCustomers(actor: Pick<Actor, "id" | "employeeId">): Prisma.Cu
  * D-019), in their branches, and only their own with "own" scope (D-017).
  */
 export function visibleTo(actor: Actor): Prisma.CustomerWhereInput {
-  return { AND: [{ stage: "CUSTOMER" }, inBranches(actor), isOwnOnly(actor, "customers") ? ownCustomers(actor) : {}] };
+  return {
+    AND: [
+      { stage: "CUSTOMER" },
+      { mergedIntoId: null },
+      inBranches(actor),
+      isOwnOnly(actor, "customers") ? ownCustomers(actor) : {},
+    ],
+  };
 }
 
 /** The customer as this actor may see it: masked fields are null and listed (D-017). */

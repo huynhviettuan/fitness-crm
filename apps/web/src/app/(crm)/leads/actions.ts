@@ -2,10 +2,12 @@
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import {
+  addInquiry,
   assignLead,
   changeLeadStatus,
   completeLeadStep,
   createLead,
+  mergePersons,
   noShowLead,
   showLead,
   updateLead,
@@ -13,6 +15,8 @@ import {
 import type {
   LeadAssignInput,
   LeadInput,
+  LeadInquiryInput,
+  MergeInput,
   LeadStatusChangeInput,
   LeadUpdateInput,
   StepCompleteInput,
@@ -62,5 +66,27 @@ export async function showLeadAction(id: string, input: ShowInput): Promise<Acti
 export async function noShowLeadAction(id: string): Promise<ActionResult> {
   return runAction(async () => {
     await noShowLead(id);
+  });
+}
+
+/** The duplicate dialog's "Gộp vào hồ sơ này": the inquiry goes to the existing record (BR-202, A-063). */
+export async function addInquiryAction(
+  personId: string,
+  input: LeadInquiryInput,
+): Promise<ActionResult<{ id: string; stage: "LEAD" | "CUSTOMER"; code: string }>> {
+  return runAction(async () => {
+    const result = await addInquiry(personId, input);
+    return { id: result.personId, stage: result.stage, code: result.code };
+  });
+}
+
+/** Returns the surviving record, which may be the other one (A-064). */
+export async function mergePersonsAction(
+  id: string,
+  input: MergeInput,
+): Promise<ActionResult<{ survivorId: string; stage: "LEAD" | "CUSTOMER" }>> {
+  return runAction(async () => {
+    const result = await mergePersons(id, input);
+    return { survivorId: result.survivorId, stage: result.stage };
   });
 }

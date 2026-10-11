@@ -24,7 +24,8 @@
     "approvalRules": "Ma trận phê duyệt",
     "notifications": "Thông báo",
     "leadsToday": "Việc hôm nay",
-    "checklist": "Checklist tư vấn"
+    "checklist": "Checklist tư vấn",
+    "leadsRecare": "Tái chăm sóc"
   },
   "status": {
     "customer": {
@@ -113,6 +114,10 @@
     "previous": "Trang trước",
     "next": "Trang sau",
     "pageOf": "Trang {page} / {pages}",
+    "first": "Trang đầu",
+    "last": "Trang cuối",
+    "goToPage": "Đến trang {page}",
+    "rowsPerPage": "Số dòng mỗi trang",
     "totalResults": "{total, plural, other {# kết quả}}",
     "notProvided": "Chưa có",
     "toggleSidebar": "Ẩn/hiện thanh bên",
@@ -256,14 +261,38 @@
       "appointment": "Hẹn:",
       "reason": "Lý do: {reason}",
       "roundRobin": "Tự động chia lượt",
+      "inquiry": "Liên hệ lại qua {channel}",
+      "mergedFrom": "Gộp từ hồ sơ {code} · {name}",
       "system": "Hệ thống"
     },
-    "checklist": "Checklist tư vấn"
+    "checklist": "Checklist tư vấn",
+    "merge": {
+      "action": "Gộp hồ sơ",
+      "title": "Gộp hồ sơ: {name}",
+      "description": "Chọn hồ sơ trùng của cùng một người. Khách hàng được giữ lại; nếu cả hai là lead thì giữ hồ sơ cũ hơn. Hồ sơ còn lại vào thùng rác kèm lý do và mã của nó không được dùng lại.",
+      "search": "Tìm hồ sơ trùng",
+      "searchHint": "Nhập mã, tên hoặc số điện thoại (ít nhất 2 ký tự)",
+      "noMatches": "Không thấy hồ sơ nào",
+      "chosen": "Hồ sơ sẽ được gộp",
+      "change": "Chọn lại",
+      "reason": "Lý do gộp",
+      "confirm": "Gộp hồ sơ",
+      "done": "Đã gộp hồ sơ",
+      "stage": {
+        "LEAD": "Lead",
+        "CUSTOMER": "Khách hàng"
+      }
+    }
   },
   "people": {
     "duplicateLead": "Số điện thoại này đã thuộc lead {code} · {name}. Mỗi người chỉ có một hồ sơ.",
     "duplicateCustomer": "Số điện thoại này đã thuộc khách hàng {code} · {name}. Mỗi người chỉ có một hồ sơ.",
-    "openExisting": "Mở hồ sơ {code}"
+    "openExisting": "Mở hồ sơ {code}",
+    "mergeInto": "Gộp vào hồ sơ này",
+    "duplicateTitle": "Số điện thoại đã có hồ sơ",
+    "duplicateIntake": "Hồ sơ {code} · {name} đang dùng số này. \"Gộp vào hồ sơ này\" thêm lần liên hệ mới (kênh, nguồn, nhu cầu, ghi chú) vào hồ sơ đó và không tạo hồ sơ thứ hai.",
+    "backToEdit": "Quay lại sửa",
+    "inquiryAdded": "Đã thêm lần liên hệ vào hồ sơ {code}"
   },
   "customers": {
     "title": "Khách hàng",
@@ -303,7 +332,8 @@
       "payments": "Thanh toán"
     },
     "identitySubmitted": "Đã lưu. Thay đổi họ tên, điện thoại, email đang chờ duyệt.",
-    "pendingIdentity": "Đang chờ duyệt: {changes}. Thông tin hiện tại vẫn có hiệu lực đến khi được duyệt."
+    "pendingIdentity": "Đang chờ duyệt: {changes}. Thông tin hiện tại vẫn có hiệu lực đến khi được duyệt.",
+    "intakeHistory": "Liên hệ lại và gộp hồ sơ"
   },
   "users": {
     "title": "Người dùng",
@@ -431,7 +461,10 @@
     "APPROVAL_NOT_PENDING": "Yêu cầu này đã được xử lý.",
     "APPROVAL_ALREADY_PENDING": "Đã có một yêu cầu đang chờ duyệt cho dữ liệu này.",
     "BOOKING_OUTSIDE_WORKING_HOURS": "Ngoài giờ làm việc của huấn luyện viên, hoặc là ngày nghỉ của họ.",
-    "PHONE_ALREADY_USED": "Số điện thoại này đã có trong hệ thống."
+    "PHONE_ALREADY_USED": "Số điện thoại này đã có trong hệ thống.",
+    "DUPLICATE_PHONE": "Số điện thoại này đã có hồ sơ. Bạn có thể gộp vào hồ sơ đó.",
+    "MERGE_CUSTOMERS_UNSUPPORTED": "Chưa thể gộp hai hồ sơ khách hàng.",
+    "PERSON_ALREADY_MERGED": "Hồ sơ này đã được gộp vào hồ sơ khác."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -814,7 +847,8 @@
         "create": "Thêm lead",
         "manage": "Sửa thông tin và đổi trạng thái lead",
         "assign": "Phân công lại lead, nhận thông báo lead mới",
-        "receive": "Nhận lead chia tự động"
+        "receive": "Nhận lead chia tự động",
+        "merge": "Gộp hai hồ sơ của một người"
       }
     },
     "resources": {
@@ -973,7 +1007,8 @@
     "apply": "Lọc",
     "types": {
       "payment": "Phiếu thu",
-      "cash_transaction": "Khoản thu chi"
+      "cash_transaction": "Khoản thu chi",
+      "person": "Hồ sơ đã gộp"
     },
     "fields": {
       "type": "Loại",
@@ -1020,7 +1055,8 @@
       "approval_request": "Yêu cầu duyệt",
       "approval_rule": "Ma trận phê duyệt",
       "task": "Công việc",
-      "consulting_checklist": "Checklist tư vấn"
+      "consulting_checklist": "Checklist tư vấn",
+      "person": "Hồ sơ"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1248,7 +1284,10 @@
       "approvalOverdue": "Yêu cầu chờ duyệt đã quá hạn: {title}",
       "leadNew": "Lead mới {code} · {name}",
       "leadAssigned": "Bạn được giao lead {code} · {name}",
-      "leadStepDue": "Đến hạn: {step} · lead {code} · {name}"
+      "leadStepDue": "Đến hạn: {step} · lead {code} · {name}",
+      "leadRecare": "Lead {code} · {name} cần tái chăm sóc",
+      "leadInquiry": "{name} ({code}) vừa liên hệ lại",
+      "personMerged": "Hồ sơ {mergedCode} đã được gộp vào {code} · {name}"
     }
   },
   "checklist": {
@@ -1343,7 +1382,9 @@
     "noEffect": "Không",
     "effects": {
       "SHOW": "Show – chuyển thành khách hàng",
-      "NO_SHOW": "No show"
+      "NO_SHOW": "No show",
+      "BOOK": "Đặt lịch hẹn",
+      "REFUSE": "Từ chối"
     }
   },
   "visit": {
@@ -1373,6 +1414,37 @@
       "phone": "Số điện thoại",
       "healthNote": "Sức khỏe cơ bản (không bắt buộc)",
       "consent": "Khách đồng ý cho Flow lưu giấy tờ và thông tin sức khỏe"
+    }
+  },
+  "recare": {
+    "title": "Danh sách tái chăm sóc",
+    "description": "Lead không phản hồi, từ chối hoặc không đến (No show), theo ngày liên hệ lại.",
+    "scopes": "Phạm vi",
+    "scope": {
+      "mine": "Của tôi",
+      "all": "Tất cả"
+    },
+    "filters": "Bộ lọc",
+    "apply": "Lọc",
+    "all": "Tất cả",
+    "summary": "{total} lead, {overdue} quá hạn",
+    "overdue": "Quá hạn",
+    "overdueFilter": "Hạn liên hệ lại",
+    "noDate": "Chưa đặt ngày",
+    "noPic": "Chưa phân công",
+    "noPhone": "Chưa có SĐT",
+    "emptyTitle": "Chưa có lead nào cần tái chăm sóc",
+    "emptyBody": "Lead không phản hồi, từ chối hoặc không đến sẽ hiện ở đây cùng ngày liên hệ lại.",
+    "noResultsTitle": "Không tìm thấy lead",
+    "noResultsBody": "Không có lead nào khớp bộ lọc.",
+    "open": "Xem lead {name}",
+    "fields": {
+      "lead": "Lead",
+      "phone": "Số điện thoại",
+      "status": "Trạng thái",
+      "contactAgainOn": "Liên hệ lại",
+      "pic": "Người phụ trách",
+      "refuseReason": "Lý do từ chối"
     }
   }
 }

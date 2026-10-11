@@ -20,6 +20,7 @@ import { EditLeadButton } from "../lead-form";
 import { AssignLeadButton, ChangeStatusButton } from "../lead-journey";
 import { LeadTimeline } from "../lead-timeline";
 import { ChecklistSteps } from "../lead-checklist";
+import { MergePersonButton } from "../merge-person";
 import { NoShowButton, ShowButton } from "../lead-visit";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
@@ -132,7 +133,14 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
       <PageHeader
         title={lead.fullName}
         description={lead.leadCode}
-        actions={can(user, "lead.manage") && <EditLeadButton lead={lead} />}
+        actions={
+          <>
+            {can(user, "lead.merge") && (
+              <MergePersonButton person={{ id: lead.id, fullName: lead.fullName, code: lead.leadCode }} />
+            )}
+            {can(user, "lead.manage") && <EditLeadButton lead={lead} />}
+          </>
+        }
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card role="region" aria-label={t("journey")}>

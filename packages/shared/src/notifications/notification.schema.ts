@@ -22,6 +22,11 @@ export const NOTIFICATION_KINDS = [
   "leadAssigned",
   // A consulting step's deadline has come (FR-LEAD-004).
   "leadStepDue",
+  // A lead entered re-care (BR-204), or a person wrote again (BR-202): the consultant and managers hear of it.
+  "leadRecare",
+  "leadInquiry",
+  // Two records of one person were merged (A-064): the person in charge of the survivor hears of it.
+  "personMerged",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

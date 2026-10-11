@@ -88,3 +88,20 @@ export async function makeStepDueNow(leadId: string, key: string): Promise<void>
     await prisma.$disconnect();
   }
 }
+
+/**
+ * Setup for the re-care list: sets the day a lead in re-care is due to be contacted again
+ * (a gym date, `YYYY-MM-DD`; null for none), so ordering and "overdue" do not depend on
+ * today's date.
+ */
+export async function setContactAgainOn(leadId: string, day: string | null): Promise<void> {
+  const prisma = connect();
+  try {
+    await prisma.customer.update({
+      where: { id: leadId },
+      data: { contactAgainOn: day ? new Date(`${day}T00:00:00Z`) : null },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}

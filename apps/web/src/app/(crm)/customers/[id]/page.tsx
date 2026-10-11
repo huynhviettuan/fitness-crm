@@ -17,6 +17,7 @@ import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { getCustomer } from "@/lib/api/customers";
+import { getIntakeHistory } from "@/lib/api/leads";
 import { listContracts } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
@@ -26,6 +27,8 @@ import { CreateContractButton } from "../../contracts/contract-buttons";
 import { PaymentsTable } from "../../finance/payments";
 import { ContractsTable } from "../../contracts/contracts-table";
 import { EditCustomerButton } from "../customer-sheets";
+import { LeadTimeline } from "../../leads/lead-timeline";
+import { MergePersonButton } from "../../leads/merge-person";
 
 async function loadCustomer(user: CurrentUser, id: string) {
   try {
@@ -110,6 +113,9 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     },
   ];
 
+  // BR-202: when the person wrote again or a duplicate record was merged into this one.
+  const intake = can(user, "lead.view") ? (await getIntakeHistory(customer.id)).items : [];
+
   // Brief §8.2: a task about this customer.
   const assignees = can(user, "task.create") ? await getTaskAssignees() : null;
 
@@ -125,6 +131,11 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
                 assignees={assignees}
                 branches={[]}
                 about={{ type: "customer", id: customer.id, label: `${customer.customerCode} · ${customer.fullName}` }}
+              />
+            )}
+            {can(user, "lead.merge") && (
+              <MergePersonButton
+                person={{ id: customer.id, fullName: customer.fullName, code: customer.customerCode }}
               />
             )}
             {can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
@@ -173,6 +184,18 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
               </dl>
             </CardContent>
           </Card>
+          {intake.length > 0 && (
+            <Card className="mt-4 max-w-3xl" role="region" aria-label={t("intakeHistory")}>
+              <CardHeader>
+                <CardTitle>
+                  <h2>{t("intakeHistory")}</h2>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LeadTimeline entries={intake} />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         {contracts && (
           <TabsContent value="contracts" className="space-y-4">

@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { listTrash } from "@/lib/api/history";
 import { TRASH_ENTITY_TYPES } from "@flow/shared/trash";
 import { parseDateOnly } from "@flow/shared/validation";
@@ -35,18 +36,8 @@ export default async function TrashPage({ searchParams }: PageProps<"/admin/tras
   const day = (value: string | undefined) => (value && parseDateOnly(value) ? value : undefined);
   const from = day(filterValue(params.from));
   const to = day(filterValue(params.to));
-  const page = Math.max(1, Number(params.page) || 1);
-  const result = await listTrash({ entityType, from, to, page });
-
-  const hrefFor = (target: number) => {
-    const query = new URLSearchParams();
-    if (entityType) query.set("type", entityType);
-    if (from) query.set("from", from);
-    if (to) query.set("to", to);
-    if (target > 1) query.set("page", String(target));
-    const search = query.toString();
-    return search ? `/admin/trash?${search}` : "/admin/trash";
-  };
+  const { page, pageSize } = readPaging(params);
+  const result = await listTrash({ entityType, from, to, page, pageSize });
 
   return (
     <>
@@ -68,7 +59,13 @@ export default async function TrashPage({ searchParams }: PageProps<"/admin/tras
             entries={result.items}
             empty={<EmptyState icon={Trash2Icon} title={t("empty")} />}
             footer={
-              <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+              <TablePagination
+                page={result.page}
+                pageSize={result.pageSize}
+                total={result.total}
+                path="/admin/trash"
+                params={params}
+              />
             }
           />
         </div>

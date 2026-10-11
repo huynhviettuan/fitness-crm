@@ -12,6 +12,7 @@ import { env } from "@/lib/env";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { formatDateOnly } from "@/lib/format";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { listBookings, type BookingQuery } from "@/lib/api/bookings";
 import { bookingContext } from "../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../bookings/bookings-table";
@@ -35,8 +36,7 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
   const t = await getTranslations("bookings");
   const params = await searchParams;
   const view: View = VIEWS.find((v) => v === params.view) ?? "today";
-  const requestedPage = Number(params.page);
-  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const { page, pageSize } = readPaging(params);
   const context = await bookingContext(user);
   const header = (
     <PageHeader
@@ -57,12 +57,11 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
     );
   }
 
-  const result = await listBookings({ ...viewQuery(view), page });
-  const hrefFor = (target: { view?: View; page?: number }) => {
+  const result = await listBookings({ ...viewQuery(view), page, pageSize });
+  const hrefFor = (target: { view?: View }) => {
     const query = new URLSearchParams();
     const nextView = target.view ?? view;
     if (nextView !== "today") query.set("view", nextView);
-    if (target.page && target.page > 1) query.set("page", String(target.page));
     const search = query.toString();
     return search ? `/sessions?${search}` : "/sessions";
   };
@@ -90,7 +89,8 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
             page={result.page}
             pageSize={result.pageSize}
             total={result.total}
-            hrefFor={(p) => hrefFor({ page: p })}
+            path="/sessions"
+            params={params}
           />
         }
       />

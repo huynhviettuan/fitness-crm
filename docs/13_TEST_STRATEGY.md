@@ -27,7 +27,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | ID | Scenario | Criterion |
 |---|---|---|
 | E2E-101 | Lead from the quick form → assigned round-robin → checklist steps → appointment → Show → converted with the same ID | AC-06, AC-09 |
-| E2E-102 | Duplicate phone → warning → merge, one record | BR-202 |
+| E2E-102 | A receptionist types a phone already on a lead: the warning names that lead; "Quay lại sửa" keeps the form; "Gộp vào hồ sơ này" adds the contact (channel, source, need, note) to the existing record, which shows it on its timeline, and leaves one record; for a phone already on a customer the inquiry joins the customer (`e2e/leads.spec.ts`; the API side in `apps/api/test/integration/lead-merge.int.test.ts`) | BR-202, FR-LEAD-009, AC-03 |
 | E2E-103 | "Khác" without note refused; option deactivated stays on old record (`e2e/configuration.spec.ts`, `e2e/finance.spec.ts`) | AC-03, AC-04 |
 | E2E-104 | Contract with any session count → tier price, end date, name; exception price stays pending; booking refused until approved | AC-10, AC-11 |
 | E2E-105 | Approved contract cannot be edited by admin | AC-11 |
@@ -39,10 +39,13 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-111 | Session log on phone: plan and actual per row; cardio fields; escalation reaches manager and Master | AC-20, AC-21, AC-23 |
 | E2E-112 | Role without a module: menu hidden and direct URL refused; masked phone absent from screen and export | AC-01 |
 | E2E-113 | Submitter cannot approve own request; approval matrix change takes effect immediately (`e2e/approvals.spec.ts`) | AC-05 |
+| E2E-122 | "Từ chối" on the re-care step asks for the reason and sets the next contact-again day to today + `recareDays` (not the earlier day); refusing again after a return to Consulting sets it again (A-062) (`e2e/recare.spec.ts`) | AC-07 (15-day part) |
+| E2E-121 | "Đặt lịch" on the re-care step asks for the appointment, books the lead again (status Booked, appointment shown), the step is done and the pre-visit reminders reappear, one reaching "Việc hôm nay" when due (`e2e/recare.spec.ts`) | AC-07, BR-204 |
+| E2E-120 | On a phone a consultant's re-care list holds only No response, Refused, and No show, oldest contact-again day first, overdue marked, nothing wider than the screen; the status and overdue filters narrow it; a manager has none under "Của tôi" and the team's under "Tất cả" (`e2e/recare.spec.ts`) | FR-LEAD-007, AC-23 |
 | E2E-119 | A receptionist records Show: the form needs the consent, the lead becomes a customer with a KH code, its ID document, health note, and nationality, and leaves the lead list; on a phone a consultant records No show on the checklist and the lead goes to re-care (`e2e/visit.spec.ts`) | AC-09 (part), AC-23 |
 | E2E-118 | On a phone a consultant sees "Đặt lịch" done by the booking, records a visit reminder on time, and completes the Báo Studio step it opens from "Việc hôm nay"; an admin renames a step and saves a new version that only new leads get (`e2e/checklist.spec.ts`) | AC-07, AC-23 |
 | E2E-117 | New leads go round-robin to a branch's consultants; an admin reassigns one and records a refusal with its reason; the history and the Kanban board show both; on a phone a consultant sees only their own leads, books an appointment, and finds it on the board (`e2e/leads.branch.spec.ts`) | AC-06, AC-23 |
-| E2E-116 | A walk-in is added with the quick form on a phone and on a desktop, gets an LD code and status New; a phone already on a customer is refused with a link to them (`e2e/leads.spec.ts`) | AC-06 (part), AC-23 |
+| E2E-116 | A walk-in is added with the quick form on a phone and on a desktop, gets an LD code and status New; a phone already on a customer offers the merge (E2E-102) (`e2e/leads.spec.ts`) | AC-06 (part), AC-23 |
 | E2E-115 | A manager gives a task; the receptionist sees it in the bell, accepts, works on, and completes it; the manager is told; comments with mentions; overdue tasks are marked (`e2e/tasks.spec.ts`) | AC-05 |
 | E2E-114 | A manager adds a PT, sets a shift and a day off; the calendar books only inside the shift; a PT sees their own schedule read-only (`e2e/employees.spec.ts`) | AC-02 |
 
@@ -62,6 +65,8 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | INT-010 | Approve and delete of the same pending record at once: one wins, the other gets a clear error. |
 | INT-011 | Two payouts for the same period and PT at once: no session paid twice. |
 | INT-012 | Reactivating a frozen contract twice at once extends the end date once. |
+| INT-013 | Merging the same two records at once (also with the pair in the other order, or five requests): one merge, one trash entry; the others get `PERSON_ALREADY_MERGED`. |
+| INT-014 | Two lead intakes with one phone at once: one lead is created, the other gets `DUPLICATE_PHONE`; after a merge one live record holds each phone. |
 
 ## Reused from Phases 0–4
 

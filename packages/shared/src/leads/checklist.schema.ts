@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionNote } from "../options/option.schema.js";
 import { hasNoControlCharacters } from "../validation/index.js";
 import { type LEAD_STATUSES } from "./lead.schema.js";
 import { showInputSchema } from "./show.schema.js";
@@ -27,9 +28,12 @@ const MINUTES_PER: Record<OffsetUnit, number> = { MINUTES: 1, HOURS: 60, DAYS: 1
 /**
  * What choosing a result does besides recording it: SHOW converts the lead to a customer
  * (it then needs the Show details), NO_SHOW marks it No show; the same as the lead's own
- * Show and No show buttons (M2 slice 4).
+ * Show and No show buttons (M2 slice 4). BOOK books the lead (it then needs the
+ * appointment) and REFUSE refuses it (it then needs the reason), the same as the status
+ * change; on the re-care step they put the lead back on the appointment path, or set the
+ * next contact-again day (M2 slice 5, BR-204, A-062).
  */
-export const RESULT_EFFECTS = ["SHOW", "NO_SHOW"] as const;
+export const RESULT_EFFECTS = ["SHOW", "NO_SHOW", "BOOK", "REFUSE"] as const;
 export type ResultEffect = (typeof RESULT_EFFECTS)[number];
 
 /** What the system does when the step is done: STUDIO_TASK tells the studio through Giao việc (brief §4.1, §8.2). */
@@ -140,6 +144,20 @@ export const stepCompleteSchema = z.object({
     .min(0, { error: "invalidChoice" }),
   /** Needed when the result converts the lead (effect SHOW). */
   show: showInputSchema.optional(),
+  /** Needed when the result books the lead (effect BOOK): the day and time they come in, gym-local (checked like a status change). */
+  book: z
+    .object({
+      appointmentDate: z.string().trim().max(10, { error: "tooLong" }).prefault(""),
+      appointmentTime: z.string().trim().max(5, { error: "tooLong" }).prefault(""),
+    })
+    .optional(),
+  /** Needed when the result refuses the lead (effect REFUSE): why, from "leadRefuseReasons". */
+  refuse: z
+    .object({
+      refuseReasonId: z.preprocess((value) => (value === "" ? undefined : value), z.uuid({ error: "required" })),
+      refuseReasonNote: optionNote,
+    })
+    .optional(),
   note: z
     .string()
     .trim()

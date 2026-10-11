@@ -202,6 +202,8 @@ model User {
   leadAssignedBy     LeadAssignment[]         @relation("LeadAssignmentBy")
   leadRoundRobins    LeadRoundRobin[]
   leadStepsDone      LeadStep[]
+  leadInquiries      LeadInquiry[]
+  personMerges       PersonMerge[]
 
   @@index([roleId])
   @@map("users")
@@ -231,6 +233,7 @@ model Branch {
   approvalRequests ApprovalRequest[]
   tasks            Task[]
   leadRoundRobin   LeadRoundRobin?
+  leadInquiries    LeadInquiry[]
 
   @@map("branches")
 }
@@ -372,6 +375,10 @@ model Option {
   personRefuseReasons  Customer[]         @relation("PersonRefuseReason")
   leadStatusReasons    LeadStatusChange[]
   taskDepartments      Task[]
+  inquiryChannels      LeadInquiry[]      @relation("InquiryChannel")
+  inquirySources       LeadInquiry[]      @relation("InquirySource")
+  inquiryNeedGroups    LeadInquiry[]      @relation("InquiryNeedGroup")
+  personMerges         PersonMerge[]
 
   @@unique([listKey, labelVi])
   @@index([listKey, sortOrder])
@@ -638,6 +645,15 @@ model Customer {
   leadStatusChanges LeadStatusChange[]
   leadAssignments   LeadAssignment[]
   leadSteps         LeadStep[]
+  inquiries         LeadInquiry[]      @relation("InquiryPerson")
+
+  // Set when this record was merged into another (A-064): it is hidden everywhere, its codes stay reserved.
+  mergedIntoId     String?       @map("merged_into_id") @db.Uuid
+  mergedInto       Customer?     @relation("CustomerMergedInto", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  mergedFrom       Customer[]    @relation("CustomerMergedInto")
+  mergedAt         DateTime?     @map("merged_at") @db.Timestamptz(3)
+  mergesAsSurvivor PersonMerge[] @relation("MergeSurvivor")
+  mergeAsMerged    PersonMerge?  @relation("MergeMerged")
 
   @@index([phone])
   @@index([searchName])
@@ -1067,4 +1083,54 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+// A person who wrote or came in again (BR-202, FR-LEAD-009): one row per intake on an
+// existing record, so the timeline shows every inquiry while the person stays one record (D-019).
+model LeadInquiry {
+  id            String      @id @default(uuid()) @db.Uuid
+  personId      String      @map("person_id") @db.Uuid
+  person        Customer    @relation("InquiryPerson", fields: [personId], references: [id], onDelete: Restrict)
+  branchId      String      @map("branch_id") @db.Uuid
+  branch        Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  channelId     String      @map("channel_option_id") @db.Uuid
+  channel       Option      @relation("InquiryChannel", fields: [channelId], references: [id], onDelete: Restrict)
+  channelNote   String?     @map("channel_note")
+  sourceId      String?     @map("source_option_id") @db.Uuid
+  source        Option?     @relation("InquirySource", fields: [sourceId], references: [id], onDelete: Restrict)
+  sourceNote    String?     @map("source_note")
+  sourceType    SourceType? @map("source_type")
+  sourceDetail  String?     @map("source_detail")
+  needGroupId   String?     @map("need_group_option_id") @db.Uuid
+  needGroup     Option?     @relation("InquiryNeedGroup", fields: [needGroupId], references: [id], onDelete: Restrict)
+  needGroupNote String?     @map("need_group_note")
+  needDetail    String?     @map("need_detail")
+  note          String?
+  createdById   String      @map("created_by") @db.Uuid
+  createdBy     User        @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([personId, createdAt])
+  @@map("lead_inquiries")
+}
+
+// Two records of one person merged into one (BR-202, D-019, A-064). The merged record stays
+// as a row (its codes are never reused, D-038), marked with merged_into_id, and is in the trash.
+model PersonMerge {
+  id         String   @id @default(uuid()) @db.Uuid
+  survivorId String   @map("survivor_id") @db.Uuid
+  survivor   Customer @relation("MergeSurvivor", fields: [survivorId], references: [id], onDelete: Restrict)
+  mergedId   String   @unique @map("merged_id") @db.Uuid
+  merged     Customer @relation("MergeMerged", fields: [mergedId], references: [id], onDelete: Restrict)
+  reasonId   String   @map("reason_option_id") @db.Uuid
+  reason     Option   @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+  reasonNote String?  @map("reason_note")
+  mergedById String   @map("merged_by") @db.Uuid
+  mergedBy   User     @relation(fields: [mergedById], references: [id], onDelete: Restrict)
+  // The merged record's fields before the merge, without encrypted values (A-066).
+  before     Json
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([survivorId])
+  @@map("person_merges")
 }

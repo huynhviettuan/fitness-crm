@@ -234,3 +234,30 @@ export function searchWhere(q: string, searchPhone: boolean): Prisma.CustomerWhe
     ],
   };
 }
+
+/**
+ * The re-care list's page: the contact-again day oldest first, leads without one last, then
+ * the longest in the status; and how many of all matches are overdue (`overdue` is the fragment).
+ */
+export async function recareRows(
+  db: Db,
+  where: Prisma.CustomerWhereInput,
+  overdue: Prisma.CustomerWhereInput,
+  page: { skip: number; take: number },
+): Promise<{ items: LeadRecord[]; total: number; overdueTotal: number }> {
+  const [items, total, overdueTotal] = await Promise.all([
+    db.customer.findMany({
+      where,
+      include: withRefs,
+      orderBy: [
+        { contactAgainOn: { sort: "asc", nulls: "last" } },
+        { leadStatusChangedAt: "asc" },
+        { leadCode: "asc" },
+      ],
+      ...page,
+    }),
+    db.customer.count({ where }),
+    db.customer.count({ where: { AND: [where, overdue] } }),
+  ]);
+  return { items, total, overdueTotal };
+}

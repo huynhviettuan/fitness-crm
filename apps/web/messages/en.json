@@ -24,7 +24,8 @@
     "approvalRules": "Approval matrix",
     "notifications": "Notifications",
     "leadsToday": "Today's tasks",
-    "checklist": "Consulting checklist"
+    "checklist": "Consulting checklist",
+    "leadsRecare": "Re-care"
   },
   "status": {
     "customer": {
@@ -113,6 +114,10 @@
     "previous": "Previous page",
     "next": "Next page",
     "pageOf": "Page {page} of {pages}",
+    "first": "First page",
+    "last": "Last page",
+    "goToPage": "Go to page {page}",
+    "rowsPerPage": "Rows per page",
     "totalResults": "{total, plural, one {# result} other {# results}}",
     "notProvided": "Not provided",
     "toggleSidebar": "Toggle sidebar",
@@ -256,14 +261,38 @@
       "appointment": "Appointment:",
       "reason": "Reason: {reason}",
       "roundRobin": "Round-robin",
+      "inquiry": "Got in touch again via {channel}",
+      "mergedFrom": "Merged from record {code} · {name}",
       "system": "System"
     },
-    "checklist": "Consulting checklist"
+    "checklist": "Consulting checklist",
+    "merge": {
+      "action": "Merge records",
+      "title": "Merge records: {name}",
+      "description": "Choose the duplicate record of the same person. The customer is kept; if both are leads, the older one is kept. The other record goes to the trash with the reason and its code is never reused.",
+      "search": "Find the duplicate",
+      "searchHint": "Type a code, name, or phone number (at least 2 characters)",
+      "noMatches": "No record found",
+      "chosen": "Record to merge",
+      "change": "Choose again",
+      "reason": "Reason for merging",
+      "confirm": "Merge records",
+      "done": "Records merged",
+      "stage": {
+        "LEAD": "Lead",
+        "CUSTOMER": "Customer"
+      }
+    }
   },
   "people": {
     "duplicateLead": "This phone already belongs to lead {code} · {name}. Each person has one record.",
     "duplicateCustomer": "This phone already belongs to customer {code} · {name}. Each person has one record.",
-    "openExisting": "Open {code}"
+    "openExisting": "Open {code}",
+    "mergeInto": "Merge into this record",
+    "duplicateTitle": "This phone number already has a record",
+    "duplicateIntake": "Record {code} · {name} uses this number. \"Merge into this record\" adds the new inquiry (channel, source, need, note) to it and does not create a second record.",
+    "backToEdit": "Back to the form",
+    "inquiryAdded": "Inquiry added to record {code}"
   },
   "customers": {
     "title": "Customers",
@@ -303,7 +332,8 @@
       "payments": "Payments"
     },
     "identitySubmitted": "Saved. The change of name, phone, or email waits for approval.",
-    "pendingIdentity": "Waiting for approval: {changes}. The current details apply until it is approved."
+    "pendingIdentity": "Waiting for approval: {changes}. The current details apply until it is approved.",
+    "intakeHistory": "Inquiries and merges"
   },
   "users": {
     "title": "Users",
@@ -431,7 +461,10 @@
     "APPROVAL_NOT_PENDING": "This request has already been decided.",
     "APPROVAL_ALREADY_PENDING": "A request for this record is already waiting for approval.",
     "BOOKING_OUTSIDE_WORKING_HOURS": "That time is outside the trainer's working hours, or on their day off.",
-    "PHONE_ALREADY_USED": "This phone number is already in the system."
+    "PHONE_ALREADY_USED": "This phone number is already in the system.",
+    "DUPLICATE_PHONE": "This phone number already has a record. You can merge into it.",
+    "MERGE_CUSTOMERS_UNSUPPORTED": "Two customer records cannot be merged yet.",
+    "PERSON_ALREADY_MERGED": "This record was already merged into another."
   },
   "validation": {
     "required": "Required.",
@@ -814,7 +847,8 @@
         "create": "Add leads",
         "manage": "Edit leads and change their status",
         "assign": "Reassign leads, hear of new leads",
-        "receive": "Receive leads automatically"
+        "receive": "Receive leads automatically",
+        "merge": "Merge two records of one person"
       }
     },
     "resources": {
@@ -973,7 +1007,8 @@
     "apply": "Filter",
     "types": {
       "payment": "Receipt",
-      "cash_transaction": "Income or expense"
+      "cash_transaction": "Income or expense",
+      "person": "Merged record"
     },
     "fields": {
       "type": "Kind",
@@ -1020,7 +1055,8 @@
       "approval_request": "Approval request",
       "approval_rule": "Approval matrix",
       "task": "Task",
-      "consulting_checklist": "Consulting checklist"
+      "consulting_checklist": "Consulting checklist",
+      "person": "Person record"
     },
     "verbs": {
       "created": "Created",
@@ -1248,7 +1284,10 @@
       "approvalOverdue": "A request waiting for approval is overdue: {title}",
       "leadNew": "New lead {code} · {name}",
       "leadAssigned": "Lead {code} · {name} was assigned to you",
-      "leadStepDue": "Due: {step} · lead {code} · {name}"
+      "leadStepDue": "Due: {step} · lead {code} · {name}",
+      "leadRecare": "Lead {code} · {name} is due for re-care",
+      "leadInquiry": "{name} ({code}) got in touch again",
+      "personMerged": "Record {mergedCode} was merged into {code} · {name}"
     }
   },
   "checklist": {
@@ -1343,7 +1382,9 @@
     "noEffect": "None",
     "effects": {
       "SHOW": "Show – convert to customer",
-      "NO_SHOW": "No show"
+      "NO_SHOW": "No show",
+      "BOOK": "Book appointment",
+      "REFUSE": "Refuse"
     }
   },
   "visit": {
@@ -1373,6 +1414,37 @@
       "phone": "Phone",
       "healthNote": "Basic health (optional)",
       "consent": "The customer agrees that Flow keeps the ID document and health information"
+    }
+  },
+  "recare": {
+    "title": "Re-care list",
+    "description": "Leads with no response, refused, or no show, by the day to contact them again.",
+    "scopes": "Scope",
+    "scope": {
+      "mine": "Mine",
+      "all": "All"
+    },
+    "filters": "Filters",
+    "apply": "Filter",
+    "all": "All",
+    "summary": "{total} leads, {overdue} overdue",
+    "overdue": "Overdue",
+    "overdueFilter": "Contact-again day",
+    "noDate": "No date set",
+    "noPic": "Not assigned",
+    "noPhone": "No phone",
+    "emptyTitle": "No leads to re-care",
+    "emptyBody": "Leads with no response, refused, or no show appear here with their contact-again day.",
+    "noResultsTitle": "No leads found",
+    "noResultsBody": "No lead matches the filters.",
+    "open": "Open lead {name}",
+    "fields": {
+      "lead": "Lead",
+      "phone": "Phone",
+      "status": "Status",
+      "contactAgainOn": "Contact again",
+      "pic": "Person in charge",
+      "refuseReason": "Refusal reason"
     }
   }
 }

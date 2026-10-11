@@ -79,7 +79,7 @@ test.describe("A01 leads between consultants", () => {
     });
     expect(again.status()).toBe(409);
     expect(await again.json()).toMatchObject({
-      code: "PHONE_ALREADY_USED",
+      code: "DUPLICATE_PHONE",
       details: { duplicate: { id: first.id, stage: "LEAD" } },
     });
 

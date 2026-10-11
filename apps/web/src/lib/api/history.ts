@@ -5,7 +5,7 @@ import { api, query, read } from "./client";
 
 // The trash (D-035) and the action history (T-048). Both are read-only.
 
-type TrashQuery = { entityType?: string; from?: string; to?: string; page?: number };
+type TrashQuery = { entityType?: string; from?: string; to?: string; page?: number; pageSize?: number };
 
 export async function listTrash(params: TrashQuery) {
   return read(trashPageSchema, (await api()).GET("/api/v1/trash", { params: { query: query(params) } }));
@@ -18,6 +18,7 @@ type AuditQuery = {
   from?: string;
   to?: string;
   page?: number;
+  pageSize?: number;
 };
 
 export async function listAuditEvents(params: AuditQuery) {

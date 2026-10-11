@@ -3,12 +3,13 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma, type Db } from "../../platform/db/prisma.js";
 import { assertCan } from "../../platform/permissions/assert.js";
 import { isMasked, resolveBranch } from "../../platform/permissions/scope.js";
+import { AppError } from "../../platform/errors/app-error.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import { resolveChoice } from "../../platform/options/option.service.js";
 import type { OptionListKey } from "@flow/shared/options";
-import { assertPhoneFree, leadsVisibleTo } from "../customers/person.service.js";
+import { assertPhoneFree, findPhoneOwner, leadsVisibleTo } from "../customers/person.service.js";
 import { visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import * as repo from "./lead.repository.js";
 import { present, visibleLead } from "./lead.present.js";
@@ -99,15 +100,17 @@ export async function getLead(actor: Actor, id: string): Promise<Lead> {
 }
 
 /**
- * The quick intake form (FR-LEAD-001). A phone that is already someone's is refused
- * (D-019). The new lead goes round-robin to the branch's next consultant (BR-203).
+ * The quick intake form (FR-LEAD-001). A phone that is already someone's is
+ * DUPLICATE_PHONE (D-019, BR-202): the answer names that record when the actor may see it,
+ * so the form can offer to add the inquiry to it. The new lead goes round-robin to the
+ * branch's next consultant (BR-203).
  */
 export async function createLead(actor: Actor, input: unknown, now: Date = new Date()): Promise<Lead> {
   assertCan(actor, "lead.create");
   const { branchId: requested, ...data } = parseInput(leadInputSchema, input);
   return prisma.$transaction(async (tx) => {
     const branchId = await resolveBranch(tx, actor, requested);
-    await assertPhoneFree(tx, actor, data.phone, null, customersVisibleTo);
+    await assertPhoneNew(tx, actor, data.phone);
     const created = await repo.createLead(
       tx,
       await repo.nextLeadCode(tx),
@@ -123,6 +126,19 @@ export async function createLead(actor: Actor, input: unknown, now: Date = new D
     });
     await startChecklist(tx, created.id);
     return present(actor, await startJourney(tx, actor, created, now));
+  });
+}
+
+/** The existing record is named only to someone who may see it: a customer by customer scope and `customer.view` (A-068). */
+async function assertPhoneNew(db: Db, actor: Actor, phone: string | null): Promise<void> {
+  const owner = await findPhoneOwner(db, actor, phone, null, (who) =>
+    who.permissions.has("customer.view") ? customersVisibleTo(who) : { id: { in: [] } },
+  );
+  if (!owner) return;
+  const { visible, ...duplicate } = owner;
+  throw new AppError("DUPLICATE_PHONE", {
+    fieldErrors: { phone: ["phoneAlreadyUsed"] },
+    duplicate: visible ? duplicate : undefined,
   });
 }
 

@@ -161,9 +161,12 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     rejectReasons: Prisma.sql`SELECT "reject_reason_note" AS note, "decided_at" AS at FROM "approval_requests" WHERE "reject_reason_option_id" = ${id}::uuid`,
     departments: Prisma.sql`SELECT "department_note" AS note, "updated_at" AS at FROM "employees" WHERE "department_option_id" = ${id}::uuid`,
     jobTitles: Prisma.sql`SELECT "title_note" AS note, "updated_at" AS at FROM "employees" WHERE "title_option_id" = ${id}::uuid`,
-    leadChannels: Prisma.sql`SELECT "channel_note" AS note, "created_at" AS at FROM "customers" WHERE "channel_option_id" = ${id}::uuid`,
-    leadSources: Prisma.sql`SELECT "source_note" AS note, "created_at" AS at FROM "customers" WHERE "source_option_id" = ${id}::uuid`,
-    needGroups: Prisma.sql`SELECT "need_group_note" AS note, "created_at" AS at FROM "customers" WHERE "need_group_option_id" = ${id}::uuid`,
+    leadChannels: Prisma.sql`SELECT "channel_note" AS note, "created_at" AS at FROM "customers" WHERE "channel_option_id" = ${id}::uuid
+      UNION ALL SELECT "channel_note", "created_at" FROM "lead_inquiries" WHERE "channel_option_id" = ${id}::uuid`,
+    leadSources: Prisma.sql`SELECT "source_note" AS note, "created_at" AS at FROM "customers" WHERE "source_option_id" = ${id}::uuid
+      UNION ALL SELECT "source_note", "created_at" FROM "lead_inquiries" WHERE "source_option_id" = ${id}::uuid`,
+    needGroups: Prisma.sql`SELECT "need_group_note" AS note, "created_at" AS at FROM "customers" WHERE "need_group_option_id" = ${id}::uuid
+      UNION ALL SELECT "need_group_note", "created_at" FROM "lead_inquiries" WHERE "need_group_option_id" = ${id}::uuid`,
     painStatuses: Prisma.sql`SELECT "pain_status_note" AS note, "created_at" AS at FROM "customers" WHERE "pain_status_option_id" = ${id}::uuid`,
     assessmentTypes: Prisma.sql`SELECT "assessment_type_note" AS note, "created_at" AS at FROM "customers" WHERE "assessment_type_option_id" = ${id}::uuid`,
     // Every refusal, also of leads that came back since (D-020).

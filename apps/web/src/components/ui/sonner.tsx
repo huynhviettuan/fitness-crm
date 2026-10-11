@@ -13,6 +13,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       // The one shared live region for toasts (docs/23 §11).
       containerAriaLabel={t("notifications")}
       className="toaster group"
+      closeButton
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -29,6 +30,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties
       }
       toastOptions={{
+        closeButtonAriaLabel: t("close"),
         classNames: {
           toast: "cn-toast",
         },

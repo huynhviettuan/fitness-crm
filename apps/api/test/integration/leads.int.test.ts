@@ -89,8 +89,7 @@ describe("one person, one record (D-019)", () => {
     await expect(
       createLead(reception, { fullName: "An", phone: "0909.123.456", channelId: WHATSAPP }),
     ).rejects.toMatchObject({
-      code: "PHONE_ALREADY_USED",
-      fieldErrors: { phone: ["phoneAlreadyUsed"] },
+      code: "DUPLICATE_PHONE",
       duplicate: { id: customer.id, stage: "CUSTOMER", code: customer.customerCode, fullName: "Nguyễn Văn An" },
     });
     await expect(createCustomer(reception, { fullName: "Hoa", phone: "0933111222" })).rejects.toMatchObject({
@@ -115,7 +114,7 @@ describe("one person, one record (D-019)", () => {
       (error: unknown) => error,
     );
 
-    expect(refused).toMatchObject({ code: "PHONE_ALREADY_USED", duplicate: undefined });
+    expect(refused).toMatchObject({ code: "DUPLICATE_PHONE", duplicate: undefined });
   });
 
   it("lets only one of two leads with the same phone in, when they arrive together", async () => {
@@ -128,7 +127,7 @@ describe("one person, one record (D-019)", () => {
     ]);
 
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { code: "PHONE_ALREADY_USED" } });
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { code: "DUPLICATE_PHONE" } });
   });
 
   it("keeps leads off the customer screens, and a lead cannot get a contract before Show", async () => {

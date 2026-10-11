@@ -18,8 +18,3 @@ export function selectedMonth(param: string | string[] | undefined) {
     query: { from: formatDateOnly(range.from), to: formatDateOnly(range.to) },
   };
 }
-
-export function pageParam(param: string | string[] | undefined): number {
-  const page = Number(param);
-  return Number.isInteger(page) && page > 0 ? page : 1;
-}

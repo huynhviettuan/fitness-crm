@@ -32,9 +32,9 @@ One section per module of phase 1 (`01_SCOPE_MVP.md`). Rules are in `05_BUSINESS
 - **FR-LEAD-004** Each lead has the consulting checklist; due steps create tasks; results are drop-downs; steps are marked on time, late, or skipped.
 - **FR-LEAD-005** "Today's tasks" per consultant shows due and overdue steps.
 - **FR-LEAD-006** List and Kanban by status; lead detail with checklist, timeline, notes, and appointments.
-- **FR-LEAD-007** Re-care list sorted by contact-again date.
+- **FR-LEAD-007** Re-care list sorted by contact-again date. Built (M2 slice 5): filters status, consultant, overdue; mine or all; phone-friendly.
 - **FR-LEAD-008** "Convert to customer" at Show requires ID document, birth date, nationality, and email; the record keeps its ID.
-- **FR-LEAD-009** Duplicate phone warning with merge.
+- **FR-LEAD-009** Duplicate phone warning with merge. Built (M2 slice 5): inquiry on the existing record, and a manager's merge of two records.
 - **FR-LEAD-010** Script library: situations with Vietnamese and English answers; copy button; managed by managers.
 - **FR-LEAD-011** Automatic audit per lead and consultant (compliance %, late and skipped steps, missing required fields); manager audit with pass/fail and comment.
 - **FR-LEAD-012** AI-assisted audit suggestions (milestone 11, OQ-025).

@@ -41,6 +41,31 @@ export class LeadFormSheet {
   get duplicate(): Locator {
     return this.root.getByRole("alert").filter({ has: this.page.getByRole("link") });
   }
+
+  /**
+   * BR-202: the phone belongs to an existing record; the intake offers to add this contact to
+   * it. A dialog of its own, over the sheet.
+   */
+  get duplicateDialog(): DuplicateDialog {
+    return new DuplicateDialog(this.page.getByRole("alertdialog", { name: labels.people.duplicateTitle }));
+  }
+}
+
+/** "Số điện thoại đã có hồ sơ": merge the new inquiry into the existing record, or go back to editing. */
+export class DuplicateDialog {
+  constructor(readonly root: Locator) {}
+
+  async mergeInto(): Promise<void> {
+    await this.root.getByRole("button", { name: labels.people.mergeInto, exact: true }).click();
+  }
+
+  async backToEdit(): Promise<void> {
+    await this.root.getByRole("button", { name: labels.people.backToEdit, exact: true }).click();
+  }
+
+  openExisting(code: string): Locator {
+    return this.root.getByRole("link", { name: fill(labels.people.openExisting, { code }), exact: true });
+  }
 }
 
 /** "Change status" (D-020): only the moves allowed from the lead's status are offered. Scoped to the dialog. */
@@ -166,6 +191,60 @@ export class LeadsPage {
 
   async open(fullName: string): Promise<void> {
     await this.table.getByRole("link", { name: fill(l.open, { name: fullName }), exact: true }).click();
+  }
+}
+
+/** "Danh sách tái chăm sóc" (FR-LEAD-007): leads in No response, Refused, or No show by contact-again day. */
+export class RecarePage {
+  private readonly shell: AppShell;
+
+  constructor(private readonly page: Page) {
+    this.shell = new AppShell(page);
+  }
+
+  async goto(query = ""): Promise<void> {
+    await this.page.goto(`/leads/recare${query}`);
+  }
+
+  get heading(): Locator {
+    return this.shell.pageHeading(labels.recare.title);
+  }
+
+  get table(): Locator {
+    return this.shell.main.getByRole("table", { name: labels.recare.title });
+  }
+
+  /** The rows that have `text` (a lead's name, or the tag of a test), in list order. */
+  row(text: string): Locator {
+    return this.table.getByRole("row").filter({ hasText: text });
+  }
+
+  /** The leads' names in the table, top to bottom, of the rows that have `text`. */
+  async namesWith(text: string): Promise<string[]> {
+    return this.row(text).getByRole("link").allTextContents();
+  }
+
+  private get filters(): Locator {
+    return this.shell.main.getByRole("complementary", { name: labels.recare.filters });
+  }
+
+  /** Chooses a filter's value, applies the filters, and waits for the page they lead to (`param` = `value` in the URL). */
+  async filter(label: string, option: string, query: { param: string; value: string }): Promise<void> {
+    await this.filters.getByRole("combobox", { name: label, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: option, exact: true }).click();
+    await this.filters.getByRole("button", { name: labels.recare.apply, exact: true }).click();
+    await this.page.waitForURL((url) => url.searchParams.get(query.param) === query.value);
+  }
+
+  async showScope(scope: "mine" | "all"): Promise<void> {
+    await this.shell.main
+      .getByRole("navigation", { name: labels.recare.scopes })
+      .getByRole("link", { name: labels.recare.scope[scope], exact: true })
+      .click();
+  }
+
+  get summary(): Locator {
+    return this.shell.main.getByRole("status");
   }
 }
 

@@ -2,9 +2,11 @@ import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
 import {
   canChangeLeadStatus,
   isRecareStatus,
+  nextContactAgainOn,
   leadAssignSchema,
   leadStatusChangeSchema,
   type Lead,
+  type LeadStatusChange,
   type LeadTimeline,
 } from "@flow/shared/leads";
 import { prisma, type Db } from "../../platform/db/prisma.js";
@@ -20,12 +22,11 @@ import { notify } from "../../platform/notifications/notification.service.js";
 import * as repo from "./lead.repository.js";
 import { lockedLead, present, visibleLead } from "./lead.present.js";
 import { applyJourneyEvent } from "./checklist.engine.js";
+import { intakeEntries } from "./intake-history.js";
 
 // The lead journey (brief §3, §4.1; D-020): round-robin assignment, reassignment by
 // managers, and status changes, each kept with who and when. Daily work, so no approval
 // (OQ-029 interim); every change is audited (T-048).
-
-const DAY_MS = 86_400_000;
 
 /**
  * Runs inside the creating transaction (BR-203): records the creation, hands the lead
@@ -89,58 +90,90 @@ export async function changeLeadStatus(
   const change = parseInput(leadStatusChangeSchema, input);
   return prisma.$transaction(async (tx) => {
     const lead = await lockedLead(tx, actor, id);
-    const from = lead.leadStatus ?? "NEW";
-    if (!canChangeLeadStatus(from, change.status)) throw new AppError("INVALID_STATUS_TRANSITION");
-
-    const appointmentAt = change.appointment
-      ? instantAt(change.appointment.date, change.appointment.time, env.GYM_TIMEZONE)
-      : null;
-    if (appointmentAt && appointmentAt.getTime() <= now.getTime()) {
-      throw new AppError("VALIDATION_FAILED", { fieldErrors: { appointmentDate: ["notInFuture"] } });
-    }
-    const reason = change.refuseReason
-      ? await resolveChoice(tx, "leadRefuseReasons", "refuseReasonId", change.refuseReason, lead.refuseReasonId)
-      : { optionId: null, note: null };
-    const contactAgainOn = isRecareStatus(change.status) ? await contactAgainDay(tx, now) : null;
-
-    const after = await repo.updateJourney(tx, id, {
-      leadStatus: change.status,
-      leadStatusChangedAt: now,
-      appointmentAt,
-      contactAgainOn,
-      refuseReasonId: reason.optionId,
-      refuseReasonNote: reason.note,
-    });
-    await repo.addStatusChange(tx, {
-      customerId: id,
-      fromStatus: from,
-      toStatus: change.status,
-      changedById: actor.id,
-      changedAt: now,
-      appointmentAt,
-      reasonId: reason.optionId,
-      reasonNote: reason.note,
-      note: change.note,
-    });
-    // The consulting steps that wait for this status, the appointment, or re-care (D-020).
-    await applyJourneyEvent(tx, after, { kind: "STATUS", at: now, by: actor.id });
-    await recordAudit(tx, {
-      actorUserId: actor.id,
-      entityType: "lead",
-      entityId: id,
-      action: "lead.status_changed",
-      before: journeyOf(lead),
-      after: journeyOf(after),
-      context: change.note ? { note: change.note } : undefined,
-    });
-    return present(actor, after);
+    return present(actor, await moveLead(tx, actor, lead, change, now));
   });
+}
+
+/**
+ * The status change itself, for a locked, visible lead inside the caller's transaction:
+ * the lead's own buttons and the re-care step's results (Đặt lịch, Từ chối) both end here.
+ * `again` lets a Refused lead be refused again with a new day and reason (A-062).
+ */
+export async function moveLead(
+  db: Db,
+  actor: Actor,
+  lead: repo.LeadRecord,
+  change: LeadStatusChange,
+  now: Date,
+  again = false,
+): Promise<repo.LeadRecord> {
+  const from = lead.leadStatus ?? "NEW";
+  if (!(again && from === change.status) && !canChangeLeadStatus(from, change.status)) {
+    throw new AppError("INVALID_STATUS_TRANSITION");
+  }
+  const appointmentAt = change.appointment
+    ? instantAt(change.appointment.date, change.appointment.time, env.GYM_TIMEZONE)
+    : null;
+  if (appointmentAt && appointmentAt.getTime() <= now.getTime()) {
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { appointmentDate: ["notInFuture"] } });
+  }
+  const reason = change.refuseReason
+    ? await resolveChoice(db, "leadRefuseReasons", "refuseReasonId", change.refuseReason, lead.refuseReasonId)
+    : { optionId: null, note: null };
+  const recare = isRecareStatus(change.status);
+  const contactAgainOn = recare ? await contactAgainDay(db, now) : null;
+
+  const after = await repo.updateJourney(db, lead.id, {
+    leadStatus: change.status,
+    leadStatusChangedAt: now,
+    appointmentAt,
+    contactAgainOn,
+    refuseReasonId: reason.optionId,
+    refuseReasonNote: reason.note,
+  });
+  await repo.addStatusChange(db, {
+    customerId: lead.id,
+    fromStatus: from,
+    toStatus: change.status,
+    changedById: actor.id,
+    changedAt: now,
+    appointmentAt,
+    reasonId: reason.optionId,
+    reasonNote: reason.note,
+    note: change.note,
+  });
+  // The consulting steps that wait for this status, the appointment, or re-care (D-020).
+  await applyJourneyEvent(db, after, { kind: "STATUS", at: now, by: actor.id });
+  await recordAudit(db, {
+    actorUserId: actor.id,
+    entityType: "lead",
+    entityId: lead.id,
+    action: "lead.status_changed",
+    before: journeyOf(lead),
+    after: journeyOf(after),
+    context: change.note ? { note: change.note } : undefined,
+  });
+  if (recare) await notifyRecare(db, actor, after);
+  return after;
+}
+
+/**
+ * A lead entering re-care goes back to its consultant's list; the consultant and the
+ * branch's managers are told, except whoever did it (BR-203, BR-204).
+ */
+export async function notifyRecare(db: Db, actor: Actor, lead: repo.LeadRecord): Promise<void> {
+  const managers = await repo.leadManagers(db, lead.branchId);
+  await notify(
+    db,
+    [lead.picUserId, ...managers].filter((id) => id !== actor.id),
+    { kind: "leadRecare", params: params(lead), link: link(lead) },
+  );
 }
 
 /** The day a lead in re-care is due to be contacted again: `recareDays` after the gym's today (BR-204). */
 export async function contactAgainDay(db: Db, now: Date): Promise<Date> {
   const days = Number(await readParameter(db, "recareDays"));
-  return new Date(calendarDateInTimeZone(env.GYM_TIMEZONE, now).getTime() + days * DAY_MS);
+  return nextContactAgainOn(calendarDateInTimeZone(env.GYM_TIMEZONE, now), days);
 }
 
 /** Every status change and assignment of the lead, newest first (D-020). */
@@ -148,6 +181,7 @@ export async function leadTimeline(actor: Actor, id: string): Promise<LeadTimeli
   assertCan(actor, "lead.view");
   const lead = await visibleLead(prisma, actor, id);
   const [changes, assignments] = await repo.timeline(prisma, lead.id);
+  const intake = await intakeEntries(prisma, lead.id);
   const items: LeadTimeline["items"] = [
     ...changes.map((change) => ({
       kind: "status" as const,
@@ -168,6 +202,7 @@ export async function leadTimeline(actor: Actor, id: string): Promise<LeadTimeli
       from: assignment.fromUser,
       to: assignment.toUser,
     })),
+    ...intake,
   ];
   return { items: items.sort((a, b) => b.at.getTime() - a.at.getTime() || rank(b) - rank(a)) };
 }
@@ -175,11 +210,12 @@ export async function leadTimeline(actor: Actor, id: string): Promise<LeadTimeli
 /** What happens in one instant: the lead is created, then assigned, then starts Consulting. */
 function rank(entry: LeadTimeline["items"][number]): number {
   if (entry.kind === "assignment") return 1;
+  if (entry.kind !== "status") return 3;
   return entry.fromStatus === null ? 0 : 2;
 }
 
 /** The next receiver after the branch's last one, in their fixed order; the first again after the last. */
-async function nextReceiver(db: Db, branchId: string): Promise<string | null> {
+export async function nextReceiver(db: Db, branchId: string): Promise<string | null> {
   await repo.lockRoundRobin(db, branchId);
   const receivers = await repo.receivers(db, branchId);
   if (receivers.length === 0) return null;
@@ -194,7 +230,7 @@ async function nextReceiver(db: Db, branchId: string): Promise<string | null> {
 }
 
 /** Gives the lead to `userId`; a New lead starts Consulting (brief §3). `by` is null for the round-robin. */
-async function assign(
+export async function assign(
   db: Db,
   actor: Actor,
   lead: repo.LeadRecord,
@@ -249,5 +285,5 @@ function journeyOf(lead: repo.LeadRecord) {
   };
 }
 
-const params = (lead: repo.LeadRecord) => ({ code: lead.leadCode ?? "", name: lead.fullName });
-const link = (lead: { id: string }) => `/leads/${lead.id}`;
+export const params = (lead: repo.LeadRecord) => ({ code: lead.leadCode ?? "", name: lead.fullName });
+export const link = (lead: { id: string }) => `/leads/${lead.id}`;

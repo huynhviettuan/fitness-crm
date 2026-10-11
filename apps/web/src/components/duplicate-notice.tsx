@@ -6,7 +6,8 @@ import type { DuplicatePerson } from "@flow/shared/errors";
 
 /**
  * D-019: a phone belongs to one person. When the API refuses a second record, this
- * names the existing one so the user opens it instead (the merge arrives in M2 slice 5).
+ * names the existing one so the user opens it instead. The lead intake offers to add its
+ * inquiry to that record (BR-202) in a dialog of its own; edits and customers only show this.
  */
 export function DuplicateNotice({ duplicate }: { duplicate: DuplicatePerson | null }) {
   const t = useTranslations("people");

@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { filterValue } from "@/lib/filters";
 import { listOptions } from "@/lib/api/configuration";
 import { getLeadBoard, listLeads } from "@/lib/api/leads";
@@ -48,10 +49,10 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
   const channelId = pick(channels, params.channel);
   const sourceId = pick(sources, params.source);
   const needGroupId = pick(needs, params.need);
-  const page = Math.max(1, Number(params.page) || 1);
+  const { page, pageSize } = readPaging(params);
   const onBoard = filterValue(params.view) === "board";
   const [result, board] = await Promise.all([
-    onBoard ? null : listLeads({ q, status, channelId, sourceId, needGroupId, page }),
+    onBoard ? null : listLeads({ q, status, channelId, sourceId, needGroupId, page, pageSize }),
     onBoard ? getLeadBoard({ q, channelId, sourceId, needGroupId }) : null,
   ]);
   const filtered = Boolean(q || status || channelId || sourceId || needGroupId);
@@ -65,13 +66,6 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
     channel: channelId,
     source: sourceId,
     need: needGroupId,
-  };
-  const hrefFor = (target: number) => {
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(kept)) if (value) query.set(key, value);
-    if (target > 1) query.set("page", String(target));
-    const search = query.toString();
-    return search ? `/leads?${search}` : "/leads";
   };
   const viewHref = (view: "list" | "board") => {
     const query = new URLSearchParams();
@@ -184,7 +178,8 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
                     page={result.page}
                     pageSize={result.pageSize}
                     total={result.total}
-                    hrefFor={hrefFor}
+                    path="/leads"
+                    params={params}
                   />
                 }
               />

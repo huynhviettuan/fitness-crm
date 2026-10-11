@@ -49,3 +49,18 @@ export function canChangeLeadStatus(from: LeadStatus, to: LeadStatus): boolean {
 export function isRecareStatus(status: LeadStatus): boolean {
   return (RECARE_STATUSES as readonly LeadStatus[]).includes(status);
 }
+
+const DAY_MS = 86_400_000;
+
+/**
+ * The next day to contact a lead in re-care (BR-204, A-062): `recareDays` after the gym's
+ * today, every time they enter or stay in re-care. `today` is a date at UTC midnight.
+ */
+export function nextContactAgainOn(today: Date, recareDays: number): Date {
+  return new Date(today.getTime() + recareDays * DAY_MS);
+}
+
+/** A lead is overdue when its contact-again day is before the gym's today (FR-LEAD-007); both are dates at UTC midnight. */
+export function isRecareOverdue(contactAgainOn: Date | null, today: Date): boolean {
+  return contactAgainOn !== null && contactAgainOn.getTime() < today.getTime();
+}

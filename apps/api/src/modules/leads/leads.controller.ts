@@ -16,6 +16,7 @@ import {
   leadStatusChangeSchema,
   leadTimelineSchema,
   leadUpdateSchema,
+  recarePageSchema,
 } from "@flow/shared/leads";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
@@ -26,8 +27,10 @@ import { createLead, getLead, leadBoard, listLeads, updateLead } from "./lead.se
 import { assignLead, changeLeadStatus, leadAssignees, leadTimeline } from "./lead-journey.service.js";
 import { completeLeadStep, leadChecklist, todaySteps } from "./checklist.service.js";
 import { noShowLead, showLead } from "./lead-outcome.service.js";
+import { recareList } from "./lead-recare.service.js";
 
 const FILTERS = ["q", "status", "channelId", "sourceId", "needGroupId", "page", "pageSize"] as const;
+const RECARE_FILTERS = ["status", "picUserId", "overdue", "scope", "page", "pageSize"] as const;
 const BOARD_FILTERS = ["q", "channelId", "sourceId", "needGroupId"] as const;
 
 /** Leads (brief §4.1): people before Show, in the same record they keep as customers (D-019). */
@@ -61,7 +64,31 @@ export class LeadsController {
     return encode(todayStepsSchema, await todaySteps(actor, queryOf(request, ["scope"] as const)));
   }
 
-  /** A phone that is already someone's is PHONE_ALREADY_USED, naming that record when visible (D-019). */
+  /**
+   * "Danh sách tái chăm sóc" (FR-LEAD-007): leads in No response, Refused, or No show by
+   * contact-again day (nulls last); `scope` mine (default) or all; `overdue` true for those past it.
+   */
+  @Get("recare")
+  @RequirePermission("lead.view")
+  @ApiOptionalQuery(...RECARE_FILTERS)
+  @ApiResult(recarePageSchema)
+  async recare(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(recarePageSchema, await recareList(actor, queryOf(request, RECARE_FILTERS)));
+  }
+
+  /**
+   * The quick intake form (FR-LEAD-001). A phone that is already someone's is DUPLICATE_PHONE
+   * (409) naming that record when the user may see it, so the form can offer to add the
+   * inquiry to it (`POST /persons/:id/inquiries`) instead (D-019, BR-202).
+   */
+  @Post("intake")
+  @RequirePermission("lead.create")
+  @ApiResult(leadSchema, 201, "Created")
+  async intake(@CurrentActor() actor: CurrentUser, @Body({ schema: leadInputSchema }) body: unknown) {
+    return encode(leadSchema, await createLead(actor, body));
+  }
+
+  /** The same as `POST /leads/intake`, kept for existing callers. */
   @Post()
   @RequirePermission("lead.create")
   @ApiResult(leadSchema, 201, "Created")

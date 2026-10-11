@@ -1,35 +1,93 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PAGE_SIZES, pagingHref, type SearchParams } from "@/lib/paging";
 
 type TablePaginationProps = {
   page: number;
   pageSize: number;
   total: number;
-  /** Builds the link for a page, keeping the current search and filters. */
-  hrefFor: (page: number) => string;
+  /** The list's path and its current search params: page links keep the search and filters. */
+  path: string;
+  params: SearchParams;
 };
 
-/** Server-side pagination: each page is a link, so it works without client state. */
-export function TablePagination({ page, pageSize, total, hrefFor }: TablePaginationProps) {
+/** Server-side pagination: each page and each page size is a link, so it works without client state. */
+export function TablePagination({ page, pageSize, total, path, params }: TablePaginationProps) {
   const t = useTranslations("common");
   const pages = Math.max(1, Math.ceil(total / pageSize));
+  const hrefFor = (target: number, size = pageSize) => pagingHref(path, params, target, size);
 
   return (
-    <nav aria-label={t("pageOf", { page, pages })} className="flex items-center justify-between gap-4 text-sm">
+    <nav
+      aria-label={t("pageOf", { page, pages })}
+      className="flex flex-wrap items-center justify-between gap-4 text-sm"
+    >
       <p className="text-muted-foreground">{t("totalResults", { total })}</p>
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">{t("pageOf", { page, pages })}</span>
-        <PageLink href={page > 1 ? hrefFor(page - 1) : undefined} label={t("previous")}>
-          <ChevronLeftIcon />
-        </PageLink>
-        <PageLink href={page < pages ? hrefFor(page + 1) : undefined} label={t("next")}>
-          <ChevronRightIcon />
-        </PageLink>
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-muted-foreground">{t("rowsPerPage")}</span>
+          {PAGE_SIZES.map((size) => (
+            <Button
+              key={size}
+              variant={size === pageSize ? "secondary" : "ghost"}
+              size="sm"
+              aria-current={size === pageSize ? "true" : undefined}
+              asChild
+            >
+              <Link href={hrefFor(1, size)}>{size}</Link>
+            </Button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <PageLink href={page > 1 ? hrefFor(1) : undefined} label={t("first")}>
+            <ChevronsLeftIcon />
+          </PageLink>
+          <PageLink href={page > 1 ? hrefFor(page - 1) : undefined} label={t("previous")}>
+            <ChevronLeftIcon />
+          </PageLink>
+          {pageWindow(page, pages).map((entry, index) =>
+            entry === null ? (
+              <span key={`gap-${index}`} aria-hidden className="px-1 text-muted-foreground">
+                …
+              </span>
+            ) : (
+              <Button
+                key={entry}
+                variant={entry === page ? "secondary" : "ghost"}
+                size="sm"
+                aria-label={t("goToPage", { page: entry })}
+                aria-current={entry === page ? "page" : undefined}
+                asChild
+              >
+                <Link href={hrefFor(entry)}>{entry}</Link>
+              </Button>
+            ),
+          )}
+          <PageLink href={page < pages ? hrefFor(page + 1) : undefined} label={t("next")}>
+            <ChevronRightIcon />
+          </PageLink>
+          <PageLink href={page < pages ? hrefFor(pages) : undefined} label={t("last")}>
+            <ChevronsRightIcon />
+          </PageLink>
+        </div>
       </div>
     </nav>
   );
+}
+
+/** The first and last page, and the current one with a neighbour on each side; `null` marks a gap. */
+export function pageWindow(page: number, pages: number): (number | null)[] {
+  const wanted = new Set([1, pages, page - 1, page, page + 1]);
+  const shown = [...wanted].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  const result: (number | null)[] = [];
+  shown.forEach((n, i) => {
+    const before = shown[i - 1];
+    if (before !== undefined && n - before > 1) result.push(null);
+    result.push(n);
+  });
+  return result;
 }
 
 function PageLink({ href, label, children }: { href?: string; label: string; children: React.ReactNode }) {

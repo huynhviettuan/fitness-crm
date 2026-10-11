@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,7 @@ import { FieldGroup } from "@/components/ui/field";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { NO_OPTION, OptionSelect } from "@/components/option-select";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DuplicateNotice } from "@/components/duplicate-notice";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
@@ -19,7 +21,7 @@ import type { DuplicatePerson } from "@/lib/api/errors";
 import { formatDateOnly } from "@/lib/format";
 import { GENDERS } from "@flow/shared/employees";
 import { NATIONALITY_GROUPS, SOURCE_TYPES, leadInputSchema, type Lead } from "@flow/shared/leads";
-import { createLeadAction, updateLeadAction } from "./actions";
+import { addInquiryAction, createLeadAction, updateLeadAction } from "./actions";
 
 type BranchOption = { id: string; name: string };
 
@@ -133,6 +135,9 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
   const errorMessage = useErrorMessage();
   const [pending, startTransition] = useTransition();
   const [duplicate, setDuplicate] = useState<DuplicatePerson | null>(null);
+  // The last submitted form: what "Gộp vào hồ sơ này" sends as the new inquiry (BR-202).
+  const [submitted, setSubmitted] = useState<FormValues | null>(null);
+  const [mergeOpen, setMergeOpen] = useState(false);
   // A new lead starts with the three things reception asks first; the rest unfolds.
   const [more, setMore] = useState(lead !== null);
   const form = useForm<FormValues>({
@@ -148,6 +153,11 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
       const result = lead ? await updateLeadAction(lead.id, fields) : await createLeadAction({ ...fields, branchId });
       if (!result.ok) {
         setDuplicate(result.duplicate ?? null);
+        // A phone already in use: offer to add this contact to the record that has it, when the user may see it.
+        if (!lead && result.code === "DUPLICATE_PHONE" && result.duplicate) {
+          setSubmitted(fromNone(values) as FormValues);
+          setMergeOpen(true);
+        }
         applyFieldErrors(form.setError, result.fieldErrors);
         return void notify.error(errorMessage(result.code));
       }
@@ -163,8 +173,49 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
     }),
   );
 
+  const mergeIntoExisting = async () => {
+    if (!duplicate || !submitted) return false;
+    const result = await addInquiryAction(duplicate.id, {
+      channelId: submitted.channelId,
+      channelNote: submitted.channelNote,
+      sourceId: submitted.sourceId,
+      sourceNote: submitted.sourceNote,
+      sourceType: submitted.sourceType,
+      sourceDetail: submitted.sourceDetail,
+      needGroupId: submitted.needGroupId,
+      needGroupNote: submitted.needGroupNote,
+      needDetail: submitted.needDetail,
+      note: submitted.notes,
+    } as never);
+    if (!result.ok) {
+      notify.error(errorMessage(result.code));
+      return false;
+    }
+    notify.success(t("people.inquiryAdded", { code: result.data.code }));
+    onDone();
+    router.push(result.data.stage === "LEAD" ? `/leads/${result.data.id}` : `/customers/${result.data.id}`);
+  };
+
   return (
     <form onSubmit={onSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+      {duplicate && (
+        <ConfirmDialog
+          open={mergeOpen}
+          onOpenChange={setMergeOpen}
+          title={t("people.duplicateTitle")}
+          description={t("people.duplicateIntake", { code: duplicate.code, name: duplicate.fullName })}
+          confirmLabel={t("people.mergeInto")}
+          dismissLabel={t("people.backToEdit")}
+          onConfirm={mergeIntoExisting}
+        >
+          <Link
+            href={duplicate.stage === "LEAD" ? `/leads/${duplicate.id}` : `/customers/${duplicate.id}`}
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            {t("people.openExisting", { code: duplicate.code })}
+          </Link>
+        </ConfirmDialog>
+      )}
       <FieldGroup className="flex-1 overflow-y-auto px-4 pb-4">
         {!lead && branches.length > 1 && (
           <SelectField

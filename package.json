@@ -20,6 +20,7 @@
     "db:deploy": "pnpm --filter api db:deploy",
     "db:seed": "pnpm --filter api db:seed",
     "db:seed:demo": "pnpm --filter api db:seed:demo",
+    "db:seed:bulk": "pnpm --filter api db:seed:bulk",
     "security:audit": "node scripts/audit-check.mjs"
   },
   "devDependencies": {

@@ -1,10 +1,10 @@
 import type { Page } from "@playwright/test";
 import { expect, signedInAs, test } from "./fixtures";
-import { createCustomerViaApi, uniquePhone } from "./support/data";
+import { createCustomerViaApi, createLeadViaApi, uniquePhone } from "./support/data";
 import { E2E_USERS } from "./support/db";
 import { fill, labels } from "./support/labels";
 
-// Leads (brief §3, §4.1; D-019, D-020; docs/13 E2E-116). The journey across consultants is in
+// Leads (brief §3, §4.1; D-019, D-020; docs/13 E2E-116, E2E-102). The journey across consultants is in
 // leads.branch.spec.ts (E2E-117).
 const l = labels.leads;
 const toasts = (page: Page) => page.getByRole("region", { name: labels.common.notifications });
@@ -42,29 +42,71 @@ test.describe("leads as a receptionist", () => {
     await expect(leadsPage.row(name)).toContainText(labels.status.lead.CONSULTING);
   });
 
-  test("D-019: a phone that is already a customer's is refused, and the form links to that customer", async ({
+  test("E2E-102: a phone already in use warns, merges the new contact into the existing lead, and leaves one record", async ({
     page,
     apiAs,
     testTag,
     leadsPage,
+    leadPage,
   }) => {
-    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
-    const phone = (
-      (await (await (await apiAs("RECEPTIONIST")).get(`/api/v1/customers/${customer.id}`)).json()) as { phone: string }
-    ).phone;
+    const reception = await apiAs("RECEPTIONIST");
+    const phone = uniquePhone();
+    const existing = await createLeadViaApi(reception, { fullName: `Khách cũ ${testTag}`, phone });
+
+    await leadsPage.goto();
+    const form = await leadsPage.openAdd();
+    await form.fill({ fullName: `Khách quay lại ${testTag}`, phone, channel: "Zalo" });
+    await form.save();
+
+    // The warning names the existing record; going back keeps what was typed and creates nothing.
+    const warning = form.duplicateDialog;
+    await expect(warning.root).toContainText(existing.leadCode);
+    await expect(warning.root).toContainText(existing.fullName);
+    await warning.backToEdit();
+    await expect(form.field(l.fields.fullName)).toHaveValue(`Khách quay lại ${testTag}`);
+    await form.save();
+    await form.duplicateDialog.mergeInto();
+
+    await expect(toasts(page).getByText(fill(labels.people.inquiryAdded, { code: existing.leadCode }))).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/leads/${existing.id}$`));
+    await expect(leadPage.heading(existing.fullName)).toBeVisible();
+    await expect(leadPage.history.first()).toContainText(fill(l.timeline.inquiry, { channel: "Zalo" }));
+    // The person is one record: no second lead, and the phone is still the existing one's (D-019).
+    const leads = (await (await reception.get(`/api/v1/leads?q=${testTag}`)).json()) as { items: { id: string }[] };
+    expect(leads.items.map((lead) => lead.id)).toEqual([existing.id]);
+    await leadsPage.goto(`?q=${encodeURIComponent(testTag)}`);
+    await expect(leadsPage.table.getByRole("row").filter({ hasText: testTag })).toHaveCount(1);
+  });
+
+  test("E2E-102: a phone that is already a customer's offers the merge too, and the inquiry joins the customer", async ({
+    page,
+    apiAs,
+    testTag,
+    leadsPage,
+    customerDetailPage,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const customer = await createCustomerViaApi(reception, testTag);
+    const phone = ((await (await reception.get(`/api/v1/customers/${customer.id}`)).json()) as { phone: string }).phone;
 
     await leadsPage.goto();
     const form = await leadsPage.openAdd();
     await form.fill({ fullName: `Trùng ${testTag}`, phone, channel: "Zalo" });
     await form.save();
 
-    await expect(form.duplicate).toContainText(
-      fill(labels.people.duplicateCustomer, { code: customer.customerCode, name: customer.fullName }),
-    );
-    await form.duplicate
-      .getByRole("link", { name: fill(labels.people.openExisting, { code: customer.customerCode }) })
-      .click();
+    const warning = form.duplicateDialog;
+    await expect(warning.root).toContainText(customer.customerCode);
+    await expect(warning.openExisting(customer.customerCode)).toBeVisible();
+    await warning.mergeInto();
+
+    await expect(
+      toasts(page).getByText(fill(labels.people.inquiryAdded, { code: customer.customerCode })),
+    ).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/customers/${customer.id}$`));
+    await expect(customerDetailPage.heading(customer.fullName)).toBeVisible();
+    // Still one person with that phone, and no lead was made.
+    const leads = (await (await reception.get(`/api/v1/leads?q=${testTag}`)).json()) as { total: number };
+    expect(leads.total).toBe(0);
   });
 
   test("Khác needs a note, and an edit keeps the lead's code (D-016)", async ({

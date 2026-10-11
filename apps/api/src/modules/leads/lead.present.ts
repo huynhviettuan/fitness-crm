@@ -6,6 +6,7 @@ import { chosen } from "../../platform/options/option.service.js";
 import { isMasked } from "../../platform/permissions/scope.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { leadsVisibleTo } from "../customers/person.service.js";
+import { visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import * as repo from "./lead.repository.js";
 
 /** A lead the actor may see, or NOT_FOUND (docs/07). */
@@ -14,6 +15,20 @@ export async function visibleLead(db: Db, actor: Actor, id: string): Promise<rep
   const lead = await repo.findLead(db, id, leadsVisibleTo(actor));
   if (!lead) throw new AppError("NOT_FOUND");
   return lead;
+}
+
+/**
+ * A lead, or a customer who came in as one (D-019), the actor may see: leads by lead scope,
+ * customers by customer scope and `customer.view` (A-068). A merged record is seen by no one.
+ */
+export async function visiblePerson(db: Db, actor: Actor, id: string): Promise<repo.LeadRecord> {
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+  const visibility = {
+    OR: [leadsVisibleTo(actor), ...(actor.permissions.has("customer.view") ? [customersVisibleTo(actor)] : [])],
+  };
+  const person = await repo.findLead(db, id, visibility);
+  if (!person) throw new AppError("NOT_FOUND");
+  return person;
 }
 
 /** The same, locked until the transaction ends, so two changes of its journey never interleave. */

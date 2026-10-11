@@ -80,6 +80,8 @@ erDiagram
 |---|---|
 | `people` (built as `customers`, T-061; ID document, nationality, health note, and data consent since T-064) | lead_code, customer_code (set at Show), stage (LEAD, CUSTOMER), status (lead statuses, D-020), pic_employee_id, full_name, gender, birth_date, phone (unique per active person), email, nationality_group, nationality, id_document (encrypted), address, health_basic (encrypted), customer_group_option_id, channel_option_id, source_option_id, source_type (ORGANIC, PAID), source_detail, need_group_option_id, need_detail_option_id, need_note, pain_status_option_id, assessment_type_option_id, emergency_contact, consent_at, notes |
 | `person_merges` | kept_person_id, merged_person_id, by, at |
+| `lead_inquiries` (T-065) | person_id, branch_id, channel_option_id, channel_note, source_option_id, source_note, source_type, source_detail, need_group_option_id, need_group_note, need_detail, note, created_by, created_at; one row per later intake on an existing record (BR-202) |
+| `person_merges` (T-065) | survivor_id, merged_id (unique), reason_option_id, reason_note, merged_by, before (the merged record without encrypted values, the conflicting phone and email, the filled fields), created_at; the merged record keeps its row with `merged_into_id` and `merged_at` (no phone), its codes stay reserved (D-038) |
 | `lead_status_history` (built as `lead_status_changes`, T-062) | person_id, from_status (null at creation), to_status, appointment_at, reason_option_id, reason_note, note, by (null: the system), at |
 | `lead_assignments` (T-062) | person_id, from_user_id, to_user_id, by (null: round-robin), at |
 | `lead_round_robin` (T-062) | branch_id, last_user_id: the branch's last receiver of a new lead |

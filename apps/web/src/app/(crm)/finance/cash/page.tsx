@@ -11,10 +11,11 @@ import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { formatMonth } from "@/lib/format";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { financeSummary, listCashTransactions } from "@/lib/api/finance";
 import { CashTable, RecordCashButton } from "../cash";
 import { FinanceTabs, MonthNav } from "../finance-nav";
-import { pageParam, selectedMonth } from "../month";
+import { selectedMonth } from "../month";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;
@@ -32,9 +33,10 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
   const t = await getTranslations("finance");
   const params = await searchParams;
   const month = selectedMonth(params.month);
+  const { page, pageSize } = readPaging(params);
   const [summary, result] = await Promise.all([
     financeSummary(month.query),
-    listCashTransactions({ ...month.query, page: pageParam(params.page) }),
+    listCashTransactions({ ...month.query, page, pageSize }),
   ]);
   // OQ-007 interim: payments and other income are separate lines, and there is no net figure.
   const totals = [
@@ -77,7 +79,8 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
             page={result.page}
             pageSize={result.pageSize}
             total={result.total}
-            hrefFor={(page) => `/finance/cash?month=${month.param}${page > 1 ? `&page=${page}` : ""}`}
+            path="/finance/cash"
+            params={params}
           />
         }
       />

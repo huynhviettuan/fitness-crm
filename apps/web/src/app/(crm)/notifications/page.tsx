@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
+import { readPaging } from "@/lib/paging";
 import { listNotifications } from "@/lib/api/notifications";
 import { MarkAllReadButton, NotificationList } from "./notification-list";
 
@@ -19,10 +20,8 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
   await requirePageUser();
   const t = await getTranslations("notifications");
   const params = await searchParams;
-  const page = Math.max(1, Number(params.page) || 1);
-  const result = await listNotifications({ page });
-  const hrefFor = (target: number) => (target > 1 ? `/notifications?page=${target}` : "/notifications");
-
+  const { page, pageSize } = readPaging(params);
+  const result = await listNotifications({ page, pageSize });
   return (
     <>
       <PageHeader
@@ -32,7 +31,13 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
       />
       <NotificationList notifications={result.items} />
       <div className="mt-4">
-        <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+        <TablePagination
+          page={result.page}
+          pageSize={result.pageSize}
+          total={result.total}
+          path="/notifications"
+          params={params}
+        />
       </div>
     </>
   );

@@ -20,14 +20,23 @@ import { FieldGroup } from "@/components/ui/field";
 import { DateTime } from "@/components/date-time";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
+import { OptionSelect } from "@/components/option-select";
 import { StatusBadge } from "@/components/status-badge";
-import { offsetParts, showInputSchema, stepCompleteSchema, type Lead, type LeadStep } from "@flow/shared/leads";
+import {
+  leadStatusChangeSchema,
+  offsetParts,
+  showInputSchema,
+  stepCompleteSchema,
+  type Lead,
+  type LeadStep,
+} from "@flow/shared/leads";
 import { useSubmit } from "../admin/users/user-dialogs";
 import { completeLeadStepAction } from "./actions";
 import { ShowFields, showDefaults, type ShowValues } from "./lead-visit";
 
-const withShow = stepCompleteSchema.extend({ show: showInputSchema });
-const withoutShow = stepCompleteSchema.omit({ show: true });
+// Each result's own details are checked only when it is chosen; see the resolver.
+const withShow = stepCompleteSchema.omit({ book: true, refuse: true }).extend({ show: showInputSchema });
+const withoutShow = stepCompleteSchema.omit({ show: true, book: true, refuse: true });
 const emptyShow: ShowValues = {
   idDocumentType: "CCCD",
   idDocumentNumber: "",
@@ -38,6 +47,31 @@ const emptyShow: ShowValues = {
   healthNote: "",
   consent: false,
 };
+
+const emptyBook = { appointmentDate: "", appointmentTime: "" };
+const emptyRefuse = { refuseReasonId: "", refuseReasonNote: "" };
+
+type StepEffect = LeadStep["results"][number]["effect"];
+
+/**
+ * The re-care results' own checks (BR-204): the same as the lead's status change, so the
+ * appointment and the refusal reason are checked the way the status dialog checks them.
+ */
+function statusErrors(effect: "BOOK" | "REFUSE", values: { book: typeof emptyBook; refuse: typeof emptyRefuse }) {
+  const parsed = leadStatusChangeSchema.safeParse(
+    effect === "BOOK" ? { status: "BOOKED", ...values.book } : { status: "REFUSED", ...values.refuse },
+  );
+  const prefix = effect === "BOOK" ? "book" : "refuse";
+  const errors: Record<string, Record<string, { type: string; message: string }>> = {};
+  if (parsed.success) return errors;
+  for (const issue of parsed.error.issues) {
+    const field = String(issue.path[0]);
+    if (field === "note") continue;
+    errors[prefix] ??= {};
+    errors[prefix][field] ??= { type: "validation", message: issue.message };
+  }
+  return errors;
+}
 
 type Labelled = { labelVi: string; labelEn: string };
 type Trigger = Pick<LeadStep, "trigger" | "triggerStatus" | "triggerStepKey" | "offsetMinutes">;
@@ -149,22 +183,42 @@ export function CompleteStepButton({
   const label = useLabel();
   const [open, setOpen] = useState(false);
   const { pending, run } = useSubmit();
-  const form = useForm<{ resultIndex: string; note: string; show: ShowValues }>({
-    // The Show details are checked only when the chosen result converts the lead (D-019).
-    resolver: (values, context, options) =>
-      zodResolver(converts(values.resultIndex) ? withShow : withoutShow, undefined, { raw: true })(
+  const effectOf = (resultIndex: string): StepEffect => step.results[Number(resultIndex)]?.effect ?? null;
+  const form = useForm<{
+    resultIndex: string;
+    note: string;
+    show: ShowValues;
+    book: typeof emptyBook;
+    refuse: typeof emptyRefuse;
+  }>({
+    // The Show details are checked only when the chosen result converts the lead (D-019); the
+    // appointment or the refusal reason only when it books or refuses the lead (BR-204).
+    resolver: async (values, context, options) => {
+      const effect = effectOf(values.resultIndex);
+      const base = await zodResolver(effect === "SHOW" ? withShow : withoutShow, undefined, { raw: true })(
         values as never,
         context,
         options as never,
-      ) as never,
+      );
+      if (effect !== "BOOK" && effect !== "REFUSE") return base as never;
+      const errors = statusErrors(effect, values);
+      return (
+        Object.keys(errors).length > 0 || Object.keys(base.errors).length > 0
+          ? { values: {}, errors: { ...base.errors, ...errors } }
+          : base
+      ) as never;
+    },
     defaultValues: {
       resultIndex: step.results.length === 1 ? "0" : "",
       note: "",
       show: lead ? showDefaults(lead, t("visit.vietnam")) : { ...emptyShow, nationality: "" },
+      book: emptyBook,
+      refuse: emptyRefuse,
     },
   });
-  const converts = (resultIndex: string) => step.results[Number(resultIndex)]?.effect === "SHOW";
+  const converts = (resultIndex: string) => effectOf(resultIndex) === "SHOW";
   const chosen = useWatch({ control: form.control, name: "resultIndex" });
+  const effect = effectOf(chosen);
   const onSubmit = form.handleSubmit((values) =>
     run(
       () =>
@@ -172,6 +226,8 @@ export function CompleteStepButton({
           resultIndex: values.resultIndex,
           note: values.note,
           ...(converts(values.resultIndex) ? { show: values.show as never } : {}),
+          ...(effectOf(values.resultIndex) === "BOOK" ? { book: values.book } : {}),
+          ...(effectOf(values.resultIndex) === "REFUSE" ? { refuse: values.refuse } : {}),
         }),
       (fieldErrors) => applyFieldErrors(form.setError, fieldErrors),
       () => {
@@ -212,6 +268,33 @@ export function CompleteStepButton({
                 options={step.results.map((result, index) => ({ value: String(index), label: label(result) }))}
               />
               {converts(chosen) && <ShowFields control={form.control} prefix="show." />}
+              {effect === "BOOK" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField
+                    control={form.control}
+                    name="book.appointmentDate"
+                    label={t("leads.fields.appointmentDate")}
+                    placeholder={t("leads.datePlaceholder")}
+                    autoComplete="off"
+                  />
+                  <TextField
+                    control={form.control}
+                    name="book.appointmentTime"
+                    label={t("leads.fields.appointmentTime")}
+                    placeholder={t("leads.timePlaceholder")}
+                    inputMode="numeric"
+                  />
+                </div>
+              )}
+              {effect === "REFUSE" && (
+                <OptionSelect
+                  control={form.control}
+                  name="refuse.refuseReasonId"
+                  noteName="refuse.refuseReasonNote"
+                  listKey="leadRefuseReasons"
+                  label={t("leads.fields.refuseReason")}
+                />
+              )}
               <TextField control={form.control} name="note" label={t("checklist.note")} multiline />
             </FieldGroup>
             <DialogFooter>

@@ -137,6 +137,6 @@ export function claimDueSteps(db: Db, now: Date) {
     FROM "customers" AS c, "consulting_step_templates" AS t
     WHERE s."customer_id" = c."id" AND s."template_id" = t."id"
       AND s."done_at" IS NULL AND s."due_at" <= ${now} AND s."due_notified_at" IS NULL
-      AND c."stage" = 'LEAD' AND c."pic_user_id" IS NOT NULL
+      AND c."stage" = 'LEAD' AND c."merged_into_id" IS NULL AND c."pic_user_id" IS NOT NULL
     RETURNING c."id" AS customer_id, c."lead_code", c."full_name", c."pic_user_id", t."label_vi", t."label_en"`;
 }

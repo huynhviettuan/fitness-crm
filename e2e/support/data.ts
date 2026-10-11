@@ -210,3 +210,38 @@ export async function branchWithConsultants(admin: APIRequestContext, tag: strin
   }
   return { branchId, consultants };
 }
+
+/** The re-care statuses a lead can be put in for a test (BR-204). */
+export type RecareStatus = "NO_RESPONSE" | "REFUSED" | "NO_SHOW";
+
+/**
+ * A lead in re-care, through the real status changes: Refused (with "Khác" and a note),
+ * No response, or No show (booked, then missed). `consultant` works the lead; in the
+ * shared branch the lead goes to the E2E consultant (BR-203).
+ */
+export async function leadInRecareViaApi(
+  apis: { reception: APIRequestContext; consultant: APIRequestContext },
+  data: { fullName: string; status: RecareStatus; phone?: string; branchId?: string },
+): Promise<CreatedLead> {
+  const { status, ...lead } = data;
+  const created = await createLeadViaApi(apis.reception, lead);
+  const change = async (body: unknown) => {
+    const response = await apis.consultant.post(`/api/v1/leads/${created.id}/status`, { data: body });
+    if (response.status() !== 200)
+      throw new Error(`Status setup failed: ${response.status()} ${await response.text()}`);
+  };
+  if (status === "NO_SHOW") {
+    await change({ status: "BOOKED", appointmentDate: "20/10/2030", appointmentTime: "18:30" });
+    const missed = await apis.consultant.post(`/api/v1/leads/${created.id}/no-show`);
+    if (missed.status() !== 200) throw new Error(`No-show setup failed: ${missed.status()}`);
+  } else if (status === "REFUSED") {
+    await change({
+      status,
+      refuseReasonId: await otherOptionId(apis.consultant, "leadRefuseReasons"),
+      refuseReasonNote: "E2E",
+    });
+  } else {
+    await change({ status });
+  }
+  return created;
+}

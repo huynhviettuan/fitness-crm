@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { filterValue } from "@/lib/filters";
 import { getApprovalSummary } from "@/lib/api/approvals";
 import { getTaskAssignees, listTasks } from "@/lib/api/tasks";
@@ -44,21 +45,20 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
   const status = TASK_STATUSES.find((value) => value === filterValue(params.status));
   const overdueOnly = filterValue(params.deadline) === "overdue";
   const q = filterValue(params.q) ?? "";
-  const page = Math.max(1, Number(params.page) || 1);
+  const { page, pageSize } = readPaging(params);
   const [result, approvals, assignees] = await Promise.all([
-    listTasks({ view, status, overdueOnly, q, page }),
+    listTasks({ view, status, overdueOnly, q, page, pageSize }),
     view === "mine" ? getApprovalSummary() : Promise.resolve(null),
     can(user, "task.create") ? getTaskAssignees() : Promise.resolve(null),
   ]);
 
-  const query = (target: { view?: string; page?: number }) => {
+  const query = (target: { view?: string }) => {
     const search = new URLSearchParams();
     search.set("view", target.view ?? view);
     if (!target.view) {
       if (status) search.set("status", status);
       if (overdueOnly) search.set("deadline", "overdue");
       if (q) search.set("q", q);
-      if (target.page && target.page > 1) search.set("page", String(target.page));
     }
     return `/tasks?${search.toString()}`;
   };
@@ -146,7 +146,8 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
                 page={result.page}
                 pageSize={result.pageSize}
                 total={result.total}
-                hrefFor={(target) => query({ page: target })}
+                path="/tasks"
+                params={params}
               />
             }
           />

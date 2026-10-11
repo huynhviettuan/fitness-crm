@@ -16,6 +16,17 @@ export class CompleteStepDialog {
     await this.page.getByRole("listbox").getByRole("option", { name: result, exact: true }).click();
   }
 
+  /** A field of the chosen result's own details (the appointment of "Đặt lịch", the reason of "Từ chối"). */
+  field(label: string): Locator {
+    return this.root.getByLabel(label, { exact: true });
+  }
+
+  /** A drop-down of the result's own details, e.g. the refusal reason. */
+  async pick(label: string, option: string): Promise<void> {
+    await this.root.getByRole("combobox", { name: label, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: option, exact: true }).click();
+  }
+
   async note(text: string): Promise<void> {
     await this.root.getByLabel(c.note, { exact: true }).fill(text);
   }

@@ -1,5 +1,16 @@
 # Documentation Changelog
 
+## 2026-10-12 — M2 slice 5: re-care and merge
+
+- **Danh sách tái chăm sóc** (FR-LEAD-007, BR-204): a new menu item lists the leads in No response, Refused, or No show by the day to contact them again (those without a date last). Filters: status, overdue; mine (default) or all. It works on a phone.
+- **Re-care step results** (brief §4.1 step 10): "Đặt lịch" asks for the appointment and books the lead again, so the pre-visit steps start again; "Từ chối" asks for the reason and sets the next contact-again day, 15 days after today each time (A-062). A lead entering re-care notifies its consultant and the managers.
+- **Duplicate phone** (BR-202, FR-LEAD-009): the quick form answers that the phone already has a record and offers "Gộp vào hồ sơ này": the new channel, source, need, and note are added to the existing lead or customer as an inquiry on its timeline, and no second record is created. A returning lead stays with its consultant while they still receive leads, and comes back to Consulting from re-care (A-063).
+- **Merge two records** (D-019): managers (new permission `lead.merge`: Admin, Fitness Manager) merge a duplicate from the lead or customer page. The customer is kept, or the older of two leads; empty fields are filled, never overwritten; history, tasks, and steps move; the other record goes to the trash with the reason and its codes stay reserved. Merging two customers is refused until OQ-033 is answered (A-064 to A-067).
+- Customer page: inquiries and merges are listed under the details (needs `customer.view` for customer records, A-068).
+- API: `GET /leads/recare`, `POST /leads/intake`, `POST /persons/:id/inquiries`, `GET /persons/:id/intake-history`, `POST /persons/:id/merge`; errors `DUPLICATE_PHONE`, `MERGE_CUSTOMERS_UNSUPPORTED`, `PERSON_ALREADY_MERGED`; notifications `leadRecare`, `leadInquiry`, `personMerged`.
+- Tests: unit (shared 142, web 286, API 124), integration 341, E2E and security 385.
+- Docs: 04, 05, 06, 07, 09, 16, 18 (T-065, A-062 to A-068, OQ-033; A-051 amended), 28.
+
 ## 2026-10-11 — Slice plan
 
 - New `docs/28_SLICE_PLAN.md`: every remaining slice from M2.5 to M11. Each slice lists what it builds, its sources, data, API, and screens, the tests to write, the decisions to settle before coding, and what it depends on. Plan-level proposals: the consulting-Excel import moves to M3 for AC-08; a shared Excel export in M3.1; file storage in M4.1; staging before the M2 trial; an email outbox from M5.4.

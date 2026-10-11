@@ -12,7 +12,7 @@ import { nextCustomerCode } from "../customers/customer.repository.js";
 import * as repo from "./lead.repository.js";
 import { lockedLead, present } from "./lead.present.js";
 import { applyJourneyEvent, finishOutcomeStep } from "./checklist.engine.js";
-import { contactAgainDay } from "./lead-journey.service.js";
+import { contactAgainDay, notifyRecare } from "./lead-journey.service.js";
 
 // The visit (brief §3 stage 3, §4.1; D-019): the lead showed and becomes a customer in
 // the same record, or did not and goes to re-care. Recorded from the lead's buttons or
@@ -150,6 +150,7 @@ export async function recordNoShow(
     before: { leadStatus: "BOOKED", appointmentAt: lead.appointmentAt, contactAgainOn: lead.contactAgainOn },
     after: { leadStatus: "NO_SHOW", appointmentAt: null, contactAgainOn },
   });
+  await notifyRecare(db, actor, after);
   return after;
 }
 

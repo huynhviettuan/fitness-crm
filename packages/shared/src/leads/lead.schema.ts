@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { branchChoice } from "../branches/branch.schema.js";
 import { GENDERS } from "../employees/employee.schema.js";
-import { optionNote } from "../options/option.schema.js";
+import { optionChoice, optionNote } from "../options/option.schema.js";
 import { formatCode } from "../parameters/parameter.schema.js";
 import { calendarDate, hasNoControlCharacters, normalizePhone, parseDateOnly, timeOfDay } from "../validation/index.js";
-import { MANUAL_LEAD_STATUSES } from "./lead.domain.js";
+import { MANUAL_LEAD_STATUSES, RECARE_STATUSES } from "./lead.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Form inputs send "" for an empty optional field; it is stored as null.
@@ -178,7 +178,58 @@ export const leadStatusChangeSchema = z
 export const leadAssignSchema = z.object({ userId: z.uuid({ error: "required" }) });
 
 export type LeadStatusChangeInput = z.input<typeof leadStatusChangeSchema>;
+/** A status change as parsed: the appointment and refusal reason checked in shape. */
+export type LeadStatusChange = z.output<typeof leadStatusChangeSchema>;
 export type LeadAssignInput = z.input<typeof leadAssignSchema>;
 export type LeadInput = z.input<typeof leadInputSchema>;
 export type LeadData = z.output<typeof leadInputSchema>;
 export type LeadUpdateInput = z.input<typeof leadUpdateSchema>;
+
+/**
+ * The same person wrote or came in again (BR-202, FR-LEAD-009): the intake form's channel,
+ * source, and need, and a note, added to the existing record as a new inquiry (A-063).
+ */
+export const leadInquiryInputSchema = z.object({
+  channelId: leadFields.channelId,
+  channelNote: leadFields.channelNote,
+  sourceId: leadFields.sourceId,
+  sourceNote: leadFields.sourceNote,
+  sourceType: leadFields.sourceType,
+  sourceDetail: leadFields.sourceDetail,
+  needGroupId: leadFields.needGroupId,
+  needGroupNote: leadFields.needGroupNote,
+  needDetail: leadFields.needDetail,
+  note: leadFields.notes,
+});
+
+/**
+ * "Danh sách tái chăm sóc" (FR-LEAD-007): leads in No response, Refused, or No show, by
+ * contact-again day. `scope` mine: in my charge; all: every lead I may see.
+ */
+export const recareQuerySchema = z.object({
+  status: optional(z.enum(RECARE_STATUSES, { error: "invalidChoice" })),
+  picUserId: optional(z.uuid({ error: "invalidChoice" })),
+  /** Only those whose contact-again day has passed. */
+  overdue: z
+    .union([z.boolean(), z.enum(["true", "false", ""])])
+    .transform((value) => value === true || value === "true")
+    .prefault(false),
+  scope: z.enum(["mine", "all"], { error: "invalidChoice" }).prefault("mine"),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
+});
+
+/**
+ * A manager merges two records of one person (BR-202, A-064): `mergedId` goes to the trash
+ * with the reason ("deleteReasons", "Khác" needs a note); the other record, the one named
+ * in the path, survives or not by the rule of A-064 (the response says which).
+ */
+export const mergeInputSchema = z.object({
+  mergedId: z.uuid({ error: "required" }),
+  reasonId: optionChoice,
+  reasonNote: optionNote,
+});
+
+export type LeadInquiryInput = z.input<typeof leadInquiryInputSchema>;
+export type RecareQuery = z.output<typeof recareQuerySchema>;
+export type MergeInput = z.input<typeof mergeInputSchema>;

@@ -67,8 +67,9 @@ test.describe("leads on a phone (AC-23)", () => {
 
   test("E2E-117: a consultant adds a lead, sees only their own, books an appointment, and finds it on the board", async ({
     apiAs,
+    apiSignedIn,
+    page,
     testTag,
-    loginPage,
     shell,
     leadsPage,
     leadPage,
@@ -81,9 +82,9 @@ test.describe("leads on a phone (AC-23)", () => {
     const mine = leads[0];
     const me = consultants.find((c) => c.id === mine.pic?.id)!;
 
-    await loginPage.goto();
-    await loginPage.signIn(me.email, me.password);
-    await expect(shell.pageHeading(labels.dashboard.title)).toBeVisible();
+    // The sign-in screen has its own specs; here the session comes from the API.
+    const session = await apiSignedIn(me.email, me.password);
+    await page.context().addCookies((await session.storageState()).cookies);
     await leadsPage.goto();
     await expect(leadsPage.addButton).toBeVisible();
     // Nothing on the page is wider than the phone.

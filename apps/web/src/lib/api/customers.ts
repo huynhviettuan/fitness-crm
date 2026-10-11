@@ -7,11 +7,13 @@ import {
 } from "@flow/shared/customers";
 import { api, query, read } from "./client";
 
-export async function listCustomers(params: { q?: string; page?: number }) {
+export async function listCustomers(params: { q?: string; page?: number; pageSize?: number }) {
   const client = await api();
   return read(
     customerPageSchema,
-    client.GET("/api/v1/customers", { params: { query: query({ search: params.q, page: params.page }) } }),
+    client.GET("/api/v1/customers", {
+      params: { query: query({ search: params.q, page: params.page, pageSize: params.pageSize }) },
+    }),
   );
 }
 

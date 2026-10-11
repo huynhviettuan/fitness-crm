@@ -9,9 +9,10 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { collectedBetween, listPayments } from "@/lib/api/finance";
 import { FinanceTabs, MonthNav } from "../finance-nav";
-import { pageParam, selectedMonth } from "../month";
+import { selectedMonth } from "../month";
 import { PaymentsTable } from "../payments";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
@@ -30,8 +31,9 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
   const t = await getTranslations("finance");
   const params = await searchParams;
   const month = selectedMonth(params.month);
+  const { page, pageSize } = readPaging(params);
   const [result, collected] = await Promise.all([
-    listPayments({ ...month.query, page: pageParam(params.page) }),
+    listPayments({ ...month.query, page, pageSize }),
     collectedBetween(month.query),
   ]);
 
@@ -54,7 +56,8 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
             page={result.page}
             pageSize={result.pageSize}
             total={result.total}
-            hrefFor={(page) => `/finance/payments?month=${month.param}${page > 1 ? `&page=${page}` : ""}`}
+            path="/finance/payments"
+            params={params}
           />
         }
       />

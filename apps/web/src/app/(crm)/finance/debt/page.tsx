@@ -7,10 +7,10 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { listDebts } from "@/lib/api/finance";
 import { ContractsTable } from "../../contracts/contracts-table";
 import { FinanceTabs } from "../finance-nav";
-import { pageParam } from "../month";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;
@@ -26,7 +26,9 @@ export default async function DebtPage({ searchParams }: PageProps<"/finance/deb
   if (!can(user, "payment.view")) return <ForbiddenState />;
 
   const t = await getTranslations("finance");
-  const result = await listDebts({ page: pageParam((await searchParams).page) });
+  const params = await searchParams;
+  const { page, pageSize } = readPaging(params);
+  const result = await listDebts({ page, pageSize });
 
   return (
     <>
@@ -41,7 +43,8 @@ export default async function DebtPage({ searchParams }: PageProps<"/finance/deb
             page={result.page}
             pageSize={result.pageSize}
             total={result.total}
-            hrefFor={(page) => (page > 1 ? `/finance/debt?page=${page}` : "/finance/debt")}
+            path="/finance/debt"
+            params={params}
           />
         }
       />

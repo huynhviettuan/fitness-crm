@@ -9,6 +9,7 @@ import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { filterValue } from "@/lib/filters";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { listAuditEvents } from "@/lib/api/history";
 import { listUsers } from "@/lib/api/users";
 import { AUDIT_ENTITY_TYPES } from "@flow/shared/audit";
@@ -41,21 +42,12 @@ export default async function AuditPage({ searchParams }: PageProps<"/admin/audi
   const actorUserId = id(filterValue(params.actor));
   const from = day(filterValue(params.from));
   const to = day(filterValue(params.to));
-  const page = Math.max(1, Number(params.page) || 1);
+  const { page, pageSize } = readPaging(params);
   // The user filter lists accounts only for someone who manages them.
   const [result, users] = await Promise.all([
-    listAuditEvents({ entityType, entityId, actorUserId, from, to, page }),
+    listAuditEvents({ entityType, entityId, actorUserId, from, to, page, pageSize }),
     can(user, "user.manage") ? listUsers() : Promise.resolve([]),
   ]);
-
-  const filters = { entity: entityType, record: entityId, actor: actorUserId, from, to };
-  const hrefFor = (target: number) => {
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(filters)) if (value) query.set(key, value);
-    if (target > 1) query.set("page", String(target));
-    const search = query.toString();
-    return search ? `/admin/audit?${search}` : "/admin/audit";
-  };
 
   return (
     <>
@@ -87,7 +79,13 @@ export default async function AuditPage({ searchParams }: PageProps<"/admin/audi
             events={result.items}
             empty={<EmptyState icon={HistoryIcon} title={t("empty")} />}
             footer={
-              <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+              <TablePagination
+                page={result.page}
+                pageSize={result.pageSize}
+                total={result.total}
+                path="/admin/audit"
+                params={params}
+              />
             }
           />
         </div>

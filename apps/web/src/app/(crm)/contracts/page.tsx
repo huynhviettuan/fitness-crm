@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { listContracts } from "@/lib/api/contracts";
 import { ContractsTable } from "./contracts-table";
 
@@ -27,18 +28,9 @@ export default async function ContractsPage({ searchParams }: PageProps<"/contra
   const t = await getTranslations("contracts");
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim() : "";
-  const requestedPage = Number(params.page);
-  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const { page, pageSize } = readPaging(params);
 
-  const result = await listContracts({ q, page });
-
-  const hrefFor = (target: number) => {
-    const query = new URLSearchParams();
-    if (q) query.set("q", q);
-    if (target > 1) query.set("page", String(target));
-    const search = query.toString();
-    return search ? `/contracts?${search}` : "/contracts";
-  };
+  const result = await listContracts({ q, page, pageSize });
 
   return (
     <>
@@ -64,7 +56,13 @@ export default async function ContractsPage({ searchParams }: PageProps<"/contra
           )
         }
         footer={
-          <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+          <TablePagination
+            page={result.page}
+            pageSize={result.pageSize}
+            total={result.total}
+            path="/contracts"
+            params={params}
+          />
         }
       />
     </>

@@ -94,7 +94,7 @@ The model above runs in the API (T-054) for the resources that exist today. Scre
 | Group | Permission keys |
 |---|---|
 | System | `user.manage`, `role.manage`, `branch.manage` |
-| Leads | `lead.view`, `lead.create`, `lead.manage` (edit and change status; Admin, Fitness Manager, Consulting, Receptionist; M2 slice 1), `lead.assign` (reassign, told of new leads; Admin, Fitness Manager), `lead.receive` (in the round-robin; Consulting; M2 slice 2) |
+| Leads | `lead.view`, `lead.create`, `lead.manage` (edit and change status; Admin, Fitness Manager, Consulting, Receptionist; M2 slice 1), `lead.assign` (reassign, told of new leads; Admin, Fitness Manager), `lead.receive` (in the round-robin; Consulting; M2 slice 2), `lead.merge` (merge two records of one person; Admin, Fitness Manager; M2 slice 5, A-065) |
 | Customers | `customer.view`, `customer.manage` |
 | Contract operations | `contract.view`, `contract.create`, `contract.approve`, `contract.cancel` |
 | PT schedule | `booking.view`, `booking.manage`, `session.checkIn`, `session.complete` |

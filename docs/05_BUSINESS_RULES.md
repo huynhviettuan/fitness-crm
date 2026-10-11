@@ -15,9 +15,9 @@ Rules are binding. Values written here are **initial configuration** (D-015) unl
 ## Leads and customers
 
 - **BR-201** One person has one record; a lead becomes a customer at Show and keeps its ID (D-019).
-- **BR-202** A new lead or contact with a phone number already in use triggers a duplicate warning and a merge proposal; no second record is created (D-019).
+- **BR-202** A new lead or contact with a phone number already in use triggers a duplicate warning and a merge proposal; no second record is created (D-019). Built (M2 slice 5): the quick form answers `DUPLICATE_PHONE`; "Gộp vào hồ sơ này" adds the new inquiry to the existing lead or customer; managers merge two existing records (A-063 to A-068).
 - **BR-203** Leads are assigned round-robin to active consultants of the branch; managers may reassign (D-020, OQ-017).
-- **BR-204** Refused requires a reason. Refused, No response, and No show leads enter the re-care queue with a contact-again date (initially 15 days) and are never closed (D-020, OQ-018).
+- **BR-204** Refused requires a reason. Refused, No response, and No show leads enter the re-care queue with a contact-again date (initially 15 days) and are never closed (D-020, OQ-018). The next contact-again day is `recareDays` after today every time (A-062); the lead stays with its consultant, who and the managers are notified (M2 slice 5).
 - **BR-205** Each consulting step creates a task with a deadline from the checklist; its result is a drop-down; it is marked on time, late, or skipped. Checklist changes apply only to new leads (D-020).
 - **BR-206** Converting to a customer requires ID card/passport, birth date, nationality, and email (brief §4.1, D-036).
 - **BR-207** Customer status is derived from contracts: training, expiring soon, expired, on hold, no contract (D-040).

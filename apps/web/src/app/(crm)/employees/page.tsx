@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
+import { readPaging } from "@/lib/paging";
 import { filterValue } from "@/lib/filters";
 import { listOptions } from "@/lib/api/configuration";
 import { listEmployeeLogins, listEmployees } from "@/lib/api/employees";
@@ -38,25 +39,14 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
   const departments = await listOptions("departments", true);
   const departmentId = departments.find((option) => option.id === filterValue(params.department))?.id;
   const trainersOnly = filterValue(params.kind) === "trainers";
-  const page = Math.max(1, Number(params.page) || 1);
+  const { page, pageSize } = readPaging(params);
   const canManage = can(user, "employee.manage");
 
   const [result, logins] = await Promise.all([
-    listEmployees({ q, status, departmentId, trainersOnly, page }),
+    listEmployees({ q, status, departmentId, trainersOnly, page, pageSize }),
     canManage ? listEmployeeLogins() : Promise.resolve([]),
   ]);
   const filtered = Boolean(q || status || departmentId || trainersOnly);
-
-  const hrefFor = (target: number) => {
-    const query = new URLSearchParams();
-    if (q) query.set("q", q);
-    if (status) query.set("status", status);
-    if (departmentId) query.set("department", departmentId);
-    if (trainersOnly) query.set("kind", "trainers");
-    if (target > 1) query.set("page", String(target));
-    const search = query.toString();
-    return search ? `/employees?${search}` : "/employees";
-  };
 
   return (
     <>
@@ -118,7 +108,13 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
               )
             }
             footer={
-              <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+              <TablePagination
+                page={result.page}
+                pageSize={result.pageSize}
+                total={result.total}
+                path="/employees"
+                params={params}
+              />
             }
           />
         </div>

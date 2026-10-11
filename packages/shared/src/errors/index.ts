@@ -13,6 +13,12 @@ export const ERROR_HTTP_STATUS = {
   EMAIL_ALREADY_USED: 409,
   // D-019: one person, one record; the answer names the record that has the phone.
   PHONE_ALREADY_USED: 409,
+  // D-019, BR-202: the lead intake finds the phone on an existing record and offers to add the inquiry to it.
+  DUPLICATE_PHONE: 409,
+  // A-064, OQ-033: two customers are not merged in this slice (contracts, receipts, sessions would move).
+  MERGE_CUSTOMERS_UNSUPPORTED: 409,
+  // One of the two records was already merged into another (also the second of two concurrent merges).
+  PERSON_ALREADY_MERGED: 409,
   CANNOT_CHANGE_OWN_ACCESS: 409,
   INVALID_STATUS_TRANSITION: 409,
   CONTRACT_NOT_EDITABLE: 409,
@@ -53,7 +59,7 @@ export const apiErrorSchema = z
     message: z.string(),
     details: z.object({
       fieldErrors: z.record(z.string(), z.array(z.string())).optional(),
-      /** PHONE_ALREADY_USED: the person who has the phone, when the user may see them. */
+      /** PHONE_ALREADY_USED, DUPLICATE_PHONE: the person who has the phone, when the user may see them. */
       duplicate: duplicatePersonSchema.optional(),
     }),
   })

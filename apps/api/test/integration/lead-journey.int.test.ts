@@ -185,7 +185,11 @@ describe("reassigning a lead (BR-203)", () => {
     const timeline = await leadTimeline(manager, lead.id);
     expect(
       timeline.items.map((entry) =>
-        entry.kind === "status" ? `${entry.fromStatus}→${entry.toStatus}` : `→${entry.to.id}`,
+        entry.kind === "status"
+          ? `${entry.fromStatus}→${entry.toStatus}`
+          : entry.kind === "assignment"
+            ? `→${entry.to.id}`
+            : entry.kind,
       ),
     ).toEqual(["NEW→CONSULTING", `→${consultant.id}`, "null→NEW"]);
     expect(timeline.items[0].by?.id).toBe(manager.id);
