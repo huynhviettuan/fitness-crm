@@ -8,7 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { PencilIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { CheckboxListField, SwitchField, TextField, applyFieldErrors } from "@/components/form-fields";
@@ -27,19 +34,40 @@ export function ApprovalRulesTable({ rules, roles }: { rules: ApprovalRule[]; ro
   const [editing, setEditing] = useState<ApprovalRule | null>(null);
 
   const columns: DataTableColumn<ApprovalRule>[] = [
-    { id: "action", header: t("fields.action"), cell: ({ row }) => <span className="font-medium">{ta(`actions.${messageKey(row.original.action)}`)}</span> },
+    {
+      id: "action",
+      header: t("fields.action"),
+      cell: ({ row }) => <span className="font-medium">{ta(`actions.${messageKey(row.original.action)}`)}</span>,
+    },
     {
       id: "required",
       header: t("fields.required"),
-      cell: ({ row }) => <Badge variant={row.original.required ? "default" : "secondary"}>{row.original.required ? t("on") : t("off")}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant={row.original.required ? "default" : "secondary"}>
+          {row.original.required ? t("on") : t("off")}
+        </Badge>
+      ),
     },
-    { id: "approvers", header: t("fields.approvers"), cell: ({ row }) => row.original.approvers.map((role) => role.name).join(", ") || "—" },
-    { id: "overdueHours", header: t("fields.overdueHours"), cell: ({ row }) => t("hours", { hours: row.original.overdueHours }) },
+    {
+      id: "approvers",
+      header: t("fields.approvers"),
+      cell: ({ row }) => row.original.approvers.map((role) => role.name).join(", ") || "—",
+    },
+    {
+      id: "overdueHours",
+      header: t("fields.overdueHours"),
+      cell: ({ row }) => t("hours", { hours: row.original.overdueHours }),
+    },
     {
       id: "actions",
       header: () => <span className="sr-only">{t("edit")}</span>,
       cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => setEditing(row.original)} aria-label={t("editLabel", { name: ta(`actions.${messageKey(row.original.action)}`) })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setEditing(row.original)}
+          aria-label={t("editLabel", { name: ta(`actions.${messageKey(row.original.action)}`) })}
+        >
           <PencilIcon />
           {t("edit")}
         </Button>
@@ -63,7 +91,11 @@ function RuleDialog({ rule, roles, onClose }: { rule: ApprovalRule; roles: RoleO
   const { pending, run } = useSubmit();
   const form = useForm<RuleValues>({
     resolver: zodResolver(approvalRuleInputSchema, undefined, { raw: true }) as never,
-    defaultValues: { required: rule.required, approverRoleIds: rule.approvers.map((role) => role.id), overdueHours: String(rule.overdueHours) },
+    defaultValues: {
+      required: rule.required,
+      approverRoleIds: rule.approvers.map((role) => role.id),
+      overdueHours: String(rule.overdueHours),
+    },
   });
   const onSubmit = form.handleSubmit((values) =>
     run(
@@ -94,7 +126,12 @@ function RuleDialog({ rule, roles, onClose }: { rule: ApprovalRule; roles: RoleO
               description={t("approvalRules.approversHint")}
               options={roles.map((role) => ({ value: role.id, label: role.name }))}
             />
-            <TextField control={form.control} name="overdueHours" label={t("approvalRules.fields.overdueHours")} inputMode="numeric" />
+            <TextField
+              control={form.control}
+              name="overdueHours"
+              label={t("approvalRules.fields.overdueHours")}
+              inputMode="numeric"
+            />
           </FieldGroup>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={pending}>

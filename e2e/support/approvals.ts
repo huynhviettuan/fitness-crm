@@ -4,7 +4,11 @@ import type { APIRequestContext } from "@playwright/test";
  * Approves the pending request about `entityId` (and `action`) as `approver` (D-018), through the
  * same inbox endpoint a person uses. The approver must not be the submitter.
  */
-export async function approvePendingViaApi(approver: APIRequestContext, entityId: string, action?: string): Promise<void> {
+export async function approvePendingViaApi(
+  approver: APIRequestContext,
+  entityId: string,
+  action?: string,
+): Promise<void> {
   const inbox = await approver.get("/api/v1/approvals?view=toDecide&pageSize=100");
   if (!inbox.ok()) throw new Error(`Approvals inbox: ${inbox.status()}`);
   const { items } = (await inbox.json()) as { items: { id: string; entityId: string; action: string }[] };

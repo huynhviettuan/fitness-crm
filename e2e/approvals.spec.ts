@@ -46,7 +46,9 @@ test.describe("approvals as a Fitness Manager", () => {
   test("a rejection takes a reason, and the submitter sees it", async ({ apiAs, testTag, approvalsPage }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN") });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: await apiAs("ADMIN"),
+    });
     const title = `${contract.contractCode} · ${customer.fullName}`;
     await recordPaymentViaApi(reception, contract.id, "3.000.000");
 
@@ -56,7 +58,10 @@ test.describe("approvals as a Fitness Manager", () => {
     const mine = (await (await reception.get("/api/v1/approvals?view=mine&pageSize=100")).json()) as {
       items: { title: string; status: string; rejectReason: { note: string } | null }[];
     };
-    expect(mine.items.find((item) => item.title === title)).toMatchObject({ status: "REJECTED", rejectReason: { note: `Sai số tiền ${testTag}` } });
+    expect(mine.items.find((item) => item.title === title)).toMatchObject({
+      status: "REJECTED",
+      rejectReason: { note: `Sai số tiền ${testTag}` },
+    });
   });
 });
 
@@ -73,7 +78,9 @@ test.describe("the approval matrix as an admin", () => {
     void restoresApprovalRules;
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const response = await reception.patch(`/api/v1/customers/${customer.id}`, { data: { fullName: customer.fullName, phone: "0909 888 777" } });
+    const response = await reception.patch(`/api/v1/customers/${customer.id}`, {
+      data: { fullName: customer.fullName, phone: "0909 888 777" },
+    });
     expect(response.status()).toBe(202);
     const title = `${customer.customerCode} · ${customer.fullName}`;
     const action = a.actions.customer_identity;
@@ -84,7 +91,9 @@ test.describe("the approval matrix as an admin", () => {
 
     await approvalRulesPage.goto();
     const adminRole = await (await (await apiAs("ADMIN")).get("/api/v1/roles")).json();
-    const adminName = (adminRole.items as { code: string | null; name: string }[]).find((role) => role.code === "ADMIN")!.name;
+    const adminName = (adminRole.items as { code: string | null; name: string }[]).find(
+      (role) => role.code === "ADMIN",
+    )!.name;
     await approvalRulesPage.setApprover(action, adminName, true);
     await expect(approvalRulesPage.row(action)).toContainText(adminName);
 

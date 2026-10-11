@@ -62,7 +62,9 @@ describe("createEmployee (brief §8.4)", () => {
   it("gives employees created at the same time different codes (T-019)", async () => {
     const { actor: admin } = await createTestUser("ADMIN");
 
-    const employees = await Promise.all(Array.from({ length: 5 }, (_, i) => createEmployee(admin, { fullName: `NV ${i}` })));
+    const employees = await Promise.all(
+      Array.from({ length: 5 }, (_, i) => createEmployee(admin, { fullName: `NV ${i}` })),
+    );
 
     expect(new Set(employees.map((e) => e.employeeCode)).size).toBe(5);
   });
@@ -97,7 +99,9 @@ describe("createEmployee (brief §8.4)", () => {
     await expect(createEmployee(manager, { fullName: "A", titleId: retired })).rejects.toMatchObject({
       fieldErrors: { titleId: ["invalidChoice"] },
     });
-    await expect(createEmployee(manager, { fullName: "A", departmentId: otherDepartment, departmentNote: "Bảo vệ" })).resolves.toMatchObject({
+    await expect(
+      createEmployee(manager, { fullName: "A", departmentId: otherDepartment, departmentNote: "Bảo vệ" }),
+    ).resolves.toMatchObject({
       department: { isOther: true, note: "Bảo vệ" },
     });
   });
@@ -120,7 +124,9 @@ describe("linking a login (brief §8.4)", () => {
   it("refuses an unknown login", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
 
-    await expect(createEmployee(manager, { fullName: "A", userId: "0b9d2c4e-3f1a-4b5c-8d6e-7f8091a2b3c4" })).rejects.toMatchObject({
+    await expect(
+      createEmployee(manager, { fullName: "A", userId: "0b9d2c4e-3f1a-4b5c-8d6e-7f8091a2b3c4" }),
+    ).rejects.toMatchObject({
       fieldErrors: { userId: ["invalidChoice"] },
     });
   });
@@ -147,11 +153,19 @@ describe("updateEmployee", () => {
     const { user } = await createTestUser("PT");
     const employee = await createEmployee(admin, { fullName: "PT Linh", userId: user.id, isTrainer: true });
 
-    const updated = await updateEmployee(admin, employee.id, { fullName: "PT Linh", status: "INACTIVE", isTrainer: true, userId: "" });
+    const updated = await updateEmployee(admin, employee.id, {
+      fullName: "PT Linh",
+      status: "INACTIVE",
+      isTrainer: true,
+      userId: "",
+    });
 
     expect(updated).toMatchObject({ status: "INACTIVE", user: null, employeeCode: employee.employeeCode });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: employee.id, action: "employee.updated" } });
-    expect(audit).toMatchObject({ before: { status: "ACTIVE", userId: user.id }, after: { status: "INACTIVE", userId: null } });
+    expect(audit).toMatchObject({
+      before: { status: "ACTIVE", userId: user.id },
+      after: { status: "INACTIVE", userId: null },
+    });
   });
 
   it("keeps an inactive option the employee already has (D-016)", async () => {
@@ -160,7 +174,9 @@ describe("updateEmployee", () => {
     const employee = await createEmployee(admin, { fullName: "PT Linh", titleId: title });
     await prisma.option.update({ where: { id: title }, data: { active: false } });
 
-    await expect(updateEmployee(admin, employee.id, { fullName: "PT Linh Nguyễn", titleId: title })).resolves.toMatchObject({
+    await expect(
+      updateEmployee(admin, employee.id, { fullName: "PT Linh Nguyễn", titleId: title }),
+    ).resolves.toMatchObject({
       title: { id: title },
     });
   });
@@ -218,14 +234,21 @@ describe("working schedule (D-030)", () => {
     const trainer = await createEmployee(manager, { fullName: "PT Linh", userId: user.id, isTrainer: true });
     const pt = await actorOf(user.id);
 
-    const schedule = await replaceShifts(manager, trainer.id, { shifts: [...WEEKDAYS_8_TO_17, { weekday: 6, start: "07:00", end: "11:30" }] });
+    const schedule = await replaceShifts(manager, trainer.id, {
+      shifts: [...WEEKDAYS_8_TO_17, { weekday: 6, start: "07:00", end: "11:30" }],
+    });
 
     expect(schedule.shifts).toHaveLength(6);
     expect(schedule.shifts.at(-1)).toEqual({ weekday: 6, start: "07:00", end: "11:30" });
     expect(await getWorkSchedule(pt, trainer.id)).toEqual(schedule);
     await expect(replaceShifts(pt, trainer.id, { shifts: [] })).rejects.toMatchObject({ code: "FORBIDDEN" });
-    const audit = await prisma.auditEvent.findFirst({ where: { entityId: trainer.id, action: "employee.shifts_changed" } });
-    expect(audit).toMatchObject({ before: { shifts: "" }, after: { shifts: expect.stringContaining("6 07:00–11:30") } });
+    const audit = await prisma.auditEvent.findFirst({
+      where: { entityId: trainer.id, action: "employee.shifts_changed" },
+    });
+    expect(audit).toMatchObject({
+      before: { shifts: "" },
+      after: { shifts: expect.stringContaining("6 07:00–11:30") },
+    });
   });
 
   it("refuses overlapping shifts on one day", async () => {
@@ -256,7 +279,11 @@ describe("working schedule (D-030)", () => {
     await removeDayOff(manager, trainer.id, future.id);
     expect((await getWorkSchedule(manager, trainer.id)).daysOff).toEqual([]);
     await expect(removeDayOff(manager, trainer.id, future.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    const actions = await prisma.auditEvent.findMany({ where: { entityId: trainer.id }, select: { action: true }, orderBy: { createdAt: "asc" } });
+    const actions = await prisma.auditEvent.findMany({
+      where: { entityId: trainer.id },
+      select: { action: true },
+      orderBy: { createdAt: "asc" },
+    });
     expect(actions.map((a) => a.action)).toEqual([
       "employee.created",
       "employee.day_off_added",
@@ -303,6 +330,8 @@ describe("working schedule (D-030)", () => {
 
     expect(await trainersOfDay(await actorOf(user.id), { date: "15/10/2026" })).toEqual([]);
     const own = await createEmployee(manager, { fullName: "PT Linh", isTrainer: true, userId: user.id });
-    expect((await trainersOfDay(await actorOf(user.id), { date: "15/10/2026" })).map((day) => day.trainer.id)).toEqual([own.id]);
+    expect((await trainersOfDay(await actorOf(user.id), { date: "15/10/2026" })).map((day) => day.trainer.id)).toEqual([
+      own.id,
+    ]);
   });
 });

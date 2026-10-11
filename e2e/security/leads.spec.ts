@@ -9,7 +9,9 @@ import { createLeadViaApi } from "../support/data";
 import type { Role } from "../support/db";
 
 async function whatsApp(api: APIRequestContext): Promise<string> {
-  const options = (await (await api.get("/api/v1/option-lists/leadChannels/options")).json()) as { items: { id: string; labelVi: string }[] };
+  const options = (await (await api.get("/api/v1/option-lists/leadChannels/options")).json()) as {
+    items: { id: string; labelVi: string }[];
+  };
   return options.items.find((option) => option.labelVi === "WhatsApp")!.id;
 }
 
@@ -25,12 +27,17 @@ test.describe("A01 leads", () => {
   for (const [role, status] of expectations) {
     test(`${role} adding a lead gets ${status} (09_RBAC.md)`, async ({ apiAs, testTag }) => {
       const api = await apiAs(role);
-      const response = await api.post("/api/v1/leads", { data: { fullName: `Lead ${testTag}`, channelId: await whatsApp(await apiAs("ADMIN")) } });
+      const response = await api.post("/api/v1/leads", {
+        data: { fullName: `Lead ${testTag}`, channelId: await whatsApp(await apiAs("ADMIN")) },
+      });
       expect(response.status()).toBe(status);
     });
   }
 
-  test("the code, stage, status, person in charge, and customer code cannot be set by the client (mass assignment)", async ({ apiAs, testTag }) => {
+  test("the code, stage, status, person in charge, and customer code cannot be set by the client (mass assignment)", async ({
+    apiAs,
+    testTag,
+  }) => {
     const reception = await apiAs("RECEPTIONIST");
     const admin = await apiAs("ADMIN");
     const adminId = (await (await admin.get("/api/v1/me")).json()).id;
@@ -56,7 +63,6 @@ test.describe("A01 leads", () => {
     expect(lead.pic?.id).not.toBe(adminId);
     expect(lead.leadCode).not.toBe("LD999999");
   });
-
 });
 
 test.describe("A01 lead journey (D-020)", () => {
@@ -72,7 +78,9 @@ test.describe("A01 lead journey (D-020)", () => {
     test(`${role} changing a lead's status gets ${status} (09_RBAC.md)`, async ({ apiAs, testTag }) => {
       // In the shared branch the lead goes to the E2E consultant, so everyone who works leads sees it.
       const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
-      const response = await (await apiAs(role)).post(`/api/v1/leads/${lead.id}/status`, { data: { status: "CONSIDERING" } });
+      const response = await (
+        await apiAs(role)
+      ).post(`/api/v1/leads/${lead.id}/status`, { data: { status: "CONSIDERING" } });
       expect(response.status()).toBe(status);
     });
   }
@@ -89,18 +97,29 @@ test.describe("A01 lead journey (D-020)", () => {
     test(`${role} reassigning a lead gets ${status} (09_RBAC.md)`, async ({ apiAs, testTag }) => {
       const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
       const api = await apiAs(role);
-      expect((await api.post(`/api/v1/leads/${lead.id}/assign`, { data: { userId: lead.pic?.id } })).status()).toBe(status);
+      expect((await api.post(`/api/v1/leads/${lead.id}/assign`, { data: { userId: lead.pic?.id } })).status()).toBe(
+        status,
+      );
       expect((await api.get(`/api/v1/leads/${lead.id}/assignees`)).status()).toBe(status);
     });
   }
 
-  test("the person in charge, status time, and re-care date of a status change come from the server (mass assignment)", async ({ apiAs, testTag }) => {
+  test("the person in charge, status time, and re-care date of a status change come from the server (mass assignment)", async ({
+    apiAs,
+    testTag,
+  }) => {
     const admin = await apiAs("ADMIN");
     const adminId = (await (await admin.get("/api/v1/me")).json()).id;
     const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
 
     const response = await admin.post(`/api/v1/leads/${lead.id}/status`, {
-      data: { status: "CONSIDERING", picUserId: adminId, leadStatus: "CONTRACTED", contactAgainOn: "2030-01-01", statusChangedAt: "2020-01-01T00:00:00Z" },
+      data: {
+        status: "CONSIDERING",
+        picUserId: adminId,
+        leadStatus: "CONTRACTED",
+        contactAgainOn: "2030-01-01",
+        statusChangedAt: "2020-01-01T00:00:00Z",
+      },
     });
 
     expect(response.status()).toBe(200);
@@ -125,7 +144,15 @@ test.describe("A10 lead input errors", () => {
     const manager = await apiAs("FITNESS_MANAGER");
 
     const invalid = await manager.post("/api/v1/leads", {
-      data: { fullName: "", channelId: "x", phone: "12", email: "a@", sourceType: "FREE", birthDate: "31/02/2000", sourceId: randomUUID() },
+      data: {
+        fullName: "",
+        channelId: "x",
+        phone: "12",
+        email: "a@",
+        sourceType: "FREE",
+        birthDate: "31/02/2000",
+        sourceId: randomUUID(),
+      },
     });
     expect(invalid.status()).toBe(400);
     expect((await invalid.json()).details.fieldErrors).toMatchObject({
@@ -136,7 +163,9 @@ test.describe("A10 lead input errors", () => {
       sourceType: ["invalidChoice"],
       birthDate: ["invalidDate"],
     });
-    const wrongList = await manager.post("/api/v1/leads", { data: { fullName: "A", channelId: await whatsApp(manager), sourceId: randomUUID() } });
+    const wrongList = await manager.post("/api/v1/leads", {
+      data: { fullName: "A", channelId: await whatsApp(manager), sourceId: randomUUID() },
+    });
     expect(wrongList.status()).toBe(400);
     expect((await wrongList.json()).details.fieldErrors).toMatchObject({ sourceId: ["invalidChoice"] });
     for (const id of [randomUUID(), "not-a-uuid"]) {
@@ -145,7 +174,10 @@ test.describe("A10 lead input errors", () => {
     expect((await manager.get("/api/v1/leads?status=WON")).status()).toBe(400);
   });
 
-  test("status changes and assignments check their input; a move the flow forbids is 409", async ({ apiAs, testTag }) => {
+  test("status changes and assignments check their input; a move the flow forbids is 409", async ({
+    apiAs,
+    testTag,
+  }) => {
     const manager = await apiAs("FITNESS_MANAGER");
     const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
     const post = (path: string, data: unknown) => manager.post(`/api/v1/leads/${lead.id}/${path}`, { data });
@@ -157,23 +189,35 @@ test.describe("A10 lead input errors", () => {
 
     expect(await errors("status", { status: "WON" })).toMatchObject({ status: ["invalidChoice"] });
     expect(await errors("status", { status: "SHOWED" })).toMatchObject({ status: ["invalidChoice"] });
-    expect(await errors("status", { status: "BOOKED", appointmentDate: "31/02/2030", appointmentTime: "" })).toMatchObject({
+    expect(
+      await errors("status", { status: "BOOKED", appointmentDate: "31/02/2030", appointmentTime: "" }),
+    ).toMatchObject({
       appointmentDate: ["invalidDate"],
       appointmentTime: ["required"],
     });
-    expect(await errors("status", { status: "BOOKED", appointmentDate: "01/01/2020", appointmentTime: "09:00" })).toMatchObject({
+    expect(
+      await errors("status", { status: "BOOKED", appointmentDate: "01/01/2020", appointmentTime: "09:00" }),
+    ).toMatchObject({
       appointmentDate: ["notInFuture"],
     });
-    expect(await errors("status", { status: "REFUSED", refuseReasonId: "" })).toMatchObject({ refuseReasonId: ["required"] });
-    expect(await errors("status", { status: "REFUSED", refuseReasonId: randomUUID() })).toMatchObject({ refuseReasonId: ["invalidChoice"] });
-    expect(await errors("status", { status: "CONSIDERING", note: "a\u0000b" })).toMatchObject({ note: ["invalidCharacters"] });
+    expect(await errors("status", { status: "REFUSED", refuseReasonId: "" })).toMatchObject({
+      refuseReasonId: ["required"],
+    });
+    expect(await errors("status", { status: "REFUSED", refuseReasonId: randomUUID() })).toMatchObject({
+      refuseReasonId: ["invalidChoice"],
+    });
+    expect(await errors("status", { status: "CONSIDERING", note: "a\u0000b" })).toMatchObject({
+      note: ["invalidCharacters"],
+    });
     expect(await errors("assign", { userId: "x" })).toMatchObject({ userId: ["required"] });
 
     const again = await post("status", { status: "CONSULTING" });
     expect(again.status()).toBe(409);
     expect((await again.json()).code).toBe("INVALID_STATUS_TRANSITION");
     for (const id of [randomUUID(), "not-a-uuid"]) {
-      expect((await manager.post(`/api/v1/leads/${id}/status`, { data: { status: "CONSIDERING" } })).status()).toBe(404);
+      expect((await manager.post(`/api/v1/leads/${id}/status`, { data: { status: "CONSIDERING" } })).status()).toBe(
+        404,
+      );
       expect((await manager.get(`/api/v1/leads/${id}/timeline`)).status()).toBe(404);
     }
   });

@@ -12,12 +12,7 @@ import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDateOnly } from "@/lib/format";
 import { ContractForm, type ContractFormValues } from "./contract-form";
-import {
-  activateContractAction,
-  cancelContractAction,
-  createContractAction,
-  updateContractAction,
-} from "./actions";
+import { activateContractAction, cancelContractAction, createContractAction, updateContractAction } from "./actions";
 
 const EMPTY: ContractFormValues = { packageName: "", contractValue: "", totalSessions: "", startDate: "", endDate: "" };
 
@@ -113,7 +108,10 @@ type StatusActionProps = { contract: { id: string; contractCode: string } };
 export function ActivateContractButton({ contract }: StatusActionProps) {
   const t = useTranslations("contracts");
   const [open, setOpen] = useState(false);
-  const run = useStatusAction(() => activateContractAction(contract.id), t("activated", { code: contract.contractCode }));
+  const run = useStatusAction(
+    () => activateContractAction(contract.id),
+    t("activated", { code: contract.contractCode }),
+  );
   return (
     <>
       <Button onClick={() => setOpen(true)}>
@@ -161,7 +159,8 @@ export function CancelContractButton({ contract, bookings }: StatusActionProps &
               {bookings.map((booking) => (
                 <li key={booking.id} className="flex justify-between gap-4 tabular-nums">
                   <span>
-                    <DateTime value={booking.scheduledStart} format="dateTime" />–<DateTime value={booking.scheduledEnd} format="time" />
+                    <DateTime value={booking.scheduledStart} format="dateTime" />–
+                    <DateTime value={booking.scheduledEnd} format="time" />
                   </span>
                   <span className="truncate text-muted-foreground">{booking.trainer.fullName}</span>
                 </li>

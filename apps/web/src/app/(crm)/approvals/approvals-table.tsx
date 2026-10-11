@@ -8,7 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
@@ -25,7 +32,12 @@ import { useSubmit } from "../admin/users/user-dialogs";
 import { messageKey } from "./message-key";
 import { approveAction, rejectAction } from "./actions";
 
-type Props = { requests: ApprovalRequest[]; view: (typeof APPROVAL_VIEWS)[number]; empty: ReactNode; footer?: ReactNode };
+type Props = {
+  requests: ApprovalRequest[];
+  view: (typeof APPROVAL_VIEWS)[number];
+  empty: ReactNode;
+  footer?: ReactNode;
+};
 
 /** Requests with what approving would do; approve and reject where the user may (D-018). */
 export function ApprovalsTable({ requests, view, empty, footer }: Props) {
@@ -36,7 +48,11 @@ export function ApprovalsTable({ requests, view, empty, footer }: Props) {
   const [rejecting, setRejecting] = useState<ApprovalRequest | null>(null);
 
   const columns: DataTableColumn<ApprovalRequest>[] = [
-    { id: "submittedAt", header: t("fields.submittedAt"), cell: ({ row }) => <DateTime value={row.original.submittedAt} format="dateTime" /> },
+    {
+      id: "submittedAt",
+      header: t("fields.submittedAt"),
+      cell: ({ row }) => <DateTime value={row.original.submittedAt} format="dateTime" />,
+    },
     { id: "action", header: t("fields.action"), cell: ({ row }) => t(`actions.${messageKey(row.original.action)}`) },
     {
       id: "record",
@@ -52,7 +68,13 @@ export function ApprovalsTable({ requests, view, empty, footer }: Props) {
       id: "amount",
       header: t("fields.amount"),
       cell: ({ row }) =>
-        row.original.amount === null ? (row.original.action === "customer.identity" ? null : <HiddenValue />) : <Money amount={row.original.amount} />,
+        row.original.amount === null ? (
+          row.original.action === "customer.identity" ? null : (
+            <HiddenValue />
+          )
+        ) : (
+          <Money amount={row.original.amount} />
+        ),
     },
     { id: "branch", header: t("fields.branch"), cell: ({ row }) => row.original.branch.name },
     { id: "submittedBy", header: t("fields.submittedBy"), cell: ({ row }) => row.original.submittedBy.name },
@@ -63,7 +85,9 @@ export function ApprovalsTable({ requests, view, empty, footer }: Props) {
         <div className="flex flex-wrap items-center gap-1">
           <StatusBadge entity="approval" status={row.original.status} />
           {row.original.overdue && <Badge variant="destructive">{t("overdue")}</Badge>}
-          {row.original.decidedBy && <span className="text-xs text-muted-foreground">{row.original.decidedBy.name}</span>}
+          {row.original.decidedBy && (
+            <span className="text-xs text-muted-foreground">{row.original.decidedBy.name}</span>
+          )}
           {row.original.rejectReason && (
             <span className="block w-full text-xs text-muted-foreground">
               <ChosenOptionText option={row.original.rejectReason} />
@@ -78,11 +102,20 @@ export function ApprovalsTable({ requests, view, empty, footer }: Props) {
       cell: ({ row }) =>
         row.original.canDecide && (
           <div className="flex gap-1">
-            <Button size="sm" onClick={() => setApproving(row.original)} aria-label={t("approveLabel", { name: row.original.title })}>
+            <Button
+              size="sm"
+              onClick={() => setApproving(row.original)}
+              aria-label={t("approveLabel", { name: row.original.title })}
+            >
               <CheckIcon />
               {t("approve")}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setRejecting(row.original)} aria-label={t("rejectLabel", { name: row.original.title })}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRejecting(row.original)}
+              aria-label={t("rejectLabel", { name: row.original.title })}
+            >
               <XIcon />
               {t("reject")}
             </Button>
@@ -93,7 +126,14 @@ export function ApprovalsTable({ requests, view, empty, footer }: Props) {
 
   return (
     <>
-      <DataTable columns={columns} data={requests} label={t(`views.${view}`)} empty={empty} footer={footer} getRowId={(row) => row.id} />
+      <DataTable
+        columns={columns}
+        data={requests}
+        label={t(`views.${view}`)}
+        empty={empty}
+        footer={footer}
+        getRowId={(row) => row.id}
+      />
       <ConfirmDialog
         open={approving !== null}
         onOpenChange={(open) => !open && setApproving(null)}
@@ -122,13 +162,19 @@ function Changes({ request }: { request: ApprovalRequest }) {
   const text = useChosenOptionText();
   const changes = request.changes;
   if (request.action === "record.delete" && changes.reason) {
-    return <p className="text-xs text-muted-foreground">{t("approvals.deleteReason", { reason: text(changes.reason as ChosenOption) })}</p>;
+    return (
+      <p className="text-xs text-muted-foreground">
+        {t("approvals.deleteReason", { reason: text(changes.reason as ChosenOption) })}
+      </p>
+    );
   }
   if (request.action === "customer.identity") {
     const fields = (["fullName", "phone", "email"] as const).filter((field) => field in changes);
     return (
       <p className="text-xs text-muted-foreground">
-        {fields.map((field) => `${t(`customers.fields.${field}`)}: ${(changes[field] as string | null) ?? "—"}`).join("; ")}
+        {fields
+          .map((field) => `${t(`customers.fields.${field}`)}: ${(changes[field] as string | null) ?? "—"}`)
+          .join("; ")}
       </p>
     );
   }
@@ -163,7 +209,13 @@ function RejectDialog({ request, onClose }: { request: ApprovalRequest; onClose:
             <DialogTitle>{t("approvals.rejectTitle", { name: request.title })}</DialogTitle>
             <DialogDescription>{t("approvals.rejectBody")}</DialogDescription>
           </DialogHeader>
-          <OptionSelect control={form.control} name="reasonId" noteName="reasonNote" listKey="rejectReasons" label={t("approvals.rejectReason")} />
+          <OptionSelect
+            control={form.control}
+            name="reasonId"
+            noteName="reasonNote"
+            listKey="rejectReasons"
+            label={t("approvals.rejectReason")}
+          />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
               {t("common.cancel")}

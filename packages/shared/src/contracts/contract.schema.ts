@@ -10,13 +10,15 @@ const packageName = z
   .refine(hasNoControlCharacters, { error: "invalidCharacters" });
 
 // Forms send text; API clients may send a number.
-const totalSessions = z.union([z.number(), z.string()], { error: "invalidNumber" }).pipe(
-  z.coerce
-    .number<string | number>({ error: "invalidNumber" })
-    .int({ error: "invalidNumber" })
-    .min(1, { error: "invalidNumber" })
-    .max(1000, { error: "invalidNumber" }),
-);
+const totalSessions = z
+  .union([z.number(), z.string()], { error: "invalidNumber" })
+  .pipe(
+    z.coerce
+      .number<string | number>({ error: "invalidNumber" })
+      .int({ error: "invalidNumber" })
+      .min(1, { error: "invalidNumber" })
+      .max(1000, { error: "invalidNumber" }),
+  );
 
 /**
  * The fields staff enter. Contract code, status, and opening balances are never

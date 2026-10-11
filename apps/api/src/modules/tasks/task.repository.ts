@@ -49,7 +49,12 @@ export async function listTasks(
 ): Promise<{ items: TaskRecord[]; total: number }> {
   const [items, total] = await Promise.all([
     // Open tasks first (the status enum is in lifecycle order), soonest deadline first.
-    db.task.findMany({ where, include: withRefs, orderBy: [{ status: "asc" }, { dueAt: "asc" }, { createdAt: "asc" }], ...page }),
+    db.task.findMany({
+      where,
+      include: withRefs,
+      orderBy: [{ status: "asc" }, { dueAt: "asc" }, { createdAt: "asc" }],
+      ...page,
+    }),
     db.task.count({ where }),
   ]);
   return { items, total };
@@ -92,7 +97,10 @@ export async function departmentMembers(db: Db, departmentId: string, branchId: 
 
 /** Which of these users are active and work in the branch. */
 export async function usableUsers(db: Db, userIds: string[], branchId: string): Promise<Set<string>> {
-  const users = await db.user.findMany({ where: { AND: [{ id: { in: userIds } }, activeInBranch(branchId)] }, select: { id: true } });
+  const users = await db.user.findMany({
+    where: { AND: [{ id: { in: userIds } }, activeInBranch(branchId)] },
+    select: { id: true },
+  });
   return new Set(users.map((user) => user.id));
 }
 
@@ -101,9 +109,15 @@ export function assignableUsers(db: Db, branches: "ALL" | readonly string[]) {
   return db.user.findMany({
     where: {
       status: "ACTIVE",
-      ...(branches === "ALL" ? {} : { OR: [{ allBranches: true }, { branches: { some: { branchId: { in: [...branches] } } } }] }),
+      ...(branches === "ALL"
+        ? {}
+        : { OR: [{ allBranches: true }, { branches: { some: { branchId: { in: [...branches] } } } }] }),
     },
-    select: { id: true, name: true, employee: { select: { department: { select: chosenSelect }, departmentNote: true } } },
+    select: {
+      id: true,
+      name: true,
+      employee: { select: { department: { select: chosenSelect }, departmentNote: true } },
+    },
     orderBy: { name: "asc" },
   });
 }
@@ -117,15 +131,24 @@ export function activeDepartments(db: Db) {
 }
 
 export function findDepartment(db: Db, id: string) {
-  return db.option.findFirst({ where: { id, listKey: "departments" }, select: { id: true, active: true, isOther: true } });
+  return db.option.findFirst({
+    where: { id, listKey: "departments" },
+    select: { id: true, active: true, isOther: true },
+  });
 }
 
 /** Labels of the records tasks are about, by id. */
 export async function entityLabels(db: Db, refs: { type: string; id: string }[]): Promise<Map<string, string>> {
   const ids = (type: string) => refs.filter((ref) => ref.type === type).map((ref) => ref.id);
   const [customers, contracts] = await Promise.all([
-    db.customer.findMany({ where: { id: { in: ids("customer") } }, select: { id: true, customerCode: true, fullName: true } }),
-    db.contract.findMany({ where: { id: { in: ids("contract") } }, select: { id: true, contractCode: true, packageName: true } }),
+    db.customer.findMany({
+      where: { id: { in: ids("customer") } },
+      select: { id: true, customerCode: true, fullName: true },
+    }),
+    db.contract.findMany({
+      where: { id: { in: ids("contract") } },
+      select: { id: true, contractCode: true, packageName: true },
+    }),
   ]);
   return new Map([
     ...customers.map((c) => [c.id, `${c.customerCode} · ${c.fullName}`] as const),
@@ -160,6 +183,8 @@ export type ReminderRow = {
 };
 
 // A fixed column list, spliced as raw SQL into the RETURNING clauses above.
-const REMINDER_COLUMNS = Prisma.raw("id, title, branch_id, assigner_id, assignee_user_id, assignee_department_option_id, due_at");
+const REMINDER_COLUMNS = Prisma.raw(
+  "id, title, branch_id, assigner_id, assignee_user_id, assignee_department_option_id, due_at",
+);
 
 export type { TaskPriority, TaskStatus };

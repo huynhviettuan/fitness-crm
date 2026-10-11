@@ -22,7 +22,10 @@ export const ANY_SIGNED_IN_USER = "authenticated";
  * elsewhere is never open.
  */
 export function RequirePermission(...permissions: [Permission, ...Permission[]]) {
-  return applyDecorators(SetMetadata(PERMISSION_METADATA, permissions), ApiExtension("x-permission", permissions.join(" | ")));
+  return applyDecorators(
+    SetMetadata(PERMISSION_METADATA, permissions),
+    ApiExtension("x-permission", permissions.join(" | ")),
+  );
 }
 
 /** For endpoints about the signed-in user themselves. */
@@ -46,14 +49,23 @@ export class AuthGuard implements CanActivate {
     const headers = fromNodeHeaders(request.headers);
     const user = await getSessionUser(headers);
     if (!user) {
-      logSecurityEvent("auth.unauthenticated", { method: request.method, path: request.path, ip: clientIp(headers) }, "info");
+      logSecurityEvent(
+        "auth.unauthenticated",
+        { method: request.method, path: request.path, ip: clientIp(headers) },
+        "info",
+      );
       throw new AppError("UNAUTHENTICATED");
     }
     request.user = user;
 
-    const required = Reflect.getMetadata(PERMISSION_METADATA, context.getHandler()) as Permission[] | typeof ANY_SIGNED_IN_USER | undefined;
+    const required = Reflect.getMetadata(PERMISSION_METADATA, context.getHandler()) as
+      Permission[] | typeof ANY_SIGNED_IN_USER | undefined;
     if (required === undefined) {
-      logSecurityEvent("authz.denied", { userId: user.id, path: request.path, reason: "endpoint declares no permission" });
+      logSecurityEvent("authz.denied", {
+        userId: user.id,
+        path: request.path,
+        reason: "endpoint declares no permission",
+      });
       throw new AppError("FORBIDDEN");
     }
     if (required !== ANY_SIGNED_IN_USER) assertCanAny(user, required);

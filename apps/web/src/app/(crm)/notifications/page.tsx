@@ -25,7 +25,11 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={result.items.some((n) => !n.readAt) && <MarkAllReadButton />} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={result.items.some((n) => !n.readAt) && <MarkAllReadButton />}
+      />
       <NotificationList notifications={result.items} />
       <div className="mt-4">
         <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />

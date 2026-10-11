@@ -28,7 +28,9 @@ export type ParameterKey = keyof typeof PARAMETER_DEFAULTS;
 export const PARAMETER_KEYS = Object.keys(PARAMETER_DEFAULTS) as ParameterKey[];
 
 /** The calendar is drawn in 30-minute cells (D-030), so its hours fall on them. */
-const calendarTime = timeOfDay.refine((value) => value.endsWith(":00") || value.endsWith(":30"), { error: "notOnHalfHour" });
+const calendarTime = timeOfDay.refine((value) => value.endsWith(":00") || value.endsWith(":30"), {
+  error: "notOnHalfHour",
+});
 
 const codePrefix = z
   .string()
@@ -63,7 +65,10 @@ export const parametersInputSchema = z
     taskDueSoonHours: hours,
     recareDays: days,
   })
-  .refine((value) => value.calendarDayEnd > value.calendarDayStart, { path: ["calendarDayEnd"], error: "endTimeNotAfterStart" });
+  .refine((value) => value.calendarDayEnd > value.calendarDayStart, {
+    path: ["calendarDayEnd"],
+    error: "endTimeNotAfterStart",
+  });
 
 export const parametersSchema = z
   .object({

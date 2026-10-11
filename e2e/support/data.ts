@@ -60,10 +60,14 @@ export async function createTrainerViaApi(
   tag: string,
   options: { userId?: string; shifts?: { weekday: number; start: string; end: string }[] } = {},
 ) {
-  const response = await api.post("/api/v1/employees", { data: { fullName: `PT ${tag}`, isTrainer: true, userId: options.userId ?? "" } });
+  const response = await api.post("/api/v1/employees", {
+    data: { fullName: `PT ${tag}`, isTrainer: true, userId: options.userId ?? "" },
+  });
   if (response.status() !== 201) throw new Error(`Trainer setup failed: ${response.status()} ${await response.text()}`);
   const trainer = (await response.json()) as { id: string; employeeCode: string; fullName: string };
-  const shifts = await api.put(`/api/v1/employees/${trainer.id}/shifts`, { data: { shifts: options.shifts ?? ALL_DAY_SHIFTS } });
+  const shifts = await api.put(`/api/v1/employees/${trainer.id}/shifts`, {
+    data: { shifts: options.shifts ?? ALL_DAY_SHIFTS },
+  });
   if (!shifts.ok()) throw new Error(`Shift setup failed: ${shifts.status()} ${await shifts.text()}`);
   return trainer;
 }
@@ -104,9 +108,17 @@ export async function bookingSetup(
 ) {
   const reception = await apiAs("RECEPTIONIST");
   const customer = await createCustomerViaApi(reception, tag);
-  const created = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN"), data: contract });
+  const created = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+    activateWith: await apiAs("ADMIN"),
+    data: contract,
+  });
   const trainer = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), tag);
-  return { customer, contract: created, trainer, refs: { customerId: customer.id, contractId: created.id, trainerId: trainer.id } };
+  return {
+    customer,
+    contract: created,
+    trainer,
+    refs: { customerId: customer.id, contractId: created.id, trainerId: trainer.id },
+  };
 }
 
 /**
@@ -137,24 +149,44 @@ export async function recordPaymentViaApi(
 ) {
   const response = await api.post(`/api/v1/contracts/${contractId}/payments`, {
     headers: { "idempotency-key": randomUUID() },
-    data: { amount, methodId: await otherOptionId(api, "paymentMethods"), methodNote: "E2E", paidOn: options.paidOn ?? gymToday().date },
+    data: {
+      amount,
+      methodId: await otherOptionId(api, "paymentMethods"),
+      methodNote: "E2E",
+      paidOn: options.paidOn ?? gymToday().date,
+    },
   });
-  if (![201, 202].includes(response.status())) throw new Error(`Payment setup failed: ${response.status()} ${await response.text()}`);
+  if (![201, 202].includes(response.status()))
+    throw new Error(`Payment setup failed: ${response.status()} ${await response.text()}`);
   const payment = (await response.json()) as { id: string; amount: number; approvalStatus: string };
-  if (options.approver && payment.approvalStatus === "PENDING") await approvePendingViaApi(options.approver, payment.id);
+  if (options.approver && payment.approvalStatus === "PENDING")
+    await approvePendingViaApi(options.approver, payment.id);
   return payment;
 }
 
 /** A lead contact channel's id by its Vietnamese label. */
 export async function leadChannelId(api: APIRequestContext, label: string): Promise<string> {
-  const { items } = (await (await api.get("/api/v1/option-lists/leadChannels/options")).json()) as { items: { id: string; labelVi: string }[] };
+  const { items } = (await (await api.get("/api/v1/option-lists/leadChannels/options")).json()) as {
+    items: { id: string; labelVi: string }[];
+  };
   return items.find((option) => option.labelVi === label)!.id;
 }
 
-export type CreatedLead = { id: string; leadCode: string; fullName: string; status: string; pic: { id: string; name: string } | null };
+export type CreatedLead = {
+  id: string;
+  leadCode: string;
+  fullName: string;
+  status: string;
+  pic: { id: string; name: string } | null;
+};
 
-export async function createLeadViaApi(api: APIRequestContext, data: { fullName: string; branchId?: string; phone?: string }): Promise<CreatedLead> {
-  const response = await api.post("/api/v1/leads", { data: { ...data, channelId: await leadChannelId(api, "WhatsApp") } });
+export async function createLeadViaApi(
+  api: APIRequestContext,
+  data: { fullName: string; branchId?: string; phone?: string },
+): Promise<CreatedLead> {
+  const response = await api.post("/api/v1/leads", {
+    data: { ...data, channelId: await leadChannelId(api, "WhatsApp") },
+  });
   if (response.status() !== 201) throw new Error(`Lead setup failed: ${response.status()} ${await response.text()}`);
   return response.json() as Promise<CreatedLead>;
 }
@@ -171,7 +203,10 @@ export async function branchWithConsultants(admin: APIRequestContext, tag: strin
   const roleId = await roleIdOf(admin, { code: "CONSULTING" });
   const consultants = [];
   for (const label of ["Consultant A", "Consultant B"]) {
-    consultants.push({ ...(await createUserViaApi(admin, tag, { roleId, branchIds: [branchId], label })), name: `${label} ${tag}` });
+    consultants.push({
+      ...(await createUserViaApi(admin, tag, { roleId, branchIds: [branchId], label })),
+      name: `${label} ${tag}`,
+    });
   }
   return { branchId, consultants };
 }

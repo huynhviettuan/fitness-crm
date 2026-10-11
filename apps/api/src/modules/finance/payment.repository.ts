@@ -4,7 +4,12 @@ import { chosenSelect } from "../../platform/options/option.service.js";
 
 const paymentInclude = {
   contract: {
-    select: { id: true, contractCode: true, packageName: true, customer: { select: { id: true, customerCode: true, fullName: true } } },
+    select: {
+      id: true,
+      contractCode: true,
+      packageName: true,
+      customer: { select: { id: true, customerCode: true, fullName: true } },
+    },
   },
   method: { select: chosenSelect },
   createdBy: { select: { name: true } },
@@ -30,7 +35,11 @@ export function createPayment(
 }
 
 /** A payment that is not deleted (D-035). */
-export function findPayment(db: Db, id: string, visibility: Prisma.PaymentWhereInput = {}): Promise<PaymentRecord | null> {
+export function findPayment(
+  db: Db,
+  id: string,
+  visibility: Prisma.PaymentWhereInput = {},
+): Promise<PaymentRecord | null> {
   return db.payment.findFirst({ where: { AND: [{ id, deletedAt: null }, visibility] }, include: paymentInclude });
 }
 
@@ -86,8 +95,16 @@ export async function sumCommittedPayments(db: Db, where: Prisma.PaymentWhereInp
 }
 
 /** Moves a payment's approval status only from `from`, so a decision applies once (D-018). */
-export async function setPaymentApprovalStatus(db: Db, id: string, from: "PENDING", to: "APPROVED" | "REJECTED"): Promise<number> {
-  const { count } = await db.payment.updateMany({ where: { id, approvalStatus: from, deletedAt: null }, data: { approvalStatus: to } });
+export async function setPaymentApprovalStatus(
+  db: Db,
+  id: string,
+  from: "PENDING",
+  to: "APPROVED" | "REJECTED",
+): Promise<number> {
+  const { count } = await db.payment.updateMany({
+    where: { id, approvalStatus: from, deletedAt: null },
+    data: { approvalStatus: to },
+  });
   return count;
 }
 
@@ -106,7 +123,8 @@ export async function validPaidByContract(db: Db, contractIds: string[]): Promis
 export type DebtScope = { branchIds: string[] | "ALL"; ownBy: { userId: string; employeeId: string | null } | null };
 
 function debtScopeSql(scope: DebtScope): Prisma.Sql {
-  const branch = scope.branchIds === "ALL" ? Prisma.sql`TRUE` : Prisma.sql`c.branch_id = ANY(${scope.branchIds}::uuid[])`;
+  const branch =
+    scope.branchIds === "ALL" ? Prisma.sql`TRUE` : Prisma.sql`c.branch_id = ANY(${scope.branchIds}::uuid[])`;
   if (!scope.ownBy) return branch;
   const { userId, employeeId } = scope.ownBy;
   const viaTrainer = employeeId

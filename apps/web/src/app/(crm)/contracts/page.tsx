@@ -45,7 +45,14 @@ export default async function ContractsPage({ searchParams }: PageProps<"/contra
       <PageHeader title={t("title")} description={t("description")} />
       <Form action="/contracts" role="search" className="relative mb-4 max-w-sm">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input name="q" type="search" defaultValue={q} placeholder={t("searchPlaceholder")} aria-label={t("searchPlaceholder")} className="pl-8" />
+        <Input
+          name="q"
+          type="search"
+          defaultValue={q}
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchPlaceholder")}
+          className="pl-8"
+        />
       </Form>
       <ContractsTable
         contracts={result.items}
@@ -56,7 +63,9 @@ export default async function ContractsPage({ searchParams }: PageProps<"/contra
             <EmptyState icon={FileTextIcon} title={t("emptyTitle")} description={t("emptyBody")} />
           )
         }
-        footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />}
+        footer={
+          <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+        }
       />
     </>
   );

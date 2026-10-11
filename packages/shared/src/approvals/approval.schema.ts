@@ -26,9 +26,16 @@ export const approvalRuleInputSchema = z
     required: z.boolean({ error: "invalidChoice" }),
     approverRoleIds: z.array(z.uuid({ error: "invalidChoice" })).max(50, { error: "tooLong" }),
     /** After this long a pending request is overdue (reminders arrive with notifications). */
-    overdueHours: z.coerce.number({ error: "invalidNumber" }).int({ error: "invalidNumber" }).min(1, { error: "outOfRange" }).max(720, { error: "outOfRange" }),
+    overdueHours: z.coerce
+      .number({ error: "invalidNumber" })
+      .int({ error: "invalidNumber" })
+      .min(1, { error: "outOfRange" })
+      .max(720, { error: "outOfRange" }),
   })
-  .refine((rule) => !rule.required || rule.approverRoleIds.length > 0, { path: ["approverRoleIds"], error: "approverRequired" });
+  .refine((rule) => !rule.required || rule.approverRoleIds.length > 0, {
+    path: ["approverRoleIds"],
+    error: "approverRequired",
+  });
 
 export const approvalRuleSchema = z
   .object({
@@ -49,7 +56,10 @@ export const APPROVAL_VIEWS = ["toDecide", "mine", "all"] as const;
 export const listApprovalsSchema = z.object({
   /** toDecide: what the user may decide; mine: what they submitted; all: needs approval.manage. */
   view: z.enum(APPROVAL_VIEWS, { error: "invalidChoice" }).optional().default("toDecide"),
-  status: z.preprocess((value) => (value === "" ? undefined : value), z.enum(APPROVAL_STATUSES, { error: "invalidChoice" }).optional()),
+  status: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.enum(APPROVAL_STATUSES, { error: "invalidChoice" }).optional(),
+  ),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });

@@ -19,7 +19,10 @@ export async function recordPaymentAction(
 }
 
 /** `submitted`: the deletion waits for approval (D-018). */
-export async function deletePaymentAction(id: string, input: DeleteInput): Promise<ActionResult<{ submitted: boolean }>> {
+export async function deletePaymentAction(
+  id: string,
+  input: DeleteInput,
+): Promise<ActionResult<{ submitted: boolean }>> {
   return runAction(async () => ({ submitted: await deletePayment(id, input) }));
 }
 
@@ -33,6 +36,9 @@ export async function recordCashTransactionAction(
   });
 }
 
-export async function deleteCashTransactionAction(id: string, input: DeleteInput): Promise<ActionResult<{ submitted: boolean }>> {
+export async function deleteCashTransactionAction(
+  id: string,
+  input: DeleteInput,
+): Promise<ActionResult<{ submitted: boolean }>> {
   return runAction(async () => ({ submitted: await deleteCashTransaction(id, input) }));
 }

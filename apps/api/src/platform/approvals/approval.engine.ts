@@ -25,9 +25,16 @@ export type Rule = { required: boolean; approverRoleIds: string[]; overdueHours:
 
 /** The rule of an action; an action without a row needs no approval. */
 export async function ruleFor(db: Db, action: ApprovalAction): Promise<Rule> {
-  const row = await db.approvalRule.findUnique({ where: { actionType: action }, include: { approvers: { select: { roleId: true } } } });
+  const row = await db.approvalRule.findUnique({
+    where: { actionType: action },
+    include: { approvers: { select: { roleId: true } } },
+  });
   if (!row) return { required: false, approverRoleIds: [], overdueHours: 24 };
-  return { required: row.required, approverRoleIds: row.approvers.map((a) => a.roleId), overdueHours: row.overdueHours };
+  return {
+    required: row.required,
+    approverRoleIds: row.approvers.map((a) => a.roleId),
+    overdueHours: row.overdueHours,
+  };
 }
 
 export type Submission = {
@@ -45,7 +52,11 @@ export type Submission = {
  * Records a pending request, in the transaction of the submitted change. A second
  * pending request for the same record and action is refused (APPROVAL_ALREADY_PENDING).
  */
-export async function submitForApproval(db: Db, actor: Pick<Actor, "id">, submission: Submission): Promise<{ id: string }> {
+export async function submitForApproval(
+  db: Db,
+  actor: Pick<Actor, "id">,
+  submission: Submission,
+): Promise<{ id: string }> {
   const request = await db.approvalRequest.create({
     data: {
       actionType: submission.action,
@@ -64,10 +75,19 @@ export async function submitForApproval(db: Db, actor: Pick<Actor, "id">, submis
     entityType: "approval_request",
     entityId: request.id,
     action: "approval_request.submitted",
-    after: { action: submission.action, entityType: submission.entityType, entityId: submission.entityId, status: "PENDING" },
+    after: {
+      action: submission.action,
+      entityType: submission.entityType,
+      entityId: submission.entityId,
+      status: "PENDING",
+    },
   });
   // D-018: the approvers get it in their inbox, and are told.
-  const deciders = await decidersOf(db, { actionType: submission.action, branchId: submission.branchId, submittedById: actor.id });
+  const deciders = await decidersOf(db, {
+    actionType: submission.action,
+    branchId: submission.branchId,
+    submittedById: actor.id,
+  });
   await notify(db, deciders, { kind: "approvalSubmitted", params: { title: submission.title }, link: "/approvals" });
   return request;
 }
@@ -103,7 +123,9 @@ async function usersWhere(db: Db, request: RequestRef, where: Prisma.UserWhereIn
  */
 export async function remindOverdueApprovals(now: Date = new Date()): Promise<number> {
   return prisma.$transaction(async (tx) => {
-    const overdue = await tx.$queryRaw<{ id: string; action_type: string; branch_id: string; submitted_by: string; title: string }[]>`
+    const overdue = await tx.$queryRaw<
+      { id: string; action_type: string; branch_id: string; submitted_by: string; title: string }[]
+    >`
       UPDATE approval_requests AS ar SET overdue_notified_at = ${now}
       FROM approval_rules AS r
       WHERE r.action_type = ar.action_type
@@ -137,15 +159,26 @@ export async function hasPending(db: Db, action: ApprovalAction, entityId: strin
 
 /** When a record goes away, its pending requests are withdrawn (no decider). */
 export async function cancelPendingFor(db: Db, entityId: string): Promise<void> {
-  await db.approvalRequest.updateMany({ where: { entityId, status: "PENDING" }, data: { status: "CANCELLED", decidedAt: new Date() } });
+  await db.approvalRequest.updateMany({
+    where: { entityId, status: "PENDING" },
+    data: { status: "CANCELLED", decidedAt: new Date() },
+  });
 }
 
 /**
  * D-018: an approver of the action's current rule, with the request's branch, and not
  * the submitter. Matrix changes take effect for requests already pending.
  */
-export function mayDecide(actor: Pick<Actor, "id" | "roleId" | "branches">, request: { submittedById: string; branchId: string }, rule: Rule): boolean {
-  return actor.id !== request.submittedById && rule.approverRoleIds.includes(actor.roleId) && hasBranch(actor, request.branchId);
+export function mayDecide(
+  actor: Pick<Actor, "id" | "roleId" | "branches">,
+  request: { submittedById: string; branchId: string },
+  rule: Rule,
+): boolean {
+  return (
+    actor.id !== request.submittedById &&
+    rule.approverRoleIds.includes(actor.roleId) &&
+    hasBranch(actor, request.branchId)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -154,7 +187,9 @@ export function mayDecide(actor: Pick<Actor, "id" | "roleId" | "branches">, requ
 
 export async function listRules(actor: Actor): Promise<ApprovalRule[]> {
   assertCan(actor, "approval.manage");
-  const rows = await prisma.approvalRule.findMany({ include: { approvers: { include: { role: { select: { id: true, name: true } } } } } });
+  const rows = await prisma.approvalRule.findMany({
+    include: { approvers: { include: { role: { select: { id: true, name: true } } } } },
+  });
   return APPROVAL_ACTIONS.map((action) => {
     const row = rows.find((r) => r.actionType === action);
     return {
@@ -191,7 +226,11 @@ export async function updateRule(actor: Actor, rawAction: string, input: unknown
       entityType: "approval_rule",
       entityId: rule.id,
       action: "approval_rule.updated",
-      before: { required: before.required, overdueHours: before.overdueHours, approverRoleIds: [...before.approverRoleIds].sort() },
+      before: {
+        required: before.required,
+        overdueHours: before.overdueHours,
+        approverRoleIds: [...before.approverRoleIds].sort(),
+      },
       after: { required: data.required, overdueHours: data.overdueHours, approverRoleIds: [...roleIds].sort() },
       context: { action },
     });
@@ -226,8 +265,15 @@ export async function listApprovals(
     where = { AND: [inBranches(actor), { status: query.status }] };
   } else {
     // What the actor may decide: actions whose approvers include their role.
-    const actions = [...rules].filter(([, rule]) => rule.approverRoleIds.includes(actor.roleId)).map(([action]) => action);
-    where = { AND: [inBranches(actor), { actionType: { in: actions }, submittedById: { not: actor.id }, status: query.status ?? "PENDING" }] };
+    const actions = [...rules]
+      .filter(([, rule]) => rule.approverRoleIds.includes(actor.roleId))
+      .map(([action]) => action);
+    where = {
+      AND: [
+        inBranches(actor),
+        { actionType: { in: actions }, submittedById: { not: actor.id }, status: query.status ?? "PENDING" },
+      ],
+    };
   }
   const [rows, total] = await Promise.all([
     prisma.approvalRequest.findMany({
@@ -249,15 +295,24 @@ export async function approvalSummary(actor: Actor): Promise<{ toDecide: number;
   const mine = [...rules].filter(([, rule]) => rule.approverRoleIds.includes(actor.roleId));
   if (mine.length === 0) return { toDecide: 0, overdue: 0 };
   const rows = await prisma.approvalRequest.findMany({
-    where: { AND: [inBranches(actor), { actionType: { in: mine.map(([a]) => a) }, submittedById: { not: actor.id }, status: "PENDING" }] },
+    where: {
+      AND: [
+        inBranches(actor),
+        { actionType: { in: mine.map(([a]) => a) }, submittedById: { not: actor.id }, status: "PENDING" },
+      ],
+    },
     select: { actionType: true, submittedAt: true },
   });
-  const overdue = rows.filter((row) => now - row.submittedAt.getTime() > rules.get(row.actionType as ApprovalAction)!.overdueHours * 3_600_000);
+  const overdue = rows.filter(
+    (row) => now - row.submittedAt.getTime() > rules.get(row.actionType as ApprovalAction)!.overdueHours * 3_600_000,
+  );
   return { toDecide: rows.length, overdue: overdue.length };
 }
 
 async function allRules(): Promise<Map<ApprovalAction, Rule>> {
-  return new Map(await Promise.all(APPROVAL_ACTIONS.map(async (action) => [action, await ruleFor(prisma, action)] as const)));
+  return new Map(
+    await Promise.all(APPROVAL_ACTIONS.map(async (action) => [action, await ruleFor(prisma, action)] as const)),
+  );
 }
 
 function toView(actor: Actor, row: RequestRow, rules: Map<ApprovalAction, Rule>): ApprovalRequest {

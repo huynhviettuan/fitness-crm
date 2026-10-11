@@ -17,7 +17,10 @@ export function formatContractCode(prefix: string, sequenceValue: bigint | numbe
  * T-018: an ACTIVE contract whose end date is before the gym's current day is EXPIRED.
  * The end date itself is still valid. `today` is the gym's calendar day at UTC midnight.
  */
-export function effectiveStatus(contract: { status: ContractStatus; endDate: Date }, today: Date): EffectiveContractStatus {
+export function effectiveStatus(
+  contract: { status: ContractStatus; endDate: Date },
+  today: Date,
+): EffectiveContractStatus {
   if (contract.status === "ACTIVE" && contract.endDate.getTime() < today.getTime()) return "EXPIRED";
   return contract.status;
 }

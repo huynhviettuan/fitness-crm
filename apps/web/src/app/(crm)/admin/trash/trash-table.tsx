@@ -14,14 +14,30 @@ import type { ChosenOption } from "@flow/shared/options";
 import type { TrashEntry } from "@flow/shared/trash";
 
 /** Deleted records, newest first (FR-TRASH-002). "View" shows the record as it was. */
-export function TrashTable({ entries, empty, footer }: { entries: TrashEntry[]; empty: ReactNode; footer?: ReactNode }) {
+export function TrashTable({
+  entries,
+  empty,
+  footer,
+}: {
+  entries: TrashEntry[];
+  empty: ReactNode;
+  footer?: ReactNode;
+}) {
   const t = useTranslations("trash");
   const [viewing, setViewing] = useState<TrashEntry | null>(null);
 
   const columns: DataTableColumn<TrashEntry>[] = [
-    { id: "deletedAt", header: t("fields.deletedAt"), cell: ({ row }) => <DateTime value={row.original.deletedAt} format="dateTime" /> },
+    {
+      id: "deletedAt",
+      header: t("fields.deletedAt"),
+      cell: ({ row }) => <DateTime value={row.original.deletedAt} format="dateTime" />,
+    },
     { id: "type", header: t("fields.type"), cell: ({ row }) => t(`types.${row.original.entityType}`) },
-    { id: "record", header: t("fields.record"), cell: ({ row }) => <span className="font-medium">{row.original.title}</span> },
+    {
+      id: "record",
+      header: t("fields.record"),
+      cell: ({ row }) => <span className="font-medium">{row.original.title}</span>,
+    },
     {
       id: "amount",
       header: t("fields.amount"),
@@ -42,7 +58,12 @@ export function TrashTable({ entries, empty, footer }: { entries: TrashEntry[]; 
       id: "actions",
       header: () => <span className="sr-only">{t("view")}</span>,
       cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => setViewing(row.original)} aria-label={t("viewLabel", { name: row.original.title })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setViewing(row.original)}
+          aria-label={t("viewLabel", { name: row.original.title })}
+        >
           <EyeIcon />
           {t("view")}
         </Button>
@@ -52,7 +73,14 @@ export function TrashTable({ entries, empty, footer }: { entries: TrashEntry[]; 
 
   return (
     <>
-      <DataTable columns={columns} data={entries} label={t("title")} empty={empty} footer={footer} getRowId={(row) => row.id} />
+      <DataTable
+        columns={columns}
+        data={entries}
+        label={t("title")}
+        empty={empty}
+        footer={footer}
+        getRowId={(row) => row.id}
+      />
       <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
         {viewing && (
           <DialogContent>

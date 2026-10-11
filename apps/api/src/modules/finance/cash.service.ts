@@ -12,7 +12,12 @@ import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { chosen, chosenSelect, resolveChoice } from "../../platform/options/option.service.js";
 import { moveToTrash } from "../../platform/trash/trash.service.js";
-import { cancelPendingFor, ruleFor, submitForApproval, withPendingConflictMapped } from "../../platform/approvals/approval.engine.js";
+import {
+  cancelPendingFor,
+  ruleFor,
+  submitForApproval,
+  withPendingConflictMapped,
+} from "../../platform/approvals/approval.engine.js";
 import type { Db as TxDb } from "../../platform/db/prisma.js";
 import type { RecordApprovalStatus } from "@flow/shared/approvals";
 import { encode } from "../../platform/http/encode.js";
@@ -94,7 +99,10 @@ export async function recordCashTransaction(
       const branchId = await resolveBranch(tx, actor, data.branchId);
       // Income and expenses have their own lists; "Khác" needs a note (D-016).
       const list = data.type === "INCOME" ? "incomeCategories" : "expenseTypes";
-      const category = await resolveChoice(tx, list, "categoryId", { optionId: data.categoryId, note: data.categoryNote });
+      const category = await resolveChoice(tx, list, "categoryId", {
+        optionId: data.categoryId,
+        note: data.categoryNote,
+      });
       const rule = await ruleFor(tx, "cash.create");
       const transaction = await repo.createCashTransaction(tx, {
         ...data,
@@ -148,7 +156,11 @@ export async function recordCashTransaction(
  * matrix requires it, the deletion waits for approval (D-018). Deleting vouchers is its
  * own permission (09_RBAC.md). An entry already deleted is NOT_FOUND.
  */
-export async function deleteCashTransaction(actor: Actor, id: string, input: unknown): Promise<{ approval: { id: string } } | null> {
+export async function deleteCashTransaction(
+  actor: Actor,
+  id: string,
+  input: unknown,
+): Promise<{ approval: { id: string } } | null> {
   assertCan(actor, "cash.delete");
   const { reasonId, reasonNote } = parseInput(deleteSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
@@ -218,7 +230,12 @@ export function findCashForApproval(tx: TxDb, id: string): Promise<repo.CashTran
 }
 
 /** Approving or rejecting a pending entry (D-018), with its audit. */
-export async function decideCashTransaction(tx: TxDb, decider: Pick<Actor, "id">, id: string, to: "APPROVED" | "REJECTED"): Promise<void> {
+export async function decideCashTransaction(
+  tx: TxDb,
+  decider: Pick<Actor, "id">,
+  id: string,
+  to: "APPROVED" | "REJECTED",
+): Promise<void> {
   if ((await repo.setCashApprovalStatus(tx, id, "PENDING", to)) !== 1) throw new AppError("APPROVAL_NOT_PENDING");
   await recordAudit(tx, {
     actorUserId: decider.id,

@@ -35,7 +35,10 @@ const pay = (actor: Actor, contractId: string, amount: number) =>
   recordPayment(actor, contractId, { amount, methodId: CASH, paidOn: "05/10/2026" }, randomUUID());
 
 const requestFor = (entityId: string, action?: string) =>
-  prisma.approvalRequest.findFirstOrThrow({ where: { entityId, ...(action ? { actionType: action } : {}) }, orderBy: { submittedAt: "desc" } });
+  prisma.approvalRequest.findFirstOrThrow({
+    where: { entityId, ...(action ? { actionType: action } : {}) },
+    orderBy: { submittedAt: "desc" },
+  });
 
 describe("a receipt under the approval matrix (D-018, AC-05)", () => {
   it("is pending and counts for nothing until a Fitness Manager approves it", async () => {
@@ -62,7 +65,9 @@ describe("a receipt under the approval matrix (D-018, AC-05)", () => {
     expect(await getContract(manager, contract.id)).toMatchObject({ paidAmount: 5_000_000, debt: 7_000_000 });
     expect((await listPayments(manager, { contractId: contract.id })).items[0].approvalStatus).toBe("APPROVED");
     expect(await requestFor(payment.id)).toMatchObject({ status: "APPROVED", decidedById: manager.id });
-    expect(await prisma.auditEvent.findFirst({ where: { entityId: payment.id, action: "payment.approved" } })).toMatchObject({
+    expect(
+      await prisma.auditEvent.findFirst({ where: { entityId: payment.id, action: "payment.approved" } }),
+    ).toMatchObject({
       actorUserId: manager.id,
       before: { approvalStatus: "PENDING" },
       after: { approvalStatus: "APPROVED" },
@@ -76,7 +81,10 @@ describe("a receipt under the approval matrix (D-018, AC-05)", () => {
 
     await expect(approveRequest(manager, request.id)).rejects.toMatchObject({ code: "APPROVAL_OWN_REQUEST" });
     expect((await listApprovals(manager, {})).total).toBe(0);
-    expect((await listApprovals(manager, { view: "mine" })).items[0]).toMatchObject({ id: request.id, canDecide: false });
+    expect((await listApprovals(manager, { view: "mine" })).items[0]).toMatchObject({
+      id: request.id,
+      canDecide: false,
+    });
 
     await approveRequest(otherManager, request.id);
     expect((await getContract(manager, contract.id)).paidAmount).toBe(5_000_000);
@@ -99,9 +107,11 @@ describe("a receipt under the approval matrix (D-018, AC-05)", () => {
     const { payment } = await pay(reception, contract.id, 5_000_000);
     const request = await requestFor(payment.id);
 
-    await expect(rejectRequest(manager, request.id, { reasonId: OTHER_REJECT, reasonNote: " " })).rejects.toMatchObject({
-      fieldErrors: { reasonNote: ["otherNeedsNote"] },
-    });
+    await expect(rejectRequest(manager, request.id, { reasonId: OTHER_REJECT, reasonNote: " " })).rejects.toMatchObject(
+      {
+        fieldErrors: { reasonNote: ["otherNeedsNote"] },
+      },
+    );
     await rejectRequest(manager, request.id, { reasonId: OTHER_REJECT, reasonNote: "Sai số tiền" });
 
     expect((await listPayments(manager, { contractId: contract.id })).items[0].approvalStatus).toBe("REJECTED");
@@ -119,7 +129,10 @@ describe("a receipt under the approval matrix (D-018, AC-05)", () => {
     const { payment } = await pay(reception, contract.id, 5_000_000);
     const request = await requestFor(payment.id);
 
-    const results = await Promise.allSettled([approveRequest(manager, request.id), approveRequest(otherManager, request.id)]);
+    const results = await Promise.allSettled([
+      approveRequest(manager, request.id),
+      approveRequest(otherManager, request.id),
+    ]);
 
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { code: "APPROVAL_NOT_PENDING" } });
@@ -130,7 +143,9 @@ describe("a receipt under the approval matrix (D-018, AC-05)", () => {
     const { reception, contract } = await setup();
     await pay(reception, contract.id, 10_000_000);
 
-    await expect(pay(reception, contract.id, 3_000_000)).rejects.toMatchObject({ code: "PAYMENT_EXCEEDS_CONTRACT_VALUE" });
+    await expect(pay(reception, contract.id, 3_000_000)).rejects.toMatchObject({
+      code: "PAYMENT_EXCEEDS_CONTRACT_VALUE",
+    });
   });
 });
 
@@ -162,7 +177,9 @@ describe("other actions under the matrix", () => {
 
     expect(await deletePayment(accountant, payment.id, reason)).toMatchObject({ approval: { id: expect.any(String) } });
     expect((await getContract(manager, contract.id)).paidAmount).toBe(5_000_000);
-    await expect(deletePayment(accountant, payment.id, reason)).rejects.toMatchObject({ code: "APPROVAL_ALREADY_PENDING" });
+    await expect(deletePayment(accountant, payment.id, reason)).rejects.toMatchObject({
+      code: "APPROVAL_ALREADY_PENDING",
+    });
     const [item] = (await listApprovals(admin, {})).items;
     expect(item).toMatchObject({ action: "record.delete", changes: { reason: { labelVi: "Khác", note: "Ghi nhầm" } } });
 
@@ -170,7 +187,10 @@ describe("other actions under the matrix", () => {
 
     expect((await getContract(manager, contract.id)).paidAmount).toBe(0);
     // The trash names who asked; the approver is on the request.
-    expect(await prisma.trashEntry.findFirst({ where: { entityId: payment.id } })).toMatchObject({ deletedById: accountant.id, reasonNote: "Ghi nhầm" });
+    expect(await prisma.trashEntry.findFirst({ where: { entityId: payment.id } })).toMatchObject({
+      deletedById: accountant.id,
+      reasonNote: "Ghi nhầm",
+    });
   });
 
   it("deleting a receipt still waiting for approval withdraws that request", async () => {
@@ -194,10 +214,18 @@ describe("other actions under the matrix", () => {
     });
 
     expect(approval).not.toBeNull();
-    expect(edited).toMatchObject({ phone: "0909123456", notes: "Thích tập buổi sáng", pendingIdentity: { phone: "0911222333" } });
+    expect(edited).toMatchObject({
+      phone: "0909123456",
+      notes: "Thích tập buổi sáng",
+      pendingIdentity: { phone: "0911222333" },
+    });
     await approveRequest(manager, approval!.id);
     expect(await getCustomer(manager, customer.id)).toMatchObject({ phone: "0911222333", pendingIdentity: null });
-    expect(await prisma.auditEvent.findFirst({ where: { entityId: customer.id, action: "customer.updated", actorUserId: manager.id } })).toMatchObject({
+    expect(
+      await prisma.auditEvent.findFirst({
+        where: { entityId: customer.id, action: "customer.updated", actorUserId: manager.id },
+      }),
+    ).toMatchObject({
       before: { phone: "0909123456" },
       after: { phone: "0911222333" },
       metadata: { approvalRequestId: approval!.id },
@@ -211,14 +239,23 @@ describe("the approval matrix (FR-PLT-006, AC-05)", () => {
     const { actor: admin } = await createTestUser("ADMIN");
     const { payment: waiting } = await pay(reception, contract.id, 1_000_000);
 
-    await updateRule(admin, "payment.create", { required: true, approverRoleIds: [await roleId("ADMIN")], overdueHours: 24 });
+    await updateRule(admin, "payment.create", {
+      required: true,
+      approverRoleIds: [await roleId("ADMIN")],
+      overdueHours: 24,
+    });
     expect((await listApprovals(manager, {})).total).toBe(0);
-    await expect(approveRequest(manager, (await requestFor(waiting.id)).id)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(approveRequest(manager, (await requestFor(waiting.id)).id)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
 
     await updateRule(admin, "payment.create", { required: false, approverRoleIds: [], overdueHours: 24 });
     const { payment } = await pay(reception, contract.id, 2_000_000);
     expect(payment.approvalStatus).toBe("APPROVED");
-    expect((await listRules(admin)).find((rule) => rule.action === "payment.create")).toMatchObject({ required: false, approvers: [] });
+    expect((await listRules(admin)).find((rule) => rule.action === "payment.create")).toMatchObject({
+      required: false,
+      approvers: [],
+    });
     expect(await prisma.auditEvent.count({ where: { action: "approval_rule.updated" } })).toBe(2);
   });
 
@@ -227,10 +264,14 @@ describe("the approval matrix (FR-PLT-006, AC-05)", () => {
     const { actor: admin } = await createTestUser("ADMIN");
 
     await expect(listRules(manager)).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(updateRule(admin, "payment.create", { required: true, approverRoleIds: [], overdueHours: 24 })).rejects.toMatchObject({
+    await expect(
+      updateRule(admin, "payment.create", { required: true, approverRoleIds: [], overdueHours: 24 }),
+    ).rejects.toMatchObject({
       fieldErrors: { approverRoleIds: ["approverRequired"] },
     });
-    await expect(updateRule(admin, "lead.create", { required: false, approverRoleIds: [], overdueHours: 24 })).rejects.toMatchObject({
+    await expect(
+      updateRule(admin, "lead.create", { required: false, approverRoleIds: [], overdueHours: 24 }),
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
   });
@@ -252,7 +293,10 @@ describe("the approval matrix (FR-PLT-006, AC-05)", () => {
     const request = await requestFor(payment.id);
 
     await expect(
-      prisma.approvalRequest.update({ where: { id: request.id }, data: { status: "APPROVED", decidedById: reception.id, decidedAt: new Date() } }),
+      prisma.approvalRequest.update({
+        where: { id: request.id },
+        data: { status: "APPROVED", decidedById: reception.id, decidedAt: new Date() },
+      }),
     ).rejects.toThrow(/approval_requests_not_own/);
   });
 });

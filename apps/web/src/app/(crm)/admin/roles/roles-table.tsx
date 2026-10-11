@@ -7,7 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 
-type RoleRow = { id: string; code: string | null; name: string; description: string | null; permissions: string[]; userCount: number };
+type RoleRow = {
+  id: string;
+  code: string | null;
+  name: string;
+  description: string | null;
+  permissions: string[];
+  userCount: number;
+};
 
 export function RolesTable({ roles }: { roles: RoleRow[] }) {
   const t = useTranslations("roles");

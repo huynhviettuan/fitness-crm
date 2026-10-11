@@ -56,11 +56,17 @@ describe("adding a lead (brief §4.1, FR-LEAD-001)", () => {
     await expect(createLead(manager, { fullName: "A", channelId: OTHER_CHANNEL })).rejects.toMatchObject({
       fieldErrors: { channelNote: ["otherNeedsNote"] },
     });
-    await expect(createLead(manager, { fullName: "A", channelId: FANPAGE })).rejects.toMatchObject({ fieldErrors: { channelId: ["invalidChoice"] } });
-    await expect(createLead(manager, { fullName: "A", channelId: WHATSAPP, sourceId: WHATSAPP })).rejects.toMatchObject({
-      fieldErrors: { sourceId: ["invalidChoice"] },
+    await expect(createLead(manager, { fullName: "A", channelId: FANPAGE })).rejects.toMatchObject({
+      fieldErrors: { channelId: ["invalidChoice"] },
     });
-    await expect(createLead(manager, { fullName: "A", channelId: OTHER_CHANNEL, channelNote: "Hội chợ" })).resolves.toMatchObject({
+    await expect(createLead(manager, { fullName: "A", channelId: WHATSAPP, sourceId: WHATSAPP })).rejects.toMatchObject(
+      {
+        fieldErrors: { sourceId: ["invalidChoice"] },
+      },
+    );
+    await expect(
+      createLead(manager, { fullName: "A", channelId: OTHER_CHANNEL, channelNote: "Hội chợ" }),
+    ).resolves.toMatchObject({
       channel: { isOther: true, note: "Hội chợ" },
     });
   });
@@ -68,7 +74,9 @@ describe("adding a lead (brief §4.1, FR-LEAD-001)", () => {
   it.each(["PT", "MASTER", "MARKETING", "ACCOUNTANT"] as const)("refuses a %s (09_RBAC.md)", async (role) => {
     const { actor } = await createTestUser(role);
 
-    await expect(createLead(actor, { fullName: "A", channelId: WHATSAPP })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(createLead(actor, { fullName: "A", channelId: WHATSAPP })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -78,7 +86,9 @@ describe("one person, one record (D-019)", () => {
     const customer = await createCustomer(reception, { fullName: "Nguyễn Văn An", phone: "0909123456" });
     const lead = await createLead(reception, { fullName: "Lê Hoa", phone: "0933111222", channelId: WHATSAPP });
 
-    await expect(createLead(reception, { fullName: "An", phone: "0909.123.456", channelId: WHATSAPP })).rejects.toMatchObject({
+    await expect(
+      createLead(reception, { fullName: "An", phone: "0909.123.456", channelId: WHATSAPP }),
+    ).rejects.toMatchObject({
       code: "PHONE_ALREADY_USED",
       fieldErrors: { phone: ["phoneAlreadyUsed"] },
       duplicate: { id: customer.id, stage: "CUSTOMER", code: customer.customerCode, fullName: "Nguyễn Văn An" },
@@ -88,7 +98,9 @@ describe("one person, one record (D-019)", () => {
       duplicate: { id: lead.id, stage: "LEAD", code: lead.leadCode },
     });
     const other = await createLead(reception, { fullName: "Khác", phone: uniquePhone(), channelId: WHATSAPP });
-    await expect(updateLead(reception, other.id, { fullName: "Khác", phone: "0933111222", channelId: WHATSAPP })).rejects.toMatchObject({
+    await expect(
+      updateLead(reception, other.id, { fullName: "Khác", phone: "0933111222", channelId: WHATSAPP }),
+    ).rejects.toMatchObject({
       code: "PHONE_ALREADY_USED",
     });
   });
@@ -99,7 +111,9 @@ describe("one person, one record (D-019)", () => {
     await createLead(admin, { fullName: "Lead Q7", phone: "0944555666", channelId: WHATSAPP, branchId: branch.id });
     const { actor: consulting } = await createTestUser("CONSULTING");
 
-    const refused = await createLead(consulting, { fullName: "A", phone: "0944555666", channelId: WHATSAPP }).catch((error: unknown) => error);
+    const refused = await createLead(consulting, { fullName: "A", phone: "0944555666", channelId: WHATSAPP }).catch(
+      (error: unknown) => error,
+    );
 
     expect(refused).toMatchObject({ code: "PHONE_ALREADY_USED", duplicate: undefined });
   });
@@ -132,7 +146,12 @@ describe("one person, one record (D-019)", () => {
 describe("seeing and editing leads", () => {
   it("searches by name without diacritics, code, and phone, and filters by channel and need", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
-    const mai = await createLead(manager, { fullName: "Trần Thị Mai", phone: "0912345678", channelId: WHATSAPP, needGroupId: PAIN_RELIEF });
+    const mai = await createLead(manager, {
+      fullName: "Trần Thị Mai",
+      phone: "0912345678",
+      channelId: WHATSAPP,
+      needGroupId: PAIN_RELIEF,
+    });
     const hoa = await createLead(manager, { fullName: "Lê Hoa", channelId: OTHER_CHANNEL, channelNote: "Hội chợ" });
 
     const ids = async (query: Record<string, string>) => (await listLeads(manager, query)).items.map((lead) => lead.id);
@@ -164,11 +183,19 @@ describe("seeing and editing leads", () => {
     const { actor: reception } = await createTestUser("RECEPTIONIST");
     const lead = await createLead(reception, { fullName: "Lê Hoa", channelId: WHATSAPP });
 
-    const edited = await updateLead(reception, lead.id, { fullName: "Lê Thị Hoa", channelId: WHATSAPP, needGroupId: PAIN_RELIEF, gender: "FEMALE" });
+    const edited = await updateLead(reception, lead.id, {
+      fullName: "Lê Thị Hoa",
+      channelId: WHATSAPP,
+      needGroupId: PAIN_RELIEF,
+      gender: "FEMALE",
+    });
 
     expect(edited).toMatchObject({ fullName: "Lê Thị Hoa", gender: "FEMALE", needGroup: { id: PAIN_RELIEF } });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: lead.id, action: "lead.updated" } });
-    expect(audit).toMatchObject({ before: { fullName: "Lê Hoa", needGroupId: null }, after: { fullName: "Lê Thị Hoa", needGroupId: PAIN_RELIEF } });
+    expect(audit).toMatchObject({
+      before: { fullName: "Lê Hoa", needGroupId: null },
+      after: { fullName: "Lê Thị Hoa", needGroupId: PAIN_RELIEF },
+    });
   });
 
   it("hides the phone and email of a role that has them masked, and keeps them on edit (D-017)", async () => {
@@ -176,11 +203,24 @@ describe("seeing and editing leads", () => {
     const role = await createRole(admin, {
       name: "Tư vấn ẩn SĐT",
       permissions: ["lead.view", "lead.create", "lead.manage"],
-      dataScopes: { leads: "ALL", customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL", tasks: "OWN" },
+      dataScopes: {
+        leads: "ALL",
+        customers: "ALL",
+        contracts: "ALL",
+        schedule: "ALL",
+        vouchers: "ALL",
+        staff: "ALL",
+        tasks: "OWN",
+      },
       fieldMasks: ["customer.phone", "customer.email"],
     });
     const { actor } = await createTestUser("CONSULTING", { roleId: role.id });
-    const lead = await createLead(admin, { fullName: "Lê Hoa", phone: "0977888999", email: "hoa@mail.vn", channelId: WHATSAPP });
+    const lead = await createLead(admin, {
+      fullName: "Lê Hoa",
+      phone: "0977888999",
+      email: "hoa@mail.vn",
+      channelId: WHATSAPP,
+    });
 
     expect(await getLead(actor, lead.id)).toMatchObject({ phone: null, email: null, maskedFields: ["phone", "email"] });
     expect((await listLeads(actor, { q: "0977888" })).total).toBe(0);

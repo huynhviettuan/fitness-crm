@@ -4,7 +4,15 @@ import { useId, type HTMLInputTypeAttribute } from "react";
 import { useTranslations } from "next-intl";
 import { Controller, type Control, type FieldPath, type FieldValues, type UseFormSetError } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,7 +62,13 @@ export function TextField<T extends FieldValues>({
         <Field data-invalid={fieldState.invalid || undefined}>
           <FieldLabel htmlFor={id}>{label}</FieldLabel>
           {multiline ? (
-            <Textarea {...field} id={id} value={field.value ?? ""} placeholder={placeholder} aria-invalid={fieldState.invalid} />
+            <Textarea
+              {...field}
+              id={id}
+              value={field.value ?? ""}
+              placeholder={placeholder}
+              aria-invalid={fieldState.invalid}
+            />
           ) : (
             <Input
               {...field}

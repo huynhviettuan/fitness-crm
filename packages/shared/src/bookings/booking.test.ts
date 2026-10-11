@@ -92,10 +92,16 @@ describe("bookingInputSchema", () => {
   });
 
   it("never accepts a status or session facts from the client", () => {
-    const parsed = bookingInputSchema.parse({ ...ids, date: "15/10/2026", startTime: "18:00", endTime: "19:00", status: "COMPLETED" });
+    const parsed = bookingInputSchema.parse({
+      ...ids,
+      date: "15/10/2026",
+      startTime: "18:00",
+      endTime: "19:00",
+      status: "COMPLETED",
+    });
     expect(parsed).not.toHaveProperty("status");
-    expect(rescheduleSchema.parse({ ...ids, date: "15/10/2026", startTime: "18:00", endTime: "19:00" })).not.toHaveProperty(
-      "contractId",
-    );
+    expect(
+      rescheduleSchema.parse({ ...ids, date: "15/10/2026", startTime: "18:00", endTime: "19:00" }),
+    ).not.toHaveProperty("contractId");
   });
 });

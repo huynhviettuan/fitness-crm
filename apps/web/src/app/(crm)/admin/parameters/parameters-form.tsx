@@ -34,7 +34,13 @@ export function ParametersForm({ parameters }: { parameters: Parameters }) {
   );
 
   const field = (name: keyof Parameters, inputMode?: "numeric") => (
-    <TextField control={form.control} name={name} label={t(`parameters.fields.${name}`)} autoComplete="off" inputMode={inputMode} />
+    <TextField
+      control={form.control}
+      name={name}
+      label={t(`parameters.fields.${name}`)}
+      autoComplete="off"
+      inputMode={inputMode}
+    />
   );
 
   return (

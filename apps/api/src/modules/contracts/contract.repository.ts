@@ -34,12 +34,22 @@ export async function nextContractCode(db: Db): Promise<string> {
 
 export function createContract(
   db: Db,
-  data: ContractData & { customerId: string; branchId: string; contractCode: string; idempotencyKey: string; createdById: string },
+  data: ContractData & {
+    customerId: string;
+    branchId: string;
+    contractCode: string;
+    idempotencyKey: string;
+    createdById: string;
+  },
 ): Promise<ContractRecord> {
   return db.contract.create({ data, include: withCustomer });
 }
 
-export function findContract(db: Db, id: string, visibility: Prisma.ContractWhereInput): Promise<ContractRecord | null> {
+export function findContract(
+  db: Db,
+  id: string,
+  visibility: Prisma.ContractWhereInput,
+): Promise<ContractRecord | null> {
   return db.contract.findFirst({ where: { AND: [{ id }, visibility] }, include: withCustomer });
 }
 

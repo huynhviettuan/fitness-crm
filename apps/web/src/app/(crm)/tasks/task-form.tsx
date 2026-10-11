@@ -8,7 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ListPlusIcon, PencilIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
@@ -64,7 +71,15 @@ type DialogProps = {
   about?: TaskAbout;
 };
 
-export function CreateTaskButton({ assignees, branches, about }: { assignees: TaskAssignees; branches: BranchOption[]; about?: TaskAbout }) {
+export function CreateTaskButton({
+  assignees,
+  branches,
+  about,
+}: {
+  assignees: TaskAssignees;
+  branches: BranchOption[];
+  about?: TaskAbout;
+}) {
   const t = useTranslations("tasks");
   const [open, setOpen] = useState(false);
   return (
@@ -73,7 +88,14 @@ export function CreateTaskButton({ assignees, branches, about }: { assignees: Ta
         <ListPlusIcon />
         {t("create")}
       </Button>
-      <TaskDialog open={open} onOpenChange={setOpen} assignees={assignees} branches={branches} task={null} about={about} />
+      <TaskDialog
+        open={open}
+        onOpenChange={setOpen}
+        assignees={assignees}
+        branches={branches}
+        task={null}
+        about={about}
+      />
     </>
   );
 }
@@ -99,15 +121,30 @@ function TaskDialog({ open, onOpenChange, assignees, branches, task, about }: Di
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{task ? t("edit") : t("create")}</DialogTitle>
-          <DialogDescription>{task ? t("editDescription") : about ? t("createAbout", { label: about.label }) : t("createDescription")}</DialogDescription>
+          <DialogDescription>
+            {task ? t("editDescription") : about ? t("createAbout", { label: about.label }) : t("createDescription")}
+          </DialogDescription>
         </DialogHeader>
-        <TaskForm key={task?.id ?? "new"} assignees={assignees} branches={branches} task={task} about={about} onDone={() => onOpenChange(false)} />
+        <TaskForm
+          key={task?.id ?? "new"}
+          assignees={assignees}
+          branches={branches}
+          task={task}
+          about={about}
+          onDone={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-function TaskForm({ assignees, branches, task, about, onDone }: Omit<DialogProps, "open" | "onOpenChange"> & { onDone: () => void }) {
+function TaskForm({
+  assignees,
+  branches,
+  task,
+  about,
+  onDone,
+}: Omit<DialogProps, "open" | "onOpenChange"> & { onDone: () => void }) {
   const t = useTranslations();
   const f = useTranslations("tasks.fields");
   const locale = useLocale();
@@ -148,7 +185,8 @@ function TaskForm({ assignees, branches, task, about, onDone }: Omit<DialogProps
       }
       notify.success(task ? t("tasks.updated") : t("tasks.created"));
       onDone();
-      if (!task && result.data && typeof result.data === "object" && "id" in result.data) router.push(`/tasks/${result.data.id}`);
+      if (!task && result.data && typeof result.data === "object" && "id" in result.data)
+        router.push(`/tasks/${result.data.id}`);
       else router.refresh();
     }),
   );
@@ -183,7 +221,9 @@ function TaskForm({ assignees, branches, task, about, onDone }: Omit<DialogProps
             label={f("assignee")}
             options={assignees.users.map((user) => ({
               value: user.id,
-              label: user.department ? `${user.name} · ${locale === "vi" ? user.department.labelVi : user.department.labelEn}` : user.name,
+              label: user.department
+                ? `${user.name} · ${locale === "vi" ? user.department.labelVi : user.department.labelEn}`
+                : user.name,
             }))}
           />
         ) : (
@@ -191,18 +231,36 @@ function TaskForm({ assignees, branches, task, about, onDone }: Omit<DialogProps
             control={form.control}
             name="assigneeDepartmentId"
             label={f("department")}
-            options={assignees.departments.map((department) => ({ value: department.id, label: locale === "vi" ? department.labelVi : department.labelEn }))}
+            options={assignees.departments.map((department) => ({
+              value: department.id,
+              label: locale === "vi" ? department.labelVi : department.labelEn,
+            }))}
           />
         )}
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField control={form.control} name="dueDate" label={f("dueDate")} placeholder={t("tasks.datePlaceholder")} autoComplete="off" />
-          <TextField control={form.control} name="dueTime" label={f("dueTime")} placeholder={t("tasks.dueTimePlaceholder")} inputMode="numeric" />
+          <TextField
+            control={form.control}
+            name="dueDate"
+            label={f("dueDate")}
+            placeholder={t("tasks.datePlaceholder")}
+            autoComplete="off"
+          />
+          <TextField
+            control={form.control}
+            name="dueTime"
+            label={f("dueTime")}
+            placeholder={t("tasks.dueTimePlaceholder")}
+            inputMode="numeric"
+          />
         </div>
         <SelectField
           control={form.control}
           name="priority"
           label={f("priority")}
-          options={TASK_PRIORITIES.map((priority) => ({ value: priority, label: t(`status.taskPriority.${priority}`) }))}
+          options={TASK_PRIORITIES.map((priority) => ({
+            value: priority,
+            label: t(`status.taskPriority.${priority}`),
+          }))}
         />
       </FieldGroup>
       <DialogFooter>

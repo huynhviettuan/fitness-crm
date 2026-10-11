@@ -8,7 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PencilIcon, UserPlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { SelectField, SwitchField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { NO_OPTION, OptionSelect } from "@/components/option-select";
@@ -24,7 +31,12 @@ export type EmployeeLoginOption = { id: string; name: string; email: string; lin
 
 // Select items cannot have an empty value, so "none" has its own (sent as "").
 const NONE = NO_OPTION;
-const formSchema = employeeInputSchema.extend({ userId: z.string(), departmentId: z.string(), titleId: z.string(), gender: z.string() });
+const formSchema = employeeInputSchema.extend({
+  userId: z.string(),
+  departmentId: z.string(),
+  titleId: z.string(),
+  gender: z.string(),
+});
 
 type FormValues = {
   branchId: string;
@@ -72,7 +84,13 @@ type DialogProps = {
   branches: BranchOption[];
 };
 
-export function CreateEmployeeButton({ logins, branches }: { logins: EmployeeLoginOption[]; branches: BranchOption[] }) {
+export function CreateEmployeeButton({
+  logins,
+  branches,
+}: {
+  logins: EmployeeLoginOption[];
+  branches: BranchOption[];
+}) {
   const t = useTranslations("employees");
   const [open, setOpen] = useState(false);
   return (
@@ -86,7 +104,15 @@ export function CreateEmployeeButton({ logins, branches }: { logins: EmployeeLog
   );
 }
 
-export function EditEmployeeButton({ employee, logins, branches }: { employee: Employee; logins: EmployeeLoginOption[]; branches: BranchOption[] }) {
+export function EditEmployeeButton({
+  employee,
+  logins,
+  branches,
+}: {
+  employee: Employee;
+  logins: EmployeeLoginOption[];
+  branches: BranchOption[];
+}) {
   const t = useTranslations("employees");
   const [open, setOpen] = useState(false);
   return (
@@ -110,13 +136,24 @@ function EmployeeDialog({ open, onOpenChange, employee, logins, branches }: Dial
           <DialogDescription>{employee ? t("editDescription") : t("createDescription")}</DialogDescription>
         </DialogHeader>
         {/* Remount per employee, so the form starts from their values. */}
-        <EmployeeForm key={employee?.id ?? "new"} employee={employee} logins={logins} branches={branches} onDone={() => onOpenChange(false)} />
+        <EmployeeForm
+          key={employee?.id ?? "new"}
+          employee={employee}
+          logins={logins}
+          branches={branches}
+          onDone={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-function EmployeeForm({ employee, logins, branches, onDone }: Omit<DialogProps, "open" | "onOpenChange"> & { onDone: () => void }) {
+function EmployeeForm({
+  employee,
+  logins,
+  branches,
+  onDone,
+}: Omit<DialogProps, "open" | "onOpenChange"> & { onDone: () => void }) {
   const t = useTranslations();
   const router = useRouter();
   const errorMessage = useErrorMessage();
@@ -180,7 +217,12 @@ function EmployeeForm({ employee, logins, branches, onDone }: Omit<DialogProps, 
         )}
         <TextField control={form.control} name="fullName" label={f("fullName")} autoComplete="off" />
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField control={form.control} name="birthDate" label={f("birthDate")} placeholder={t("employees.birthDatePlaceholder")} />
+          <TextField
+            control={form.control}
+            name="birthDate"
+            label={f("birthDate")}
+            placeholder={t("employees.birthDatePlaceholder")}
+          />
           <SelectField
             control={form.control}
             name="gender"
@@ -190,7 +232,14 @@ function EmployeeForm({ employee, logins, branches, onDone }: Omit<DialogProps, 
               ...GENDERS.map((gender) => ({ value: gender, label: t(`employees.genders.${gender}`) })),
             ]}
           />
-          <TextField control={form.control} name="phone" label={f("phone")} type="tel" inputMode="tel" autoComplete="off" />
+          <TextField
+            control={form.control}
+            name="phone"
+            label={f("phone")}
+            type="tel"
+            inputMode="tel"
+            autoComplete="off"
+          />
           <TextField control={form.control} name="email" label={f("email")} type="email" autoComplete="off" />
         </div>
         <OptionSelect
@@ -202,7 +251,14 @@ function EmployeeForm({ employee, logins, branches, onDone }: Omit<DialogProps, 
           noneLabel={t("employees.noOption")}
         />
         <TextField control={form.control} name="team" label={f("team")} autoComplete="off" />
-        <OptionSelect control={form.control} name="titleId" noteName="titleNote" listKey="jobTitles" label={f("title")} noneLabel={t("employees.noOption")} />
+        <OptionSelect
+          control={form.control}
+          name="titleId"
+          noteName="titleNote"
+          listKey="jobTitles"
+          label={f("title")}
+          noneLabel={t("employees.noOption")}
+        />
         {employee && (
           <SelectField
             control={form.control}
@@ -211,8 +267,19 @@ function EmployeeForm({ employee, logins, branches, onDone }: Omit<DialogProps, 
             options={EMPLOYEE_STATUSES.map((status) => ({ value: status, label: t(`status.employee.${status}`) }))}
           />
         )}
-        <SwitchField control={form.control} name="isTrainer" label={f("isTrainer")} description={t("employees.isTrainerDescription")} />
-        <SelectField control={form.control} name="userId" label={f("login")} description={t("employees.loginDescription")} options={loginOptions} />
+        <SwitchField
+          control={form.control}
+          name="isTrainer"
+          label={f("isTrainer")}
+          description={t("employees.isTrainerDescription")}
+        />
+        <SelectField
+          control={form.control}
+          name="userId"
+          label={f("login")}
+          description={t("employees.loginDescription")}
+          options={loginOptions}
+        />
       </FieldGroup>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone} disabled={pending}>

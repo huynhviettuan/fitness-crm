@@ -22,8 +22,20 @@ import { parseInput } from "../validation/parse.js";
 // chosen, and the records that have it keep it. Each list has one "Khác", always
 // active and always listed last, which needs a note wherever it is chosen.
 
-const optionSelect = { id: true, listKey: true, labelVi: true, labelEn: true, sortOrder: true, active: true, isOther: true } as const;
-const listOrder: Prisma.OptionOrderByWithRelationInput[] = [{ isOther: "asc" }, { sortOrder: "asc" }, { labelVi: "asc" }];
+const optionSelect = {
+  id: true,
+  listKey: true,
+  labelVi: true,
+  labelEn: true,
+  sortOrder: true,
+  active: true,
+  isOther: true,
+} as const;
+const listOrder: Prisma.OptionOrderByWithRelationInput[] = [
+  { isOther: "asc" },
+  { sortOrder: "asc" },
+  { labelVi: "asc" },
+];
 
 /** How records include the option they chose, for `chosen()`. */
 export const chosenSelect = { id: true, labelVi: true, labelEn: true, isOther: true } as const;
@@ -57,7 +69,13 @@ export async function createOption(actor: Actor, rawKey: string, input: unknown)
         data: { ...data, listKey, sortOrder: (last._max.sortOrder ?? 0) + 1 },
         select: optionSelect,
       });
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "option", entityId: option.id, action: "option.created", after: option });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "option",
+        entityId: option.id,
+        action: "option.created",
+        after: option,
+      });
       return option as Option;
     }),
   );
@@ -73,12 +91,19 @@ export async function updateOption(actor: Actor, rawKey: string, id: string, inp
     prisma.$transaction(async (tx) => {
       const before = await tx.option.findFirst({ where: { id, listKey }, select: optionSelect });
       if (!before) throw new AppError("NOT_FOUND");
-      if (before.isOther && !data.active) throw new AppError("VALIDATION_FAILED", { fieldErrors: { active: ["otherAlwaysActive"] } });
+      if (before.isOther && !data.active)
+        throw new AppError("VALIDATION_FAILED", { fieldErrors: { active: ["otherAlwaysActive"] } });
       await assertLabelFree(tx, listKey, data.labelVi, id);
       const after = await tx.option.update({ where: { id }, data, select: optionSelect });
       const changes = diffFields(before, after, ["labelVi", "labelEn", "active"]);
       if (changes) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "option", entityId: id, action: "option.updated", ...changes });
+        await recordAudit(tx, {
+          actorUserId: actor.id,
+          entityType: "option",
+          entityId: id,
+          action: "option.updated",
+          ...changes,
+        });
       }
       return after as Option;
     }),
@@ -91,9 +116,14 @@ export async function reorderOptions(actor: Actor, rawKey: string, input: unknow
   const listKey = listKeyOf(rawKey);
   const { optionIds } = parseInput(optionOrderSchema, input);
   await prisma.$transaction(async (tx) => {
-    const options = await tx.option.findMany({ where: { listKey, isOther: false }, select: { id: true, sortOrder: true } });
+    const options = await tx.option.findMany({
+      where: { listKey, isOther: false },
+      select: { id: true, sortOrder: true },
+    });
     const sameSet =
-      optionIds.length === options.length && new Set(optionIds).size === options.length && options.every((o) => optionIds.includes(o.id));
+      optionIds.length === options.length &&
+      new Set(optionIds).size === options.length &&
+      options.every((o) => optionIds.includes(o.id));
     if (!sameSet) throw new AppError("VALIDATION_FAILED", { fieldErrors: { optionIds: ["invalidChoice"] } });
     for (const [index, id] of optionIds.entries()) {
       const from = options.find((o) => o.id === id)!.sortOrder;
@@ -161,7 +191,10 @@ export async function resolveChoice(
   choice: { optionId: string; note: string | null },
   current: string | null = null,
 ): Promise<{ optionId: string; note: string | null }> {
-  const option = await db.option.findFirst({ where: { id: choice.optionId, listKey }, select: { id: true, active: true, isOther: true } });
+  const option = await db.option.findFirst({
+    where: { id: choice.optionId, listKey },
+    select: { id: true, active: true, isOther: true },
+  });
   if (!option || (!option.active && option.id !== current)) {
     throw new AppError("VALIDATION_FAILED", { fieldErrors: { [field]: ["invalidChoice"] } });
   }
@@ -177,9 +210,18 @@ function listKeyOf(raw: string): OptionListKey {
 }
 
 /** Labels are unique in a list whatever their case. */
-async function assertLabelFree(db: Db, listKey: OptionListKey, labelVi: string, exceptId: string | null): Promise<void> {
+async function assertLabelFree(
+  db: Db,
+  listKey: OptionListKey,
+  labelVi: string,
+  exceptId: string | null,
+): Promise<void> {
   const clash = await db.option.findFirst({
-    where: { listKey, labelVi: { equals: labelVi, mode: "insensitive" }, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    where: {
+      listKey,
+      labelVi: { equals: labelVi, mode: "insensitive" },
+      ...(exceptId ? { id: { not: exceptId } } : {}),
+    },
     select: { id: true },
   });
   if (clash) throw new AppError("VALIDATION_FAILED", { fieldErrors: { labelVi: ["nameAlreadyUsed"] } });
@@ -189,7 +231,8 @@ async function withLabelConflictsMapped<T>(body: () => Promise<T>): Promise<T> {
   try {
     return await body();
   } catch (error) {
-    if (isUniqueViolation(error)) throw new AppError("VALIDATION_FAILED", { fieldErrors: { labelVi: ["nameAlreadyUsed"] } });
+    if (isUniqueViolation(error))
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { labelVi: ["nameAlreadyUsed"] } });
     throw error;
   }
 }

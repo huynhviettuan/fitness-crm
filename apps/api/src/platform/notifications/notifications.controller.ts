@@ -19,7 +19,10 @@ export class NotificationsController {
   @ApiOptionalQuery("unreadOnly", "page", "pageSize")
   @ApiResult(notificationPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
-    return encode(notificationPageSchema, await listNotifications(actor, queryOf(request, ["unreadOnly", "page", "pageSize"])));
+    return encode(
+      notificationPageSchema,
+      await listNotifications(actor, queryOf(request, ["unreadOnly", "page", "pageSize"])),
+    );
   }
 
   /** The unread count for the bell in the top bar. */

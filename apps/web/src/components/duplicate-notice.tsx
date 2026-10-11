@@ -14,7 +14,10 @@ export function DuplicateNotice({ duplicate }: { duplicate: DuplicatePerson | nu
   const href = duplicate.stage === "LEAD" ? `/leads/${duplicate.id}` : `/customers/${duplicate.id}`;
   return (
     <div role="alert" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
-      {t(duplicate.stage === "LEAD" ? "duplicateLead" : "duplicateCustomer", { code: duplicate.code, name: duplicate.fullName })}{" "}
+      {t(duplicate.stage === "LEAD" ? "duplicateLead" : "duplicateCustomer", {
+        code: duplicate.code,
+        name: duplicate.fullName,
+      })}{" "}
       <Link href={href} className="font-medium underline underline-offset-4">
         {t("openExisting", { code: duplicate.code })}
       </Link>

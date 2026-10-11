@@ -68,7 +68,10 @@ export async function listEmployees(actor: Actor, rawQuery: unknown = {}): Promi
       query.trainersOnly ? { isTrainer: true } : {},
     ],
   };
-  const { items, total } = await repo.listEmployees(prisma, where, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  const { items, total } = await repo.listEmployees(prisma, where, {
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  });
   return { items: items.map(toView), total, page: query.page, pageSize: query.pageSize };
 }
 
@@ -110,7 +113,13 @@ export async function updateEmployee(actor: Actor, id: string, input: unknown): 
       const after = await repo.updateEmployee(tx, id, await toWrite(tx, data, branchId, before));
       const changes = diffFields(before, after, AUDITED_FIELDS);
       if (changes) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "employee", entityId: id, action: "employee.updated", ...changes });
+        await recordAudit(tx, {
+          actorUserId: actor.id,
+          entityType: "employee",
+          entityId: id,
+          action: "employee.updated",
+          ...changes,
+        });
       }
       return toView(after);
     }),
@@ -138,7 +147,11 @@ export async function replaceShifts(actor: Actor, id: string, input: unknown): P
   assertCan(actor, "employee.manage");
   const { shifts } = parseInput(shiftsInputSchema, input);
   const rows = shifts
-    .map((shift) => ({ weekday: shift.weekday, startMinute: minutesOfTime(shift.start), endMinute: minutesOfTime(shift.end) }))
+    .map((shift) => ({
+      weekday: shift.weekday,
+      startMinute: minutesOfTime(shift.start),
+      endMinute: minutesOfTime(shift.end),
+    }))
     .sort((a, b) => a.weekday - b.weekday || a.startMinute - b.startMinute);
 
   return withShiftOverlapMapped(() =>
@@ -149,7 +162,13 @@ export async function replaceShifts(actor: Actor, id: string, input: unknown): P
       await repo.replaceShifts(tx, id, rows);
       const changes = diffFields({ shifts: describeShifts(before) }, { shifts: describeShifts(rows) }, ["shifts"]);
       if (changes) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "employee", entityId: id, action: "employee.shifts_changed", ...changes });
+        await recordAudit(tx, {
+          actorUserId: actor.id,
+          entityType: "employee",
+          entityId: id,
+          action: "employee.shifts_changed",
+          ...changes,
+        });
       }
       return workSchedule(tx, id);
     }, LOCKING_TRANSACTION),
@@ -261,12 +280,29 @@ async function workSchedule(db: Db, id: string): Promise<WorkSchedule> {
 }
 
 /** Checks the option choices and the linked login, and builds the row to store. */
-async function toWrite(db: Db, data: EmployeeData, branchId: string, current: repo.EmployeeRecord | null): Promise<repo.EmployeeWrite> {
+async function toWrite(
+  db: Db,
+  data: EmployeeData,
+  branchId: string,
+  current: repo.EmployeeRecord | null,
+): Promise<repo.EmployeeWrite> {
   const department = data.departmentId
-    ? await resolveChoice(db, "departments", "departmentId", { optionId: data.departmentId, note: data.departmentNote }, current?.departmentId)
+    ? await resolveChoice(
+        db,
+        "departments",
+        "departmentId",
+        { optionId: data.departmentId, note: data.departmentNote },
+        current?.departmentId,
+      )
     : { optionId: null, note: null };
   const title = data.titleId
-    ? await resolveChoice(db, "jobTitles", "titleId", { optionId: data.titleId, note: data.titleNote }, current?.titleId)
+    ? await resolveChoice(
+        db,
+        "jobTitles",
+        "titleId",
+        { optionId: data.titleId, note: data.titleNote },
+        current?.titleId,
+      )
     : { optionId: null, note: null };
   await assertLinkable(db, data.userId, current?.id ?? null);
   return {
@@ -310,7 +346,8 @@ async function withShiftOverlapMapped<T>(body: () => Promise<T>): Promise<T> {
   try {
     return await body();
   } catch (error) {
-    if (isExclusionViolation(error)) throw new AppError("VALIDATION_FAILED", { fieldErrors: { shifts: ["shiftsOverlap"] } });
+    if (isExclusionViolation(error))
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { shifts: ["shiftsOverlap"] } });
     throw error;
   }
 }
@@ -325,7 +362,9 @@ function toShift(row: repo.ShiftRow) {
 
 /** Shifts as the action history shows them, e.g. "1 08:00–12:00" (ISO weekday first). */
 function describeShifts(rows: readonly repo.ShiftRow[]): string {
-  return rows.map((row) => `${row.weekday} ${timeOfMinutes(row.startMinute)}–${timeOfMinutes(row.endMinute)}`).join(", ");
+  return rows
+    .map((row) => `${row.weekday} ${timeOfMinutes(row.startMinute)}–${timeOfMinutes(row.endMinute)}`)
+    .join(", ");
 }
 
 function pick<T extends object, K extends keyof T>(value: T, keys: readonly K[]): Pick<T, K> {

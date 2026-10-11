@@ -5,18 +5,34 @@ import { DATA_SCOPE_RESOURCES } from "@flow/shared/permissions";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { cloneRole, createRole, getRole, listRoles, updateRole } from "../../src/platform/roles/role.service.js";
 import { createBranch, listBranches, updateBranch } from "../../src/platform/branches/branch.service.js";
-import { createCustomer, getCustomer, listCustomers, updateCustomer } from "../../src/modules/customers/customer.service.js";
+import {
+  createCustomer,
+  getCustomer,
+  listCustomers,
+  updateCustomer,
+} from "../../src/modules/customers/customer.service.js";
 import { createContract, listContracts } from "../../src/modules/contracts/contract.service.js";
 import { listBookings } from "../../src/modules/bookings/booking.service.js";
 import { collectedBetween, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { financeSummary } from "../../src/modules/finance/cash.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser, optionId, withoutApprovals, uniquePhone } from "../support/factories.js";
+import {
+  DEFAULT_BRANCH_ID,
+  actorOf,
+  createTestBranch,
+  createTestUser,
+  optionId,
+  withoutApprovals,
+  uniquePhone,
+} from "../support/factories.js";
 import { CONTRACT, activeContract, book, bookingScenario, linkedTrainer } from "../support/bookings.js";
 
 afterEach(resetDatabase);
 
-const ALL = Object.fromEntries(DATA_SCOPE_RESOURCES.map((r) => [r, "ALL"])) as Record<(typeof DATA_SCOPE_RESOURCES)[number], "ALL" | "OWN">;
+const ALL = Object.fromEntries(DATA_SCOPE_RESOURCES.map((r) => [r, "ALL"])) as Record<
+  (typeof DATA_SCOPE_RESOURCES)[number],
+  "ALL" | "OWN"
+>;
 
 /** A custom role, and a user holding it. */
 async function userWithRole(input: { permissions: string[]; dataScopes?: Partial<typeof ALL>; fieldMasks?: string[] }) {
@@ -37,23 +53,46 @@ describe("roles (FR-PLT-002)", () => {
 
     const roles = await listRoles(admin);
 
-    expect(roles.map((r) => r.code).filter(Boolean).sort()).toEqual(
-      ["ACCOUNTANT", "ADMIN", "CONSULTING", "FITNESS_MANAGER", "MARKETING", "MASTER", "PT", "RECEPTIONIST"],
-    );
+    expect(
+      roles
+        .map((r) => r.code)
+        .filter(Boolean)
+        .sort(),
+    ).toEqual(["ACCOUNTANT", "ADMIN", "CONSULTING", "FITNESS_MANAGER", "MARKETING", "MASTER", "PT", "RECEPTIONIST"]);
     const pt = roles.find((r) => r.code === "PT")!;
-    expect(pt.dataScopes).toEqual({ customers: "OWN", contracts: "OWN", schedule: "OWN", vouchers: "OWN", staff: "OWN", tasks: "OWN", leads: "OWN" });
+    expect(pt.dataScopes).toEqual({
+      customers: "OWN",
+      contracts: "OWN",
+      schedule: "OWN",
+      vouchers: "OWN",
+      staff: "OWN",
+      tasks: "OWN",
+      leads: "OWN",
+    });
     expect(roles.find((r) => r.code === "MARKETING")!.fieldMasks).toEqual(["customer.email", "customer.phone"]);
   });
 
   it("a change to a role applies to its users on their next request (AC-02), and is audited", async () => {
     const { admin, role, actor } = await userWithRole({ permissions: ["customer.view"] });
-    await expect(createCustomer(actor, { fullName: "A", phone: "0909000001" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(createCustomer(actor, { fullName: "A", phone: "0909000001" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
 
-    await updateRole(admin, role.id, { name: role.name, permissions: ["customer.view", "customer.manage"], dataScopes: ALL, fieldMasks: [] });
+    await updateRole(admin, role.id, {
+      name: role.name,
+      permissions: ["customer.view", "customer.manage"],
+      dataScopes: ALL,
+      fieldMasks: [],
+    });
 
-    await expect(createCustomer(await actorOf(actor.id), { fullName: "A", phone: "0909000001" })).resolves.toBeDefined();
+    await expect(
+      createCustomer(await actorOf(actor.id), { fullName: "A", phone: "0909000001" }),
+    ).resolves.toBeDefined();
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { entityId: role.id, action: "role.updated" } });
-    expect(audit).toMatchObject({ before: { permissions: ["customer.view"] }, after: { permissions: ["customer.manage", "customer.view"] } });
+    expect(audit).toMatchObject({
+      before: { permissions: ["customer.view"] },
+      after: { permissions: ["customer.manage", "customer.view"] },
+    });
   });
 
   it("a clone copies permissions, scopes, and masks under a new name", async () => {
@@ -62,7 +101,12 @@ describe("roles (FR-PLT-002)", () => {
 
     const copy = await cloneRole(admin, marketing.id, { name: "Marketing chi nhánh 2" });
 
-    expect(copy).toMatchObject({ code: null, name: "Marketing chi nhánh 2", fieldMasks: marketing.fieldMasks, dataScopes: marketing.dataScopes });
+    expect(copy).toMatchObject({
+      code: null,
+      name: "Marketing chi nhánh 2",
+      fieldMasks: marketing.fieldMasks,
+      dataScopes: marketing.dataScopes,
+    });
     await expect(cloneRole(admin, marketing.id, { name: "Marketing chi nhánh 2" })).rejects.toMatchObject({
       fieldErrors: { name: ["nameAlreadyUsed"] },
     });
@@ -72,7 +116,9 @@ describe("roles (FR-PLT-002)", () => {
     const { actor: admin } = await createTestUser("ADMIN");
     const own = await getRole(admin, admin.roleId);
 
-    await expect(updateRole(admin, own.id, { ...own, permissions: own.permissions.filter((p) => p !== "role.manage") })).rejects.toMatchObject({
+    await expect(
+      updateRole(admin, own.id, { ...own, permissions: own.permissions.filter((p) => p !== "role.manage") }),
+    ).rejects.toMatchObject({
       code: "CANNOT_CHANGE_OWN_ACCESS",
     });
   });
@@ -81,7 +127,9 @@ describe("roles (FR-PLT-002)", () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
 
     await expect(listRoles(manager)).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(createRole(manager, { name: "X", permissions: [], dataScopes: ALL, fieldMasks: [] })).rejects.toMatchObject({
+    await expect(
+      createRole(manager, { name: "X", permissions: [], dataScopes: ALL, fieldMasks: [] }),
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -90,7 +138,6 @@ describe("roles (FR-PLT-002)", () => {
 beforeEach(async () => {
   await withoutApprovals();
 });
-
 
 describe("data scope (D-017, A-029)", () => {
   it("with own customers, a user sees the ones they created and the ones they train", async () => {
@@ -115,7 +162,9 @@ describe("data scope (D-017, A-029)", () => {
 
     expect((await listContracts(consultant, {})).items.map((c) => c.id)).toEqual([contract.id]);
     // Not even for a customer they cannot see.
-    await expect(createContract(consultant, scenario.customer.id, CONTRACT, randomUUID())).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(createContract(consultant, scenario.customer.id, CONTRACT, randomUUID())).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 
   it("with own schedule, a PT sees only their own sessions", async () => {
@@ -134,7 +183,12 @@ describe("data scope (D-017, A-029)", () => {
     const mine = await createCustomer(consultant, { fullName: "Khách của tôi", phone: "0909000004" });
     const contract = await activeContract(scenario.manager, mine.id);
     const pay = async (actor: typeof reception, amount: number) =>
-      recordPayment(actor, contract.id, { amount, methodId: await optionId("paymentMethods", "Tiền mặt"), paidOn: "05/10/2026" }, randomUUID());
+      recordPayment(
+        actor,
+        contract.id,
+        { amount, methodId: await optionId("paymentMethods", "Tiền mặt"), paidOn: "05/10/2026" },
+        randomUUID(),
+      );
     const { payment } = await pay(consultant, 1_000_000);
     await pay(reception, 2_000_000);
 
@@ -147,19 +201,37 @@ describe("data scope (D-017, A-029)", () => {
 describe("field masking (D-017, AC-01)", () => {
   it("a hidden phone and email come back empty, are listed as hidden, and cannot be searched or changed", async () => {
     const { actor: reception } = await createTestUser("RECEPTIONIST");
-    const customer = await createCustomer(reception, { fullName: "Trần Bí Mật", phone: "0909555666", email: "bi.mat@example.com" });
-    const { actor } = await userWithRole({ permissions: ["customer.view", "customer.manage"], fieldMasks: ["customer.phone", "customer.email"] });
+    const customer = await createCustomer(reception, {
+      fullName: "Trần Bí Mật",
+      phone: "0909555666",
+      email: "bi.mat@example.com",
+    });
+    const { actor } = await userWithRole({
+      permissions: ["customer.view", "customer.manage"],
+      fieldMasks: ["customer.phone", "customer.email"],
+    });
 
-    expect(await getCustomer(actor, customer.id)).toMatchObject({ phone: null, email: null, maskedFields: ["phone", "email"] });
+    expect(await getCustomer(actor, customer.id)).toMatchObject({
+      phone: null,
+      email: null,
+      maskedFields: ["phone", "email"],
+    });
     expect((await listCustomers(actor, { q: "0909555666" })).total).toBe(0);
     expect((await listCustomers(actor, { q: "bi mat" })).items[0]).toMatchObject({ phone: null });
 
     await updateCustomer(actor, customer.id, { phone: "0909000000", notes: "Đã gọi" });
-    expect(await getCustomer(reception, customer.id)).toMatchObject({ phone: "0909555666", notes: "Đã gọi", maskedFields: [] });
+    expect(await getCustomer(reception, customer.id)).toMatchObject({
+      phone: "0909555666",
+      notes: "Đã gọi",
+      maskedFields: [],
+    });
   });
 
   it("hidden receipt totals come back empty", async () => {
-    const { actor } = await userWithRole({ permissions: ["payment.view", "cash.manage"], fieldMasks: ["receipts.totals"] });
+    const { actor } = await userWithRole({
+      permissions: ["payment.view", "cash.manage"],
+      fieldMasks: ["receipts.totals"],
+    });
 
     expect(await collectedBetween(actor, { from: "01/10/2026", to: "31/10/2026" })).toBeNull();
     expect(await financeSummary(actor, { from: "01/10/2026", to: "31/10/2026" })).toEqual({
@@ -211,7 +283,9 @@ describe("branches (D-014, FR-PLT-004)", () => {
       address: null,
       active: false,
     });
-    await expect(createBranch(admin, { name: "Flow Q7" })).rejects.toMatchObject({ fieldErrors: { name: ["nameAlreadyUsed"] } });
+    await expect(createBranch(admin, { name: "Flow Q7" })).rejects.toMatchObject({
+      fieldErrors: { name: ["nameAlreadyUsed"] },
+    });
     await expect(listBranches(manager)).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

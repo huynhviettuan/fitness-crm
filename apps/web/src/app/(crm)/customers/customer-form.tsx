@@ -42,7 +42,15 @@ type CustomerFormProps = {
   onCancel: () => void;
 };
 
-export function CustomerForm({ mode, defaultValues, branches = [], masked = [], submit, onSaved, onCancel }: CustomerFormProps) {
+export function CustomerForm({
+  mode,
+  defaultValues,
+  branches = [],
+  masked = [],
+  submit,
+  onSaved,
+  onCancel,
+}: CustomerFormProps) {
   const t = useTranslations();
   const errorMessage = useErrorMessage();
   const [pending, startTransition] = useTransition();

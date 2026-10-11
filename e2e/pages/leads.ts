@@ -172,7 +172,10 @@ export class LeadPage {
 
   async openChangeStatus(name: string): Promise<ChangeStatusDialog> {
     await this.journey.getByRole("button", { name: l.changeStatus, exact: true }).click();
-    return new ChangeStatusDialog(this.page, this.page.getByRole("dialog", { name: fill(l.changeStatusTitle, { name }) }));
+    return new ChangeStatusDialog(
+      this.page,
+      this.page.getByRole("dialog", { name: fill(l.changeStatusTitle, { name }) }),
+    );
   }
 
   async openAssign(name: string, button: string = l.reassign): Promise<AssignLeadDialog> {

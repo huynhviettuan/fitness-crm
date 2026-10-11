@@ -58,7 +58,12 @@ export function ContractForm({ defaultValues, submit, onSaved, onCancel }: Contr
           placeholder={t("contracts.valuePlaceholder")}
           inputMode="numeric"
         />
-        <TextField control={form.control} name="totalSessions" label={t(`${fields}.totalSessions`)} inputMode="numeric" />
+        <TextField
+          control={form.control}
+          name="totalSessions"
+          label={t(`${fields}.totalSessions`)}
+          inputMode="numeric"
+        />
         <TextField
           control={form.control}
           name="startDate"

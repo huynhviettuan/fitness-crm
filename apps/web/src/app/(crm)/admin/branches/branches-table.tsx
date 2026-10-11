@@ -39,7 +39,11 @@ export function BranchesTable({ branches }: { branches: BranchRow[] }) {
   const [editing, setEditing] = useState<BranchRow | null>(null);
 
   const columns: DataTableColumn<BranchRow>[] = [
-    { id: "name", header: t("fields.name"), cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
+    {
+      id: "name",
+      header: t("fields.name"),
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    },
     { id: "address", header: t("fields.address"), cell: ({ row }) => row.original.address },
     {
       id: "status",
@@ -50,7 +54,12 @@ export function BranchesTable({ branches }: { branches: BranchRow[] }) {
       id: "actions",
       header: () => <span className="sr-only">{t("edit")}</span>,
       cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => setEditing(row.original)} aria-label={t("rowActions", { name: row.original.name })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setEditing(row.original)}
+          aria-label={t("rowActions", { name: row.original.name })}
+        >
           <PencilIcon />
           {t("edit")}
         </Button>
@@ -74,7 +83,15 @@ export function BranchesTable({ branches }: { branches: BranchRow[] }) {
 
 type BranchFormValues = { name: string; address: string; active: boolean };
 
-function BranchDialog({ open, onOpenChange, branch }: { open: boolean; onOpenChange: (open: boolean) => void; branch: BranchRow | null }) {
+function BranchDialog({
+  open,
+  onOpenChange,
+  branch,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  branch: BranchRow | null;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const { pending, run } = useSubmit();
@@ -91,8 +108,18 @@ function BranchDialog({ open, onOpenChange, branch }: { open: boolean; onOpenCha
   };
   const onSubmit = form.handleSubmit((values) => {
     const showErrors = (fieldErrors?: Record<string, string[]>) => applyFieldErrors(form.setError, fieldErrors);
-    if (branch) run(() => updateBranchAction(branch.id, values), showErrors, () => done(t("branches.saved")));
-    else run(() => createBranchAction(values), showErrors, ({ name }) => done(t("branches.created", { name })));
+    if (branch)
+      run(
+        () => updateBranchAction(branch.id, values),
+        showErrors,
+        () => done(t("branches.saved")),
+      );
+    else
+      run(
+        () => createBranchAction(values),
+        showErrors,
+        ({ name }) => done(t("branches.created", { name })),
+      );
   });
 
   return (

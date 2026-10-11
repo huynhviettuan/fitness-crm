@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { calendarDateInTimeZone } from "../validation/index.js";
-import { canActivate, canCancel, contractFigures, effectiveStatus, formatContractCode, isEditable } from "./contract.domain.js";
+import {
+  canActivate,
+  canCancel,
+  contractFigures,
+  effectiveStatus,
+  formatContractCode,
+  isEditable,
+} from "./contract.domain.js";
 import { contractInputSchema } from "./contract.schema.js";
 
 const GYM_TZ = "Asia/Ho_Chi_Minh";
@@ -74,7 +81,13 @@ describe("contractFigures (T-012, BR-013, D-011)", () => {
 });
 
 describe("contractInputSchema", () => {
-  const valid = { packageName: "PT 24 buổi", contractValue: "12.000.000", totalSessions: "24", startDate: "01/10/2026", endDate: "31/03/2027" };
+  const valid = {
+    packageName: "PT 24 buổi",
+    contractValue: "12.000.000",
+    totalSessions: "24",
+    startDate: "01/10/2026",
+    endDate: "31/03/2027",
+  };
   const errors = (input: unknown) => {
     const result = contractInputSchema.safeParse(input);
     return result.success ? {} : z.flattenError(result.error).fieldErrors;
@@ -90,13 +103,19 @@ describe("contractInputSchema", () => {
     });
   });
 
-  it.each(["12.000.000", "12,000,000", "12 000 000", "12000000", 12_000_000])("accepts the amount %j", (contractValue) => {
-    expect(contractInputSchema.parse({ ...valid, contractValue }).contractValue).toBe(12_000_000);
-  });
+  it.each(["12.000.000", "12,000,000", "12 000 000", "12000000", 12_000_000])(
+    "accepts the amount %j",
+    (contractValue) => {
+      expect(contractInputSchema.parse({ ...valid, contractValue }).contractValue).toBe(12_000_000);
+    },
+  );
 
-  it.each(["12.5", "12,50", "-5", "1.2.3", "abc", 12.5, "999999999999999"])("rejects the amount %j", (contractValue) => {
-    expect(errors({ ...valid, contractValue })).toEqual({ contractValue: ["invalidAmount"] });
-  });
+  it.each(["12.5", "12,50", "-5", "1.2.3", "abc", 12.5, "999999999999999"])(
+    "rejects the amount %j",
+    (contractValue) => {
+      expect(errors({ ...valid, contractValue })).toEqual({ contractValue: ["invalidAmount"] });
+    },
+  );
 
   it.each(["0", "1001", "2.5", "x"])("rejects %j sessions", (totalSessions) => {
     expect(errors({ ...valid, totalSessions })).toEqual({ totalSessions: ["invalidNumber"] });
@@ -115,6 +134,12 @@ describe("contractInputSchema", () => {
       openingSessionsUsed: 20,
       openingPaidAmount: 12_000_000,
     });
-    expect(Object.keys(parsed).sort()).toEqual(["contractValue", "endDate", "packageName", "startDate", "totalSessions"]);
+    expect(Object.keys(parsed).sort()).toEqual([
+      "contractValue",
+      "endDate",
+      "packageName",
+      "startDate",
+      "totalSessions",
+    ]);
   });
 });

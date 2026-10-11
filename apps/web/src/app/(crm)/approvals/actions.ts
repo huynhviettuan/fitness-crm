@@ -16,7 +16,10 @@ export async function rejectAction(id: string, input: RejectInput): Promise<Acti
   });
 }
 
-export async function updateApprovalRuleAction(action: ApprovalAction, input: ApprovalRuleInput): Promise<ActionResult> {
+export async function updateApprovalRuleAction(
+  action: ApprovalAction,
+  input: ApprovalRuleInput,
+): Promise<ActionResult> {
   return runAction(async () => {
     await updateApprovalRule(action, input);
   });

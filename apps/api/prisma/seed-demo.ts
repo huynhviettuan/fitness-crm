@@ -5,6 +5,8 @@
 //
 // Run after `pnpm db:seed` with: pnpm db:seed:demo
 // Local databases only. Runs once; to start over: pnpm --filter api exec prisma migrate reset
+import type { Actor } from "../src/platform/auth/session.js";
+import type { prisma as client } from "../src/platform/db/prisma.js";
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 
@@ -28,28 +30,32 @@ async function main() {
   }
 }
 
-async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma) {
+async function seed(prisma: typeof client) {
   const { env } = await import("../src/platform/env.js");
   const { calendarDateInTimeZone } = await import("@flow/shared/validation");
   const { createUser } = await import("../src/modules/users/user.service.js");
-  const { createEmployee, replaceShifts, updateEmployee } = await import("../src/modules/employees/employee.service.js");
+  const { createEmployee, replaceShifts, updateEmployee } =
+    await import("../src/modules/employees/employee.service.js");
   const { createCustomer, updateCustomer } = await import("../src/modules/customers/customer.service.js");
-  const { activateContract, cancelContract, createContract } = await import("../src/modules/contracts/contract.service.js");
+  const { activateContract, cancelContract, createContract } =
+    await import("../src/modules/contracts/contract.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");
   const { checkIn, completeSession } = await import("../src/modules/sessions/session.service.js");
   const { recordPayment, deletePayment } = await import("../src/modules/finance/payment.service.js");
   const { recordCashTransaction, deleteCashTransaction } = await import("../src/modules/finance/cash.service.js");
   const { loadCurrentUser } = await import("../src/platform/auth/actor.js");
   const { approveRequest } = await import("../src/modules/approvals/approval.service.js");
-  type Actor = import("../src/platform/auth/session.js").Actor;
   const actorOf = async (userId: string): Promise<Actor> => (await loadCurrentUser(prisma, userId))!;
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   const admin = adminEmail ? await prisma.user.findUnique({ where: { email: adminEmail } }) : null;
-  if (!admin || !password) throw new Error("Run `pnpm db:seed` first (SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD in .env).");
+  if (!admin || !password)
+    throw new Error("Run `pnpm db:seed` first (SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD in .env).");
   if (await prisma.user.findUnique({ where: { email: DEMO_MANAGER_EMAIL } })) {
-    console.log("Demo data is already loaded; nothing to do. To start over: pnpm --filter api exec prisma migrate reset");
+    console.log(
+      "Demo data is already loaded; nothing to do. To start over: pnpm --filter api exec prisma migrate reset",
+    );
     return;
   }
 
@@ -58,7 +64,7 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   // A gym day as staff type it: dd/MM/yyyy.
   const day = (offset: number) => {
     const date = new Date(today.getTime() + offset * 86_400_000);
-    return [date.getUTCDate(), date.getUTCMonth() + 1].map((n) => String(n).padStart(2, "0")).join("/") + `/${date.getUTCFullYear()}`;
+    return `${[date.getUTCDate(), date.getUTCMonth() + 1].map((n) => String(n).padStart(2, "0")).join("/")}/${date.getUTCFullYear()}`;
   };
   const asAdmin = await actorOf(admin.id);
   // Everything goes to the default branch the migration created (D-014).
@@ -88,7 +94,9 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const trainer = async (fullName: string, userId = "") => {
     const created = await createEmployee(manager, { fullName, userId, isTrainer: true });
     // Every day 05:00–22:00, like the calendar; admin narrows it on the schedule screen.
-    await replaceShifts(manager, created.id, { shifts: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "05:00", end: "22:00" })) });
+    await replaceShifts(manager, created.id, {
+      shifts: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "05:00", end: "22:00" })),
+    });
     return created;
   };
   const khoa = await trainer("Trần Minh Khoa", staff.PT.id);
@@ -112,7 +120,8 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     ["Lý Thị Hoa", "0911002200"],
   ];
   const customers = [];
-  for (const [fullName, phone, email] of people) customers.push(await createCustomer(reception, { fullName, phone, email: email ?? "" }));
+  for (const [fullName, phone, email] of people)
+    customers.push(await createCustomer(reception, { fullName, phone, email: email ?? "" }));
   const [an, mai, huy, lan, huong, tuan, tam, bao, ngan, son, hoa] = customers;
   await updateCustomer(reception, hoa.id, { status: "INACTIVE", notes: "Chuyển nhà, tạm ngưng tập." });
 
@@ -123,7 +132,13 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     const { contract: created } = await createContract(
       manager,
       customerId,
-      { packageName: spec.pkg, contractValue: spec.value, totalSessions: String(spec.sessions), startDate: day(spec.start), endDate: day(spec.end) },
+      {
+        packageName: spec.pkg,
+        contractValue: spec.value,
+        totalSessions: String(spec.sessions),
+        startDate: day(spec.start),
+        endDate: day(spec.end),
+      },
       randomUUID(),
     );
     return activate ? activateContract(asAdmin, created.id) : created;
@@ -152,7 +167,12 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     });
   }
   /** `count` past sessions every `every` days back from yesterday; listed ones become no-show or cancelled. */
-  async function history(plan: Plan, count: number, every: number, exceptions: Record<number, "noShow" | "cancel"> = {}) {
+  async function history(
+    plan: Plan,
+    count: number,
+    every: number,
+    exceptions: Record<number, "noShow" | "cancel"> = {},
+  ) {
     for (let i = count; i >= 1; i--) {
       const offset = -i * every;
       if (exceptions[i] === "noShow") await markNoShow(reception, (await book(plan, offset)).id);
@@ -216,7 +236,10 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   // ran; the end date is then moved into the past to stand for the time that went by.
   const c8 = await contract(bao.id, { ...PT24, start: -200, end: 10 });
   await history(plan(c8, bao, khoa, "09:00"), 18, 10);
-  await prisma.contract.update({ where: { id: c8.id }, data: { endDate: new Date(today.getTime() - 10 * 86_400_000) } });
+  await prisma.contract.update({
+    where: { id: c8.id },
+    data: { endDate: new Date(today.getTime() - 10 * 86_400_000) },
+  });
 
   // Ngân: cancelled; her upcoming session was cancelled with it (D-010).
   const c9 = await contract(ngan.id, { ...PT24, start: -5, end: 175 });
@@ -229,7 +252,10 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     { packageName: PT24.pkg, contractValue: PT24.value, totalSessions: "24", startDate: day(-150), endDate: day(30) },
     randomUUID(),
   );
-  await prisma.contract.update({ where: { id: c10Draft.id }, data: { openingSessionsUsed: 16, openingPaidAmount: 9_000_000 } });
+  await prisma.contract.update({
+    where: { id: c10Draft.id },
+    data: { openingSessionsUsed: 16, openingPaidAmount: 9_000_000 },
+  });
   const c10 = await activateContract(asAdmin, c10Draft.id);
   await history(plan(c10, son, anh, "07:00"), 3, 7);
 
@@ -239,7 +265,9 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
     const found = await prisma.option.findFirst({ where: { listKey, labelVi }, select: { id: true } });
     if (found) return found.id;
     const last = await prisma.option.aggregate({ where: { listKey, isOther: false }, _max: { sortOrder: true } });
-    const created = await prisma.option.create({ data: { listKey, labelVi, labelEn, sortOrder: (last._max.sortOrder ?? 0) + 1 } });
+    const created = await prisma.option.create({
+      data: { listKey, labelVi, labelEn, sortOrder: (last._max.sortOrder ?? 0) + 1 },
+    });
     return created.id;
   };
   const method = {
@@ -254,14 +282,22 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   // Everything submitted under the approval matrix so far is approved (D-018): by the
   // admin, or by the Fitness Manager for customer identity changes.
   const approvePending = async () => {
-    for (const request of await prisma.approvalRequest.findMany({ where: { status: "PENDING" }, orderBy: { submittedAt: "asc" } })) {
+    for (const request of await prisma.approvalRequest.findMany({
+      where: { status: "PENDING" },
+      orderBy: { submittedAt: "asc" },
+    })) {
       await approveRequest(request.actionType === "customer.identity" ? manager : asAdmin, request.id);
     }
   };
 
   // --- Payments
   const pay = (c: { id: string }, amount: string, how: keyof typeof method, offset: number, note = "") =>
-    recordPayment(reception, c.id, { amount, methodId: method[how], methodNote: note, paidOn: day(offset) }, randomUUID());
+    recordPayment(
+      reception,
+      c.id,
+      { amount, methodId: method[how], methodNote: note, paidOn: day(offset) },
+      randomUUID(),
+    );
   await pay(c1, "6.000.000", "BANK_TRANSFER", -45);
   await pay(c1, "6.000.000", "CASH", -15);
   await pay(yoga, "3.600.000", "CARD", -5);
@@ -282,7 +318,13 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
   const cash = async (type: "INCOME" | "EXPENSE", category: string, amount: string, offset: number, reference = "") =>
     recordCashTransaction(
       accountant,
-      { type, categoryId: await option(type === "INCOME" ? "incomeCategories" : "expenseTypes", category), amount, occurredOn: day(offset), reference },
+      {
+        type,
+        categoryId: await option(type === "INCOME" ? "incomeCategories" : "expenseTypes", category),
+        amount,
+        occurredOn: day(offset),
+        reference,
+      },
       randomUUID(),
     );
   await cash("INCOME", "Bán nước uống", "450.000", -1);
@@ -298,8 +340,15 @@ async function seed(prisma: typeof import("../src/platform/db/prisma.js").prisma
 
   await approvePending();
 
-  const counts = await Promise.all([prisma.customer.count(), prisma.contract.count(), prisma.booking.count(), prisma.payment.count()]);
-  console.log(`Demo data loaded: ${counts[0]} customers, ${counts[1]} contracts, ${counts[2]} bookings, ${counts[3]} payments.`);
+  const counts = await Promise.all([
+    prisma.customer.count(),
+    prisma.contract.count(),
+    prisma.booking.count(),
+    prisma.payment.count(),
+  ]);
+  console.log(
+    `Demo data loaded: ${counts[0]} customers, ${counts[1]} contracts, ${counts[2]} bookings, ${counts[3]} payments.`,
+  );
   console.log("Sign in as any of these with the same password as SEED_ADMIN_PASSWORD in .env:");
   for (const email of [
     DEMO_MANAGER_EMAIL,

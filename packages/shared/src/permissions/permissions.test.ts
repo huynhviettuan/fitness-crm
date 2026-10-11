@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { DATA_SCOPE_RESOURCES, MASKABLE_FIELDS, PERMISSION_GROUPS, PERMISSION_KEYS, isPermission } from "./permissions.js";
+import {
+  DATA_SCOPE_RESOURCES,
+  MASKABLE_FIELDS,
+  PERMISSION_GROUPS,
+  PERMISSION_KEYS,
+  isPermission,
+} from "./permissions.js";
 
 describe("permission catalog (D-017)", () => {
   it("lists every key once", () => {

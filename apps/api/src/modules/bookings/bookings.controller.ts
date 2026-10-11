@@ -63,7 +63,11 @@ export class BookingsController {
   @Patch(":id")
   @RequirePermission("booking.manage")
   @ApiResult(bookingSchema)
-  async reschedule(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: rescheduleSchema }) body: unknown) {
+  async reschedule(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: rescheduleSchema }) body: unknown,
+  ) {
     return encode(bookingSchema, await rescheduleBooking(actor, id, body));
   }
 

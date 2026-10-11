@@ -27,10 +27,9 @@ const description = z
   .prefault("");
 
 const dataScopes = z.object(
-  Object.fromEntries(DATA_SCOPE_RESOURCES.map((resource) => [resource, z.enum(DATA_SCOPES, { error: "invalidChoice" })])) as Record<
-    DataScopeResource,
-    z.ZodEnum<{ ALL: "ALL"; OWN: "OWN" }>
-  >,
+  Object.fromEntries(
+    DATA_SCOPE_RESOURCES.map((resource) => [resource, z.enum(DATA_SCOPES, { error: "invalidChoice" })]),
+  ) as Record<DataScopeResource, z.ZodEnum<{ ALL: "ALL"; OWN: "OWN" }>>,
 );
 
 /**

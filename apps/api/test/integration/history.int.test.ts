@@ -6,7 +6,15 @@ import { listTrash } from "../../src/platform/trash/trash.service.js";
 import { createCustomer, updateCustomer } from "../../src/modules/customers/customer.service.js";
 import { deletePayment, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, createTestBranch, createTestUser, optionId, roleId, withoutApprovals, uniquePhone } from "../support/factories.js";
+import {
+  DEFAULT_BRANCH_ID,
+  createTestBranch,
+  createTestUser,
+  optionId,
+  roleId,
+  withoutApprovals,
+  uniquePhone,
+} from "../support/factories.js";
 import { activeContract } from "../support/bookings.js";
 
 afterEach(async () => {
@@ -17,7 +25,6 @@ beforeEach(async () => {
   await withoutApprovals();
 });
 
-
 const OTHER_REASON = await optionId("deleteReasons", "Khác");
 const CASH = await optionId("paymentMethods", "Tiền mặt");
 
@@ -26,7 +33,12 @@ async function deletedPayment() {
   const { actor: admin } = await createTestUser("ADMIN");
   const customer = await createCustomer(admin, { fullName: "Nguyễn Văn An", phone: uniquePhone() });
   const contract = await activeContract(admin, customer.id);
-  const { payment } = await recordPayment(admin, contract.id, { amount: 5_000_000, methodId: CASH, paidOn: "05/10/2026" }, randomUUID());
+  const { payment } = await recordPayment(
+    admin,
+    contract.id,
+    { amount: 5_000_000, methodId: CASH, paidOn: "05/10/2026" },
+    randomUUID(),
+  );
   await deletePayment(admin, payment.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" });
   return { admin, contract, payment };
 }
@@ -52,17 +64,23 @@ describe("the trash (FR-TRASH-002, D-035)", () => {
     expect((await listTrash(admin, { from: "01/01/2020", to: "31/12/2020" })).total).toBe(0);
   });
 
-  it.each(["FITNESS_MANAGER", "ACCOUNTANT"] as const)("only management sees it: a %s is refused (09_RBAC.md)", async (role) => {
-    const { actor } = await createTestUser(role);
+  it.each(["FITNESS_MANAGER", "ACCOUNTANT"] as const)(
+    "only management sees it: a %s is refused (09_RBAC.md)",
+    async (role) => {
+      const { actor } = await createTestUser(role);
 
-    await expect(listTrash(actor, {})).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
+      await expect(listTrash(actor, {})).rejects.toMatchObject({ code: "FORBIDDEN" });
+    },
+  );
 
   it("shows only the viewer's branches, and hides amounts the role may not see (D-014, D-017)", async () => {
     await deletedPayment();
     const other = await createTestBranch();
     const elsewhere = await createTestUser("ADMIN", { branchIds: [other.id] });
-    const { actor: masked } = await createTestUser("ADMIN", { allBranches: true, roleId: await adminCopy(["receipts.totals"]) });
+    const { actor: masked } = await createTestUser("ADMIN", {
+      allBranches: true,
+      roleId: await adminCopy(["receipts.totals"]),
+    });
 
     expect((await listTrash(elsewhere.actor, {})).total).toBe(0);
     const [entry] = (await listTrash(masked, {})).items;
@@ -119,7 +137,10 @@ describe("the action history (FR-PLT-008, T-048)", () => {
 
   it("hides the values a role may not see (D-017)", async () => {
     const { actor: admin } = await createTestUser("ADMIN");
-    const { actor: masked } = await createTestUser("ADMIN", { allBranches: true, roleId: await adminCopy(["customer.phone"]) });
+    const { actor: masked } = await createTestUser("ADMIN", {
+      allBranches: true,
+      roleId: await adminCopy(["customer.phone"]),
+    });
     const customer = await createCustomer(admin, { fullName: "Nguyễn Văn An", phone: "0909123456" });
     await updateCustomer(admin, customer.id, { fullName: "Nguyễn Văn Ân", phone: "0911222333" });
 
@@ -138,7 +159,10 @@ describe("the action history (FR-PLT-008, T-048)", () => {
 
 /** A custom copy of the admin role with `masks` hidden; resetDatabase() removes it. */
 async function adminCopy(masks: string[]): Promise<string> {
-  const admin = await prisma.role.findUniqueOrThrow({ where: { id: await roleId("ADMIN") }, include: { permissions: true, dataScopes: true } });
+  const admin = await prisma.role.findUniqueOrThrow({
+    where: { id: await roleId("ADMIN") },
+    include: { permissions: true, dataScopes: true },
+  });
   const copy = await prisma.role.create({
     data: {
       name: `Admin ${randomUUID().slice(0, 8)}`,

@@ -165,7 +165,13 @@ export async function rescheduleBooking(actor: Actor, id: string, input: unknown
         ["trainerId", "scheduledStart", "scheduledEnd"],
       );
       if (changes) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "booking", entityId: id, action: "booking.rescheduled", ...changes });
+        await recordAudit(tx, {
+          actorUserId: actor.id,
+          entityType: "booking",
+          entityId: id,
+          action: "booking.rescheduled",
+          ...changes,
+        });
       }
       return after;
     }),
@@ -202,7 +208,8 @@ export async function transitionBooking(
   return changeLockedBooking(actor, id, async (tx, before) => {
     if (before.status === options.to) return toBookingView(before);
     if (!options.allowed(before.status)) throw new AppError("INVALID_STATUS_TRANSITION");
-    if ((await repo.moveStatus(tx, id, before.status, options.to)) === 0) throw new AppError("INVALID_STATUS_TRANSITION");
+    if ((await repo.moveStatus(tx, id, before.status, options.to)) === 0)
+      throw new AppError("INVALID_STATUS_TRANSITION");
     await options.apply?.(tx);
     await recordAudit(tx, {
       actorUserId: actor.id,

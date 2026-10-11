@@ -42,9 +42,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
       <MonthNav path="/finance/payments" month={month.from} thisMonth={month.thisMonth} />
       <p className="mb-4 text-sm">
         <span className="text-muted-foreground">{t("collected")}: </span>
-        <span className="font-semibold">
-          {collected === null ? <HiddenValue /> : <Money amount={collected} />}
-        </span>
+        <span className="font-semibold">{collected === null ? <HiddenValue /> : <Money amount={collected} />}</span>
       </p>
       <PaymentsTable
         payments={result.items}

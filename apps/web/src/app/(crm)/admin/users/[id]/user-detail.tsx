@@ -19,13 +19,28 @@ import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
 import { PERMISSION_GROUPS, type Permission, type PermissionGroup } from "@flow/shared/permissions";
 import { WEEKDAYS } from "@flow/shared/users";
-import { changeUserRoleAction, setUserAccessHoursAction, setUserBranchesAction, setUserOverridesAction } from "../actions";
+import {
+  changeUserRoleAction,
+  setUserAccessHoursAction,
+  setUserBranchesAction,
+  setUserOverridesAction,
+} from "../actions";
 import { useSubmit, type Option } from "../user-dialogs";
 
 type Target = { id: string; role: { id: string; name: string }; allBranches: boolean; branches: Option[] };
 
 /** Role and branches (FR-PLT-001, D-014). Each saves on its own. */
-export function UserAccessForm({ user, roles, branches, readOnly }: { user: Target; roles: Option[]; branches: Option[]; readOnly: boolean }) {
+export function UserAccessForm({
+  user,
+  roles,
+  branches,
+  readOnly,
+}: {
+  user: Target;
+  roles: Option[];
+  branches: Option[];
+  readOnly: boolean;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const role = useSubmit();
@@ -48,7 +63,8 @@ export function UserAccessForm({ user, roles, branches, readOnly }: { user: Targ
   );
   const saveBranches = branchForm.handleSubmit((values) =>
     access.run(
-      () => setUserBranchesAction({ userId: user.id, ...values, branchIds: values.allBranches ? [] : values.branchIds }),
+      () =>
+        setUserBranchesAction({ userId: user.id, ...values, branchIds: values.allBranches ? [] : values.branchIds }),
       (fieldErrors) => applyFieldErrors(branchForm.setError, fieldErrors),
       () => {
         notify.success(t("users.branchesSaved"));
@@ -184,7 +200,9 @@ export function OverridesForm({
                     </span>
                     <Select
                       value={choices[permission] ?? "inherit"}
-                      onValueChange={(value) => setChoices((current) => ({ ...current, [permission]: value as Choice }))}
+                      onValueChange={(value) =>
+                        setChoices((current) => ({ ...current, [permission]: value as Choice }))
+                      }
                       disabled={readOnly}
                     >
                       <SelectTrigger className="w-56" aria-labelledby={`perm-${permission}`}>
@@ -221,7 +239,15 @@ export function OverridesForm({
 type Window = { weekdays: number[]; startTime: string; endTime: string };
 
 /** D-017: the days and times (gym time) the user may sign in; none means any time. */
-export function AccessHoursForm({ userId, windows: initial, readOnly }: { userId: string; windows: Window[]; readOnly: boolean }) {
+export function AccessHoursForm({
+  userId,
+  windows: initial,
+  readOnly,
+}: {
+  userId: string;
+  windows: Window[];
+  readOnly: boolean;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const id = useId();
@@ -256,7 +282,11 @@ export function AccessHoursForm({ userId, windows: initial, readOnly }: { userId
       <CardContent className="space-y-4">
         {windows.length === 0 && <p className="text-sm text-muted-foreground">{t("users.accessHours.none")}</p>}
         {windows.map((window, index) => (
-          <fieldset key={index} className="space-y-3 rounded-md border p-3" aria-label={`${t("users.tabs.accessHours")} ${index + 1}`}>
+          <fieldset
+            key={index}
+            className="space-y-3 rounded-md border p-3"
+            aria-label={`${t("users.tabs.accessHours")} ${index + 1}`}
+          >
             <div className="flex flex-wrap gap-3" role="group" aria-label={t("users.accessHours.weekdays")}>
               {WEEKDAYS.map((day) => (
                 <Field key={day} orientation="horizontal" className="w-auto">
@@ -311,7 +341,12 @@ export function AccessHoursForm({ userId, windows: initial, readOnly }: { userId
           <Button
             type="button"
             variant="outline"
-            onClick={() => setWindows((current) => [...current, { weekdays: [1, 2, 3, 4, 5, 6], startTime: "08:00", endTime: "17:30" }])}
+            onClick={() =>
+              setWindows((current) => [
+                ...current,
+                { weekdays: [1, 2, 3, 4, 5, 6], startTime: "08:00", endTime: "17:30" },
+              ])
+            }
           >
             <PlusIcon />
             {t("users.accessHours.add")}
@@ -329,14 +364,23 @@ export function AccessHoursForm({ userId, windows: initial, readOnly }: { userId
   );
 }
 
-type LoginRow = { id: string; at: Date; success: boolean; reason: string | null; ip: string | null; userAgent: string | null };
+type LoginRow = {
+  id: string;
+  at: Date;
+  success: boolean;
+  reason: string | null;
+  ip: string | null;
+  userAgent: string | null;
+};
 const REASONS = ["WRONG_PASSWORD", "UNKNOWN_USER", "DISABLED", "OUTSIDE_HOURS"] as const;
 
 /** D-017: the latest sign-in attempts, newest first. */
 export function LoginHistory({ events }: { events: LoginRow[] }) {
   const t = useTranslations("users.logins");
   const reasonLabel = (reason: string | null) =>
-    reason && (REASONS as readonly string[]).includes(reason) ? t(`reasons.${reason as (typeof REASONS)[number]}`) : reason;
+    reason && (REASONS as readonly string[]).includes(reason)
+      ? t(`reasons.${reason as (typeof REASONS)[number]}`)
+      : reason;
 
   const columns: DataTableColumn<LoginRow>[] = [
     { id: "at", header: t("at"), cell: ({ row }) => <DateTime value={row.original.at} format="dateTime" /> },
@@ -346,7 +390,9 @@ export function LoginHistory({ events }: { events: LoginRow[] }) {
       cell: ({ row }) => (
         <span className="flex flex-wrap items-center gap-2">
           <StatusBadge entity="login" status={row.original.success ? "SUCCESS" : "FAILED"} />
-          {!row.original.success && <span className="text-sm text-muted-foreground">{reasonLabel(row.original.reason)}</span>}
+          {!row.original.success && (
+            <span className="text-sm text-muted-foreground">{reasonLabel(row.original.reason)}</span>
+          )}
         </span>
       ),
     },
@@ -354,7 +400,9 @@ export function LoginHistory({ events }: { events: LoginRow[] }) {
     {
       id: "device",
       header: t("device"),
-      cell: ({ row }) => <span className="line-clamp-1 max-w-xs text-sm text-muted-foreground">{row.original.userAgent}</span>,
+      cell: ({ row }) => (
+        <span className="line-clamp-1 max-w-xs text-sm text-muted-foreground">{row.original.userAgent}</span>
+      ),
     },
   ];
 

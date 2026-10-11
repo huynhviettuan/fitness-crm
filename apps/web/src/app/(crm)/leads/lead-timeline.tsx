@@ -31,7 +31,9 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
               )
             ) : (
               <span className="font-medium">
-                {entry.from ? t("reassigned", { from: entry.from.name, to: entry.to.name }) : t("assigned", { to: entry.to.name })}
+                {entry.from
+                  ? t("reassigned", { from: entry.from.name, to: entry.to.name })
+                  : t("assigned", { to: entry.to.name })}
               </span>
             )}
           </div>
@@ -40,10 +42,15 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
               {t("appointment")} <DateTime value={entry.appointmentAt} format="dateTime" />
             </p>
           )}
-          {entry.kind === "status" && entry.refuseReason && <p className="text-sm">{t("reason", { reason: chosen(entry.refuseReason) })}</p>}
-          {entry.kind === "status" && entry.note && <p className="text-sm whitespace-pre-line text-muted-foreground">{entry.note}</p>}
+          {entry.kind === "status" && entry.refuseReason && (
+            <p className="text-sm">{t("reason", { reason: chosen(entry.refuseReason) })}</p>
+          )}
+          {entry.kind === "status" && entry.note && (
+            <p className="text-sm whitespace-pre-line text-muted-foreground">{entry.note}</p>
+          )}
           <p className="text-xs text-muted-foreground">
-            <DateTime value={entry.at} format="dateTime" /> · {entry.by?.name ?? (entry.kind === "assignment" ? t("roundRobin") : t("system"))}
+            <DateTime value={entry.at} format="dateTime" /> ·{" "}
+            {entry.by?.name ?? (entry.kind === "assignment" ? t("roundRobin") : t("system"))}
           </p>
         </li>
       ))}

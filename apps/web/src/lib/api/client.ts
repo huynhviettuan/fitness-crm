@@ -59,6 +59,8 @@ export async function done(call: Promise<Answer>): Promise<void> {
 /** Query values as the API takes them: strings, with empty values left out. */
 export function query<T extends Record<string, string | number | boolean | undefined>>(values: T) {
   return Object.fromEntries(
-    Object.entries(values).flatMap(([key, value]) => (value === undefined || value === "" ? [] : [[key, String(value)]])),
+    Object.entries(values).flatMap(([key, value]) =>
+      value === undefined || value === "" ? [] : [[key, String(value)]],
+    ),
   ) as { [K in keyof T]?: string };
 }

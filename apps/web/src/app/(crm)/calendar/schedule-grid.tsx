@@ -41,7 +41,16 @@ type TrainerScheduleGridProps = {
  * and time; other cells are grey. Clicking a booking opens its sheet. Hours outside the
  * configured range appear when a booking needs them.
  */
-export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd, workingHours, permissions, trainers }: TrainerScheduleGridProps) {
+export function TrainerScheduleGrid({
+  date,
+  columns,
+  bookings,
+  dayStart,
+  dayEnd,
+  workingHours,
+  permissions,
+  trainers,
+}: TrainerScheduleGridProps) {
   const t = useTranslations();
   const timeZone = useTimeZone() ?? "UTC";
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -60,7 +69,9 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
   }
   const slots = Array.from({ length: (last - first) / SLOT_MINUTES }, (_, i) => first + i * SLOT_MINUTES);
   const working = (trainerId: string, minute: number) =>
-    (workingHours.get(trainerId) ?? []).some((hours) => minutesOfTime(hours.start) <= minute && minute + SLOT_MINUTES <= minutesOfTime(hours.end));
+    (workingHours.get(trainerId) ?? []).some(
+      (hours) => minutesOfTime(hours.start) <= minute && minute + SLOT_MINUTES <= minutesOfTime(hours.end),
+    );
   const bookable = (trainerId: string, minute: number) =>
     permissions.manage && trainers.some((tr) => tr.id === trainerId) && working(trainerId, minute);
 
@@ -74,14 +85,20 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
         >
           <div className="sticky top-0 border-b bg-background" />
           {columns.map((trainer) => (
-            <div key={trainer.id} className="sticky top-0 truncate border-b border-l bg-background px-3 py-2 text-sm font-medium">
+            <div
+              key={trainer.id}
+              className="sticky top-0 truncate border-b border-l bg-background px-3 py-2 text-sm font-medium"
+            >
               {trainer.fullName}
             </div>
           ))}
 
           <div>
             {slots.map((minute) => (
-              <div key={minute} className="h-12 border-b pt-1 pr-2 text-right text-xs text-muted-foreground tabular-nums">
+              <div
+                key={minute}
+                className="h-12 border-b pt-1 pr-2 text-right text-xs text-muted-foreground tabular-nums"
+              >
                 {clock(minute)}
               </div>
             ))}
@@ -106,7 +123,11 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
                   />
                 ) : (
                   // Outside working hours, or not for this user to book: grey when not working.
-                  <div key={minute} data-working={working(trainer.id, minute)} className={cn("h-12 border-b", !working(trainer.id, minute) && "bg-muted")} />
+                  <div
+                    key={minute}
+                    data-working={working(trainer.id, minute)}
+                    className={cn("h-12 border-b", !working(trainer.id, minute) && "bg-muted")}
+                  />
                 ),
               )}
               {bookings
@@ -125,7 +146,10 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
                         statusSurfaceClass("booking", booking.status),
                       )}
                       // Position and length follow the booking's times.
-                      style={{ top: (start - first) * PX_PER_MINUTE + 1, height: Math.max((end - start) * PX_PER_MINUTE - 2, 20) }}
+                      style={{
+                        top: (start - first) * PX_PER_MINUTE + 1,
+                        height: Math.max((end - start) * PX_PER_MINUTE - 2, 20),
+                      }}
                     >
                       <span className="block font-medium tabular-nums">
                         {t("bookings.timeRange", {
@@ -143,7 +167,12 @@ export function TrainerScheduleGrid({ date, columns, bookings, dayStart, dayEnd,
         </div>
       </div>
 
-      <BookingSheet booking={selected} onClose={() => setSelectedId(null)} permissions={permissions} trainers={trainers} />
+      <BookingSheet
+        booking={selected}
+        onClose={() => setSelectedId(null)}
+        permissions={permissions}
+        trainers={trainers}
+      />
       <BookingFormDialog
         open={preset !== null}
         onOpenChange={(open) => !open && setPreset(null)}

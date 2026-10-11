@@ -21,7 +21,10 @@ export class ContractsController {
   @ApiOptionalQuery("q", "customerId", "page", "pageSize")
   @ApiResult(contractPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
-    return encode(contractPageSchema, await listContracts(actor, queryOf(request, ["q", "customerId", "page", "pageSize"])));
+    return encode(
+      contractPageSchema,
+      await listContracts(actor, queryOf(request, ["q", "customerId", "page", "pageSize"])),
+    );
   }
 
   @Get(":id")
@@ -35,7 +38,11 @@ export class ContractsController {
   @Patch(":id")
   @RequirePermission("contract.create")
   @ApiResult(contractSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: contractInputSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: contractInputSchema }) body: unknown,
+  ) {
     return encode(contractSchema, await updateContract(actor, id, body));
   }
 
@@ -61,7 +68,10 @@ export class ContractsController {
   @ApiOptionalQuery("page", "pageSize")
   @ApiResult(paymentPageSchema)
   async payments(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Req() request: Request) {
-    return encode(paymentPageSchema, await listPayments(actor, { ...queryOf(request, ["page", "pageSize"]), contractId: id }));
+    return encode(
+      paymentPageSchema,
+      await listPayments(actor, { ...queryOf(request, ["page", "pageSize"]), contractId: id }),
+    );
   }
 
   /** T-015: a replay with the same key returns 200 with the original payment. */

@@ -21,7 +21,11 @@ export function TasksTable({ tasks, label, empty, footer }: TasksTableProps) {
       header: t("fields.title"),
       cell: ({ row }) => (
         <span className="flex flex-col gap-0.5">
-          <Link href={`/tasks/${row.original.id}`} aria-label={t("open", { title: row.original.title })} className="font-medium underline-offset-4 hover:underline">
+          <Link
+            href={`/tasks/${row.original.id}`}
+            aria-label={t("open", { title: row.original.title })}
+            className="font-medium underline-offset-4 hover:underline"
+          >
             {row.original.title}
           </Link>
           {row.original.entity && <span className="text-xs text-muted-foreground">{row.original.entity.label}</span>}
@@ -53,9 +57,19 @@ export function TasksTable({ tasks, label, empty, footer }: TasksTableProps) {
         </span>
       ),
     },
-    { id: "priority", header: t("fields.priority"), cell: ({ row }) => <StatusBadge entity="taskPriority" status={row.original.priority} /> },
-    { id: "status", header: t("fields.status"), cell: ({ row }) => <StatusBadge entity="task" status={row.original.status} /> },
+    {
+      id: "priority",
+      header: t("fields.priority"),
+      cell: ({ row }) => <StatusBadge entity="taskPriority" status={row.original.priority} />,
+    },
+    {
+      id: "status",
+      header: t("fields.status"),
+      cell: ({ row }) => <StatusBadge entity="task" status={row.original.status} />,
+    },
   ];
 
-  return <DataTable columns={columns} data={tasks} label={label} empty={empty} getRowId={(row) => row.id} footer={footer} />;
+  return (
+    <DataTable columns={columns} data={tasks} label={label} empty={empty} getRowId={(row) => row.id} footer={footer} />
+  );
 }

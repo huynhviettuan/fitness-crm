@@ -27,7 +27,12 @@ export const customerSchema = z
      * would set (hidden ones left out), or null. The fields above are still in effect.
      */
     pendingIdentity: z
-      .object({ approvalId: z.uuid(), fullName: z.string().optional(), phone: z.string().nullable().optional(), email: z.string().nullable().optional() })
+      .object({
+        approvalId: z.uuid(),
+        fullName: z.string().optional(),
+        phone: z.string().nullable().optional(),
+        email: z.string().nullable().optional(),
+      })
       .nullable(),
   })
   .meta({ id: "Customer" });

@@ -105,9 +105,14 @@ export const test = base.extend<Fixtures>({
       const before = await prisma.approvalRule.findMany({ include: { approvers: true } });
       await use();
       for (const rule of before) {
-        await prisma.approvalRule.update({ where: { id: rule.id }, data: { required: rule.required, overdueHours: rule.overdueHours } });
+        await prisma.approvalRule.update({
+          where: { id: rule.id },
+          data: { required: rule.required, overdueHours: rule.overdueHours },
+        });
         await prisma.approvalRuleRole.deleteMany({ where: { actionType: rule.actionType } });
-        await prisma.approvalRuleRole.createMany({ data: rule.approvers.map((a) => ({ actionType: a.actionType, roleId: a.roleId })) });
+        await prisma.approvalRuleRole.createMany({
+          data: rule.approvers.map((a) => ({ actionType: a.actionType, roleId: a.roleId })),
+        });
       }
     } finally {
       await prisma.$disconnect();
@@ -120,7 +125,8 @@ export const test = base.extend<Fixtures>({
       const before = await prisma.systemParameter.findMany({ select: { key: true, value: true } });
       await use();
       await prisma.systemParameter.deleteMany();
-      for (const row of before) await prisma.systemParameter.create({ data: { key: row.key, value: row.value as string } });
+      for (const row of before)
+        await prisma.systemParameter.create({ data: { key: row.key, value: row.value as string } });
     } finally {
       await prisma.$disconnect();
     }
@@ -163,15 +169,21 @@ export const test = base.extend<Fixtures>({
       const customerIds = ids(await prisma.customer.findMany({ where: tagged, select: { id: true } }));
       // Employees, trainers among them; their shifts and days off go with them (cascade).
       const trainerIds = ids(await prisma.employee.findMany({ where: tagged, select: { id: true } }));
-      const contractIds = ids(await prisma.contract.findMany({ where: { customerId: { in: customerIds } }, select: { id: true } }));
+      const contractIds = ids(
+        await prisma.contract.findMany({ where: { customerId: { in: customerIds } }, select: { id: true } }),
+      );
       const bookingIds = ids(
         await prisma.booking.findMany({
           where: { OR: [{ customerId: { in: customerIds } }, { trainerId: { in: trainerIds } }] },
           select: { id: true },
         }),
       );
-      const paymentIds = ids(await prisma.payment.findMany({ where: { contractId: { in: contractIds } }, select: { id: true } }));
-      const taggedOptionIds = ids(await prisma.option.findMany({ where: { labelVi: { contains: tag } }, select: { id: true } }));
+      const paymentIds = ids(
+        await prisma.payment.findMany({ where: { contractId: { in: contractIds } }, select: { id: true } }),
+      );
+      const taggedOptionIds = ids(
+        await prisma.option.findMany({ where: { labelVi: { contains: tag } }, select: { id: true } }),
+      );
       const cashIds = ids(
         await prisma.cashTransaction.findMany({
           where: {
@@ -198,7 +210,9 @@ export const test = base.extend<Fixtures>({
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).
       await prisma.trashEntry.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds] } } });
-      await prisma.approvalRequest.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds, ...customerIds] } } });
+      await prisma.approvalRequest.deleteMany({
+        where: { entityId: { in: [...paymentIds, ...cashIds, ...customerIds] } },
+      });
       await prisma.payment.deleteMany({ where: { id: { in: paymentIds } } });
       await prisma.cashTransaction.deleteMany({ where: { id: { in: cashIds } } });
       const audited = [...customerIds, ...contractIds, ...bookingIds, ...trainerIds, ...paymentIds, ...cashIds];
@@ -210,12 +224,18 @@ export const test = base.extend<Fixtures>({
       // Accounts, roles, and branches the test created. Their sign-ins, grants, and
       // overrides go with them (cascade); audit events they wrote first (restricted).
       const userIds = ids(await prisma.user.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
-      await prisma.auditEvent.deleteMany({ where: { OR: [{ actorUserId: { in: userIds } }, { entityId: { in: userIds } }] } });
-      await prisma.approvalRequest.deleteMany({ where: { OR: [{ submittedById: { in: userIds } }, { decidedById: { in: userIds } }] } });
+      await prisma.auditEvent.deleteMany({
+        where: { OR: [{ actorUserId: { in: userIds } }, { entityId: { in: userIds } }] },
+      });
+      await prisma.approvalRequest.deleteMany({
+        where: { OR: [{ submittedById: { in: userIds } }, { decidedById: { in: userIds } }] },
+      });
       // Their part in other leads' journeys (restricted), and the round-robin's memory of them.
       const asUser = { in: userIds };
       await prisma.leadStatusChange.updateMany({ where: { changedById: asUser }, data: { changedById: null } });
-      await prisma.leadAssignment.deleteMany({ where: { OR: [{ fromUserId: asUser }, { toUserId: asUser }, { assignedById: asUser }] } });
+      await prisma.leadAssignment.deleteMany({
+        where: { OR: [{ fromUserId: asUser }, { toUserId: asUser }, { assignedById: asUser }] },
+      });
       await prisma.customer.updateMany({ where: { picUserId: asUser }, data: { picUserId: null } });
       await prisma.leadRoundRobin.deleteMany({ where: { lastUserId: asUser } });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });

@@ -86,7 +86,9 @@ export default async function AuditPage({ searchParams }: PageProps<"/admin/audi
           <AuditTable
             events={result.items}
             empty={<EmptyState icon={HistoryIcon} title={t("empty")} />}
-            footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />}
+            footer={
+              <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+            }
           />
         </div>
       </div>

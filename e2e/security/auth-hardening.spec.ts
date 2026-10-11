@@ -21,7 +21,11 @@ test.describe("A07 sessions", () => {
     expect(sessionCookie).toMatch(/;\s*Path=\//i);
   });
 
-  test("signing out ends the session on the server, not just in the browser", async ({ apiAs, playwright, baseURL }) => {
+  test("signing out ends the session on the server, not just in the browser", async ({
+    apiAs,
+    playwright,
+    baseURL,
+  }) => {
     const api = await apiAs(null);
     await api.post("/api/auth/sign-in/email", { data: { email: E2E_USERS.ACCOUNTANT.email, password: E2E_PASSWORD } });
     const stolen = await api.storageState();

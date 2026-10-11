@@ -43,7 +43,10 @@ export async function createEmployee(input: EmployeeInput) {
 }
 
 export async function updateEmployee(id: string, input: EmployeeInput) {
-  return read(employeeSchema, (await api()).PATCH("/api/v1/employees/{id}", { params: { path: { id } }, body: input as never }));
+  return read(
+    employeeSchema,
+    (await api()).PATCH("/api/v1/employees/{id}", { params: { path: { id } }, body: input as never }),
+  );
 }
 
 export async function getWorkSchedule(id: string) {
@@ -51,19 +54,30 @@ export async function getWorkSchedule(id: string) {
 }
 
 export async function replaceShifts(id: string, input: ShiftsInput) {
-  return read(workScheduleSchema, (await api()).PUT("/api/v1/employees/{id}/shifts", { params: { path: { id } }, body: input }));
+  return read(
+    workScheduleSchema,
+    (await api()).PUT("/api/v1/employees/{id}/shifts", { params: { path: { id } }, body: input }),
+  );
 }
 
 export async function addDayOff(id: string, input: DayOffInput) {
-  return read(dayOffSchema, (await api()).POST("/api/v1/employees/{id}/days-off", { params: { path: { id } }, body: input }));
+  return read(
+    dayOffSchema,
+    (await api()).POST("/api/v1/employees/{id}/days-off", { params: { path: { id } }, body: input }),
+  );
 }
 
 export async function removeDayOff(id: string, dayOffId: string) {
-  return done((await api()).DELETE("/api/v1/employees/{id}/days-off/{dayOffId}", { params: { path: { id, dayOffId } } }));
+  return done(
+    (await api()).DELETE("/api/v1/employees/{id}/days-off/{dayOffId}", { params: { path: { id, dayOffId } } }),
+  );
 }
 
 /** The PT calendar's trainers for one gym day (dd/MM/yyyy), with their working hours. */
 export async function listTrainersOfDay(date: string) {
-  const { items } = await read(trainerDayListSchema, (await api()).GET("/api/v1/schedule/trainers", { params: { query: { date } } }));
+  const { items } = await read(
+    trainerDayListSchema,
+    (await api()).GET("/api/v1/schedule/trainers", { params: { query: { date } } }),
+  );
   return items;
 }

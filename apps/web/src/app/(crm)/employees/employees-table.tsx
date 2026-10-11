@@ -53,14 +53,31 @@ export function EmployeesTable({ employees, empty, footer }: EmployeesTableProps
       cell: ({ row }) => (row.original.title ? <ChosenOptionText option={row.original.title} /> : null),
     },
     { id: "branch", header: t("fields.branch"), cell: ({ row }) => row.original.branch.name },
-    { id: "phone", header: t("fields.phone"), cell: ({ row }) => <span className="tabular-nums">{row.original.phone}</span> },
+    {
+      id: "phone",
+      header: t("fields.phone"),
+      cell: ({ row }) => <span className="tabular-nums">{row.original.phone}</span>,
+    },
     {
       id: "login",
       header: t("fields.login"),
       cell: ({ row }) => row.original.user?.email ?? <span className="text-muted-foreground">{t("noLogin")}</span>,
     },
-    { id: "status", header: t("fields.status"), cell: ({ row }) => <StatusBadge entity="employee" status={row.original.status} /> },
+    {
+      id: "status",
+      header: t("fields.status"),
+      cell: ({ row }) => <StatusBadge entity="employee" status={row.original.status} />,
+    },
   ];
 
-  return <DataTable columns={columns} data={employees} label={t("title")} empty={empty} getRowId={(row) => row.id} footer={footer} />;
+  return (
+    <DataTable
+      columns={columns}
+      data={employees}
+      label={t("title")}
+      empty={empty}
+      getRowId={(row) => row.id}
+      footer={footer}
+    />
+  );
 }

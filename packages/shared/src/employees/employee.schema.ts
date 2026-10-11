@@ -55,7 +55,10 @@ const birthDate = z
   });
 
 /** An optional field from an option list (D-016): "" or null for none. */
-const optionalChoice = z.preprocess((value) => (value === "" ? null : value), z.uuid({ error: "invalidChoice" }).nullable());
+const optionalChoice = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.uuid({ error: "invalidChoice" }).nullable(),
+);
 
 /** The linked login (brief §8.4). The form sends "" for "no login". */
 const userId = z.preprocess((value) => (value === "" ? null : value), z.uuid({ error: "invalidChoice" }).nullable());
@@ -66,7 +69,9 @@ export const employeeInputSchema = z.object({
   branchId: branchChoice,
   fullName,
   birthDate: birthDate.prefault(""),
-  gender: z.preprocess((value) => (value === "" ? null : value), z.enum(GENDERS, { error: "invalidChoice" }).nullable()).prefault(""),
+  gender: z
+    .preprocess((value) => (value === "" ? null : value), z.enum(GENDERS, { error: "invalidChoice" }).nullable())
+    .prefault(""),
   phone: phone.prefault(""),
   email: email.prefault(""),
   /** From the "departments" list (OQ-024 interim); "Khác" needs a note. */
@@ -89,7 +94,8 @@ const flag = z
   .prefault(false);
 
 /** Forms send "" for a filter left empty. */
-const optional = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
 
 export const listEmployeesSchema = z.object({
   q: text(100).prefault(""),
@@ -119,7 +125,10 @@ export const shiftSchema = z
     start: shiftTime.refine((value) => value !== "24:00", { error: "invalidTime" }),
     end: shiftTime,
   })
-  .refine((shift) => minutesOfTime(shift.end) > minutesOfTime(shift.start), { path: ["end"], error: "endTimeNotAfterStart" });
+  .refine((shift) => minutesOfTime(shift.end) > minutesOfTime(shift.start), {
+    path: ["end"],
+    error: "endTimeNotAfterStart",
+  });
 
 /** The whole weekly pattern, replacing the one before. Shifts of one day do not overlap. */
 export const shiftsInputSchema = z

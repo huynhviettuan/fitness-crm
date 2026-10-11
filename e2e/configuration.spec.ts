@@ -18,9 +18,13 @@ test.describe("configuration", () => {
     contractDetailPage,
   }) => {
     const method = `Ví ${testTag}`;
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag)).id, {
-      activateWith: await apiAs("ADMIN"),
-    });
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag)).id,
+      {
+        activateWith: await apiAs("ADMIN"),
+      },
+    );
 
     await optionListsPage.goto("paymentMethods");
     await optionListsPage.create(method, `Wallet ${testTag}`);
@@ -45,7 +49,12 @@ test.describe("configuration", () => {
     await expect(listbox.getByRole("option", { name: method, exact: true })).toHaveCount(0);
   });
 
-  test("an admin moves an option up; Khác stays last (FR-PLT-005)", async ({ page, apiAs, testTag, optionListsPage }) => {
+  test("an admin moves an option up; Khác stays last (FR-PLT-005)", async ({
+    page,
+    apiAs,
+    testTag,
+    optionListsPage,
+  }) => {
     const admin = await apiAs("ADMIN");
     const first = `Lý do A ${testTag}`;
     const second = `Lý do B ${testTag}`;
@@ -54,7 +63,9 @@ test.describe("configuration", () => {
 
     await optionListsPage.goto("deleteReasons");
     await optionListsPage.moveUp(second);
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.options.reordered)).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(labels.options.reordered),
+    ).toBeVisible();
 
     await expect(async () => {
       const order = await optionListsPage.labelsInOrder();
@@ -64,13 +75,26 @@ test.describe("configuration", () => {
     }).toPass();
   });
 
-  test("notes written with Khác are listed for admin to promote (FR-PLT-005)", async ({ apiAs, testTag, optionListsPage }) => {
+  test("notes written with Khác are listed for admin to promote (FR-PLT-005)", async ({
+    apiAs,
+    testTag,
+    optionListsPage,
+  }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(reception, testTag)).id,
+      { activateWith: await apiAs("ADMIN") },
+    );
     const note = `Séc ${testTag}`;
     const response = await reception.post(`/api/v1/contracts/${contract.id}/payments`, {
       headers: { "idempotency-key": randomUUID() },
-      data: { amount: "1.000.000", methodId: await otherOptionId(reception, "paymentMethods"), methodNote: note, paidOn: gymToday().date },
+      data: {
+        amount: "1.000.000",
+        methodId: await otherOptionId(reception, "paymentMethods"),
+        methodNote: note,
+        paidOn: gymToday().date,
+      },
     });
     // Receipts wait for approval (D-018); the note counts either way.
     expect(response.status()).toBe(202);
@@ -103,7 +127,9 @@ test.describe("configuration", () => {
 
     await parametersPage.field("calendarDayEnd").fill("22:30");
     await parametersPage.save();
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.parameters.saved)).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(labels.parameters.saved),
+    ).toBeVisible();
 
     await calendarPage.goto(gymToday().url);
     await expect(slot22).toBeVisible();

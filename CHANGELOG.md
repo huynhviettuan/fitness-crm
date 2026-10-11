@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-11 — Code style: Prettier and ESLint readability rules
+
+- **Prettier** formats the whole repository: 120-character lines, double quotes, semicolons, trailing commas, and Tailwind classes in their canonical order (`prettier.config.mjs`). Markdown, generated files, and the customer's brief are left as written (`.prettierignore`). `pnpm format` formats; CI runs `pnpm format:check`.
+- **ESLint** gains readability rules shared by every package, the web app included (`packages/config/eslint.mjs`): type-only imports marked as such, `===`, braces around multi-line bodies, shorthand properties, template strings. `eslint-config-prettier` keeps ESLint out of formatting.
+- VS Code formats on save and fixes lint problems on save (`.vscode/`).
+- The one-time reformat changes no behavior; `.git-blame-ignore-revs` hides it from `git blame`.
+- Docs: AGENTS.md (§4, §8), README.
+
 ## 2026-10-11 — M2 slice 2: lead assignment and statuses
 
 - **Round-robin** (BR-203): a new lead goes in turn to the branch's consultants (users with the new permission "receive leads", initially the Consulting role) and starts *Đang tư vấn*. With nobody to receive it, it stays *Mới*. The consultant is told; the branch's managers are told of every new lead (A-052).

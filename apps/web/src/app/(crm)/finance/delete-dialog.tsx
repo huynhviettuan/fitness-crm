@@ -75,7 +75,13 @@ function DeleteForm({ onDelete, onDeleted }: Pick<DeleteDialogProps, "onDelete" 
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      <OptionSelect control={form.control} name="reasonId" noteName="reasonNote" listKey="deleteReasons" label={t("finance.deleteReason")} />
+      <OptionSelect
+        control={form.control}
+        name="reasonId"
+        noteName="reasonNote"
+        listKey="deleteReasons"
+        label={t("finance.deleteReason")}
+      />
       <AlertDialogFooter>
         <AlertDialogCancel disabled={pending}>{t("common.cancel")}</AlertDialogCancel>
         <Button type="submit" variant="destructive" disabled={pending}>

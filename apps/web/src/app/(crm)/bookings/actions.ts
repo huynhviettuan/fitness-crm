@@ -1,7 +1,14 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { cancelBooking, createBooking, markNoShow, rescheduleBooking, checkIn, completeSession } from "@/lib/api/bookings";
+import {
+  cancelBooking,
+  createBooking,
+  markNoShow,
+  rescheduleBooking,
+  checkIn,
+  completeSession,
+} from "@/lib/api/bookings";
 import type { BookingInput, RescheduleInput } from "@flow/shared/bookings";
 
 export async function createBookingAction(input: BookingInput): Promise<ActionResult> {

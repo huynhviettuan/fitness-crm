@@ -55,9 +55,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
   const [history, context] = canSeeBookings
     ? await Promise.all([listBookings({ contractId: contract.id, order: "desc", pageSize: 100 }), bookingContext(user)])
     : [null, null];
-  const payments = can(user, "payment.view")
-    ? await listPayments({ contractId: contract.id, pageSize: 100 })
-    : null;
+  const payments = can(user, "payment.view") ? await listPayments({ contractId: contract.id, pageSize: 100 }) : null;
   // OQ-003 and OQ-013 interim: nothing more to collect once paid in full, or once cancelled.
   const canRecordPayment = can(user, "payment.record") && contract.status !== "CANCELLED" && contract.debt > 0;
   const cancellable = can(user, "contract.cancel") && canCancel(contract.status);
@@ -85,7 +83,9 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
 
   const sessions = [
     { label: f("fields.totalSessions"), value: contract.totalSessions },
-    ...(contract.openingSessionsUsed > 0 ? [{ label: f("fields.openingSessionsUsed"), value: contract.openingSessionsUsed }] : []),
+    ...(contract.openingSessionsUsed > 0
+      ? [{ label: f("fields.openingSessionsUsed"), value: contract.openingSessionsUsed }]
+      : []),
     { label: f("fields.completedSessions"), value: contract.completedSessions },
     { label: f("fields.remainingSessions"), value: contract.remainingSessions, strong: true },
   ];
@@ -159,7 +159,10 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
               <AddBookingButton
                 trainers={context.trainers}
                 preset={{
-                  customer: { id: contract.customer.id, label: `${contract.customer.customerCode} · ${contract.customer.fullName}` },
+                  customer: {
+                    id: contract.customer.id,
+                    label: `${contract.customer.customerCode} · ${contract.customer.fullName}`,
+                  },
                   contract: { id: contract.id, label: `${contract.contractCode} · ${contract.packageName}` },
                 }}
               />
@@ -179,7 +182,13 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
   );
 }
 
-function FigureCard({ title, rows }: { title: string; rows: { label: string; value: React.ReactNode; strong?: boolean }[] }) {
+function FigureCard({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: { label: string; value: React.ReactNode; strong?: boolean }[];
+}) {
   return (
     <Card>
       <CardHeader>
@@ -190,7 +199,11 @@ function FigureCard({ title, rows }: { title: string; rows: { label: string; val
       <CardContent>
         <dl className="space-y-3">
           {rows.map(({ label, value, strong }) => (
-            <Detail key={label} label={label} value={<span className={strong ? "text-base font-semibold tabular-nums" : "tabular-nums"}>{value}</span>} />
+            <Detail
+              key={label}
+              label={label}
+              value={<span className={strong ? "text-base font-semibold tabular-nums" : "tabular-nums"}>{value}</span>}
+            />
           ))}
         </dl>
       </CardContent>

@@ -21,7 +21,13 @@ afterEach(async () => {
   await resetDatabase();
 });
 
-const pt24 = { packageName: "PT 24 buổi", contractValue: "12.000.000", totalSessions: "24", startDate: "01/10/2026", endDate: "31/03/2027" };
+const pt24 = {
+  packageName: "PT 24 buổi",
+  contractValue: "12.000.000",
+  totalSessions: "24",
+  startDate: "01/10/2026",
+  endDate: "31/03/2027",
+};
 
 /** A Fitness Manager, who creates and approves contracts (09_RBAC.md), and a customer. */
 /** A Fitness Manager who sells, and another who approves: nobody approves their own (D-018). */
@@ -82,7 +88,9 @@ describe("createContract", () => {
   it("returns field errors and saves nothing for invalid input", async () => {
     const { seller, customer } = await setup();
 
-    await expect(create(seller, customer.id, { ...pt24, contractValue: "12.5", endDate: "01/01/2026" })).rejects.toMatchObject({
+    await expect(
+      create(seller, customer.id, { ...pt24, contractValue: "12.5", endDate: "01/01/2026" }),
+    ).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
       fieldErrors: { contractValue: ["invalidAmount"] },
     });
@@ -95,7 +103,9 @@ describe("duplicate submission (T-015)", () => {
     const { seller, customer } = await setup();
 
     for (const key of [undefined, "", "not-a-uuid"]) {
-      await expect(createContract(seller, customer.id, pt24, key)).rejects.toMatchObject({ code: "IDEMPOTENCY_KEY_REQUIRED" });
+      await expect(createContract(seller, customer.id, pt24, key)).rejects.toMatchObject({
+        code: "IDEMPOTENCY_KEY_REQUIRED",
+      });
     }
   });
 
@@ -188,10 +198,16 @@ describe("editing (OQ-015 interim: drafts only)", () => {
     const { seller, customer } = await setup();
     const { contract } = await create(seller, customer.id);
 
-    const updated = await updateContract(seller, contract.id, { ...pt24, totalSessions: "12", contractValue: "6.000.000" });
+    const updated = await updateContract(seller, contract.id, {
+      ...pt24,
+      totalSessions: "12",
+      contractValue: "6.000.000",
+    });
 
     expect(updated).toMatchObject({ totalSessions: 12, contractValue: 6_000_000, contractCode: contract.contractCode });
-    const audit = await prisma.auditEvent.findFirstOrThrow({ where: { entityId: contract.id, action: "contract.updated" } });
+    const audit = await prisma.auditEvent.findFirstOrThrow({
+      where: { entityId: contract.id, action: "contract.updated" },
+    });
     expect(audit).toMatchObject({
       before: { contractValue: "12000000", totalSessions: 24 },
       after: { contractValue: "6000000", totalSessions: 12 },
@@ -214,7 +230,10 @@ describe("reading", () => {
     const { seller, customer } = await setup();
     const { contract } = await create(seller, customer.id);
     // Set as the import tool will (OQ-014): directly, once.
-    await prisma.contract.update({ where: { id: contract.id }, data: { openingSessionsUsed: 8, openingPaidAmount: 5_000_000 } });
+    await prisma.contract.update({
+      where: { id: contract.id },
+      data: { openingSessionsUsed: 8, openingPaidAmount: 5_000_000 },
+    });
 
     expect(await getContract(seller, contract.id)).toMatchObject({
       remainingSessions: 16,
@@ -252,7 +271,10 @@ describe("reading", () => {
     await create(seller, other.id, { ...pt24, packageName: "Yoga 12 buổi" });
 
     for (const q of [contract.contractCode.toLowerCase(), "pt 24", "nguyen van"]) {
-      expect((await listContracts(seller, { q })).items.map((c) => c.id), q).toEqual([contract.id]);
+      expect(
+        (await listContracts(seller, { q })).items.map((c) => c.id),
+        q,
+      ).toEqual([contract.id]);
     }
   });
 
@@ -261,7 +283,9 @@ describe("reading", () => {
     const { contract } = await create(seller, customer.id);
 
     await expect(prisma.contract.update({ where: { id: contract.id }, data: { totalSessions: 0 } })).rejects.toThrow();
-    await expect(prisma.contract.update({ where: { id: contract.id }, data: { openingSessionsUsed: 25 } })).rejects.toThrow();
+    await expect(
+      prisma.contract.update({ where: { id: contract.id }, data: { openingSessionsUsed: 25 } }),
+    ).rejects.toThrow();
     await expect(prisma.contract.update({ where: { id: contract.id }, data: { contractValue: -1 } })).rejects.toThrow();
   });
 });
@@ -271,7 +295,11 @@ describe("cancelling a contract with bookings (D-010, BR-017)", () => {
     const scenario = await bookingScenario();
     const future = await book(scenario.manager, scenario, { date: "20/10/2026", startTime: "08:00", endTime: "09:00" });
     const past = await book(scenario.manager, scenario, { date: "02/10/2026", startTime: "08:00", endTime: "09:00" });
-    const completed = await book(scenario.manager, scenario, { date: "03/10/2026", startTime: "08:00", endTime: "09:00" });
+    const completed = await book(scenario.manager, scenario, {
+      date: "03/10/2026",
+      startTime: "08:00",
+      endTime: "09:00",
+    });
     await checkIn(scenario.manager, completed.id);
     await completeSession(scenario.manager, completed.id);
 
@@ -309,7 +337,10 @@ describe("cancelling a contract with bookings (D-010, BR-017)", () => {
       const scenario = await bookingScenario({ phone: `09090000${round}0` });
       const booking = await book(scenario.manager, scenario);
 
-      await Promise.allSettled([cancelContract(scenario.manager, scenario.contract.id), checkIn(scenario.manager, booking.id)]);
+      await Promise.allSettled([
+        cancelContract(scenario.manager, scenario.contract.id),
+        checkIn(scenario.manager, booking.id),
+      ]);
 
       const contract = await getContract(scenario.manager, scenario.contract.id);
       const after = await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } });

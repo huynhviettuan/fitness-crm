@@ -46,13 +46,17 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
 
   const t = await getTranslations("leads");
   const lead = await loadLead((await params).id);
-  const [timeline, assignees] = await Promise.all([getLeadTimeline(lead.id), can(user, "lead.assign") ? listLeadAssignees(lead.id) : null]);
+  const [timeline, assignees] = await Promise.all([
+    getLeadTimeline(lead.id),
+    can(user, "lead.assign") ? listLeadAssignees(lead.id) : null,
+  ]);
   const chosen = (option: ChosenOption | null) => {
     if (!option) return null;
     const label = user.locale === "vi" ? option.labelVi : option.labelEn;
     return option.note ? `${label}: ${option.note}` : label;
   };
-  const masked = (field: "phone" | "email", value: string | null) => (lead.maskedFields.includes(field) ? <HiddenValue /> : value);
+  const masked = (field: "phone" | "email", value: string | null) =>
+    lead.maskedFields.includes(field) ? <HiddenValue /> : value;
 
   const journey: { label: string; value: React.ReactNode }[] = [
     {
@@ -67,7 +71,9 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
       ),
     },
     { label: t("fields.pic"), value: lead.pic?.name ?? t("noPic") },
-    ...(lead.appointmentAt ? [{ label: t("fields.appointmentAt"), value: <DateTime value={lead.appointmentAt} format="dateTime" /> }] : []),
+    ...(lead.appointmentAt
+      ? [{ label: t("fields.appointmentAt"), value: <DateTime value={lead.appointmentAt} format="dateTime" /> }]
+      : []),
     ...(lead.refuseReason ? [{ label: t("fields.refuseReason"), value: chosen(lead.refuseReason) }] : []),
     ...(isRecareStatus(lead.status) && lead.contactAgainOn
       ? [{ label: t("fields.contactAgainOn"), value: <DateTime value={lead.contactAgainOn} format="dateOnly" /> }]
@@ -87,12 +93,18 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
   ];
   const need: { label: string; value: React.ReactNode }[] = [
     { label: t("fields.needGroup"), value: chosen(lead.needGroup) },
-    { label: t("fields.needDetail"), value: lead.needDetail && <span className="whitespace-pre-line">{lead.needDetail}</span> },
+    {
+      label: t("fields.needDetail"),
+      value: lead.needDetail && <span className="whitespace-pre-line">{lead.needDetail}</span>,
+    },
     { label: t("fields.painStatus"), value: chosen(lead.painStatus) },
     { label: t("fields.assessmentType"), value: chosen(lead.assessmentType) },
     { label: t("fields.gender"), value: lead.gender && t(`genders.${lead.gender}`) },
     { label: t("fields.birthDate"), value: lead.birthDate && <DateTime value={lead.birthDate} format="dateOnly" /> },
-    { label: t("fields.nationalityGroup"), value: lead.nationalityGroup && t(`nationalityGroups.${lead.nationalityGroup}`) },
+    {
+      label: t("fields.nationalityGroup"),
+      value: lead.nationalityGroup && t(`nationalityGroups.${lead.nationalityGroup}`),
+    },
     { label: t("fields.notes"), value: lead.notes && <span className="whitespace-pre-line">{lead.notes}</span> },
   ];
   const list = (items: { label: string; value: React.ReactNode }[]) => (
@@ -114,7 +126,11 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
           {t("backToList")}
         </Link>
       </Button>
-      <PageHeader title={lead.fullName} description={lead.leadCode} actions={can(user, "lead.manage") && <EditLeadButton lead={lead} />} />
+      <PageHeader
+        title={lead.fullName}
+        description={lead.leadCode}
+        actions={can(user, "lead.manage") && <EditLeadButton lead={lead} />}
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card role="region" aria-label={t("journey")}>
           <CardHeader>

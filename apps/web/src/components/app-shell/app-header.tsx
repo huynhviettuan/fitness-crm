@@ -35,7 +35,9 @@ export function AppHeader({ user, showSearch, approvals, notifications }: Header
         <Link href="/approvals" aria-label={ta("inboxLabel", { count: approvals.toDecide })}>
           <InboxIcon />
           <span className="hidden sm:inline">{ta("title")}</span>
-          {approvals.toDecide > 0 && <Badge variant={approvals.overdue > 0 ? "destructive" : "default"}>{approvals.toDecide}</Badge>}
+          {approvals.toDecide > 0 && (
+            <Badge variant={approvals.overdue > 0 ? "destructive" : "default"}>{approvals.toDecide}</Badge>
+          )}
         </Link>
       </Button>
       <NotificationBell unread={notifications.unread} recent={notifications.recent} />

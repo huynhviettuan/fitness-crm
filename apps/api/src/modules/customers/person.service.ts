@@ -37,7 +37,12 @@ export async function assertPhoneFree(
   throw new AppError("PHONE_ALREADY_USED", {
     fieldErrors: { phone: ["phoneAlreadyUsed"] },
     duplicate: visible
-      ? { id: existing.id, stage: existing.stage, code: (existing.stage === "LEAD" ? existing.leadCode : existing.customerCode) ?? "", fullName: existing.fullName }
+      ? {
+          id: existing.id,
+          stage: existing.stage,
+          code: (existing.stage === "LEAD" ? existing.leadCode : existing.customerCode) ?? "",
+          fullName: existing.fullName,
+        }
       : undefined,
   });
 }

@@ -68,11 +68,22 @@ export function ContractsTable({ contracts, showCustomer = true, empty, footer }
         </span>
       ),
     },
-    { id: "contractValue", header: t("fields.contractValue"), cell: ({ row }) => <Money amount={row.original.contractValue} /> },
+    {
+      id: "contractValue",
+      header: t("fields.contractValue"),
+      cell: ({ row }) => <Money amount={row.original.contractValue} />,
+    },
     { id: "debt", header: t("fields.debt"), cell: ({ row }) => <Money amount={row.original.debt} /> },
   ];
 
   return (
-    <DataTable columns={columns} data={contracts} label={t("title")} empty={empty} footer={footer} getRowId={(row) => row.id} />
+    <DataTable
+      columns={columns}
+      data={contracts}
+      label={t("title")}
+      empty={empty}
+      footer={footer}
+      getRowId={(row) => row.id}
+    />
   );
 }

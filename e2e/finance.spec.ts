@@ -27,7 +27,11 @@ test.describe("finance as a receptionist", () => {
     contractDetailPage,
   }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(reception, testTag)).id,
+      { activateWith: await apiAs("ADMIN") },
+    );
     const toasts = page.getByRole("region", { name: labels.common.notifications });
     // Payment methods are an admin list (D-016); this test brings its own two.
     const admin = await apiAs("ADMIN");
@@ -50,7 +54,9 @@ test.describe("finance as a receptionist", () => {
     // Pending payments count for nothing until a Fitness Manager approves them.
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/12\.000\.000/);
     const manager = await apiAs("FITNESS_MANAGER");
-    const { items } = (await (await reception.get(`/api/v1/contracts/${contract.id}/payments`)).json()) as { items: { id: string }[] };
+    const { items } = (await (await reception.get(`/api/v1/contracts/${contract.id}/payments`)).json()) as {
+      items: { id: string }[];
+    };
     for (const payment of items) await approvePendingViaApi(manager, payment.id);
     await page.reload();
 
@@ -61,9 +67,18 @@ test.describe("finance as a receptionist", () => {
     await expect(contractDetailPage.payments.deleteButton("5.000.000")).toHaveCount(0);
   });
 
-  test("a payment above what is still owed is refused (OQ-003 interim)", async ({ page, apiAs, testTag, contractDetailPage }) => {
+  test("a payment above what is still owed is refused (OQ-003 interim)", async ({
+    page,
+    apiAs,
+    testTag,
+    contractDetailPage,
+  }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(reception, testTag)).id,
+      { activateWith: await apiAs("ADMIN") },
+    );
     await recordPaymentViaApi(reception, contract.id, "10.000.000", { approver: await apiAs("FITNESS_MANAGER") });
 
     await contractDetailPage.goto(contract.id);
@@ -72,7 +87,11 @@ test.describe("finance as a receptionist", () => {
     await dialog.fill({ amount: "3.000.000", method: OTHER_OPTION_LABEL, methodNote: "Ví MoMo" });
     await dialog.save();
 
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.errors.PAYMENT_EXCEEDS_CONTRACT_VALUE)).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: labels.common.notifications })
+        .getByText(labels.errors.PAYMENT_EXCEEDS_CONTRACT_VALUE),
+    ).toBeVisible();
     await dialog.cancel();
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/2\.000\.000/);
   });
@@ -99,8 +118,14 @@ test.describe("finance as an accountant", () => {
     contractDetailPage,
   }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
-    const payment = await recordPaymentViaApi(reception, contract.id, "5.000.000", { approver: await apiAs("FITNESS_MANAGER") });
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(reception, testTag)).id,
+      { activateWith: await apiAs("ADMIN") },
+    );
+    const payment = await recordPaymentViaApi(reception, contract.id, "5.000.000", {
+      approver: await apiAs("FITNESS_MANAGER"),
+    });
 
     await contractDetailPage.goto(contract.id);
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/7\.000\.000/);
@@ -115,7 +140,9 @@ test.describe("finance as an accountant", () => {
     await dialog.confirm();
 
     // Deleting is approved by an admin (09_RBAC.md); until then the payment counts.
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.approvals.submitted)).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(labels.approvals.submitted),
+    ).toBeVisible();
     await expect(contractDetailPage.figure(cf.debt)).toHaveText(/7\.000\.000/);
     await approvePendingViaApi(await apiAs("ADMIN"), payment.id, "record.delete");
     await page.reload();
@@ -152,7 +179,9 @@ test.describe("finance as an accountant", () => {
     const [year, monthNumber] = month.split("-");
     const lastDay = new Date(Date.UTC(Number(year), Number(monthNumber), 0)).getUTCDate();
     const entries = (await (
-      await accountant.get(`/api/v1/cash-transactions?from=01/${monthNumber}/${year}&to=${lastDay}/${monthNumber}/${year}&pageSize=100`)
+      await accountant.get(
+        `/api/v1/cash-transactions?from=01/${monthNumber}/${year}&to=${lastDay}/${monthNumber}/${year}&pageSize=100`,
+      )
     ).json()) as { items: { id: string; category: { labelVi: string } }[] };
     for (const entry of entries.items.filter((item) => item.category.labelVi.includes(testTag))) {
       await approvePendingViaApi(manager, entry.id);
@@ -163,7 +192,9 @@ test.describe("finance as an accountant", () => {
     await expect(financePage.total(fin.expense)).toContainText("1.500.000");
     await expect(financePage.total(fin.contractPayments)).toContainText(/^\D*0\D*$/);
 
-    await financePage.table(fin.tabs.cash).delete({ option: OTHER_OPTION_LABEL, note: "Nhập sai số tiền" }, `Điện nước ${testTag}`);
+    await financePage
+      .table(fin.tabs.cash)
+      .delete({ option: OTHER_OPTION_LABEL, note: "Nhập sai số tiền" }, `Điện nước ${testTag}`);
     const expense = entries.items.find((item) => item.category.labelVi === `Điện nước ${testTag}`)!;
     await approvePendingViaApi(await apiAs("ADMIN"), expense.id, "record.delete");
     await financePage.goto("cash", month);

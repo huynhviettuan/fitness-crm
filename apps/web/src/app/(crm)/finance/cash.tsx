@@ -7,7 +7,14 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ReceiptTextIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
@@ -52,7 +59,11 @@ export function CashTable({ transactions, canDelete, label, empty, footer }: Cas
   const [deleting, setDeleting] = useState<CashRow | null>(null);
 
   const columns: DataTableColumn<CashRow>[] = [
-    { id: "occurredOn", header: t("fields.occurredOn"), cell: ({ row }) => <DateTime value={row.original.occurredOn} format="dateOnly" /> },
+    {
+      id: "occurredOn",
+      header: t("fields.occurredOn"),
+      cell: ({ row }) => <DateTime value={row.original.occurredOn} format="dateOnly" />,
+    },
     { id: "type", header: t("fields.type"), cell: ({ row }) => t(`types.${row.original.type}`) },
     {
       id: "category",
@@ -92,7 +103,14 @@ export function CashTable({ transactions, canDelete, label, empty, footer }: Cas
 
   return (
     <>
-      <DataTable columns={columns} data={transactions} label={label} empty={empty} footer={footer} getRowId={(row) => row.id} />
+      <DataTable
+        columns={columns}
+        data={transactions}
+        label={label}
+        empty={empty}
+        footer={footer}
+        getRowId={(row) => row.id}
+      />
       <DeleteDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
@@ -150,7 +168,15 @@ export function RecordCashButton({ branches }: { branches: BranchOption[] }) {
   );
 }
 
-function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string; branches: BranchOption[]; onDone: () => void }) {
+function CashForm({
+  idempotencyKey,
+  branches,
+  onDone,
+}: {
+  idempotencyKey: string;
+  branches: BranchOption[];
+  onDone: () => void;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const timeZone = useTimeZone() ?? "UTC";
@@ -221,7 +247,13 @@ function CashForm({ idempotencyKey, branches, onDone }: { idempotencyKey: string
             inputMode="numeric"
           />
         </div>
-        <OptionSelect control={form.control} name="categoryId" noteName="categoryNote" listKey={listKey} label={t(`${f}.category`)} />
+        <OptionSelect
+          control={form.control}
+          name="categoryId"
+          noteName="categoryNote"
+          listKey={listKey}
+          label={t(`${f}.category`)}
+        />
         <div className="grid grid-cols-2 gap-4">
           <TextField
             control={form.control}

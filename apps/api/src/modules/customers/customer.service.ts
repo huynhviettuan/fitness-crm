@@ -30,8 +30,16 @@ export async function listCustomers(actor: Actor, rawQuery: unknown): Promise<Cu
   // A hidden phone number cannot be probed through the search box either (D-017).
   const searchPhone = !isMasked(actor, "customer.phone");
   const { items, total } = await repo.listCustomers(prisma, query, visibleTo(actor), searchPhone);
-  const pending = await pendingIdentities(prisma, items.map((c) => c.id));
-  return { items: items.map((c) => present(actor, c, pending.get(c.id))), total, page: query.page, pageSize: query.pageSize };
+  const pending = await pendingIdentities(
+    prisma,
+    items.map((c) => c.id),
+  );
+  return {
+    items: items.map((c) => present(actor, c, pending.get(c.id))),
+    total,
+    page: query.page,
+    pageSize: query.pageSize,
+  };
 }
 
 export async function getCustomer(actor: Actor, id: string): Promise<Customer> {
@@ -68,7 +76,11 @@ export async function createCustomer(actor: Actor, input: unknown): Promise<Cust
  * waits for approval while the other fields change at once (D-018); `approval` is the
  * request it created, if any.
  */
-export async function updateCustomer(actor: Actor, id: string, input: unknown): Promise<{ customer: Customer; approval: { id: string } | null }> {
+export async function updateCustomer(
+  actor: Actor,
+  id: string,
+  input: unknown,
+): Promise<{ customer: Customer; approval: { id: string } | null }> {
   assertCan(actor, "customer.manage");
   const data = parseInput(updateCustomerSchema, input);
   // A user who cannot see a field cannot change it either (D-017).
@@ -79,11 +91,13 @@ export async function updateCustomer(actor: Actor, id: string, input: unknown): 
     prisma.$transaction(async (tx) => {
       const before = await repo.findCustomer(tx, id, visibleTo(actor));
       if (!before) throw new AppError("NOT_FOUND");
-      if (data.phone !== undefined && data.phone !== before.phone) await assertPhoneFree(tx, actor, data.phone, id, visibleTo);
+      if (data.phone !== undefined && data.phone !== before.phone)
+        await assertPhoneFree(tx, actor, data.phone, id, visibleTo);
 
       const identity: IdentityChange = {};
       for (const field of IDENTITY_FIELDS) {
-        if (data[field] !== undefined && data[field] !== before[field]) Object.assign(identity, { [field]: data[field] });
+        if (data[field] !== undefined && data[field] !== before[field])
+          Object.assign(identity, { [field]: data[field] });
       }
       const held = Object.keys(identity).length > 0 && (await ruleFor(tx, "customer.identity")).required;
       const applied = held ? Object.fromEntries(Object.entries(data).filter(([key]) => !(key in identity))) : data;
@@ -91,7 +105,13 @@ export async function updateCustomer(actor: Actor, id: string, input: unknown): 
       const after = await repo.updateCustomer(tx, id, applied);
       const changes = diffFields(before, after, AUDITED_FIELDS);
       if (changes) {
-        await recordAudit(tx, { actorUserId: actor.id, entityType: "customer", entityId: id, action: "customer.updated", ...changes });
+        await recordAudit(tx, {
+          actorUserId: actor.id,
+          entityType: "customer",
+          entityId: id,
+          action: "customer.updated",
+          ...changes,
+        });
       }
       const approval = held
         ? await submitForApproval(tx, actor, {
@@ -110,7 +130,13 @@ export async function updateCustomer(actor: Actor, id: string, input: unknown): 
 }
 
 /** Applies an approved identity change (D-018), audited as an edit of the customer. */
-export async function applyIdentityChange(db: Db, decider: Pick<Actor, "id">, id: string, change: IdentityChange, requestId: string): Promise<void> {
+export async function applyIdentityChange(
+  db: Db,
+  decider: Pick<Actor, "id">,
+  id: string,
+  change: IdentityChange,
+  requestId: string,
+): Promise<void> {
   const before = await repo.findCustomer(db, id);
   if (!before) throw new AppError("NOT_FOUND");
   const after = await repo.updateCustomer(db, id, change);
@@ -145,7 +171,10 @@ type PendingIdentity = { approvalId: string } & IdentityChange;
  */
 export function ownCustomers(actor: Pick<Actor, "id" | "employeeId">): Prisma.CustomerWhereInput {
   return {
-    OR: [{ createdById: actor.id }, ...(actor.employeeId ? [{ bookings: { some: { trainerId: actor.employeeId } } }] : [])],
+    OR: [
+      { createdById: actor.id },
+      ...(actor.employeeId ? [{ bookings: { some: { trainerId: actor.employeeId } } }] : []),
+    ],
   };
 }
 
@@ -180,7 +209,10 @@ function present(actor: Actor, customer: repo.CustomerRecord, pending?: PendingI
   };
 }
 
-function maskIdentity(pending: PendingIdentity, masked: Customer["maskedFields"]): NonNullable<Customer["pendingIdentity"]> {
+function maskIdentity(
+  pending: PendingIdentity,
+  masked: Customer["maskedFields"],
+): NonNullable<Customer["pendingIdentity"]> {
   const { phone, email, ...rest } = pending;
   return {
     ...rest,

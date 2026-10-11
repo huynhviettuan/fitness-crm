@@ -56,7 +56,9 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
         requests={result.items}
         view={view}
         empty={<EmptyState icon={InboxIcon} title={t(`empty.${view}`)} />}
-        footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />}
+        footer={
+          <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+        }
       />
     </>
   );

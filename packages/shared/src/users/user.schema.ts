@@ -16,7 +16,11 @@ const name = z
   .min(1, { error: "required" })
   .max(100, { error: "tooLong" })
   .refine(hasNoControlCharacters, { error: "invalidCharacters" });
-const email = z.string().trim().toLowerCase().pipe(z.email({ error: "invalidEmail" }));
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email({ error: "invalidEmail" }));
 const password = z.string().min(10, { error: "passwordTooShort" }).max(128, { error: "tooLong" });
 const roleId = z.uuid({ error: "required" });
 const userId = z.uuid({ error: "required" });
@@ -29,7 +33,8 @@ const branchAccess = {
     .prefault([])
     .transform((ids) => [...new Set(ids)]),
 };
-const needsABranch = (data: { allBranches: boolean; branchIds: string[] }) => data.allBranches || data.branchIds.length > 0;
+const needsABranch = (data: { allBranches: boolean; branchIds: string[] }) =>
+  data.allBranches || data.branchIds.length > 0;
 const branchRequired = { path: ["branchIds"], error: "required" };
 
 export const createUserSchema = z
@@ -55,7 +60,12 @@ export const setOverridesSchema = z.object({
 export const accessWindowSchema = z
   .object({
     weekdays: z
-      .array(z.union(WEEKDAYS.map((day) => z.literal(day)), { error: "invalidChoice" }))
+      .array(
+        z.union(
+          WEEKDAYS.map((day) => z.literal(day)),
+          { error: "invalidChoice" },
+        ),
+      )
       .min(1, { error: "required" })
       .transform((days) => [...new Set(days)].sort()),
     startTime: timeOfDay,
@@ -64,7 +74,10 @@ export const accessWindowSchema = z
   .refine((window) => window.endTime > window.startTime, { path: ["endTime"], error: "endTimeNotAfterStart" });
 
 /** Replaces the user's windows; an empty list means any time. */
-export const setAccessWindowsSchema = z.object({ userId, windows: z.array(accessWindowSchema).max(14, { error: "tooLong" }) });
+export const setAccessWindowsSchema = z.object({
+  userId,
+  windows: z.array(accessWindowSchema).max(14, { error: "tooLong" }),
+});
 
 export const loginHistoryQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),

@@ -18,11 +18,20 @@ import { parseInput } from "../validation/parse.js";
 export type NewNotification = { kind: NotificationKind; params: NotificationParams; link: string | null };
 
 /** One notification for each user named once; nothing when nobody is left. */
-export async function notify(db: Db, userIds: Iterable<string | null | undefined>, notification: NewNotification): Promise<void> {
+export async function notify(
+  db: Db,
+  userIds: Iterable<string | null | undefined>,
+  notification: NewNotification,
+): Promise<void> {
   const ids = [...new Set([...userIds].filter((id): id is string => Boolean(id)))];
   if (ids.length === 0) return;
   await db.notification.createMany({
-    data: ids.map((userId) => ({ userId, kind: notification.kind, params: notification.params, link: notification.link })),
+    data: ids.map((userId) => ({
+      userId,
+      kind: notification.kind,
+      params: notification.params,
+      link: notification.link,
+    })),
   });
 }
 
@@ -62,12 +71,21 @@ export async function markAllRead(actor: Actor): Promise<void> {
   await prisma.notification.updateMany({ where: { userId: actor.id, readAt: null }, data: { readAt: new Date() } });
 }
 
-function toView(row: { id: string; kind: string; params: Prisma.JsonValue; link: string | null; readAt: Date | null; createdAt: Date }): NotificationView {
+function toView(row: {
+  id: string;
+  kind: string;
+  params: Prisma.JsonValue;
+  link: string | null;
+  readAt: Date | null;
+  createdAt: Date;
+}): NotificationView {
   const params = row.params && typeof row.params === "object" && !Array.isArray(row.params) ? row.params : {};
   return {
     id: row.id,
     // A kind no longer in the code would fail the response schema; such rows are not written.
-    kind: (NOTIFICATION_KINDS as readonly string[]).includes(row.kind) ? (row.kind as NotificationKind) : "taskCommented",
+    kind: (NOTIFICATION_KINDS as readonly string[]).includes(row.kind)
+      ? (row.kind as NotificationKind)
+      : "taskCommented",
     params: Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)])),
     link: row.link,
     readAt: row.readAt,

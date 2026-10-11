@@ -19,15 +19,25 @@ test.describe("the trash and the action history as an admin", () => {
   }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN") });
-    const payment = await recordPaymentViaApi(reception, contract.id, "4.000.000", { approver: await apiAs("FITNESS_MANAGER") });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: await apiAs("ADMIN"),
+    });
+    const payment = await recordPaymentViaApi(reception, contract.id, "4.000.000", {
+      approver: await apiAs("FITNESS_MANAGER"),
+    });
     const title = `${contract.contractCode} · ${customer.fullName}`;
     const reason = `Ghi nhầm ${testTag}`;
 
     // "Kế toán" asks to delete; deleting is approved by an admin (09_RBAC.md).
     const accountant = await apiAs("ACCOUNTANT");
     const deleteReasonId = await otherOptionId(accountant, "deleteReasons");
-    expect((await accountant.delete(`/api/v1/payments/${payment.id}`, { data: { reasonId: deleteReasonId, reasonNote: reason } })).status()).toBe(202);
+    expect(
+      (
+        await accountant.delete(`/api/v1/payments/${payment.id}`, {
+          data: { reasonId: deleteReasonId, reasonNote: reason },
+        })
+      ).status(),
+    ).toBe(202);
     await approvalsPage.goto("toDecide");
     await approvalsPage.approve(title);
 
@@ -58,7 +68,10 @@ test.describe("the trash and the action history as an admin", () => {
 test.describe("the trash and the action history as a Fitness Manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("AC-13: only management sees them; the menu hides them and the URLs refuse (09_RBAC.md)", async ({ page, shell }) => {
+  test("AC-13: only management sees them; the menu hides them and the URLs refuse (09_RBAC.md)", async ({
+    page,
+    shell,
+  }) => {
     await page.goto("/dashboard");
     await expect(shell.navLink(labels.nav.trash)).toHaveCount(0);
     await expect(shell.navLink(labels.nav.audit)).toHaveCount(0);

@@ -66,7 +66,11 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={assignees && <CreateTaskButton assignees={assignees} branches={user.branches} />} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={assignees && <CreateTaskButton assignees={assignees} branches={user.branches} />}
+      />
       {/* D-018: the approver gets their approvals in the task module; they are decided in the inbox. */}
       {approvals && approvals.toDecide > 0 && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-sm">
@@ -119,13 +123,32 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
             {status && <input type="hidden" name="status" value={status} />}
             {overdueOnly && <input type="hidden" name="deadline" value="overdue" />}
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input name="q" type="search" defaultValue={q} placeholder={t("searchPlaceholder")} aria-label={t("searchPlaceholder")} className="pl-8" />
+            <Input
+              name="q"
+              type="search"
+              defaultValue={q}
+              placeholder={t("searchPlaceholder")}
+              aria-label={t("searchPlaceholder")}
+              className="pl-8"
+            />
           </Form>
           <TasksTable
             tasks={result.items}
             label={t(`views.${view}`)}
-            empty={<EmptyState icon={filtered ? SearchIcon : ListTodoIcon} title={filtered ? t("noResults") : t(`empty.${view}`)} />}
-            footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={(target) => query({ page: target })} />}
+            empty={
+              <EmptyState
+                icon={filtered ? SearchIcon : ListTodoIcon}
+                title={filtered ? t("noResults") : t(`empty.${view}`)}
+              />
+            }
+            footer={
+              <TablePagination
+                page={result.page}
+                pageSize={result.pageSize}
+                total={result.total}
+                hrefFor={(target) => query({ page: target })}
+              />
+            }
           />
         </div>
       </div>

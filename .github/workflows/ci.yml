@@ -44,6 +44,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Dependency audit (OWASP A03)
         run: pnpm security:audit
+      - name: Code style (Prettier)
+        run: pnpm format:check
       - run: pnpm turbo run typecheck lint test
       - run: pnpm test:integration
       - name: OpenAPI contract is up to date

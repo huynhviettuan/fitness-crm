@@ -12,5 +12,7 @@ export function isWithinAccessWindows(windows: readonly AccessWindow[], now: Dat
   // getDay(): 0 = Sunday; access windows use ISO weekdays, 7 = Sunday.
   const weekday = local.getDay() === 0 ? 7 : local.getDay();
   const time = `${String(local.getHours()).padStart(2, "0")}:${String(local.getMinutes()).padStart(2, "0")}`;
-  return windows.some((window) => window.weekdays.includes(weekday) && time >= window.startTime && time < window.endTime);
+  return windows.some(
+    (window) => window.weekdays.includes(weekday) && time >= window.startTime && time < window.endTime,
+  );
 }

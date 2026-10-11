@@ -21,9 +21,13 @@ export const AUDIT_ENTITY_TYPES = [
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
-const optionalDate = z.union([z.literal(""), calendarDate]).optional().transform((value) => value || undefined);
+const optionalDate = z
+  .union([z.literal(""), calendarDate])
+  .optional()
+  .transform((value) => value || undefined);
 /** Forms send "" for a filter left empty. */
-const optional = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
 
 /** FR-PLT-008: search by entity, record, user, and day. */
 export const listAuditSchema = z.object({

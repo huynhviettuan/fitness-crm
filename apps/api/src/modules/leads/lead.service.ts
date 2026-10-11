@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { type z } from "zod";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma, type Db } from "../../platform/db/prisma.js";
 import { assertCan } from "../../platform/permissions/assert.js";
@@ -61,7 +61,10 @@ export async function listLeads(actor: Actor, rawQuery: unknown): Promise<LeadPa
   assertCan(actor, "lead.view");
   const query = parseInput(listLeadsSchema, rawQuery);
   const where: Prisma.CustomerWhereInput = { AND: [filtered(actor, query), { leadStatus: query.status }] };
-  const { items, total } = await repo.listLeads(prisma, where, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  const { items, total } = await repo.listLeads(prisma, where, {
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  });
   return { items: items.map((lead) => present(actor, lead)), total, page: query.page, pageSize: query.pageSize };
 }
 
@@ -104,7 +107,12 @@ export async function createLead(actor: Actor, input: unknown, now: Date = new D
   return prisma.$transaction(async (tx) => {
     const branchId = await resolveBranch(tx, actor, requested);
     await assertPhoneFree(tx, actor, data.phone, null, customersVisibleTo);
-    const created = await repo.createLead(tx, await repo.nextLeadCode(tx), { ...(await toWrite(tx, data, null)), branchId, createdById: actor.id }, now);
+    const created = await repo.createLead(
+      tx,
+      await repo.nextLeadCode(tx),
+      { ...(await toWrite(tx, data, null)), branchId, createdById: actor.id },
+      now,
+    );
     await recordAudit(tx, {
       actorUserId: actor.id,
       entityType: "lead",
@@ -129,20 +137,59 @@ export async function updateLead(actor: Actor, id: string, input: unknown): Prom
     if (write.phone !== before.phone) await assertPhoneFree(tx, actor, write.phone, id, customersVisibleTo);
     const after = await repo.updateLead(tx, id, write);
     const changes = diffFields(before, after, AUDITED_FIELDS);
-    if (changes) await recordAudit(tx, { actorUserId: actor.id, entityType: "lead", entityId: id, action: "lead.updated", ...changes });
+    if (changes)
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "lead",
+        entityId: id,
+        action: "lead.updated",
+        ...changes,
+      });
     return present(actor, after);
   });
 }
 
 /** Each choice must come from its own list, active or the lead's current one; "Khác" needs a note (D-016). */
 async function toWrite(db: Db, data: LeadData, current: repo.LeadRecord | null): Promise<repo.LeadWrite> {
-  const choice = async (listKey: OptionListKey, field: string, optionId: string | null, note: string | null, currentId: string | null | undefined) =>
-    optionId ? resolveChoice(db, listKey, field, { optionId, note }, currentId ?? null) : { optionId: null, note: null };
-  const channel = await resolveChoice(db, "leadChannels", "channelId", { optionId: data.channelId, note: data.channelNote }, current?.channelId ?? null);
+  const choice = async (
+    listKey: OptionListKey,
+    field: string,
+    optionId: string | null,
+    note: string | null,
+    currentId: string | null | undefined,
+  ) =>
+    optionId
+      ? resolveChoice(db, listKey, field, { optionId, note }, currentId ?? null)
+      : { optionId: null, note: null };
+  const channel = await resolveChoice(
+    db,
+    "leadChannels",
+    "channelId",
+    { optionId: data.channelId, note: data.channelNote },
+    current?.channelId ?? null,
+  );
   const source = await choice("leadSources", "sourceId", data.sourceId, data.sourceNote, current?.sourceId);
-  const needGroup = await choice("needGroups", "needGroupId", data.needGroupId, data.needGroupNote, current?.needGroupId);
-  const painStatus = await choice("painStatuses", "painStatusId", data.painStatusId, data.painStatusNote, current?.painStatusId);
-  const assessmentType = await choice("assessmentTypes", "assessmentTypeId", data.assessmentTypeId, data.assessmentTypeNote, current?.assessmentTypeId);
+  const needGroup = await choice(
+    "needGroups",
+    "needGroupId",
+    data.needGroupId,
+    data.needGroupNote,
+    current?.needGroupId,
+  );
+  const painStatus = await choice(
+    "painStatuses",
+    "painStatusId",
+    data.painStatusId,
+    data.painStatusNote,
+    current?.painStatusId,
+  );
+  const assessmentType = await choice(
+    "assessmentTypes",
+    "assessmentTypeId",
+    data.assessmentTypeId,
+    data.assessmentTypeNote,
+    current?.assessmentTypeId,
+  );
   return {
     fullName: data.fullName,
     gender: data.gender,

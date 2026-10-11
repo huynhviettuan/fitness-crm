@@ -71,7 +71,10 @@ export function CalendarToolbar({ day, today, trainers, trainerId }: CalendarToo
         </Button>
       </form>
       {trainers.length > 1 && (
-        <Select value={trainerId ?? ALL} onValueChange={(value) => router.push(hrefFor(day, value === ALL ? undefined : value))}>
+        <Select
+          value={trainerId ?? ALL}
+          onValueChange={(value) => router.push(hrefFor(day, value === ALL ? undefined : value))}
+        >
           <SelectTrigger aria-label={t("fields.trainer")} className="w-56">
             <SelectValue />
           </SelectTrigger>

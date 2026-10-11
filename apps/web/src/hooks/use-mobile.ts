@@ -1,12 +1,12 @@
-import * as React from "react"
+import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768
-const MOBILE_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
 
 function subscribe(onChange: () => void) {
-  const mql = window.matchMedia(MOBILE_QUERY)
-  mql.addEventListener("change", onChange)
-  return () => mql.removeEventListener("change", onChange)
+  const mql = window.matchMedia(MOBILE_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
 }
 
 export function useIsMobile() {
@@ -14,6 +14,6 @@ export function useIsMobile() {
     subscribe,
     () => window.matchMedia(MOBILE_QUERY).matches,
     // The server has no viewport; render the desktop layout first.
-    () => false
-  )
+    () => false,
+  );
 }

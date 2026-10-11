@@ -45,14 +45,25 @@ export async function nextEmployeeCode(db: Db): Promise<string> {
 }
 
 export function createEmployee(db: Db, employeeCode: string, data: EmployeeWrite): Promise<EmployeeRecord> {
-  return db.employee.create({ data: { ...data, employeeCode, searchName: normalizeForSearch(data.fullName) }, include: withRefs });
+  return db.employee.create({
+    data: { ...data, employeeCode, searchName: normalizeForSearch(data.fullName) },
+    include: withRefs,
+  });
 }
 
 export function updateEmployee(db: Db, id: string, data: EmployeeWrite): Promise<EmployeeRecord> {
-  return db.employee.update({ where: { id }, data: { ...data, searchName: normalizeForSearch(data.fullName) }, include: withRefs });
+  return db.employee.update({
+    where: { id },
+    data: { ...data, searchName: normalizeForSearch(data.fullName) },
+    include: withRefs,
+  });
 }
 
-export function findEmployee(db: Db, id: string, visibility: Prisma.EmployeeWhereInput = {}): Promise<EmployeeRecord | null> {
+export function findEmployee(
+  db: Db,
+  id: string,
+  visibility: Prisma.EmployeeWhereInput = {},
+): Promise<EmployeeRecord | null> {
   return db.employee.findFirst({ where: { AND: [{ id }, visibility] }, include: withRefs });
 }
 
@@ -85,7 +96,12 @@ export async function listEmployees(
   page: { skip: number; take: number },
 ): Promise<{ items: EmployeeRecord[]; total: number }> {
   const [items, total] = await Promise.all([
-    db.employee.findMany({ where, include: withRefs, orderBy: [{ status: "asc" }, { fullName: "asc" }, { employeeCode: "asc" }], ...page }),
+    db.employee.findMany({
+      where,
+      include: withRefs,
+      orderBy: [{ status: "asc" }, { fullName: "asc" }, { employeeCode: "asc" }],
+      ...page,
+    }),
     db.employee.count({ where }),
   ]);
   return { items, total };

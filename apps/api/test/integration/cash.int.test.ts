@@ -22,14 +22,18 @@ beforeEach(async () => {
   await withoutApprovals();
 });
 
-
 const OTHER_REASON = await optionId("deleteReasons", "Khác");
 
 // Categories are options of the income and expense lists (D-016); tests add their own.
 let expense: { type: string; categoryId: string; amount: string; occurredOn: string };
 let sales: string;
 beforeEach(async () => {
-  expense = { type: "EXPENSE", categoryId: await createTestOption("expenseTypes", "Điện nước"), amount: "1.500.000", occurredOn: "03/10/2026" };
+  expense = {
+    type: "EXPENSE",
+    categoryId: await createTestOption("expenseTypes", "Điện nước"),
+    amount: "1.500.000",
+    occurredOn: "03/10/2026",
+  };
   sales = await createTestOption("incomeCategories", "Bán nước");
 });
 
@@ -43,7 +47,9 @@ describe("recordCashTransaction", () => {
 
     expect(replayed).toBe(false);
     expect(transaction).toMatchObject({ type: "EXPENSE", amount: 1_500_000, reference: null, description: null });
-    expect(await prisma.auditEvent.findFirst({ where: { entityId: transaction.id } })).toMatchObject({ action: "cash_transaction.created" });
+    expect(await prisma.auditEvent.findFirst({ where: { entityId: transaction.id } })).toMatchObject({
+      action: "cash_transaction.created",
+    });
   });
 
   it("replays the same submission and refuses the same key with other content (T-015)", async () => {
@@ -52,7 +58,9 @@ describe("recordCashTransaction", () => {
     const first = await record(accountant, expense, key);
 
     expect(await record(accountant, expense, key)).toEqual({ transaction: first.transaction, replayed: true });
-    await expect(record(accountant, { ...expense, amount: "2.000.000" }, key)).rejects.toMatchObject({ code: "IDEMPOTENCY_KEY_REUSED" });
+    await expect(record(accountant, { ...expense, amount: "2.000.000" }, key)).rejects.toMatchObject({
+      code: "IDEMPOTENCY_KEY_REUSED",
+    });
     const together = await Promise.all(Array.from({ length: 5 }, () => record(accountant, expense, key)));
     expect(new Set(together.map((r) => r.transaction.id))).toEqual(new Set([first.transaction.id]));
     expect(await prisma.cashTransaction.count()).toBe(1);
@@ -61,9 +69,16 @@ describe("recordCashTransaction", () => {
   it("returns field errors for invalid input", async () => {
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
 
-    await expect(record(accountant, { type: "GIFT", categoryId: "", amount: "0", occurredOn: "" })).rejects.toMatchObject({
+    await expect(
+      record(accountant, { type: "GIFT", categoryId: "", amount: "0", occurredOn: "" }),
+    ).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
-      fieldErrors: { type: ["invalidChoice"], categoryId: ["required"], amount: ["amountNotPositive"], occurredOn: ["required"] },
+      fieldErrors: {
+        type: ["invalidChoice"],
+        categoryId: ["required"],
+        amount: ["amountNotPositive"],
+        occurredOn: ["required"],
+      },
     });
   });
 
@@ -71,11 +86,17 @@ describe("recordCashTransaction", () => {
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const otherExpense = await optionId("expenseTypes", "Khác");
 
-    await expect(record(accountant, { ...expense, categoryId: sales })).rejects.toMatchObject({ fieldErrors: { categoryId: ["invalidChoice"] } });
+    await expect(record(accountant, { ...expense, categoryId: sales })).rejects.toMatchObject({
+      fieldErrors: { categoryId: ["invalidChoice"] },
+    });
     await expect(record(accountant, { ...expense, categoryId: otherExpense })).rejects.toMatchObject({
       fieldErrors: { categoryNote: ["otherNeedsNote"] },
     });
-    const { transaction } = await record(accountant, { ...expense, categoryId: otherExpense, categoryNote: "Sơn lại phòng" });
+    const { transaction } = await record(accountant, {
+      ...expense,
+      categoryId: otherExpense,
+      categoryNote: "Sơn lại phòng",
+    });
     expect(transaction.category).toMatchObject({ labelVi: "Khác", isOther: true, note: "Sơn lại phòng" });
   });
 
@@ -101,10 +122,14 @@ describe("deleteCashTransaction (D-035)", () => {
       reasonNote: "Nhập sai số tiền",
       snapshot: { id: transaction.id, type: "EXPENSE", amount: 1_500_000 },
     });
-    await expect(deleteCashTransaction(accountant, transaction.id, { reasonId: OTHER_REASON, reasonNote: "Lần hai" })).rejects.toMatchObject({
+    await expect(
+      deleteCashTransaction(accountant, transaction.id, { reasonId: OTHER_REASON, reasonNote: "Lần hai" }),
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
-    expect(await prisma.auditEvent.count({ where: { entityId: transaction.id, action: "cash_transaction.deleted" } })).toBe(1);
+    expect(
+      await prisma.auditEvent.count({ where: { entityId: transaction.id, action: "cash_transaction.deleted" } }),
+    ).toBe(1);
   });
 
   // 09_RBAC.md: a Fitness Manager records income and expenses but does not delete vouchers.
@@ -112,7 +137,9 @@ describe("deleteCashTransaction (D-035)", () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { transaction } = await record(manager);
 
-    await expect(deleteCashTransaction(manager, transaction.id, { reasonId: OTHER_REASON, reasonNote: "x" })).rejects.toMatchObject({
+    await expect(
+      deleteCashTransaction(manager, transaction.id, { reasonId: OTHER_REASON, reasonNote: "x" }),
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -124,7 +151,12 @@ describe("financeSummary (FR-CASH-002, OQ-007 interim)", () => {
     const { actor: admin } = await createTestUser("ADMIN");
     const customer = await createCustomer(manager, { fullName: "Nguyễn Văn An", phone: "0909123456" });
     const contract = await activeContract(manager, customer.id);
-    await recordPayment(manager, contract.id, { amount: "5.000.000", methodId: await optionId("paymentMethods", "Chuyển khoản"), paidOn: "02/10/2026" }, randomUUID());
+    await recordPayment(
+      manager,
+      contract.id,
+      { amount: "5.000.000", methodId: await optionId("paymentMethods", "Chuyển khoản"), paidOn: "02/10/2026" },
+      randomUUID(),
+    );
     await record(manager, { type: "INCOME", categoryId: sales, amount: "300.000", occurredOn: "04/10/2026" });
     await record(manager, expense);
     const voided = await record(manager, { ...expense, amount: "9.000.000" });
@@ -134,6 +166,8 @@ describe("financeSummary (FR-CASH-002, OQ-007 interim)", () => {
     const summary = await financeSummary(manager, { from: "01/10/2026", to: "31/10/2026" });
 
     expect(summary).toEqual({ contractPayments: 5_000_000, otherIncome: 300_000, expense: 1_500_000 });
-    expect((await listCashTransactions(manager, { from: "01/10/2026", to: "31/10/2026", type: "EXPENSE" })).total).toBe(1);
+    expect((await listCashTransactions(manager, { from: "01/10/2026", to: "31/10/2026", type: "EXPENSE" })).total).toBe(
+      1,
+    );
   });
 });

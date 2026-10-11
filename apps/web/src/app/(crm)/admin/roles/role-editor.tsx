@@ -7,7 +7,14 @@ import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -62,7 +69,9 @@ export function RoleEditor({ role }: { role: EditableRole }) {
     return next;
   };
   const toggleGroup = (group: PermissionGroup, on: boolean) =>
-    setPermissions((current) => PERMISSION_GROUPS[group].reduce((set, permission) => toggle(set, permission, on), current));
+    setPermissions((current) =>
+      PERMISSION_GROUPS[group].reduce((set, permission) => toggle(set, permission, on), current),
+    );
 
   const save = () => {
     setNameError(null);
@@ -96,12 +105,21 @@ export function RoleEditor({ role }: { role: EditableRole }) {
           <FieldGroup>
             <Field data-invalid={nameError ? true : undefined}>
               <FieldLabel htmlFor={`${id}-name`}>{t("roles.fields.name")}</FieldLabel>
-              <Input id={`${id}-name`} value={name} onChange={(event) => setName(event.target.value)} aria-invalid={Boolean(nameError)} />
+              <Input
+                id={`${id}-name`}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                aria-invalid={Boolean(nameError)}
+              />
               {nameError && <FieldError>{validationMessage(nameError)}</FieldError>}
             </Field>
             <Field>
               <FieldLabel htmlFor={`${id}-description`}>{t("roles.fields.description")}</FieldLabel>
-              <Textarea id={`${id}-description`} value={description} onChange={(event) => setDescription(event.target.value)} />
+              <Textarea
+                id={`${id}-description`}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
             </Field>
           </FieldGroup>
         </CardContent>
@@ -250,7 +268,12 @@ export function CloneRoleButton({ role }: { role: { id: string; name: string } }
           </DialogHeader>
           <Field data-invalid={error ? true : undefined}>
             <FieldLabel htmlFor={`${id}-clone-name`}>{t("roles.fields.name")}</FieldLabel>
-            <Input id={`${id}-clone-name`} value={name} onChange={(event) => setName(event.target.value)} aria-invalid={Boolean(error)} />
+            <Input
+              id={`${id}-clone-name`}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              aria-invalid={Boolean(error)}
+            />
             {error && <FieldError>{validationMessage(error)}</FieldError>}
           </Field>
           <DialogFooter>

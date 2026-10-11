@@ -25,7 +25,11 @@ export async function otherOptionId(api: APIRequestContext, listKey: OptionListK
  * An option for this test, made through the admin API. Its label carries the test tag,
  * so teardown removes it with the records that use it.
  */
-export async function createOptionViaApi(admin: APIRequestContext, listKey: OptionListKey, labelVi: string): Promise<string> {
+export async function createOptionViaApi(
+  admin: APIRequestContext,
+  listKey: OptionListKey,
+  labelVi: string,
+): Promise<string> {
   const response = await admin.post(`/api/v1/option-lists/${listKey}/options`, { data: { labelVi, labelEn: labelVi } });
   if (response.status() !== 201) throw new Error(`Option setup failed: ${response.status()} ${await response.text()}`);
   return ((await response.json()) as { id: string }).id;

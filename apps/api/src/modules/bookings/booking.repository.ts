@@ -38,7 +38,9 @@ export type BookingSlot = { trainerId: string; scheduledStart: Date; scheduledEn
  * when the booking does not exist.
  */
 export async function lockBooking(db: Db, id: string): Promise<boolean> {
-  const [booking] = await db.$queryRaw<{ contract_id: string }[]>`SELECT contract_id FROM bookings WHERE id = ${id}::uuid`;
+  const [booking] = await db.$queryRaw<
+    { contract_id: string }[]
+  >`SELECT contract_id FROM bookings WHERE id = ${id}::uuid`;
   if (!booking) return false;
   await lockContract(db, booking.contract_id);
   await db.$queryRaw`SELECT id FROM bookings WHERE id = ${id}::uuid FOR UPDATE`;
@@ -86,7 +88,11 @@ export function findOverlappingBooking(db: Db, slot: BookingSlot, excludeId?: st
   });
 }
 
-export function countBookingsOfContract(db: Db, contractId: string, statuses: readonly BookingStatus[]): Promise<number> {
+export function countBookingsOfContract(
+  db: Db,
+  contractId: string,
+  statuses: readonly BookingStatus[],
+): Promise<number> {
   return db.booking.count({ where: { contractId, status: { in: [...statuses] } } });
 }
 

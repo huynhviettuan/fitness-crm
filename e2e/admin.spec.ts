@@ -19,7 +19,9 @@ test.describe("administration", () => {
     const branch = `CN ${testTag}`;
     await branchesPage.goto();
     await branchesPage.create(branch, "1 Lê Lợi, Quận 1");
-    await expect(branchesPage.table.getByRole("row").filter({ hasText: branch })).toContainText(labels.status.branch.ACTIVE);
+    await expect(branchesPage.table.getByRole("row").filter({ hasText: branch })).toContainText(
+      labels.status.branch.ACTIVE,
+    );
 
     // An admin works in every branch, so a new record asks which one.
     await customersPage.goto();
@@ -50,7 +52,10 @@ test.describe("administration", () => {
     await expect(rolesPage.heading(roleName)).toBeVisible();
 
     const admin = await apiAs("ADMIN");
-    const user = await createUserViaApi(admin, testTag, { roleId: await roleIdOf(admin, { name: roleName }), label: "Marketing" });
+    const user = await createUserViaApi(admin, testTag, {
+      roleId: await roleIdOf(admin, { name: roleName }),
+      label: "Marketing",
+    });
     const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag, uniquePhone());
 
     await page.context().clearCookies();
@@ -82,7 +87,10 @@ test.describe("administration", () => {
     userDetailPage,
   }) => {
     const admin = await apiAs("ADMIN");
-    const user = await createUserViaApi(admin, testTag, { roleId: await roleIdOf(admin, { code: "RECEPTIONIST" }), label: "Reception" });
+    const user = await createUserViaApi(admin, testTag, {
+      roleId: await roleIdOf(admin, { code: "RECEPTIONIST" }),
+      label: "Reception",
+    });
     const toasts = page.getByRole("region", { name: labels.common.notifications });
 
     await userDetailPage.goto(user.id);
@@ -99,7 +107,9 @@ test.describe("administration", () => {
     // The history is read when the page loads, so reload it to see the refusal.
     await userDetailPage.goto(user.id);
     const history = await userDetailPage.loginHistory();
-    await expect(history.getByRole("row").filter({ hasText: labels.users.logins.reasons.OUTSIDE_HOURS })).toHaveCount(1);
+    await expect(history.getByRole("row").filter({ hasText: labels.users.logins.reasons.OUTSIDE_HOURS })).toHaveCount(
+      1,
+    );
     await expect(history.getByRole("row").filter({ hasText: labels.status.login.SUCCESS })).toHaveCount(1);
   });
 });

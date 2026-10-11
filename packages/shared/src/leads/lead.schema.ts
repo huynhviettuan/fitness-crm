@@ -48,7 +48,10 @@ const text = (max: number) =>
   z.string().trim().max(max, { error: "tooLong" }).refine(hasNoControlCharacters, { error: "invalidCharacters" });
 
 /** "" or null for none. */
-const optionalChoice = z.preprocess((value) => (value === "" ? null : value), z.uuid({ error: "invalidChoice" }).nullable());
+const optionalChoice = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.uuid({ error: "invalidChoice" }).nullable(),
+);
 const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
   z.preprocess((value) => (value === "" ? null : value), z.enum(values, { error: "invalidChoice" }).nullable());
 
@@ -114,7 +117,8 @@ export const leadInputSchema = z.object({ branchId: branchChoice, ...leadFields 
 export const leadUpdateSchema = z.object(leadFields);
 
 /** Forms send "" for a filter left empty. */
-const optional = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
 
 export const listLeadsSchema = z.object({
   q: text(100).prefault(""),
@@ -148,8 +152,10 @@ export const leadStatusChangeSchema = z
     if (value.status === "BOOKED") {
       const date = calendarDate.safeParse(value.appointmentDate);
       const time = timeOfDay.safeParse(value.appointmentTime);
-      if (!date.success) ctx.addIssue({ code: "custom", path: ["appointmentDate"], message: date.error.issues[0].message });
-      if (!time.success) ctx.addIssue({ code: "custom", path: ["appointmentTime"], message: time.error.issues[0].message });
+      if (!date.success)
+        ctx.addIssue({ code: "custom", path: ["appointmentDate"], message: date.error.issues[0].message });
+      if (!time.success)
+        ctx.addIssue({ code: "custom", path: ["appointmentTime"], message: time.error.issues[0].message });
       if (!date.success || !time.success) return z.NEVER;
       appointment = { date: date.data, time: time.data };
     }
@@ -160,7 +166,10 @@ export const leadStatusChangeSchema = z
     return {
       status: value.status,
       appointment,
-      refuseReason: value.status === "REFUSED" && value.refuseReasonId ? { optionId: value.refuseReasonId, note: value.refuseReasonNote } : null,
+      refuseReason:
+        value.status === "REFUSED" && value.refuseReasonId
+          ? { optionId: value.refuseReasonId, note: value.refuseReasonNote }
+          : null,
       note: value.note,
     };
   });

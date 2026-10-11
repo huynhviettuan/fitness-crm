@@ -27,7 +27,10 @@ const text = (max: number) =>
   z.string().trim().max(max, { error: "tooLong" }).refine(hasNoControlCharacters, { error: "invalidCharacters" });
 
 /** "" or null for none. */
-const optionalId = z.preprocess((value) => (value === "" ? null : value), z.uuid({ error: "invalidChoice" }).nullable());
+const optionalId = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.uuid({ error: "invalidChoice" }).nullable(),
+);
 
 const taskFields = {
   title: text(200).pipe(z.string().min(1, { error: "required" })),
@@ -41,7 +44,10 @@ const taskFields = {
   priority: z.enum(TASK_PRIORITIES, { error: "invalidChoice" }).prefault("NORMAL"),
 };
 
-function oneAssignee(value: { assigneeUserId: string | null; assigneeDepartmentId: string | null }, ctx: z.RefinementCtx) {
+function oneAssignee(
+  value: { assigneeUserId: string | null; assigneeDepartmentId: string | null },
+  ctx: z.RefinementCtx,
+) {
   if (!value.assigneeUserId && !value.assigneeDepartmentId) {
     ctx.addIssue({ code: "custom", path: ["assigneeUserId"], message: "required" });
   } else if (value.assigneeUserId && value.assigneeDepartmentId) {
@@ -56,7 +62,10 @@ export const taskInputSchema = z
     ...taskFields,
     /** The record the task is about, if any: both or neither. */
     entityType: z
-      .preprocess((value) => (value === "" ? null : value), z.enum(TASK_ENTITY_TYPES, { error: "invalidChoice" }).nullable())
+      .preprocess(
+        (value) => (value === "" ? null : value),
+        z.enum(TASK_ENTITY_TYPES, { error: "invalidChoice" }).nullable(),
+      )
       .prefault(""),
     entityId: optionalId.prefault(""),
   })
@@ -70,7 +79,8 @@ export const TASK_VIEWS = ["mine", "assigned", "department", "all"] as const;
 export type TaskView = (typeof TASK_VIEWS)[number];
 
 /** Forms send "" for a filter left empty. */
-const optional = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
 
 export const listTasksSchema = z.object({
   /** mine: given to me or waiting in my department; assigned: I gave; department: my department's; all: the "all" tasks scope. */
@@ -89,7 +99,10 @@ export const listTasksSchema = z.object({
 export const taskCommentSchema = z.object({
   body: text(2000).pipe(z.string().min(1, { error: "required" })),
   /** People named in the comment; each gets a notification. */
-  mentions: z.array(z.uuid({ error: "invalidChoice" })).max(20, { error: "tooLong" }).prefault([]),
+  mentions: z
+    .array(z.uuid({ error: "invalidChoice" }))
+    .max(20, { error: "tooLong" })
+    .prefault([]),
 });
 
 export type TaskInput = z.input<typeof taskInputSchema>;

@@ -54,7 +54,9 @@ export const leadPageSchema = pageOf(leadSchema).meta({ id: "LeadPage" });
 
 /** The Kanban board (FR-LEAD-006): one column per status a lead can have, the first cards of each. */
 export const leadBoardSchema = z
-  .object({ columns: z.array(z.object({ status: z.enum(BOARD_STATUSES), total: z.int(), items: z.array(leadSchema) })) })
+  .object({
+    columns: z.array(z.object({ status: z.enum(BOARD_STATUSES), total: z.int(), items: z.array(leadSchema) })),
+  })
   .meta({ id: "LeadBoard" });
 
 /** `by` is null when the system did it: the creation's round-robin assignment (D-020). */

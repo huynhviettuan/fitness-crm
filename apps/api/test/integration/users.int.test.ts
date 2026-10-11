@@ -81,11 +81,17 @@ describe("createUser", () => {
     const { actor: admin } = await createTestUser("ADMIN");
     const input = await newUser();
 
-    await expect(createUser(admin, { ...input, roleId: "00000000-0000-4000-8000-000000000000" })).rejects.toMatchObject({
-      fieldErrors: { roleId: ["invalidChoice"] },
+    await expect(createUser(admin, { ...input, roleId: "00000000-0000-4000-8000-000000000000" })).rejects.toMatchObject(
+      {
+        fieldErrors: { roleId: ["invalidChoice"] },
+      },
+    );
+    await expect(createUser(admin, { ...input, branchIds: [] })).rejects.toMatchObject({
+      fieldErrors: { branchIds: ["required"] },
     });
-    await expect(createUser(admin, { ...input, branchIds: [] })).rejects.toMatchObject({ fieldErrors: { branchIds: ["required"] } });
-    await expect(createUser(admin, { ...input, branchIds: [], allBranches: true })).resolves.toMatchObject({ allBranches: true });
+    await expect(createUser(admin, { ...input, branchIds: [], allBranches: true })).resolves.toMatchObject({
+      allBranches: true,
+    });
   });
 
   it.each(["FITNESS_MANAGER", "RECEPTIONIST", "PT", "ACCOUNTANT"] as const)("rejects a %s (docs/09)", async (role) => {
@@ -136,7 +142,9 @@ describe("disabling a user (T-017, INT-006)", () => {
 
     await expect(setUserStatus(admin, { userId: admin.id, status: "DISABLED" })).rejects.toMatchObject(own);
     await expect(changeUserRole(admin, { userId: admin.id, roleId: await roleId("PT") })).rejects.toMatchObject(own);
-    await expect(setUserBranches(admin, { userId: admin.id, branchIds: [DEFAULT_BRANCH_ID] })).rejects.toMatchObject(own);
+    await expect(setUserBranches(admin, { userId: admin.id, branchIds: [DEFAULT_BRANCH_ID] })).rejects.toMatchObject(
+      own,
+    );
     await expect(setUserOverrides(admin, { userId: admin.id, overrides: [] })).rejects.toMatchObject(own);
     await expect(setUserAccessWindows(admin, { userId: admin.id, windows: [] })).rejects.toMatchObject(own);
   });
@@ -274,7 +282,9 @@ describe("access hours and login history (D-017)", () => {
     await expect(signIn(user.email, "Wrong-password-1")).rejects.toThrow();
     await expect(signIn("nobody@fitness-crm.test", "Wrong-password-1")).rejects.toThrow();
 
-    expect((await listLoginHistory(admin, user.id, {})).items).toMatchObject([{ success: false, reason: "WRONG_PASSWORD" }]);
+    expect((await listLoginHistory(admin, user.id, {})).items).toMatchObject([
+      { success: false, reason: "WRONG_PASSWORD" },
+    ]);
     expect(await prisma.loginEvent.findFirst({ where: { email: "nobody@fitness-crm.test" } })).toMatchObject({
       userId: null,
       reason: "UNKNOWN_USER",
@@ -286,10 +296,16 @@ describe("access hours and login history (D-017)", () => {
     const { user } = await createTestUser("RECEPTIONIST");
 
     await expect(
-      setUserAccessWindows(admin, { userId: user.id, windows: [{ weekdays: [1], startTime: "18:00", endTime: "08:00" }] }),
+      setUserAccessWindows(admin, {
+        userId: user.id,
+        windows: [{ weekdays: [1], startTime: "18:00", endTime: "08:00" }],
+      }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
     await expect(
-      setUserAccessWindows(admin, { userId: user.id, windows: [{ weekdays: [], startTime: "08:00", endTime: "18:00" }] }),
+      setUserAccessWindows(admin, {
+        userId: user.id,
+        windows: [{ weekdays: [], startTime: "08:00", endTime: "18:00" }],
+      }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
     expect((await getUser(admin, user.id)).accessWindows).toEqual([]);
   });

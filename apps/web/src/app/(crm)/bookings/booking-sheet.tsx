@@ -41,7 +41,10 @@ export function BookingSheet({ booking, onClose, permissions, trainers }: Bookin
               <SheetTitle>{booking.customer.fullName}</SheetTitle>
               <SheetDescription>
                 {formatDate(booking.scheduledStart, timeZone)} ·{" "}
-                {t("timeRange", { start: formatTime(booking.scheduledStart, timeZone), end: formatTime(booking.scheduledEnd, timeZone) })}
+                {t("timeRange", {
+                  start: formatTime(booking.scheduledStart, timeZone),
+                  end: formatTime(booking.scheduledEnd, timeZone),
+                })}
               </SheetDescription>
             </SheetHeader>
             <BookingDetails booking={booking} />
@@ -82,9 +85,14 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
         </Link>
       ),
     },
-    { label: f("fields.remainingSessions"), value: <span className="tabular-nums">{booking.contract.remainingSessions}</span> },
+    {
+      label: f("fields.remainingSessions"),
+      value: <span className="tabular-nums">{booking.contract.remainingSessions}</span>,
+    },
     { label: f("fields.trainer"), value: `${booking.trainer.fullName} · ${booking.trainer.employeeCode}` },
-    ...(booking.session ? [{ label: f("fields.checkedIn"), value: by(booking.session.checkedInAt, booking.session.checkedInBy) }] : []),
+    ...(booking.session
+      ? [{ label: f("fields.checkedIn"), value: by(booking.session.checkedInAt, booking.session.checkedInBy) }]
+      : []),
     ...(booking.session?.completedAt && booking.session.completedBy
       ? [{ label: f("fields.completed"), value: by(booking.session.completedAt, booking.session.completedBy) }]
       : []),
@@ -104,7 +112,11 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
 
 type Confirm = "complete" | "cancel" | "noShow" | null;
 
-function BookingActions({ booking, permissions, trainers }: Omit<BookingSheetProps, "booking" | "onClose"> & { booking: BookingRow }) {
+function BookingActions({
+  booking,
+  permissions,
+  trainers,
+}: Omit<BookingSheetProps, "booking" | "onClose"> & { booking: BookingRow }) {
   const t = useTranslations("bookings");
   const router = useRouter();
   const errorMessage = useErrorMessage();
@@ -151,7 +163,10 @@ function BookingActions({ booking, permissions, trainers }: Omit<BookingSheetPro
           disabled={checkingIn}
           onClick={() =>
             startCheckIn(async () => {
-              await run(() => checkInAction(booking.id), () => t("checkedIn", { customer: booking.customer.fullName }));
+              await run(
+                () => checkInAction(booking.id),
+                () => t("checkedIn", { customer: booking.customer.fullName }),
+              );
             })
           }
         >
@@ -172,7 +187,12 @@ function BookingActions({ booking, permissions, trainers }: Omit<BookingSheetPro
         title={t("completeTitle")}
         description={t("completeBody", { code: booking.contract.contractCode, from: remaining, to: remaining - 1 })}
         confirmLabel={t("complete")}
-        onConfirm={() => run(() => completeSessionAction(booking.id), (data) => t("completed", { remaining: data.remainingSessions }))}
+        onConfirm={() =>
+          run(
+            () => completeSessionAction(booking.id),
+            (data) => t("completed", { remaining: data.remainingSessions }),
+          )
+        }
       />
       <ConfirmDialog
         open={confirm === "cancel"}
@@ -182,7 +202,12 @@ function BookingActions({ booking, permissions, trainers }: Omit<BookingSheetPro
         confirmLabel={t("cancel")}
         dismissLabel={t("keep")}
         destructive
-        onConfirm={() => run(() => cancelBookingAction(booking.id), () => t("cancelled"))}
+        onConfirm={() =>
+          run(
+            () => cancelBookingAction(booking.id),
+            () => t("cancelled"),
+          )
+        }
       />
       <ConfirmDialog
         open={confirm === "noShow"}
@@ -191,9 +216,20 @@ function BookingActions({ booking, permissions, trainers }: Omit<BookingSheetPro
         description={t("noShowBody")}
         confirmLabel={t("noShow")}
         dismissLabel={t("keep")}
-        onConfirm={() => run(() => markNoShowAction(booking.id), () => t("markedNoShow"))}
+        onConfirm={() =>
+          run(
+            () => markNoShowAction(booking.id),
+            () => t("markedNoShow"),
+          )
+        }
       />
-      <BookingFormDialog open={rescheduling} onOpenChange={setRescheduling} mode="reschedule" booking={booking} trainers={trainers} />
+      <BookingFormDialog
+        open={rescheduling}
+        onOpenChange={setRescheduling}
+        mode="reschedule"
+        booking={booking}
+        trainers={trainers}
+      />
     </div>
   );
 }

@@ -26,7 +26,11 @@ export async function nextCustomerCode(db: Db): Promise<string> {
   return formatCustomerCode(await readParameter(db, "customerCodePrefix"), row.value);
 }
 
-export function createCustomer(db: Db, customerCode: string, data: CustomerWrite & { branchId: string; createdById: string }) {
+export function createCustomer(
+  db: Db,
+  customerCode: string,
+  data: CustomerWrite & { branchId: string; createdById: string },
+) {
   return db.customer.create({
     data: { ...data, customerCode, searchName: normalizeForSearch(data.fullName) },
     include: withBranch,

@@ -44,7 +44,10 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
   const t = await getTranslations("employees");
   const employee = await loadEmployee((await params).id);
   const canManage = can(user, "employee.manage");
-  const [schedule, logins] = await Promise.all([getWorkSchedule(employee.id), canManage ? listEmployeeLogins() : Promise.resolve([])]);
+  const [schedule, logins] = await Promise.all([
+    getWorkSchedule(employee.id),
+    canManage ? listEmployeeLogins() : Promise.resolve([]),
+  ]);
   const chosen = (option: ChosenOption | null) => {
     if (!option) return null;
     const label = user.locale === "vi" ? option.labelVi : option.labelEn;
@@ -56,14 +59,20 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
     { label: t("fields.status"), value: <StatusBadge entity="employee" status={employee.status} /> },
     { label: t("fields.branch"), value: employee.branch.name },
     { label: t("fields.isTrainer"), value: employee.isTrainer ? t("trainer") : "—" },
-    { label: t("fields.birthDate"), value: employee.birthDate ? <DateTime value={employee.birthDate} format="dateOnly" /> : null },
+    {
+      label: t("fields.birthDate"),
+      value: employee.birthDate ? <DateTime value={employee.birthDate} format="dateOnly" /> : null,
+    },
     { label: t("fields.gender"), value: employee.gender ? t(`genders.${employee.gender}`) : null },
     { label: t("fields.phone"), value: employee.phone },
     { label: t("fields.email"), value: employee.email },
     { label: t("fields.department"), value: chosen(employee.department) },
     { label: t("fields.team"), value: employee.team },
     { label: t("fields.title"), value: chosen(employee.title) },
-    { label: t("fields.login"), value: employee.user ? `${employee.user.name} · ${employee.user.email}` : t("noLogin") },
+    {
+      label: t("fields.login"),
+      value: employee.user ? `${employee.user.name} · ${employee.user.email}` : t("noLogin"),
+    },
   ];
 
   return (
@@ -98,11 +107,18 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
           <Card>
             <CardHeader>
               <CardTitle>{t("schedule.title")}</CardTitle>
-              <CardDescription>{employee.isTrainer ? t("schedule.description") : t("schedule.notTrainer")}</CardDescription>
+              <CardDescription>
+                {employee.isTrainer ? t("schedule.description") : t("schedule.notTrainer")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {/* Remount after a save, so the editor starts from what was stored. */}
-              <ShiftsEditor key={JSON.stringify(schedule.shifts)} employeeId={employee.id} shifts={schedule.shifts} editable={canManage} />
+              <ShiftsEditor
+                key={JSON.stringify(schedule.shifts)}
+                employeeId={employee.id}
+                shifts={schedule.shifts}
+                editable={canManage}
+              />
             </CardContent>
           </Card>
           <Card>

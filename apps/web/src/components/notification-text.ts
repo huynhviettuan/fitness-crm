@@ -14,7 +14,9 @@ export function useNotificationText(): (notification: Pick<Notification, "kind" 
   return ({ kind, params }) => {
     const values: Record<string, string> = { title: "", by: "", due: "", status: "", code: "", name: "", ...params };
     if (kind === "approvalDecided") {
-      const status = (APPROVAL_STATUSES as readonly string[]).includes(values.status) ? tStatus(values.status as ApprovalStatus) : values.status;
+      const status = (APPROVAL_STATUSES as readonly string[]).includes(values.status)
+        ? tStatus(values.status as ApprovalStatus)
+        : values.status;
       return t(kind, { ...values, status });
     }
     return t(kind, values);

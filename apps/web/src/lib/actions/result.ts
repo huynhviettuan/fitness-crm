@@ -3,8 +3,7 @@ import { unstable_rethrow } from "next/navigation";
 import { isApiError, type DuplicatePerson, type ErrorCode, type FieldErrors } from "@/lib/api/errors";
 
 export type ActionResult<T = void> =
-  | { ok: true; data: T }
-  | { ok: false; code: ErrorCode; fieldErrors?: FieldErrors; duplicate?: DuplicatePerson };
+  { ok: true; data: T } | { ok: false; code: ErrorCode; fieldErrors?: FieldErrors; duplicate?: DuplicatePerson };
 
 /**
  * Runs a Server Action body and turns API errors into a serializable result the form
@@ -17,7 +16,12 @@ export async function runAction<T>(body: () => Promise<T>): Promise<ActionResult
     // Let Next.js handle redirect() and notFound().
     unstable_rethrow(error);
     if (isApiError(error)) {
-      return { ok: false, code: error.code, fieldErrors: error.fieldErrors, ...(error.duplicate ? { duplicate: error.duplicate } : {}) };
+      return {
+        ok: false,
+        code: error.code,
+        fieldErrors: error.fieldErrors,
+        ...(error.duplicate ? { duplicate: error.duplicate } : {}),
+      };
     }
     console.error("Unhandled Server Action error", error);
     return { ok: false, code: "INTERNAL_ERROR" };

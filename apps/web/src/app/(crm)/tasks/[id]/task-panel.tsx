@@ -119,7 +119,9 @@ export function TaskComments({ task, people }: { task: TaskDetail; people: { id:
               </div>
               <p className="mt-1 text-sm break-words whitespace-pre-line">{comment.body}</p>
               {comment.mentions.length > 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">{t("mentioned", { names: comment.mentions.map((person) => person.name).join(", ") })}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("mentioned", { names: comment.mentions.map((person) => person.name).join(", ") })}
+                </p>
               )}
             </li>
           ))}
@@ -127,7 +129,13 @@ export function TaskComments({ task, people }: { task: TaskDetail; people: { id:
       )}
       {canComment && (
         <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
-          <TextField control={form.control} name="body" label={t("comment")} placeholder={t("commentPlaceholder")} multiline />
+          <TextField
+            control={form.control}
+            name="body"
+            label={t("comment")}
+            placeholder={t("commentPlaceholder")}
+            multiline
+          />
           <div className="flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

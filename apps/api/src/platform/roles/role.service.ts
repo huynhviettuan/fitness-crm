@@ -41,7 +41,13 @@ export async function createRole(actor: Actor, input: unknown): Promise<Role> {
     prisma.$transaction(async (tx) => {
       const role = await tx.role.create({ data: { name: data.name, description: data.description } });
       await writeConfiguration(tx, role.id, data);
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "role", entityId: role.id, action: "role.created", after: data });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "role",
+        entityId: role.id,
+        action: "role.created",
+        after: data,
+      });
       return toRole(await findOrThrow(tx, role.id));
     }),
   );
@@ -103,7 +109,11 @@ export async function cloneRole(actor: Actor, id: string, input: unknown): Promi
   );
 }
 
-async function writeConfiguration(db: Db, roleId: string, data: Pick<Role, "permissions" | "dataScopes" | "fieldMasks">) {
+async function writeConfiguration(
+  db: Db,
+  roleId: string,
+  data: Pick<Role, "permissions" | "dataScopes" | "fieldMasks">,
+) {
   await db.rolePermission.createMany({ data: data.permissions.map((permission) => ({ roleId, permission })) });
   await db.roleDataScope.createMany({
     data: DATA_SCOPE_RESOURCES.map((resource) => ({ roleId, resource, scope: data.dataScopes[resource] ?? "OWN" })),
@@ -126,7 +136,9 @@ function toRole(role: RoleRecord): Role {
     name: role.name,
     description: role.description,
     permissions: role.permissions.map((p) => p.permission).sort() as Role["permissions"],
-    dataScopes: Object.fromEntries(DATA_SCOPE_RESOURCES.map((resource) => [resource, scopes.get(resource) ?? "OWN"])) as Role["dataScopes"],
+    dataScopes: Object.fromEntries(
+      DATA_SCOPE_RESOURCES.map((resource) => [resource, scopes.get(resource) ?? "OWN"]),
+    ) as Role["dataScopes"],
     fieldMasks: role.fieldMasks.map((m) => m.field).sort() as Role["fieldMasks"],
     userCount: role._count.users,
   };
@@ -140,7 +152,8 @@ async function withNameConflictsMapped<T>(body: () => Promise<T>): Promise<T> {
   try {
     return await body();
   } catch (error) {
-    if (isUniqueViolation(error)) throw new AppError("VALIDATION_FAILED", { fieldErrors: { name: ["nameAlreadyUsed"] } });
+    if (isUniqueViolation(error))
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { name: ["nameAlreadyUsed"] } });
     throw error;
   }
 }

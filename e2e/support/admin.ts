@@ -5,7 +5,9 @@ export const ADMIN_MADE_PASSWORD = "E2e-made-user-1";
 
 /** A role's id, by its default code or by name (admin API). */
 export async function roleIdOf(admin: APIRequestContext, which: { code?: Role; name?: string }): Promise<string> {
-  const { items } = (await (await admin.get("/api/v1/roles")).json()) as { items: { id: string; code: string | null; name: string }[] };
+  const { items } = (await (await admin.get("/api/v1/roles")).json()) as {
+    items: { id: string; code: string | null; name: string }[];
+  };
   const role = items.find((r) => (which.code ? r.code === which.code : r.name === which.name));
   if (!role) throw new Error(`No role ${JSON.stringify(which)}`);
   return role.id;

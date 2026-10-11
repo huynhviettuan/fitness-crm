@@ -31,7 +31,11 @@ export default async function OptionListsPage({ searchParams }: PageProps<"/admi
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={<CreateOptionButton listKey={listKey} />} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={<CreateOptionButton listKey={listKey} />}
+      />
       <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
         <nav aria-label={t("listsLabel")}>
           <ul className="flex flex-col gap-1">

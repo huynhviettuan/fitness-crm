@@ -38,7 +38,9 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
   for (const [role, status] of createExpectations) {
     test(`${role} creating a customer gets ${status}`, async ({ apiAs, testTag }) => {
       const api = await apiAs(role);
-      const response = await api.post("/api/v1/customers", { data: { fullName: `RBAC ${testTag}`, phone: uniquePhone() } });
+      const response = await api.post("/api/v1/customers", {
+        data: { fullName: `RBAC ${testTag}`, phone: uniquePhone() },
+      });
 
       expect(response.status()).toBe(status);
     });
@@ -55,7 +57,9 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
       const response = await api.patch(`/api/v1/customers/${customer.id}`, { data: { fullName: "Changed" } });
 
       expect(response.status()).toBe(403);
-      expect((await (await reception.get(`/api/v1/customers/${customer.id}`)).json()).fullName).toBe(`Target ${testTag}`);
+      expect((await (await reception.get(`/api/v1/customers/${customer.id}`)).json()).fullName).toBe(
+        `Target ${testTag}`,
+      );
     });
   }
 
@@ -88,14 +92,23 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
     expect(created.customerCode).not.toBe(forged.customerCode);
     expect(new Date(created.createdAt).getFullYear()).toBeGreaterThan(2000);
 
-    const patched = await (await api.patch(`/api/v1/customers/${created.id}`, { data: { customerCode: "KH999998" } })).json();
+    const patched = await (
+      await api.patch(`/api/v1/customers/${created.id}`, { data: { customerCode: "KH999998" } })
+    ).json();
     expect(patched.customerCode).toBe(created.customerCode);
   });
 
   test("Better Auth endpoints the app does not offer are disabled", async ({ apiAs }) => {
     const api = await apiAs("RECEPTIONIST");
-    for (const path of ["/api/auth/sign-up/email", "/api/auth/update-user", "/api/auth/delete-user", "/api/auth/change-email"]) {
-      const response = await api.post(path, { data: { email: "x@y.test", password: "Whatever-123", name: "X", role: "ADMIN" } });
+    for (const path of [
+      "/api/auth/sign-up/email",
+      "/api/auth/update-user",
+      "/api/auth/delete-user",
+      "/api/auth/change-email",
+    ]) {
+      const response = await api.post(path, {
+        data: { email: "x@y.test", password: "Whatever-123", name: "X", role: "ADMIN" },
+      });
       expect(response.status(), path).toBe(404);
     }
   });
@@ -107,7 +120,9 @@ test.describe("A04 responses never expose secrets", () => {
   test("the current-user and customer APIs return only safe fields", async ({ apiAs, testTag }) => {
     const api = await apiAs("ADMIN");
     // An admin with every branch names the branch, since other tests may add branches.
-    await api.post("/api/v1/customers", { data: { fullName: `Secrets ${testTag}`, phone: uniquePhone(), branchId: E2E_BRANCH_ID } });
+    await api.post("/api/v1/customers", {
+      data: { fullName: `Secrets ${testTag}`, phone: uniquePhone(), branchId: E2E_BRANCH_ID },
+    });
 
     const me = await api.get("/api/v1/me");
     expect(Object.keys(await me.json()).sort()).toEqual([

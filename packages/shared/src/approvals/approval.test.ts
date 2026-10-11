@@ -17,7 +17,9 @@ describe("approval matrix rows (D-018)", () => {
       approverRoleIds: [],
       overdueHours: 48,
     });
-    expect(errors(approvalRuleInputSchema, { required: false, approverRoleIds: [], overdueHours: 0 })).toEqual({ overdueHours: ["outOfRange"] });
+    expect(errors(approvalRuleInputSchema, { required: false, approverRoleIds: [], overdueHours: 0 })).toEqual({
+      overdueHours: ["outOfRange"],
+    });
   });
 
   it("rejecting needs a reason; the inbox shows what the user may decide by default", () => {

@@ -30,7 +30,11 @@ export function isMasked(actor: Pick<Actor, "masks">, field: MaskableField): boo
  * The branch a new record goes to (D-014): the requested one, which must be active and
  * among the actor's branches, or the only active branch the actor works in.
  */
-export async function resolveBranch(db: Db, actor: Pick<Actor, "branches">, requested: string | undefined): Promise<string> {
+export async function resolveBranch(
+  db: Db,
+  actor: Pick<Actor, "branches">,
+  requested: string | undefined,
+): Promise<string> {
   const usable = await db.branch.findMany({
     where: { active: true, ...(actor.branches === "ALL" ? {} : { id: { in: [...actor.branches] } }) },
     select: { id: true },

@@ -75,7 +75,9 @@ export const auth = betterAuth({
         const user = email ? await prisma.user.findUnique({ where: { email }, select: { id: true } }) : null;
         const reason = user ? ((await failureReason(user.id)) ?? "WRONG_PASSWORD") : "UNKNOWN_USER";
         logSecurityEvent("auth.sign_in.failed", { email, ip, status: returned.statusCode, reason });
-        await prisma.loginEvent.create({ data: { userId: user?.id ?? null, email, success: false, reason, ip, userAgent } });
+        await prisma.loginEvent.create({
+          data: { userId: user?.id ?? null, email, success: false, reason, ip, userAgent },
+        });
       } else if (ctx.context.newSession) {
         const userId = ctx.context.newSession.user.id;
         logSecurityEvent("auth.sign_in.succeeded", { userId, ip }, "info");

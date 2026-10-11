@@ -65,7 +65,13 @@ const HANDLERS: Record<ApprovalAction, Handler> = {
   },
   "customer.identity": {
     approve: (tx, request, decider) =>
-      applyIdentityChange(tx, decider, request.entityId, request.payload as { fullName?: string; phone?: string; email?: string | null }, request.id),
+      applyIdentityChange(
+        tx,
+        decider,
+        request.entityId,
+        request.payload as { fullName?: string; phone?: string; email?: string | null },
+        request.id,
+      ),
   },
 };
 
@@ -93,13 +99,21 @@ async function decide(
     if (!handler) throw new AppError("NOT_FOUND");
     await handler.lock?.(tx, request);
     // One decision per request, also when two approvers act at once.
-    const [row] = await tx.$queryRaw<{ status: string }[]>`SELECT status FROM approval_requests WHERE id = ${id}::uuid FOR UPDATE`;
+    const [row] = await tx.$queryRaw<
+      { status: string }[]
+    >`SELECT status FROM approval_requests WHERE id = ${id}::uuid FOR UPDATE`;
     if (row.status !== "PENDING") throw new AppError("APPROVAL_NOT_PENDING");
     if (request.submittedById === actor.id) throw new AppError("APPROVAL_OWN_REQUEST");
-    if (!mayDecide(actor, request, await ruleFor(tx, request.actionType as ApprovalAction))) throw new AppError("FORBIDDEN");
+    if (!mayDecide(actor, request, await ruleFor(tx, request.actionType as ApprovalAction)))
+      throw new AppError("FORBIDDEN");
 
     const reason =
-      decision.status === "REJECTED" ? await resolveChoice(tx, "rejectReasons", "reasonId", { optionId: decision.reason.optionId, note: decision.reason.note }) : null;
+      decision.status === "REJECTED"
+        ? await resolveChoice(tx, "rejectReasons", "reasonId", {
+            optionId: decision.reason.optionId,
+            note: decision.reason.note,
+          })
+        : null;
     // The request is decided first, so the change can withdraw any other pending
     // request of the record without touching this one.
     await tx.approvalRequest.update({
@@ -121,7 +135,12 @@ async function decide(
       action: decision.status === "APPROVED" ? "approval_request.approved" : "approval_request.rejected",
       before: { status: "PENDING" },
       after: { status: decision.status },
-      context: { action: request.actionType, entityType: request.entityType, entityId: request.entityId, ...(reason ? { reason } : {}) },
+      context: {
+        action: request.actionType,
+        entityType: request.entityType,
+        entityId: request.entityId,
+        ...(reason ? { reason } : {}),
+      },
     });
     await notify(tx, [request.submittedById], {
       kind: "approvalDecided",

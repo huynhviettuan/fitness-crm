@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { BOARD_STATUSES, canChangeLeadStatus, isRecareStatus, MANUAL_LEAD_STATUSES, nextLeadStatuses } from "./lead.domain.js";
-import { formatLeadCode, LEAD_STATUSES, leadAssignSchema, leadBoardQuerySchema, leadInputSchema, leadStatusChangeSchema, listLeadsSchema } from "./lead.schema.js";
+import {
+  BOARD_STATUSES,
+  canChangeLeadStatus,
+  isRecareStatus,
+  MANUAL_LEAD_STATUSES,
+  nextLeadStatuses,
+} from "./lead.domain.js";
+import {
+  formatLeadCode,
+  LEAD_STATUSES,
+  leadAssignSchema,
+  leadBoardQuerySchema,
+  leadInputSchema,
+  leadStatusChangeSchema,
+  listLeadsSchema,
+} from "./lead.schema.js";
 
 const CHANNEL = "2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f";
 
@@ -41,12 +55,23 @@ describe("leadInputSchema (brief §4.1)", () => {
 
   it("normalizes the phone and email and takes the fixed classifications", () => {
     expect(
-      leadInputSchema.parse({ fullName: "A", channelId: CHANNEL, phone: "090 912.3456", email: " An@Mail.VN ", sourceType: "PAID", nationalityGroup: "FOREIGN" }),
+      leadInputSchema.parse({
+        fullName: "A",
+        channelId: CHANNEL,
+        phone: "090 912.3456",
+        email: " An@Mail.VN ",
+        sourceType: "PAID",
+        nationalityGroup: "FOREIGN",
+      }),
     ).toMatchObject({ phone: "0909123456", email: "an@mail.vn", sourceType: "PAID", nationalityGroup: "FOREIGN" });
   });
 
   it("rejects a missing name and channel, a bad phone, and unknown classifications", () => {
-    expect(fieldErrors(leadInputSchema.safeParse({ fullName: " ", phone: "12", sourceType: "FREE", nationalityGroup: "MARS" }))).toEqual({
+    expect(
+      fieldErrors(
+        leadInputSchema.safeParse({ fullName: " ", phone: "12", sourceType: "FREE", nationalityGroup: "MARS" }),
+      ),
+    ).toEqual({
       fullName: "required",
       channelId: "required",
       phone: "invalidPhone",
@@ -56,7 +81,13 @@ describe("leadInputSchema (brief §4.1)", () => {
   });
 
   it("never accepts a code, a stage, or a status from the client", () => {
-    const parsed = leadInputSchema.parse({ fullName: "A", channelId: CHANNEL, leadCode: "LD1", stage: "CUSTOMER", status: "CONTRACTED" });
+    const parsed = leadInputSchema.parse({
+      fullName: "A",
+      channelId: CHANNEL,
+      leadCode: "LD1",
+      stage: "CUSTOMER",
+      status: "CONTRACTED",
+    });
     expect(parsed).not.toHaveProperty("leadCode");
     expect(parsed).not.toHaveProperty("stage");
     expect(parsed).not.toHaveProperty("status");
@@ -65,7 +96,11 @@ describe("leadInputSchema (brief §4.1)", () => {
 
 describe("listLeadsSchema", () => {
   it("treats empty filters as none", () => {
-    expect(listLeadsSchema.parse({ status: "", channelId: "" })).toMatchObject({ status: undefined, channelId: undefined, page: 1 });
+    expect(listLeadsSchema.parse({ status: "", channelId: "" })).toMatchObject({
+      status: undefined,
+      channelId: undefined,
+      page: 1,
+    });
     expect(listLeadsSchema.safeParse({ status: "WON" }).success).toBe(false);
   });
 });
@@ -95,11 +130,13 @@ describe("lead journey (D-020, docs/02 flow 2)", () => {
 
   it("moves an appointment by booking again; only Booked goes to itself", () => {
     expect(canChangeLeadStatus("BOOKED", "BOOKED")).toBe(true);
-    for (const status of LEAD_STATUSES.filter((value) => value !== "BOOKED")) expect(canChangeLeadStatus(status, status)).toBe(false);
+    for (const status of LEAD_STATUSES.filter((value) => value !== "BOOKED"))
+      expect(canChangeLeadStatus(status, status)).toBe(false);
   });
 
   it("only ever moves to a status set by hand", () => {
-    for (const from of LEAD_STATUSES) for (const to of nextLeadStatuses(from)) expect(MANUAL_LEAD_STATUSES).toContain(to);
+    for (const from of LEAD_STATUSES)
+      for (const to of nextLeadStatuses(from)) expect(MANUAL_LEAD_STATUSES).toContain(to);
     expect(BOARD_STATUSES).not.toContain("SHOWED");
     expect(BOARD_STATUSES).not.toContain("CONTRACTED");
   });
@@ -109,12 +146,21 @@ describe("leadStatusChangeSchema", () => {
   const REASON = "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f";
 
   it("needs the appointment's day and time for Booked", () => {
-    expect(fieldErrors(leadStatusChangeSchema.safeParse({ status: "BOOKED" }))).toEqual({ appointmentDate: "required", appointmentTime: "required" });
-    expect(fieldErrors(leadStatusChangeSchema.safeParse({ status: "BOOKED", appointmentDate: "31/02/2026", appointmentTime: "25:00" }))).toEqual({
+    expect(fieldErrors(leadStatusChangeSchema.safeParse({ status: "BOOKED" }))).toEqual({
+      appointmentDate: "required",
+      appointmentTime: "required",
+    });
+    expect(
+      fieldErrors(
+        leadStatusChangeSchema.safeParse({ status: "BOOKED", appointmentDate: "31/02/2026", appointmentTime: "25:00" }),
+      ),
+    ).toEqual({
       appointmentDate: "invalidDate",
       appointmentTime: "invalidTime",
     });
-    expect(leadStatusChangeSchema.parse({ status: "BOOKED", appointmentDate: "20/10/2026", appointmentTime: "9:30" })).toEqual({
+    expect(
+      leadStatusChangeSchema.parse({ status: "BOOKED", appointmentDate: "20/10/2026", appointmentTime: "9:30" }),
+    ).toEqual({
       status: "BOOKED",
       appointment: { date: new Date(Date.UTC(2026, 9, 20)), time: "09:30" },
       refuseReason: null,
@@ -123,8 +169,17 @@ describe("leadStatusChangeSchema", () => {
   });
 
   it("needs a reason for Refused (BR-204)", () => {
-    expect(fieldErrors(leadStatusChangeSchema.safeParse({ status: "REFUSED", refuseReasonId: "" }))).toEqual({ refuseReasonId: "required" });
-    expect(leadStatusChangeSchema.parse({ status: "REFUSED", refuseReasonId: REASON, refuseReasonNote: " Xa nhà ", note: "Gọi lại sau Tết" })).toEqual({
+    expect(fieldErrors(leadStatusChangeSchema.safeParse({ status: "REFUSED", refuseReasonId: "" }))).toEqual({
+      refuseReasonId: "required",
+    });
+    expect(
+      leadStatusChangeSchema.parse({
+        status: "REFUSED",
+        refuseReasonId: REASON,
+        refuseReasonNote: " Xa nhà ",
+        note: "Gọi lại sau Tết",
+      }),
+    ).toEqual({
       status: "REFUSED",
       appointment: null,
       refuseReason: { optionId: REASON, note: "Xa nhà" },
@@ -133,7 +188,9 @@ describe("leadStatusChangeSchema", () => {
   });
 
   it("ignores appointment and reason fields for other statuses", () => {
-    expect(leadStatusChangeSchema.parse({ status: "CONSIDERING", appointmentDate: "x", refuseReasonId: REASON })).toEqual({
+    expect(
+      leadStatusChangeSchema.parse({ status: "CONSIDERING", appointmentDate: "x", refuseReasonId: REASON }),
+    ).toEqual({
       status: "CONSIDERING",
       appointment: null,
       refuseReason: null,
@@ -142,7 +199,8 @@ describe("leadStatusChangeSchema", () => {
   });
 
   it("is never set to New, Show, or Contracted by hand", () => {
-    for (const status of ["NEW", "SHOWED", "NO_SHOW", "CONTRACTED"]) expect(leadStatusChangeSchema.safeParse({ status }).success).toBe(false);
+    for (const status of ["NEW", "SHOWED", "NO_SHOW", "CONTRACTED"])
+      expect(leadStatusChangeSchema.safeParse({ status }).success).toBe(false);
   });
 });
 

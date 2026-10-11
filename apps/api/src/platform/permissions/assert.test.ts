@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AppError } from "../errors/app-error.js";
+import { type AppError } from "../errors/app-error.js";
 import { assertCan } from "./assert.js";
 import { hasBranch, inBranches } from "./scope.js";
 
@@ -14,8 +14,14 @@ describe("assertCan (T-046)", () => {
 
   it("throws FORBIDDEN and logs the denial otherwise", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(() => assertCan(actor, "user.manage")).toThrow(expect.objectContaining({ code: "FORBIDDEN" }) as unknown as AppError);
-    expect(JSON.parse(String(warn.mock.calls[0][0]))).toMatchObject({ event: "authz.denied", userId: "u1", permission: "user.manage" });
+    expect(() => assertCan(actor, "user.manage")).toThrow(
+      expect.objectContaining({ code: "FORBIDDEN" }) as unknown as AppError,
+    );
+    expect(JSON.parse(String(warn.mock.calls[0][0]))).toMatchObject({
+      event: "authz.denied",
+      userId: "u1",
+      permission: "user.manage",
+    });
   });
 });
 

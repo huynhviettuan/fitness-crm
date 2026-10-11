@@ -83,8 +83,12 @@ export class EmployeePage {
   /** Adds a shift to a weekday and types its times. */
   async addShift(weekday: number, start: string, end: string): Promise<void> {
     const day = weekdayLabel(weekday);
-    await this.day(weekday).getByRole("button", { name: fill(s.addShift, { day }), exact: true }).click();
-    const number = await this.day(weekday).getByRole("button", { name: new RegExp(`^${fill(s.removeShift, { number: "\\d+", day })}$`) }).count();
+    await this.day(weekday)
+      .getByRole("button", { name: fill(s.addShift, { day }), exact: true })
+      .click();
+    const number = await this.day(weekday)
+      .getByRole("button", { name: new RegExp(`^${fill(s.removeShift, { number: "\\d+", day })}$`) })
+      .count();
     await this.day(weekday).getByLabel(fill(s.shiftStart, { day, number }), { exact: true }).fill(start);
     await this.day(weekday).getByLabel(fill(s.shiftEnd, { day, number }), { exact: true }).fill(end);
   }

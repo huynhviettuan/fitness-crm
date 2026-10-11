@@ -8,7 +8,10 @@ const document = JSON.parse(readFileSync(new URL("../openapi.json", import.meta.
   paths: Record<string, Record<string, { "x-permission"?: string }>>;
 };
 const operations = Object.entries(document.paths).flatMap(([path, methods]) =>
-  Object.entries(methods).map(([method, operation]) => ({ name: `${method.toUpperCase()} ${path}`, permission: operation["x-permission"] })),
+  Object.entries(methods).map(([method, operation]) => ({
+    name: `${method.toUpperCase()} ${path}`,
+    permission: operation["x-permission"],
+  })),
 );
 
 describe("the OpenAPI contract (T-046)", () => {

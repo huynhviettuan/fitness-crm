@@ -25,7 +25,9 @@ describe("isWithinAccessWindows (D-017)", () => {
     // 23:30 UTC on Saturday is 06:30 on Sunday in Ho Chi Minh City.
     const sundayMorning = new Date("2026-10-17T23:30:00Z");
     expect(isWithinAccessWindows([officeHours], sundayMorning, TZ)).toBe(false);
-    expect(isWithinAccessWindows([{ weekdays: [7], startTime: "06:00", endTime: "12:00" }], sundayMorning, TZ)).toBe(true);
+    expect(isWithinAccessWindows([{ weekdays: [7], startTime: "06:00", endTime: "12:00" }], sundayMorning, TZ)).toBe(
+      true,
+    );
   });
 
   it("allows a time inside any of several windows", () => {

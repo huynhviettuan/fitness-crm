@@ -14,7 +14,14 @@ import { api, query, read } from "./client";
 
 // Giao việc (brief §8.2, D-037).
 
-export type TaskQuery = { view?: TaskView; status?: TaskStatus; overdueOnly?: boolean; q?: string; page?: number; pageSize?: number };
+export type TaskQuery = {
+  view?: TaskView;
+  status?: TaskStatus;
+  overdueOnly?: boolean;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+};
 
 export async function listTasks(params: TaskQuery) {
   return read(taskPageSchema, (await api()).GET("/api/v1/tasks", { params: { query: query(params) } }));
@@ -37,7 +44,10 @@ export async function createTask(input: TaskInput) {
 }
 
 export async function updateTask(id: string, input: TaskUpdateInput) {
-  return read(taskDetailSchema, (await api()).PATCH("/api/v1/tasks/{id}", { params: { path: { id } }, body: input as never }));
+  return read(
+    taskDetailSchema,
+    (await api()).PATCH("/api/v1/tasks/{id}", { params: { path: { id } }, body: input as never }),
+  );
 }
 
 export type TaskMove = "accept" | "start" | "complete" | "cancel";
@@ -55,5 +65,8 @@ export async function moveTask(id: string, move: TaskMove) {
 }
 
 export async function addTaskComment(id: string, input: TaskCommentInput) {
-  return read(taskDetailSchema, (await api()).POST("/api/v1/tasks/{id}/comments", { params: { path: { id } }, body: input as never }));
+  return read(
+    taskDetailSchema,
+    (await api()).POST("/api/v1/tasks/{id}/comments", { params: { path: { id } }, body: input as never }),
+  );
 }

@@ -30,7 +30,9 @@ export function discoverApiRoutes(): ApiRoute[] {
       template,
       path: template.replace(/\{[^}]+\}/g, () => randomUUID()),
       methods: methods.map((method) => method.toUpperCase()),
-      permissions: Object.fromEntries(methods.map((method) => [method.toUpperCase(), operations[method]["x-permission"] ?? ""])),
+      permissions: Object.fromEntries(
+        methods.map((method) => [method.toUpperCase(), operations[method]["x-permission"] ?? ""]),
+      ),
     };
   });
 }

@@ -69,7 +69,11 @@ export function NotificationBell({ unread, recent }: { unread: number; recent: N
           <p className="px-2 py-4 text-center text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           recent.map((notification) => (
-            <DropdownMenuItem key={notification.id} onSelect={() => open(notification)} className="flex flex-col items-start gap-0.5">
+            <DropdownMenuItem
+              key={notification.id}
+              onSelect={() => open(notification)}
+              className="flex flex-col items-start gap-0.5"
+            >
               <span className={cn("text-sm whitespace-normal", !notification.readAt && "font-medium")}>
                 {!notification.readAt && <span className="sr-only">{t("unread")}: </span>}
                 {text(notification)}

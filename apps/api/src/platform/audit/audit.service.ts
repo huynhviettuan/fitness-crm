@@ -41,7 +41,8 @@ export async function listAuditEvents(
   ]);
   const hidden = MASKED_VALUES.filter((mask) => isMasked(actor, mask.field));
   const mask = (entityType: string, values: Prisma.JsonValue | null) => {
-    if (!values || typeof values !== "object" || Array.isArray(values)) return values === null ? null : { value: values };
+    if (!values || typeof values !== "object" || Array.isArray(values))
+      return values === null ? null : { value: values };
     const keys = hidden.filter((h) => h.entityType === entityType).map((h) => h.key);
     return Object.fromEntries(Object.entries(values).filter(([key]) => !keys.includes(key)));
   };

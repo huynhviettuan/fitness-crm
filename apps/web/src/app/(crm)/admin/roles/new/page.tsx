@@ -24,7 +24,9 @@ const EMPTY_ROLE: EditableRole = {
   name: "",
   description: null,
   permissions: [],
-  dataScopes: Object.fromEntries(DATA_SCOPE_RESOURCES.map((resource) => [resource, "OWN"])) as EditableRole["dataScopes"],
+  dataScopes: Object.fromEntries(
+    DATA_SCOPE_RESOURCES.map((resource) => [resource, "OWN"]),
+  ) as EditableRole["dataScopes"],
   fieldMasks: [],
 };
 

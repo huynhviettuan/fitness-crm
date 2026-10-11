@@ -38,7 +38,15 @@ export function CreateOptionButton({ listKey }: { listKey: OptionListKey }) {
  * The options of one list in their order (FR-PLT-005). Arrows move an option; "Khác"
  * is always last, so it has none and cannot be switched off.
  */
-export function OptionsTable({ listKey, options, label }: { listKey: OptionListKey; options: Option[]; label: string }) {
+export function OptionsTable({
+  listKey,
+  options,
+  label,
+}: {
+  listKey: OptionListKey;
+  options: Option[];
+  label: string;
+}) {
   const t = useTranslations("options");
   const router = useRouter();
   const { pending, run } = useSubmit();
@@ -113,7 +121,12 @@ export function OptionsTable({ listKey, options, label }: { listKey: OptionListK
       id: "actions",
       header: () => <span className="sr-only">{t("edit")}</span>,
       cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => setEditing(row.original)} aria-label={t("rowActions", { name: row.original.labelVi })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setEditing(row.original)}
+          aria-label={t("rowActions", { name: row.original.labelVi })}
+        >
           <PencilIcon />
           {t("edit")}
         </Button>
@@ -140,9 +153,17 @@ export function OtherNotesTable({ notes }: { notes: OtherNote[] }) {
   const t = useTranslations("options.otherNotes");
   const locale = useLocale();
   const columns: DataTableColumn<OtherNote>[] = [
-    { id: "note", header: t("note"), cell: ({ row }) => <span className="whitespace-normal">{row.original.note}</span> },
+    {
+      id: "note",
+      header: t("note"),
+      cell: ({ row }) => <span className="whitespace-normal">{row.original.note}</span>,
+    },
     { id: "count", header: t("count"), cell: ({ row }) => row.original.count.toLocaleString(locale) },
-    { id: "lastUsedAt", header: t("lastUsedAt"), cell: ({ row }) => <DateTime value={row.original.lastUsedAt} format="dateTime" /> },
+    {
+      id: "lastUsedAt",
+      header: t("lastUsedAt"),
+      cell: ({ row }) => <DateTime value={row.original.lastUsedAt} format="dateTime" />,
+    },
   ];
   return (
     <DataTable
@@ -157,7 +178,15 @@ export function OtherNotesTable({ notes }: { notes: OtherNote[] }) {
 
 type OptionFormValues = { labelVi: string; labelEn: string; active: boolean };
 
-function OptionDialog({ listKey, option, onClose }: { listKey: OptionListKey; option: Option | null; onClose: () => void }) {
+function OptionDialog({
+  listKey,
+  option,
+  onClose,
+}: {
+  listKey: OptionListKey;
+  option: Option | null;
+  onClose: () => void;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const { pending, run } = useSubmit();
@@ -173,8 +202,18 @@ function OptionDialog({ listKey, option, onClose }: { listKey: OptionListKey; op
   };
   const onSubmit = form.handleSubmit((values) => {
     const showErrors = (fieldErrors?: Record<string, string[]>) => applyFieldErrors(form.setError, fieldErrors);
-    if (option) run(() => updateOptionAction(listKey, option.id, values), showErrors, () => done(t("options.saved")));
-    else run(() => createOptionAction(listKey, values), showErrors, ({ name }) => done(t("options.created", { name })));
+    if (option)
+      run(
+        () => updateOptionAction(listKey, option.id, values),
+        showErrors,
+        () => done(t("options.saved")),
+      );
+    else
+      run(
+        () => createOptionAction(listKey, values),
+        showErrors,
+        ({ name }) => done(t("options.created", { name })),
+      );
   });
 
   return (
@@ -187,7 +226,9 @@ function OptionDialog({ listKey, option, onClose }: { listKey: OptionListKey; op
           <FieldGroup>
             <TextField control={form.control} name="labelVi" label={t("options.fields.labelVi")} autoComplete="off" />
             <TextField control={form.control} name="labelEn" label={t("options.fields.labelEn")} autoComplete="off" />
-            {option && !option.isOther && <SwitchField control={form.control} name="active" label={t("options.fields.active")} />}
+            {option && !option.isOther && (
+              <SwitchField control={form.control} name="active" label={t("options.fields.active")} />
+            )}
           </FieldGroup>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={pending}>

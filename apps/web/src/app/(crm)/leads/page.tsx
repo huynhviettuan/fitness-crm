@@ -41,7 +41,8 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
     listOptions("leadSources", true),
     listOptions("needGroups", true),
   ]);
-  const pick = (options: { id: string }[], param: string | string[] | undefined) => options.find((o) => o.id === filterValue(param))?.id;
+  const pick = (options: { id: string }[], param: string | string[] | undefined) =>
+    options.find((o) => o.id === filterValue(param))?.id;
   const q = filterValue(params.q) ?? "";
   const status = LEAD_STATUSES.find((value) => value === filterValue(params.status));
   const channelId = pick(channels, params.channel);
@@ -54,9 +55,17 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
     onBoard ? getLeadBoard({ q, channelId, sourceId, needGroupId }) : null,
   ]);
   const filtered = Boolean(q || status || channelId || sourceId || needGroupId);
-  const label = (option: { labelVi: string; labelEn: string }) => (user.locale === "vi" ? option.labelVi : option.labelEn);
+  const label = (option: { labelVi: string; labelEn: string }) =>
+    user.locale === "vi" ? option.labelVi : option.labelEn;
 
-  const kept = { view: onBoard ? "board" : undefined, q, status: onBoard ? undefined : status, channel: channelId, source: sourceId, need: needGroupId };
+  const kept = {
+    view: onBoard ? "board" : undefined,
+    q,
+    status: onBoard ? undefined : status,
+    channel: channelId,
+    source: sourceId,
+    need: needGroupId,
+  };
   const hrefFor = (target: number) => {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(kept)) if (value) query.set(key, value);
@@ -66,13 +75,19 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
   };
   const viewHref = (view: "list" | "board") => {
     const query = new URLSearchParams();
-    for (const [key, value] of Object.entries({ ...kept, view: view === "board" ? "board" : undefined, status: undefined })) if (value) query.set(key, value);
+    for (const [key, value] of Object.entries({
+      ...kept,
+      view: view === "board" ? "board" : undefined,
+      status: undefined,
+    }))
+      if (value) query.set(key, value);
     const search = query.toString();
     return search ? `/leads?${search}` : "/leads";
   };
   const statusHref = (target: string) => {
     const query = new URLSearchParams();
-    for (const [key, value] of Object.entries({ ...kept, view: undefined, status: target })) if (value) query.set(key, value);
+    for (const [key, value] of Object.entries({ ...kept, view: undefined, status: target }))
+      if (value) query.set(key, value);
     return `/leads?${query.toString()}`;
   };
   const hidden = (except: keyof typeof kept) =>
@@ -82,24 +97,59 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={can(user, "lead.create") && <AddLeadButton branches={user.branches} />} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={can(user, "lead.create") && <AddLeadButton branches={user.branches} />}
+      />
       <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
         <FilterPanel action="/leads" label={t("filters")} submitLabel={t("apply")}>
           {q && <input type="hidden" name="q" value={q} />}
           {onBoard && <input type="hidden" name="view" value="board" />}
           {!onBoard && (
-            <FilterSelect name="status" label={t("fields.status")} allLabel={t("all")} value={status} options={LEAD_STATUSES.map((value) => ({ value, label: tStatus(value) }))} />
+            <FilterSelect
+              name="status"
+              label={t("fields.status")}
+              allLabel={t("all")}
+              value={status}
+              options={LEAD_STATUSES.map((value) => ({ value, label: tStatus(value) }))}
+            />
           )}
-          <FilterSelect name="channel" label={t("fields.channel")} allLabel={t("all")} value={channelId} options={channels.map((o) => ({ value: o.id, label: label(o) }))} />
-          <FilterSelect name="source" label={t("fields.source")} allLabel={t("all")} value={sourceId} options={sources.map((o) => ({ value: o.id, label: label(o) }))} />
-          <FilterSelect name="need" label={t("fields.needGroup")} allLabel={t("all")} value={needGroupId} options={needs.map((o) => ({ value: o.id, label: label(o) }))} />
+          <FilterSelect
+            name="channel"
+            label={t("fields.channel")}
+            allLabel={t("all")}
+            value={channelId}
+            options={channels.map((o) => ({ value: o.id, label: label(o) }))}
+          />
+          <FilterSelect
+            name="source"
+            label={t("fields.source")}
+            allLabel={t("all")}
+            value={sourceId}
+            options={sources.map((o) => ({ value: o.id, label: label(o) }))}
+          />
+          <FilterSelect
+            name="need"
+            label={t("fields.needGroup")}
+            allLabel={t("all")}
+            value={needGroupId}
+            options={needs.map((o) => ({ value: o.id, label: label(o) }))}
+          />
         </FilterPanel>
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <Form action="/leads" role="search" className="relative w-full max-w-sm">
               {hidden("q")}
               <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input name="q" type="search" defaultValue={q} placeholder={t("searchPlaceholder")} aria-label={t("searchPlaceholder")} className="pl-8" />
+              <Input
+                name="q"
+                type="search"
+                defaultValue={q}
+                placeholder={t("searchPlaceholder")}
+                aria-label={t("searchPlaceholder")}
+                className="pl-8"
+              />
             </Form>
             <nav aria-label={t("views")} className="flex gap-1">
               <Button asChild size="sm" variant={onBoard ? "ghost" : "secondary"}>
@@ -118,18 +168,27 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
           </div>
           {board ? (
             <LeadsBoard board={board} listHref={statusHref} />
-          ) : result && (
-          <LeadsTable
-            leads={result.items}
-            empty={
-              filtered ? (
-                <EmptyState icon={SearchIcon} title={t("noResultsTitle")} description={t("noResultsBody")} />
-              ) : (
-                <EmptyState icon={MegaphoneIcon} title={t("emptyTitle")} description={t("emptyBody")} />
-              )
-            }
-            footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />}
-          />
+          ) : (
+            result && (
+              <LeadsTable
+                leads={result.items}
+                empty={
+                  filtered ? (
+                    <EmptyState icon={SearchIcon} title={t("noResultsTitle")} description={t("noResultsBody")} />
+                  ) : (
+                    <EmptyState icon={MegaphoneIcon} title={t("emptyTitle")} description={t("emptyBody")} />
+                  )
+                }
+                footer={
+                  <TablePagination
+                    page={result.page}
+                    pageSize={result.pageSize}
+                    total={result.total}
+                    hrefFor={hrefFor}
+                  />
+                }
+              />
+            )
           )}
         </div>
       </div>

@@ -20,8 +20,17 @@ export async function sendReminders(now: Date = new Date()): Promise<void> {
 export type Jobs = { stop(): Promise<void> };
 
 export async function startJobs(): Promise<Jobs> {
-  const boss = new PgBoss({ connectionString: env.DATABASE_URL, schema: "pgboss", max: 2, application_name: "flow-jobs" });
-  boss.on("error", (error: unknown) => console.error(JSON.stringify({ time: new Date().toISOString(), level: "error", type: "jobs", error: String(error) })));
+  const boss = new PgBoss({
+    connectionString: env.DATABASE_URL,
+    schema: "pgboss",
+    max: 2,
+    application_name: "flow-jobs",
+  });
+  boss.on("error", (error: unknown) =>
+    console.error(
+      JSON.stringify({ time: new Date().toISOString(), level: "error", type: "jobs", error: String(error) }),
+    ),
+  );
   await boss.start();
   if (!(await boss.getQueue(REMINDERS))) await boss.createQueue(REMINDERS);
   // Every minute, in the gym's time zone.

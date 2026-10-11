@@ -4,7 +4,15 @@ import type { LeadStatus } from "./lead.schema.js";
 // re-care delay, refusal reasons, and colors are configuration.
 
 /** Statuses a person in the LEAD stage can have; Show and Contracted belong to customers. */
-export const BOARD_STATUSES = ["NEW", "CONSULTING", "CONSIDERING", "NO_RESPONSE", "BOOKED", "NO_SHOW", "REFUSED"] as const;
+export const BOARD_STATUSES = [
+  "NEW",
+  "CONSULTING",
+  "CONSIDERING",
+  "NO_RESPONSE",
+  "BOOKED",
+  "NO_SHOW",
+  "REFUSED",
+] as const;
 export type BoardStatus = (typeof BOARD_STATUSES)[number];
 
 /** Statuses a user sets by hand. New ends at assignment; Show and No show arrive with appointments (M2 slice 4). */

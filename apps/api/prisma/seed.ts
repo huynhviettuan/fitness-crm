@@ -25,7 +25,11 @@ async function main() {
     await prisma.$transaction(async (tx) => {
       // The default Admin role of the migration, with every branch (09_RBAC.md).
       const role = await tx.role.findUniqueOrThrow({ where: { code: "ADMIN" }, select: { id: true } });
-      const user = await createUserWithPassword(tx, { name, email, roleId: role.id, allBranches: true, branchIds: [] }, passwordHash);
+      const user = await createUserWithPassword(
+        tx,
+        { name, email, roleId: role.id, allBranches: true, branchIds: [] },
+        passwordHash,
+      );
       await recordAudit(tx, {
         actorUserId: null,
         entityType: "user",

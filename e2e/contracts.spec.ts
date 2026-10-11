@@ -48,7 +48,12 @@ test.describe("contracts as a Fitness Manager", () => {
     );
   });
 
-  test("invalid amounts and dates are explained before anything is saved", async ({ apiAs, testTag, customerContractsTab, contractDetailPage }) => {
+  test("invalid amounts and dates are explained before anything is saved", async ({
+    apiAs,
+    testTag,
+    customerContractsTab,
+    contractDetailPage,
+  }) => {
     const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
 
     await customerContractsTab.open(customer.id);
@@ -95,7 +100,9 @@ test.describe("contracts as a manager", () => {
   test("a manager cancels an active contract after confirming", async ({ apiAs, testTag, contractDetailPage }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await createCustomerViaApi(reception, testTag);
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, { activateWith: await apiAs("ADMIN") });
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: await apiAs("ADMIN"),
+    });
 
     await contractDetailPage.goto(contract.id);
     await contractDetailPage.confirmAction(labels.contracts.cancel);

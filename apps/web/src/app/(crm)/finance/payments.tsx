@@ -8,7 +8,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BanknoteIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
@@ -54,7 +61,11 @@ export function PaymentsTable({ payments, canDelete, label, hide = {}, empty, fo
   const [deleting, setDeleting] = useState<PaymentRow | null>(null);
 
   const columns: DataTableColumn<PaymentRow>[] = [
-    { id: "paidOn", header: t("fields.paidOn"), cell: ({ row }) => <DateTime value={row.original.paidOn} format="dateOnly" /> },
+    {
+      id: "paidOn",
+      header: t("fields.paidOn"),
+      cell: ({ row }) => <DateTime value={row.original.paidOn} format="dateOnly" />,
+    },
     {
       id: "amount",
       header: t("fields.amount"),
@@ -107,7 +118,14 @@ export function PaymentsTable({ payments, canDelete, label, hide = {}, empty, fo
 
   return (
     <>
-      <DataTable columns={columns} data={payments} label={label} empty={empty} footer={footer} getRowId={(row) => row.id} />
+      <DataTable
+        columns={columns}
+        data={payments}
+        label={label}
+        empty={empty}
+        footer={footer}
+        getRowId={(row) => row.id}
+      />
       <DeleteDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
@@ -147,7 +165,9 @@ export function RecordPaymentButton({ contract }: { contract: { id: string; debt
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("recordPayment")}</DialogTitle>
-          <DialogDescription>{t("recordPaymentDescription", { debt: formatMoney(contract.debt, locale) })}</DialogDescription>
+          <DialogDescription>
+            {t("recordPaymentDescription", { debt: formatMoney(contract.debt, locale) })}
+          </DialogDescription>
         </DialogHeader>
         <PaymentForm contractId={contract.id} idempotencyKey={idempotencyKey} onDone={() => setOpen(false)} />
       </DialogContent>
@@ -155,7 +175,15 @@ export function RecordPaymentButton({ contract }: { contract: { id: string; debt
   );
 }
 
-function PaymentForm({ contractId, idempotencyKey, onDone }: { contractId: string; idempotencyKey: string; onDone: () => void }) {
+function PaymentForm({
+  contractId,
+  idempotencyKey,
+  onDone,
+}: {
+  contractId: string;
+  idempotencyKey: string;
+  onDone: () => void;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const timeZone = useTimeZone() ?? "UTC";

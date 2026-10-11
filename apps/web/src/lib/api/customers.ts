@@ -1,5 +1,10 @@
 import "server-only";
-import { customerPageSchema, customerSchema, type CreateCustomerInput, type UpdateCustomerInput } from "@flow/shared/customers";
+import {
+  customerPageSchema,
+  customerSchema,
+  type CreateCustomerInput,
+  type UpdateCustomerInput,
+} from "@flow/shared/customers";
 import { api, query, read } from "./client";
 
 export async function listCustomers(params: { q?: string; page?: number }) {

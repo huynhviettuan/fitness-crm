@@ -13,7 +13,12 @@ import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { chosen, chosenSelect, resolveChoice } from "../../platform/options/option.service.js";
 import { moveToTrash } from "../../platform/trash/trash.service.js";
-import { cancelPendingFor, ruleFor, submitForApproval, withPendingConflictMapped } from "../../platform/approvals/approval.engine.js";
+import {
+  cancelPendingFor,
+  ruleFor,
+  submitForApproval,
+  withPendingConflictMapped,
+} from "../../platform/approvals/approval.engine.js";
 import type { RecordApprovalStatus } from "@flow/shared/approvals";
 import type { Db as TxDb } from "../../platform/db/prisma.js";
 import { encode } from "../../platform/http/encode.js";
@@ -123,7 +128,10 @@ export async function recordPayment(
       if (replayUnderLock) return { payment: replayUnderLock, replayed: true };
 
       // An active option of the list; "Khác" needs a note (D-016).
-      const method = await resolveChoice(tx, "paymentMethods", "methodId", { optionId: data.methodId, note: data.methodNote });
+      const method = await resolveChoice(tx, "paymentMethods", "methodId", {
+        optionId: data.methodId,
+        note: data.methodNote,
+      });
 
       // Only on a contract the actor can see (D-017).
       const contract = await findContract(tx, contractId, contractsVisibleTo(actor));
@@ -193,7 +201,11 @@ export async function recordPayment(
  * until then (D-018). Runs under the contract lock (T-040); a payment already deleted
  * is NOT_FOUND.
  */
-export async function deletePayment(actor: Actor, id: string, input: unknown): Promise<{ approval: { id: string } } | null> {
+export async function deletePayment(
+  actor: Actor,
+  id: string,
+  input: unknown,
+): Promise<{ approval: { id: string } } | null> {
   assertCan(actor, "payment.delete");
   const { reasonId, reasonNote } = parseInput(deleteSchema, input);
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
@@ -270,7 +282,12 @@ export function findPaymentForApproval(tx: TxDb, id: string): Promise<repo.Payme
 }
 
 /** Approving or rejecting a pending payment (D-018), with its audit. */
-export async function decidePayment(tx: TxDb, decider: Pick<Actor, "id">, id: string, to: "APPROVED" | "REJECTED"): Promise<void> {
+export async function decidePayment(
+  tx: TxDb,
+  decider: Pick<Actor, "id">,
+  id: string,
+  to: "APPROVED" | "REJECTED",
+): Promise<void> {
   if ((await repo.setPaymentApprovalStatus(tx, id, "PENDING", to)) !== 1) throw new AppError("APPROVAL_NOT_PENDING");
   await recordAudit(tx, {
     actorUserId: decider.id,
@@ -297,11 +314,20 @@ export async function listDebts(
     branchIds: actor.branches === "ALL" ? "ALL" : [...actor.branches],
     ownBy: isOwnOnly(actor, "contracts") ? { userId: actor.id, employeeId: actor.employeeId } : null,
   };
-  const { ids, total } = await repo.contractsWithDebt(prisma, scope, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  const { ids, total } = await repo.contractsWithDebt(prisma, scope, {
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  });
   return { items: await contractViewsByIds(actor, ids), total, page: query.page, pageSize: query.pageSize };
 }
 
-async function replayOf(db: Db, key: string, contractId: string, data: PaymentData, actor: Actor): Promise<PaymentView | null> {
+async function replayOf(
+  db: Db,
+  key: string,
+  contractId: string,
+  data: PaymentData,
+  actor: Actor,
+): Promise<PaymentView | null> {
   const existing = await repo.findPaymentByIdempotencyKey(db, key);
   if (!existing) return null;
   const same =

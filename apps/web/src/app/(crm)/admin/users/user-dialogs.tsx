@@ -6,7 +6,14 @@ import { useTranslations } from "next-intl";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { CheckboxListField, SelectField, SwitchField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
@@ -38,16 +45,35 @@ export function useSubmit() {
   return { pending, run };
 }
 
-type CreateUserValues = { name: string; email: string; roleId: string; password: string; allBranches: boolean; branchIds: string[] };
+type CreateUserValues = {
+  name: string;
+  email: string;
+  roleId: string;
+  password: string;
+  allBranches: boolean;
+  branchIds: string[];
+};
 
-export function CreateUserDialog({ open, onOpenChange, roles, branches }: DialogProps & { roles: Option[]; branches: Option[] }) {
+export function CreateUserDialog({
+  open,
+  onOpenChange,
+  roles,
+  branches,
+}: DialogProps & { roles: Option[]; branches: Option[] }) {
   const t = useTranslations();
   const router = useRouter();
   const { pending, run } = useSubmit();
   const form = useForm<CreateUserValues>({
     resolver: zodResolver(createUserSchema, undefined, { raw: true }) as never,
     // With a single branch there is nothing to choose.
-    defaultValues: { name: "", email: "", roleId: "", password: "", allBranches: false, branchIds: branches.length === 1 ? [branches[0].id] : [] },
+    defaultValues: {
+      name: "",
+      email: "",
+      roleId: "",
+      password: "",
+      allBranches: false,
+      branchIds: branches.length === 1 ? [branches[0].id] : [],
+    },
   });
   const allBranches = useWatch({ control: form.control, name: "allBranches" });
 
@@ -74,7 +100,13 @@ export function CreateUserDialog({ open, onOpenChange, roles, branches }: Dialog
           </DialogHeader>
           <FieldGroup>
             <TextField control={form.control} name="name" label={t("users.fields.name")} autoComplete="off" />
-            <TextField control={form.control} name="email" label={t("users.fields.email")} type="email" autoComplete="off" />
+            <TextField
+              control={form.control}
+              name="email"
+              label={t("users.fields.email")}
+              type="email"
+              autoComplete="off"
+            />
             <SelectField
               control={form.control}
               name="roleId"
@@ -82,7 +114,12 @@ export function CreateUserDialog({ open, onOpenChange, roles, branches }: Dialog
               placeholder={t("users.rolePlaceholder")}
               options={roles.map((role) => ({ value: role.id, label: role.name }))}
             />
-            <SwitchField control={form.control} name="allBranches" label={t("users.allBranches")} description={t("users.allBranchesHint")} />
+            <SwitchField
+              control={form.control}
+              name="allBranches"
+              label={t("users.allBranches")}
+              description={t("users.allBranchesHint")}
+            />
             {!allBranches && (
               <CheckboxListField
                 control={form.control}
@@ -114,7 +151,11 @@ export function CreateUserDialog({ open, onOpenChange, roles, branches }: Dialog
   );
 }
 
-export function ResetPasswordDialog({ open, onOpenChange, user }: DialogProps & { user: { id: string; name: string } }) {
+export function ResetPasswordDialog({
+  open,
+  onOpenChange,
+  user,
+}: DialogProps & { user: { id: string; name: string } }) {
   const t = useTranslations();
   const { pending, run } = useSubmit();
   const form = useForm<{ password: string }>({ defaultValues: { password: "" } });

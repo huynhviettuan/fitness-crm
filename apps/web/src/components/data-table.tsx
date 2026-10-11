@@ -20,7 +20,14 @@ type DataTableProps<TData extends RowData> = {
   footer?: ReactNode;
 };
 
-export function DataTable<TData extends RowData>({ columns, data, label, empty, getRowId, footer }: DataTableProps<TData>) {
+export function DataTable<TData extends RowData>({
+  columns,
+  data,
+  label,
+  empty,
+  getRowId,
+  footer,
+}: DataTableProps<TData>) {
   const table = useTable({
     features: dataTableFeatures,
     columns,

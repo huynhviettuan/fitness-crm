@@ -7,14 +7,27 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRightLeftIcon, UserRoundCogIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { OptionSelect } from "@/components/option-select";
 import { formatDateOnly, formatTime } from "@/lib/format";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
-import { leadAssignSchema, leadStatusChangeSchema, nextLeadStatuses, type Lead, type ManualLeadStatus } from "@flow/shared/leads";
+import {
+  leadAssignSchema,
+  leadStatusChangeSchema,
+  nextLeadStatuses,
+  type Lead,
+  type ManualLeadStatus,
+} from "@flow/shared/leads";
 import { useSubmit } from "../admin/users/user-dialogs";
 import { assignLeadAction, changeLeadStatusAction } from "./actions";
 
@@ -165,7 +178,9 @@ export function AssignLeadButton({ lead, assignees }: { lead: Lead; assignees: {
           <form onSubmit={onSubmit} noValidate className="space-y-6">
             <DialogHeader>
               <DialogTitle>{t("leads.assignTitle", { name: lead.fullName })}</DialogTitle>
-              <DialogDescription>{assignees.length > 0 ? t("leads.assignDescription") : t("leads.noAssignees")}</DialogDescription>
+              <DialogDescription>
+                {assignees.length > 0 ? t("leads.assignDescription") : t("leads.noAssignees")}
+              </DialogDescription>
             </DialogHeader>
             {assignees.length > 0 && (
               <SelectField

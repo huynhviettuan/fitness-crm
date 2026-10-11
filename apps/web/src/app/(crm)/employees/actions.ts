@@ -4,7 +4,9 @@ import { runAction, type ActionResult } from "@/lib/actions/result";
 import { addDayOff, createEmployee, removeDayOff, replaceShifts, updateEmployee } from "@/lib/api/employees";
 import type { DayOffInput, EmployeeInput, ShiftsInput } from "@flow/shared/employees";
 
-export async function createEmployeeAction(input: EmployeeInput): Promise<ActionResult<{ id: string; employeeCode: string }>> {
+export async function createEmployeeAction(
+  input: EmployeeInput,
+): Promise<ActionResult<{ id: string; employeeCode: string }>> {
   return runAction(async () => {
     const employee = await createEmployee(input);
     return { id: employee.id, employeeCode: employee.employeeCode };

@@ -15,10 +15,17 @@ test.use(signedInAs("RECEPTIONIST"));
 
 test.describe("A05 injection payloads", () => {
   for (const [index, payload] of PAYLOADS.entries()) {
-    test(`payload ${index + 1} is stored verbatim and rendered as text`, async ({ page, apiAs, testTag, customerDetailPage }) => {
+    test(`payload ${index + 1} is stored verbatim and rendered as text`, async ({
+      page,
+      apiAs,
+      testTag,
+      customerDetailPage,
+    }) => {
       const api = await apiAs("RECEPTIONIST");
       const fullName = `${payload} ${testTag}`;
-      const response = await api.post("/api/v1/customers", { data: { fullName, phone: uniquePhone(), notes: payload } });
+      const response = await api.post("/api/v1/customers", {
+        data: { fullName, phone: uniquePhone(), notes: payload },
+      });
       expect(response.status()).toBe(201);
       const customer = await response.json();
       expect(customer).toMatchObject({ fullName, notes: payload });

@@ -22,5 +22,8 @@ export async function updateRole(id: string, input: unknown) {
 }
 
 export async function cloneRole(id: string, input: unknown) {
-  return read(roleSchema, (await api()).POST("/api/v1/roles/{id}/clone", { params: { path: { id } }, body: input as never }));
+  return read(
+    roleSchema,
+    (await api()).POST("/api/v1/roles/{id}/clone", { params: { path: { id } }, body: input as never }),
+  );
 }

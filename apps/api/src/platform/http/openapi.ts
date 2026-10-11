@@ -63,5 +63,9 @@ export function ApiOptionalQuery(...names: string[]) {
 
 /** T-015: creates of contracts and money records carry a client-generated UUID. */
 export function ApiIdempotencyKey() {
-  return ApiHeader({ name: "Idempotency-Key", required: true, description: "A UUID generated when the form opens (T-015)." });
+  return ApiHeader({
+    name: "Idempotency-Key",
+    required: true,
+    description: "A UUID generated when the form opens (T-015).",
+  });
 }

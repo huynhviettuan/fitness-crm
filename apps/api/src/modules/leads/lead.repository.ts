@@ -52,9 +52,21 @@ export async function nextLeadCode(db: Db): Promise<string> {
 }
 
 /** A new lead: stage LEAD, status NEW, nobody in charge yet (D-020). */
-export function createLead(db: Db, leadCode: string, data: LeadWrite & { branchId: string; createdById: string }, now: Date): Promise<LeadRecord> {
+export function createLead(
+  db: Db,
+  leadCode: string,
+  data: LeadWrite & { branchId: string; createdById: string },
+  now: Date,
+): Promise<LeadRecord> {
   return db.customer.create({
-    data: { ...data, leadCode, stage: "LEAD", leadStatus: "NEW", leadStatusChangedAt: now, searchName: normalizeForSearch(data.fullName) },
+    data: {
+      ...data,
+      leadCode,
+      stage: "LEAD",
+      leadStatus: "NEW",
+      leadStatusChangedAt: now,
+      searchName: normalizeForSearch(data.fullName),
+    },
     include: withRefs,
   });
 }
@@ -98,7 +110,13 @@ export async function addStatusChange(
 
 export async function addAssignment(
   db: Db,
-  data: { customerId: string; fromUserId: string | null; toUserId: string; assignedById: string | null; assignedAt: Date },
+  data: {
+    customerId: string;
+    fromUserId: string | null;
+    toUserId: string;
+    assignedById: string | null;
+    assignedAt: Date;
+  },
 ): Promise<void> {
   await db.leadAssignment.create({ data });
 }
@@ -132,7 +150,10 @@ export function receivers(db: Db, branchId: string): Promise<{ id: string; name:
 
 /** Who should hear of the branch's new leads: active users of the branch who reassign them (brief §4.1). */
 export async function leadManagers(db: Db, branchId: string): Promise<string[]> {
-  const users = await db.user.findMany({ where: { AND: [activeInBranch(branchId), holding("lead.assign")] }, select: { id: true } });
+  const users = await db.user.findMany({
+    where: { AND: [activeInBranch(branchId), holding("lead.assign")] },
+    select: { id: true },
+  });
   return users.map((user) => user.id);
 }
 
@@ -142,12 +163,19 @@ export async function lockRoundRobin(db: Db, branchId: string): Promise<void> {
 }
 
 export async function lastReceiver(db: Db, branchId: string): Promise<{ id: string; createdAt: Date } | null> {
-  const row = await db.leadRoundRobin.findUnique({ where: { branchId }, select: { lastUser: { select: { id: true, createdAt: true } } } });
+  const row = await db.leadRoundRobin.findUnique({
+    where: { branchId },
+    select: { lastUser: { select: { id: true, createdAt: true } } },
+  });
   return row?.lastUser ?? null;
 }
 
 export async function setLastReceiver(db: Db, branchId: string, userId: string): Promise<void> {
-  await db.leadRoundRobin.upsert({ where: { branchId }, create: { branchId, lastUserId: userId }, update: { lastUserId: userId } });
+  await db.leadRoundRobin.upsert({
+    where: { branchId },
+    create: { branchId, lastUserId: userId },
+    update: { lastUserId: userId },
+  });
 }
 
 /** One Kanban column (FR-LEAD-006): appointments soonest first, the rest longest in their status last. */
@@ -159,13 +187,22 @@ export async function boardColumn(
 ): Promise<{ items: LeadRecord[]; total: number }> {
   const inStatus: Prisma.CustomerWhereInput = { AND: [where, { leadStatus: status }] };
   const orderBy: Prisma.CustomerOrderByWithRelationInput[] =
-    status === "BOOKED" ? [{ appointmentAt: "asc" }, { leadCode: "asc" }] : [{ leadStatusChangedAt: "desc" }, { leadCode: "desc" }];
-  const [items, total] = await Promise.all([db.customer.findMany({ where: inStatus, include: withRefs, orderBy, take }), db.customer.count({ where: inStatus })]);
+    status === "BOOKED"
+      ? [{ appointmentAt: "asc" }, { leadCode: "asc" }]
+      : [{ leadStatusChangedAt: "desc" }, { leadCode: "desc" }];
+  const [items, total] = await Promise.all([
+    db.customer.findMany({ where: inStatus, include: withRefs, orderBy, take }),
+    db.customer.count({ where: inStatus }),
+  ]);
   return { items, total };
 }
 
 export function updateLead(db: Db, id: string, data: LeadWrite): Promise<LeadRecord> {
-  return db.customer.update({ where: { id }, data: { ...data, searchName: normalizeForSearch(data.fullName) }, include: withRefs });
+  return db.customer.update({
+    where: { id },
+    data: { ...data, searchName: normalizeForSearch(data.fullName) },
+    include: withRefs,
+  });
 }
 
 export function findLead(db: Db, id: string, visibility: Prisma.CustomerWhereInput): Promise<LeadRecord | null> {

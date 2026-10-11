@@ -5,7 +5,11 @@ import { uniquePhone } from "../support/data";
 
 const LEAKS = /\bat\s+\S+\s+\(|node_modules|prisma|stack|Error:|SELECT |INSERT /i;
 
-async function expectDocumentedError(response: { status(): number; text(): Promise<string> }, status: number, code: string) {
+async function expectDocumentedError(
+  response: { status(): number; text(): Promise<string> },
+  status: number,
+  code: string,
+) {
   expect(response.status()).toBe(status);
   const text = await response.text();
   expect(text).not.toMatch(LEAKS);
@@ -38,7 +42,9 @@ test.describe("A10 exceptional input", () => {
 
   test("an oversized field", async ({ apiAs }) => {
     const api = await apiAs("RECEPTIONIST");
-    const response = await api.post("/api/v1/customers", { data: { fullName: "A".repeat(50_000), phone: uniquePhone() } });
+    const response = await api.post("/api/v1/customers", {
+      data: { fullName: "A".repeat(50_000), phone: uniquePhone() },
+    });
     await expectDocumentedError(response, 400, "VALIDATION_FAILED");
   });
 
@@ -53,7 +59,11 @@ test.describe("A10 exceptional input", () => {
   test("an id that is not a UUID, and one that does not exist", async ({ apiAs }) => {
     const api = await apiAs("RECEPTIONIST");
     await expectDocumentedError(await api.get("/api/v1/customers/1 OR 1=1"), 404, "NOT_FOUND");
-    await expectDocumentedError(await api.get("/api/v1/customers/00000000-0000-4000-8000-000000000000"), 404, "NOT_FOUND");
+    await expectDocumentedError(
+      await api.get("/api/v1/customers/00000000-0000-4000-8000-000000000000"),
+      404,
+      "NOT_FOUND",
+    );
   });
 
   test("an unsupported HTTP method", async ({ apiAs }) => {

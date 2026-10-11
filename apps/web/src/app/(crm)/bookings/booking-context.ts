@@ -20,7 +20,10 @@ export type BookingContext = {
 };
 
 /** What every booking screen needs to know about the signed-in user, for one gym day (default today). */
-export async function bookingContext(user: CurrentUser, day: string = formatDateOnly(calendarDateInTimeZone(env.GYM_TIMEZONE))): Promise<BookingContext> {
+export async function bookingContext(
+  user: CurrentUser,
+  day: string = formatDateOnly(calendarDateInTimeZone(env.GYM_TIMEZONE)),
+): Promise<BookingContext> {
   const permissions: BookingPermissions = {
     manage: can(user, "booking.manage"),
     checkIn: can(user, "session.checkIn"),

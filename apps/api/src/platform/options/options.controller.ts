@@ -1,7 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Post, Put, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { optionInputSchema, optionListSchema, optionOrderSchema, optionSchema, otherNoteListSchema } from "@flow/shared/options";
+import {
+  optionInputSchema,
+  optionListSchema,
+  optionOrderSchema,
+  optionSchema,
+  otherNoteListSchema,
+} from "@flow/shared/options";
 import { AnySignedInUser, CurrentActor, RequirePermission } from "../auth/auth.guard.js";
 import type { CurrentUser } from "../auth/session.js";
 import { encode } from "../http/encode.js";
@@ -26,7 +32,11 @@ export class OptionListsController {
   @Post(":key/options")
   @RequirePermission("config.manage")
   @ApiResult(optionSchema, 201, "Created")
-  async create(@CurrentActor() actor: CurrentUser, @Param("key") key: string, @Body({ schema: optionInputSchema }) body: unknown) {
+  async create(
+    @CurrentActor() actor: CurrentUser,
+    @Param("key") key: string,
+    @Body({ schema: optionInputSchema }) body: unknown,
+  ) {
     return encode(optionSchema, await createOption(actor, key, body));
   }
 
@@ -47,7 +57,11 @@ export class OptionListsController {
   @Put(":key/order")
   @RequirePermission("config.manage")
   @ApiResult(optionListSchema)
-  async reorder(@CurrentActor() actor: CurrentUser, @Param("key") key: string, @Body({ schema: optionOrderSchema }) body: unknown) {
+  async reorder(
+    @CurrentActor() actor: CurrentUser,
+    @Param("key") key: string,
+    @Body({ schema: optionOrderSchema }) body: unknown,
+  ) {
     return encode(optionListSchema, { items: await reorderOptions(actor, key, body) });
   }
 

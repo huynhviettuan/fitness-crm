@@ -5,7 +5,15 @@ import { createUserViaApi, roleIdOf } from "../support/admin";
 import { createCustomerViaApi } from "../support/data";
 import { discoverApiRoutes } from "../support/routes";
 
-const SCOPES_ALL = { leads: "ALL", customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL", tasks: "ALL" };
+const SCOPES_ALL = {
+  leads: "ALL",
+  customers: "ALL",
+  contracts: "ALL",
+  schedule: "ALL",
+  vouchers: "ALL",
+  staff: "ALL",
+  tasks: "ALL",
+};
 
 test.describe("A01 permissions on every endpoint (T-046)", () => {
   test("a user whose role grants nothing is refused by every endpoint that declares a permission", async ({
@@ -32,7 +40,9 @@ test.describe("A01 permissions on every endpoint (T-046)", () => {
     }
   });
 
-  test("a Fitness Manager cannot manage users, roles, branches, or configuration, nor see the trash or history (09_RBAC.md)", async ({ apiAs }) => {
+  test("a Fitness Manager cannot manage users, roles, branches, or configuration, nor see the trash or history (09_RBAC.md)", async ({
+    apiAs,
+  }) => {
     const manager = await apiAs("FITNESS_MANAGER");
 
     for (const path of [
@@ -48,7 +58,11 @@ test.describe("A01 permissions on every endpoint (T-046)", () => {
     }
     // Configuration is admin's (09_RBAC.md); reading it is open to forms.
     expect((await manager.get("/api/v1/option-lists/paymentMethods/options")).status()).toBe(200);
-    expect((await manager.post("/api/v1/option-lists/paymentMethods/options", { data: { labelVi: "x", labelEn: "x" } })).status()).toBe(403);
+    expect(
+      (
+        await manager.post("/api/v1/option-lists/paymentMethods/options", { data: { labelVi: "x", labelEn: "x" } })
+      ).status(),
+    ).toBe(403);
     expect((await manager.put("/api/v1/parameters", { data: {} })).status()).toBe(403);
   });
 });

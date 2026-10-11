@@ -15,7 +15,16 @@ import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
-import { addComment, createTask, getTask, listTasks, moveTask, taskAssignees, taskSummary, updateTask } from "./task.service.js";
+import {
+  addComment,
+  createTask,
+  getTask,
+  listTasks,
+  moveTask,
+  taskAssignees,
+  taskSummary,
+  updateTask,
+} from "./task.service.js";
 
 const FILTERS = ["view", "status", "overdueOnly", "q", "page", "pageSize"] as const;
 
@@ -66,7 +75,11 @@ export class TasksController {
   @Patch(":id")
   @RequirePermission("task.view")
   @ApiResult(taskDetailSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: taskUpdateSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: taskUpdateSchema }) body: unknown,
+  ) {
     return encode(taskDetailSchema, await updateTask(actor, id, body));
   }
 
@@ -107,7 +120,11 @@ export class TasksController {
   @Post(":id/comments")
   @RequirePermission("task.view")
   @ApiResult(taskDetailSchema, 201, "Comment added")
-  async comment(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: taskCommentSchema }) body: unknown) {
+  async comment(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: taskCommentSchema }) body: unknown,
+  ) {
     return encode(taskDetailSchema, await addComment(actor, id, body));
   }
 }

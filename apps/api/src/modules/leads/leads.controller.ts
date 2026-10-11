@@ -64,7 +64,11 @@ export class LeadsController {
   @Patch(":id")
   @RequirePermission("lead.manage")
   @ApiResult(leadSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: leadUpdateSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: leadUpdateSchema }) body: unknown,
+  ) {
     return encode(leadSchema, await updateLead(actor, id, body));
   }
 
@@ -84,7 +88,11 @@ export class LeadsController {
   @RequirePermission("lead.manage")
   @HttpCode(200)
   @ApiResult(leadSchema)
-  async changeStatus(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: leadStatusChangeSchema }) body: unknown) {
+  async changeStatus(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: leadStatusChangeSchema }) body: unknown,
+  ) {
     return encode(leadSchema, await changeLeadStatus(actor, id, body));
   }
 
@@ -101,7 +109,11 @@ export class LeadsController {
   @RequirePermission("lead.assign")
   @HttpCode(200)
   @ApiResult(leadSchema)
-  async assign(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: leadAssignSchema }) body: unknown) {
+  async assign(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: leadAssignSchema }) body: unknown,
+  ) {
     return encode(leadSchema, await assignLead(actor, id, body));
   }
 }

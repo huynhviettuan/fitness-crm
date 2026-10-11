@@ -25,7 +25,15 @@ type BookingsTableProps = {
 };
 
 /** Bookings as rows; "Open" shows the booking sheet with its actions. */
-export function BookingsTable({ bookings, permissions, trainers, label, hide = {}, empty, footer }: BookingsTableProps) {
+export function BookingsTable({
+  bookings,
+  permissions,
+  trainers,
+  label,
+  hide = {},
+  empty,
+  footer,
+}: BookingsTableProps) {
   const t = useTranslations("bookings");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Looked up on every render, so the sheet shows the refreshed booking after an action.
@@ -38,7 +46,8 @@ export function BookingsTable({ bookings, permissions, trainers, label, hide = {
       header: t("fields.time"),
       cell: ({ row }) => (
         <span className="tabular-nums">
-          <DateTime value={row.original.scheduledStart} format="time" />–<DateTime value={row.original.scheduledEnd} format="time" />
+          <DateTime value={row.original.scheduledStart} format="time" />–
+          <DateTime value={row.original.scheduledEnd} format="time" />
         </span>
       ),
     },
@@ -69,7 +78,11 @@ export function BookingsTable({ bookings, permissions, trainers, label, hide = {
           } satisfies DataTableColumn<BookingRow>,
         ]),
     { id: "trainer", header: t("fields.trainer"), cell: ({ row }) => row.original.trainer.fullName },
-    { id: "status", header: t("fields.status"), cell: ({ row }) => <StatusBadge entity="booking" status={row.original.status} /> },
+    {
+      id: "status",
+      header: t("fields.status"),
+      cell: ({ row }) => <StatusBadge entity="booking" status={row.original.status} />,
+    },
     {
       id: "actions",
       header: () => <span className="sr-only">{t("details")}</span>,
@@ -83,8 +96,20 @@ export function BookingsTable({ bookings, permissions, trainers, label, hide = {
 
   return (
     <>
-      <DataTable columns={columns} data={bookings} label={label} empty={empty} footer={footer} getRowId={(row) => row.id} />
-      <BookingSheet booking={selected} onClose={() => setSelectedId(null)} permissions={permissions} trainers={trainers} />
+      <DataTable
+        columns={columns}
+        data={bookings}
+        label={label}
+        empty={empty}
+        footer={footer}
+        getRowId={(row) => row.id}
+      />
+      <BookingSheet
+        booking={selected}
+        onClose={() => setSelectedId(null)}
+        permissions={permissions}
+        trainers={trainers}
+      />
     </>
   );
 }

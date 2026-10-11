@@ -31,7 +31,10 @@ export function findCashTransaction(
   return db.cashTransaction.findFirst({ where: { AND: [{ id, deletedAt: null }, visibility] }, include: cashInclude });
 }
 
-export function findCashTransactionByIdempotencyKey(db: Db, idempotencyKey: string): Promise<CashTransactionRecord | null> {
+export function findCashTransactionByIdempotencyKey(
+  db: Db,
+  idempotencyKey: string,
+): Promise<CashTransactionRecord | null> {
   return db.cashTransaction.findUnique({ where: { idempotencyKey }, include: cashInclude });
 }
 
@@ -45,7 +48,11 @@ export async function markCashTransactionDeleted(
   return count;
 }
 
-export async function listCashTransactions(db: Db, where: Prisma.CashTransactionWhereInput, options: { skip: number; take: number }) {
+export async function listCashTransactions(
+  db: Db,
+  where: Prisma.CashTransactionWhereInput,
+  options: { skip: number; take: number },
+) {
   // Deleted records are in the trash, not in lists (D-035).
   const valid = { AND: [where, { deletedAt: null }] };
   const [items, total] = await Promise.all([
@@ -70,14 +77,24 @@ export async function sumValidCash(
   visibility: Prisma.CashTransactionWhereInput,
 ): Promise<number> {
   const { _sum } = await db.cashTransaction.aggregate({
-    where: { AND: [visibility, { type, deletedAt: null, approvalStatus: "APPROVED", occurredOn: { gte: from, lte: to } }] },
+    where: {
+      AND: [visibility, { type, deletedAt: null, approvalStatus: "APPROVED", occurredOn: { gte: from, lte: to } }],
+    },
     _sum: { amount: true },
   });
   return Number(_sum.amount ?? 0);
 }
 
 /** Moves an entry's approval status only from `from`, so a decision applies once (D-018). */
-export async function setCashApprovalStatus(db: Db, id: string, from: "PENDING", to: "APPROVED" | "REJECTED"): Promise<number> {
-  const { count } = await db.cashTransaction.updateMany({ where: { id, approvalStatus: from, deletedAt: null }, data: { approvalStatus: to } });
+export async function setCashApprovalStatus(
+  db: Db,
+  id: string,
+  from: "PENDING",
+  to: "APPROVED" | "REJECTED",
+): Promise<number> {
+  const { count } = await db.cashTransaction.updateMany({
+    where: { id, approvalStatus: from, deletedAt: null },
+    data: { approvalStatus: to },
+  });
   return count;
 }

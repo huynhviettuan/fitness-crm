@@ -8,7 +8,16 @@ import { env } from "@/lib/env";
 // limits and security logs see the real client.
 
 // Headers that describe one connection and must not be passed on (RFC 9110 §7.6.1).
-const HOP_BY_HOP = ["connection", "keep-alive", "proxy-connection", "te", "trailer", "transfer-encoding", "upgrade", "host"];
+const HOP_BY_HOP = [
+  "connection",
+  "keep-alive",
+  "proxy-connection",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+  "host",
+];
 
 async function forward(request: Request): Promise<Response> {
   const url = new URL(request.url);
@@ -33,4 +42,12 @@ async function forward(request: Request): Promise<Response> {
   return new Response(answer.body, { status: answer.status, statusText: answer.statusText, headers: responseHeaders });
 }
 
-export { forward as DELETE, forward as GET, forward as HEAD, forward as OPTIONS, forward as PATCH, forward as POST, forward as PUT };
+export {
+  forward as DELETE,
+  forward as GET,
+  forward as HEAD,
+  forward as OPTIONS,
+  forward as PATCH,
+  forward as POST,
+  forward as PUT,
+};

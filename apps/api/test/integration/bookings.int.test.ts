@@ -1,8 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { createCustomer, getCustomer, listCustomers } from "../../src/modules/customers/customer.service.js";
-import { cancelContract, createContract, getContract, listContracts } from "../../src/modules/contracts/contract.service.js";
-import { addDayOff, createEmployee, replaceShifts, updateEmployee } from "../../src/modules/employees/employee.service.js";
+import {
+  cancelContract,
+  createContract,
+  getContract,
+  listContracts,
+} from "../../src/modules/contracts/contract.service.js";
+import {
+  addDayOff,
+  createEmployee,
+  replaceShifts,
+  updateEmployee,
+} from "../../src/modules/employees/employee.service.js";
 import {
   cancelBooking,
   getBooking,
@@ -25,7 +35,11 @@ describe("createBooking", () => {
   it("books without consuming a session (BR-004), stores gym-time instants, and audits", async () => {
     const scenario = await bookingScenario();
 
-    const booking = await book(scenario.manager, scenario, { date: "15/10/2026", startTime: "18:00", endTime: "19:00" });
+    const booking = await book(scenario.manager, scenario, {
+      date: "15/10/2026",
+      startTime: "18:00",
+      endTime: "19:00",
+    });
 
     expect(booking).toMatchObject({
       status: "BOOKED",
@@ -37,7 +51,10 @@ describe("createBooking", () => {
       contract: { id: scenario.contract.id, remainingSessions: 24 },
       session: null,
     });
-    expect(await getContract(scenario.manager, scenario.contract.id)).toMatchObject({ completedSessions: 0, remainingSessions: 24 });
+    expect(await getContract(scenario.manager, scenario.contract.id)).toMatchObject({
+      completedSessions: 0,
+      remainingSessions: 24,
+    });
     const audit = await prisma.auditEvent.findMany({ where: { entityId: booking.id } });
     expect(audit).toEqual([expect.objectContaining({ action: "booking.created", actorUserId: scenario.manager.id })]);
   });
@@ -52,7 +69,9 @@ describe("createBooking", () => {
     await expect(book(scenario.manager, scenario, { date: "31/02/2026", startTime: "25:00" })).rejects.toMatchObject({
       fieldErrors: { date: ["invalidDate"], startTime: ["invalidTime"] },
     });
-    await expect(book(scenario.manager, scenario, {}, "")).rejects.toMatchObject({ fieldErrors: { trainerId: ["required"] } });
+    await expect(book(scenario.manager, scenario, {}, "")).rejects.toMatchObject({
+      fieldErrors: { trainerId: ["required"] },
+    });
     expect(await prisma.booking.count()).toBe(0);
   });
 
@@ -67,12 +86,19 @@ describe("createBooking", () => {
 
   it("refuses a contract that is not active (BR-003)", async () => {
     const scenario = await bookingScenario();
-    const { contract: draft } = await createContract(scenario.manager, scenario.customer.id, CONTRACT, crypto.randomUUID());
+    const { contract: draft } = await createContract(
+      scenario.manager,
+      scenario.customer.id,
+      CONTRACT,
+      crypto.randomUUID(),
+    );
     const cancelled = await activeContract(scenario.manager, scenario.customer.id);
     await cancelContract(scenario.manager, cancelled.id);
 
     for (const contract of [draft, cancelled]) {
-      await expect(book(scenario.manager, { ...scenario, contract })).rejects.toMatchObject({ code: "CONTRACT_NOT_ACTIVE" });
+      await expect(book(scenario.manager, { ...scenario, contract })).rejects.toMatchObject({
+        code: "CONTRACT_NOT_ACTIVE",
+      });
     }
   });
 
@@ -91,7 +117,9 @@ describe("createBooking", () => {
     const scenario = await bookingScenario();
 
     for (const date of ["30/09/2026", "01/01/2031"]) {
-      await expect(book(scenario.manager, scenario, { date })).rejects.toMatchObject({ code: "BOOKING_OUTSIDE_CONTRACT_PERIOD" });
+      await expect(book(scenario.manager, scenario, { date })).rejects.toMatchObject({
+        code: "BOOKING_OUTSIDE_CONTRACT_PERIOD",
+      });
     }
     await expect(book(scenario.manager, scenario, { date: "01/10/2026" })).resolves.toBeDefined();
     await expect(book(scenario.manager, scenario, { date: "31/12/2030" })).resolves.toBeDefined();
@@ -99,7 +127,11 @@ describe("createBooking", () => {
 
   it("refuses an inactive trainer", async () => {
     const scenario = await bookingScenario();
-    await updateEmployee(scenario.manager, scenario.trainer.id, { fullName: "PT Minh", isTrainer: true, status: "INACTIVE" });
+    await updateEmployee(scenario.manager, scenario.trainer.id, {
+      fullName: "PT Minh",
+      isTrainer: true,
+      status: "INACTIVE",
+    });
 
     await expect(book(scenario.manager, scenario)).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
@@ -139,10 +171,14 @@ describe("createBooking", () => {
         ["13:30", "17:30"],
         ["20:30", "21:30"],
       ]) {
-        await expect(book(scenario.manager, scenario, { startTime, endTime })).rejects.toMatchObject({ code: "BOOKING_OUTSIDE_WORKING_HOURS" });
+        await expect(book(scenario.manager, scenario, { startTime, endTime })).rejects.toMatchObject({
+          code: "BOOKING_OUTSIDE_WORKING_HOURS",
+        });
       }
       // Friday has no shifts at all.
-      await expect(book(scenario.manager, scenario, { date: "16/10/2026" })).rejects.toMatchObject({ code: "BOOKING_OUTSIDE_WORKING_HOURS" });
+      await expect(book(scenario.manager, scenario, { date: "16/10/2026" })).rejects.toMatchObject({
+        code: "BOOKING_OUTSIDE_WORKING_HOURS",
+      });
     });
 
     it("refuses a day off and a reschedule out of the working hours", async () => {
@@ -151,11 +187,18 @@ describe("createBooking", () => {
       const booking = await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
       await addDayOff(scenario.manager, scenario.trainer.id, { date: "22/10/2026" });
 
-      await expect(book(scenario.manager, scenario, { date: "22/10/2026", startTime: "09:00", endTime: "10:00" })).rejects.toMatchObject({
+      await expect(
+        book(scenario.manager, scenario, { date: "22/10/2026", startTime: "09:00", endTime: "10:00" }),
+      ).rejects.toMatchObject({
         code: "BOOKING_OUTSIDE_WORKING_HOURS",
       });
       await expect(
-        rescheduleBooking(scenario.manager, booking.id, { trainerId: scenario.trainer.id, date: "15/10/2026", startTime: "15:00", endTime: "16:00" }),
+        rescheduleBooking(scenario.manager, booking.id, {
+          trainerId: scenario.trainer.id,
+          date: "15/10/2026",
+          startTime: "15:00",
+          endTime: "16:00",
+        }),
       ).rejects.toMatchObject({ code: "BOOKING_OUTSIDE_WORKING_HOURS" });
     });
 
@@ -208,7 +251,9 @@ describe("trainer overlap (BR-010)", () => {
     });
     // A-004: half-open ranges.
     await expect(book(scenario.manager, scenario, { startTime: "19:00", endTime: "20:00" })).resolves.toBeDefined();
-    await expect(book(scenario.manager, scenario, { startTime: "18:30", endTime: "19:30" }, other.id)).resolves.toBeDefined();
+    await expect(
+      book(scenario.manager, scenario, { startTime: "18:30", endTime: "19:30" }, other.id),
+    ).resolves.toBeDefined();
   });
 
   it("a cancelled or no-show booking frees the slot; a completed one does not (A-005)", async () => {
@@ -237,7 +282,11 @@ describe("trainer overlap (BR-010)", () => {
 
     const results = await Promise.allSettled([
       book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" }),
-      book(scenario.manager, { ...scenario, customer: second, contract: secondContract }, { startTime: "18:30", endTime: "19:30" }),
+      book(
+        scenario.manager,
+        { ...scenario, customer: second, contract: secondContract },
+        { startTime: "18:30", endTime: "19:30" },
+      ),
     ]);
 
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
@@ -304,7 +353,12 @@ describe("rescheduleBooking", () => {
     const first = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
     const second = await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" });
     const move = (id: string, startTime: string, endTime: string) =>
-      rescheduleBooking(scenario.manager, id, { trainerId: scenario.trainer.id, date: "15/10/2026", startTime, endTime });
+      rescheduleBooking(scenario.manager, id, {
+        trainerId: scenario.trainer.id,
+        date: "15/10/2026",
+        startTime,
+        endTime,
+      });
 
     await expect(move(second.id, "08:30", "09:30")).rejects.toMatchObject({ code: "BOOKING_TRAINER_OVERLAP" });
     await checkIn(scenario.manager, first.id);
@@ -323,8 +377,13 @@ describe("cancel and no-show", () => {
     expect(await markNoShow(scenario.manager, b.id)).toMatchObject({ status: "NO_SHOW" });
     expect(await markNoShow(scenario.manager, b.id)).toMatchObject({ status: "NO_SHOW" });
 
-    expect(await getContract(scenario.manager, scenario.contract.id)).toMatchObject({ completedSessions: 0, remainingSessions: 24 });
-    expect(await prisma.auditEvent.count({ where: { entityId: { in: [a.id, b.id] }, action: { not: "booking.created" } } })).toBe(2);
+    expect(await getContract(scenario.manager, scenario.contract.id)).toMatchObject({
+      completedSessions: 0,
+      remainingSessions: 24,
+    });
+    expect(
+      await prisma.auditEvent.count({ where: { entityId: { in: [a.id, b.id] }, action: { not: "booking.created" } } }),
+    ).toBe(2);
   });
 
   it("allows only the transitions in A-006", async () => {
@@ -360,10 +419,17 @@ describe("roles and trainer scope", () => {
     expect((await listDayBookings(trainer, { date: "15/10/2026" })).map((b) => b.id)).toEqual([mine.id]);
     await expect(getBooking(trainer, theirs.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(cancelBooking(trainer, theirs.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(book(trainer, scenario, { startTime: "12:00", endTime: "13:00" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(book(trainer, scenario, { startTime: "12:00", endTime: "13:00" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
     await expect(book(trainer, scenario, { startTime: "12:00", endTime: "13:00" }, own.id)).resolves.toBeDefined();
     await expect(
-      rescheduleBooking(trainer, mine.id, { trainerId: scenario.trainer.id, date: "15/10/2026", startTime: "14:00", endTime: "15:00" }),
+      rescheduleBooking(trainer, mine.id, {
+        trainerId: scenario.trainer.id,
+        date: "15/10/2026",
+        startTime: "14:00",
+        endTime: "15:00",
+      }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
@@ -409,8 +475,12 @@ describe("listing", () => {
 
     expect((await listBookings(scenario.manager, { status: "CHECKED_IN" })).items.map((x) => x.id)).toEqual([b.id]);
     expect(
-      (await listBookings(scenario.manager, { contractId: scenario.contract.id, order: "desc" })).items.map((x) => x.id),
+      (await listBookings(scenario.manager, { contractId: scenario.contract.id, order: "desc" })).items.map(
+        (x) => x.id,
+      ),
     ).toEqual([b.id, a.id]);
-    await expect(listBookings(scenario.manager, { status: "DONE" })).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    await expect(listBookings(scenario.manager, { status: "DONE" })).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
   });
 });

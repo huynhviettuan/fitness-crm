@@ -60,7 +60,11 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={canManage && <CreateEmployeeButton logins={logins} branches={user.branches} />} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={canManage && <CreateEmployeeButton logins={logins} branches={user.branches} />}
+      />
       <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
         <FilterPanel action="/employees" label={t("filters")} submitLabel={t("apply")}>
           {q && <input type="hidden" name="q" value={q} />}
@@ -76,7 +80,10 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
             label={t("fields.department")}
             allLabel={t("allDepartments")}
             value={departmentId}
-            options={departments.map((option) => ({ value: option.id, label: user.locale === "vi" ? option.labelVi : option.labelEn }))}
+            options={departments.map((option) => ({
+              value: option.id,
+              label: user.locale === "vi" ? option.labelVi : option.labelEn,
+            }))}
           />
           <FilterSelect
             name="kind"
@@ -92,7 +99,14 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
             {departmentId && <input type="hidden" name="department" value={departmentId} />}
             {trainersOnly && <input type="hidden" name="kind" value="trainers" />}
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input name="q" type="search" defaultValue={q} placeholder={t("searchPlaceholder")} aria-label={t("searchPlaceholder")} className="pl-8" />
+            <Input
+              name="q"
+              type="search"
+              defaultValue={q}
+              placeholder={t("searchPlaceholder")}
+              aria-label={t("searchPlaceholder")}
+              className="pl-8"
+            />
           </Form>
           <EmployeesTable
             employees={result.items}
@@ -103,7 +117,9 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
                 <EmptyState icon={IdCardIcon} title={t("emptyTitle")} description={t("emptyBody")} />
               )
             }
-            footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />}
+            footer={
+              <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+            }
           />
         </div>
       </div>

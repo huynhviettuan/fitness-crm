@@ -46,7 +46,14 @@ export const NO_OPTION = "none";
  * A drop-down from an option list (D-016, docs/23 §8). Choosing "Khác" shows the note,
  * which is then required; the API refuses "Khác" without it (AC-04).
  */
-export function OptionSelect<T extends FieldValues>({ control, name, noteName, listKey, label, noneLabel }: OptionSelectProps<T>) {
+export function OptionSelect<T extends FieldValues>({
+  control,
+  name,
+  noteName,
+  listKey,
+  label,
+  noneLabel,
+}: OptionSelectProps<T>) {
   const t = useTranslations("options");
   const locale = useLocale();
   const options = useOptions(listKey);
@@ -66,7 +73,13 @@ export function OptionSelect<T extends FieldValues>({ control, name, noteName, l
         ]}
       />
       {chosen?.isOther && (
-        <TextField control={control} name={noteName} label={t("otherNote")} description={t("otherNoteHint")} multiline />
+        <TextField
+          control={control}
+          name={noteName}
+          label={t("otherNote")}
+          description={t("otherNoteHint")}
+          multiline
+        />
       )}
     </>
   );

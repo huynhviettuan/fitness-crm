@@ -60,12 +60,17 @@ export class ApprovalRulesPage {
   }
 
   row(actionLabel: string): Locator {
-    return this.shell.main.getByRole("table", { name: labels.approvalRules.title }).getByRole("row").filter({ hasText: actionLabel });
+    return this.shell.main
+      .getByRole("table", { name: labels.approvalRules.title })
+      .getByRole("row")
+      .filter({ hasText: actionLabel });
   }
 
   /** Ticks or clears one approver role of an action, then saves. */
   async setApprover(actionLabel: string, roleName: string, on: boolean): Promise<void> {
-    await this.shell.main.getByRole("button", { name: fill(labels.approvalRules.editLabel, { name: actionLabel }), exact: true }).click();
+    await this.shell.main
+      .getByRole("button", { name: fill(labels.approvalRules.editLabel, { name: actionLabel }), exact: true })
+      .click();
     const dialog = this.page.getByRole("dialog", { name: actionLabel });
     await dialog.getByRole("checkbox", { name: roleName, exact: true }).setChecked(on);
     await dialog.getByRole("button", { name: labels.common.save, exact: true }).click();

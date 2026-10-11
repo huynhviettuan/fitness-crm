@@ -42,7 +42,9 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
     <PageHeader
       title={t("sessionsTitle")}
       description={t("sessionsDescription")}
-      actions={context.permissions.manage && context.trainers.length > 0 && <AddBookingButton trainers={context.trainers} />}
+      actions={
+        context.permissions.manage && context.trainers.length > 0 && <AddBookingButton trainers={context.trainers} />
+      }
     />
   );
 
@@ -84,7 +86,12 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
         label={t(`views.${view}`)}
         empty={<EmptyState icon={CalendarCheckIcon} title={t("emptyTitle")} />}
         footer={
-          <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={(p) => hrefFor({ page: p })} />
+          <TablePagination
+            page={result.page}
+            pageSize={result.pageSize}
+            total={result.total}
+            hrefFor={(p) => hrefFor({ page: p })}
+          />
         }
       />
     </>

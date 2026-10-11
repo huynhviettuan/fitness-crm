@@ -49,11 +49,20 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
     );
   }
 
-  const trainerId = typeof params.trainer === "string" && context.trainers.some((tr) => tr.id === params.trainer) ? params.trainer : undefined;
-  const bookings = (await listDayBookings({ date: formatDateOnly(day), trainerId })).filter((b) => isActiveBooking(b.status));
+  const trainerId =
+    typeof params.trainer === "string" && context.trainers.some((tr) => tr.id === params.trainer)
+      ? params.trainer
+      : undefined;
+  const bookings = (await listDayBookings({ date: formatDateOnly(day), trainerId })).filter((b) =>
+    isActiveBooking(b.status),
+  );
   // Calendar hours are a system parameter (D-030, T-049).
   const parameters = await getParameters();
-  const columns = scheduleColumns(context.trainers, bookings.map((b) => b.trainer), trainerId);
+  const columns = scheduleColumns(
+    context.trainers,
+    bookings.map((b) => b.trainer),
+    trainerId,
+  );
 
   return (
     <>

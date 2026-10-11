@@ -43,8 +43,14 @@ export default async function TaskPage({ params }: PageProps<"/tasks/[id]">) {
   const t = await getTranslations("tasks");
   const task = await loadTask((await params).id);
   const assignees = await getTaskAssignees();
-  const departmentName = task.department ? (user.locale === "vi" ? task.department.labelVi : task.department.labelEn) : null;
-  const entityHref = task.entity ? `/${task.entity.type === "customer" ? "customers" : "contracts"}/${task.entity.id}` : null;
+  const departmentName = task.department
+    ? user.locale === "vi"
+      ? task.department.labelVi
+      : task.department.labelEn
+    : null;
+  const entityHref = task.entity
+    ? `/${task.entity.type === "customer" ? "customers" : "contracts"}/${task.entity.id}`
+    : null;
 
   const details: { label: string; value: React.ReactNode }[] = [
     { label: t("fields.status"), value: <StatusBadge entity="task" status={task.status} /> },
@@ -58,7 +64,10 @@ export default async function TaskPage({ params }: PageProps<"/tasks/[id]">) {
         </span>
       ),
     },
-    { label: t("fields.assignee"), value: task.assignee?.name ?? <span className="text-muted-foreground">{t("waitingInDepartment")}</span> },
+    {
+      label: t("fields.assignee"),
+      value: task.assignee?.name ?? <span className="text-muted-foreground">{t("waitingInDepartment")}</span>,
+    },
     { label: t("fields.department"), value: departmentName },
     { label: t("fields.assigner"), value: task.assigner.name },
     { label: t("fields.createdAt"), value: <DateTime value={task.createdAt} format="dateTime" /> },
@@ -81,7 +90,10 @@ export default async function TaskPage({ params }: PageProps<"/tasks/[id]">) {
           {t("backToList")}
         </Link>
       </Button>
-      <PageHeader title={task.title} actions={task.actions.includes("edit") && <EditTaskButton task={task} assignees={assignees} />} />
+      <PageHeader
+        title={task.title}
+        actions={task.actions.includes("edit") && <EditTaskButton task={task} assignees={assignees} />}
+      />
       <div className="mb-6">
         <TaskMoves task={task} />
       </div>
@@ -96,7 +108,9 @@ export default async function TaskPage({ params }: PageProps<"/tasks/[id]">) {
                 </div>
               ))}
             </dl>
-            {task.description && <p className="mt-4 border-t pt-4 text-sm break-words whitespace-pre-line">{task.description}</p>}
+            {task.description && (
+              <p className="mt-4 border-t pt-4 text-sm break-words whitespace-pre-line">{task.description}</p>
+            )}
           </CardContent>
         </Card>
         <Card>

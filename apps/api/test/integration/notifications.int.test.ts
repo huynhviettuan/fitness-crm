@@ -3,7 +3,12 @@ import { prisma } from "../../src/platform/db/prisma.js";
 import { remindOverdueApprovals } from "../../src/platform/approvals/approval.engine.js";
 import { approveRequest } from "../../src/modules/approvals/approval.service.js";
 import { createCustomer, updateCustomer } from "../../src/modules/customers/customer.service.js";
-import { listNotifications, markAllRead, markRead, notificationSummary } from "../../src/platform/notifications/notification.service.js";
+import {
+  listNotifications,
+  markAllRead,
+  markRead,
+  notificationSummary,
+} from "../../src/platform/notifications/notification.service.js";
 import { createTask } from "../../src/modules/tasks/task.service.js";
 import { startJobs } from "../../src/jobs.js";
 import { resetDatabase } from "../support/database.js";
@@ -14,7 +19,9 @@ afterEach(async () => {
 });
 
 const kindsOf = async (userId: string) =>
-  (await prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { kind: true } })).map((n) => n.kind);
+  (
+    await prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { kind: true } })
+  ).map((n) => n.kind);
 
 describe("notifications of the signed-in user (FR-PLT-009)", () => {
   it("lists only one's own, counts the unread, and marks one or all read", async () => {
@@ -33,7 +40,9 @@ describe("notifications of the signed-in user (FR-PLT-009)", () => {
     await expect(markRead(hong, "not-a-uuid")).rejects.toMatchObject({ code: "NOT_FOUND" });
     await markRead(hong, page.items[0].id);
     expect(await notificationSummary(hong)).toEqual({ unread: 1 });
-    expect((await listNotifications(hong, { unreadOnly: "true" })).items.map((n) => n.params.title)).toEqual(["Việc 1"]);
+    expect((await listNotifications(hong, { unreadOnly: "true" })).items.map((n) => n.params.title)).toEqual([
+      "Việc 1",
+    ]);
     await markAllRead(hong);
     expect(await notificationSummary(hong)).toEqual({ unread: 0 });
   });
@@ -47,7 +56,10 @@ describe("approval notifications (D-018, A-037)", () => {
     const branch = await createTestBranch();
     const { actor: managerElsewhere } = await createTestUser("FITNESS_MANAGER", { branchIds: [branch.id] });
     const customer = await createCustomer(reception, { fullName: "Nguyễn Văn An", phone: "0909123456" });
-    const { approval } = await updateCustomer(reception, customer.id, { fullName: "Nguyễn Văn An", phone: "0911222333" });
+    const { approval } = await updateCustomer(reception, customer.id, {
+      fullName: "Nguyễn Văn An",
+      phone: "0911222333",
+    });
     return { reception, manager, admin, managerElsewhere, approval: approval! };
   }
 
@@ -60,12 +72,18 @@ describe("approval notifications (D-018, A-037)", () => {
     expect(await kindsOf(managerElsewhere.id)).toEqual([]);
     await approveRequest(manager, approval.id);
     const decided = await prisma.notification.findFirstOrThrow({ where: { userId: reception.id } });
-    expect(decided).toMatchObject({ kind: "approvalDecided", params: { status: "APPROVED" }, link: "/approvals?view=mine" });
+    expect(decided).toMatchObject({
+      kind: "approvalDecided",
+      params: { status: "APPROVED" },
+      link: "/approvals?view=mine",
+    });
   });
 
   it("reminds the approvers and tells their superiors once a request is overdue, once", async () => {
     const { reception, manager, admin, approval } = await identityEdit();
-    const submittedAt = (await prisma.approvalRequest.findUniqueOrThrow({ where: { id: approval.id } })).submittedAt.getTime();
+    const submittedAt = (
+      await prisma.approvalRequest.findUniqueOrThrow({ where: { id: approval.id } })
+    ).submittedAt.getTime();
 
     expect(await remindOverdueApprovals(new Date(submittedAt + 23 * 3_600_000))).toBe(0);
     expect(await remindOverdueApprovals(new Date(submittedAt + 25 * 3_600_000))).toBe(1);
@@ -82,7 +100,9 @@ describe("the job runner (T-059)", () => {
   it("starts pg-boss with the reminders queue and stops cleanly", async () => {
     const jobs = await startJobs();
     try {
-      const [queue] = await prisma.$queryRaw<{ name: string }[]>`SELECT name FROM pgboss.queue WHERE name = 'reminders'`;
+      const [queue] = await prisma.$queryRaw<
+        { name: string }[]
+      >`SELECT name FROM pgboss.queue WHERE name = 'reminders'`;
       expect(queue?.name).toBe("reminders");
     } finally {
       await jobs.stop();

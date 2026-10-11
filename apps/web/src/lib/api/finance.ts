@@ -24,7 +24,10 @@ export async function listPayments(params: PaymentQuery) {
 
 /** Payments received in the period, deleted ones left out (D-011: no opening balances). */
 export async function collectedBetween(period: Period) {
-  const { total } = await read(collectedSchema, (await api()).GET("/api/v1/payments/collected", { params: { query: period } }));
+  const { total } = await read(
+    collectedSchema,
+    (await api()).GET("/api/v1/payments/collected", { params: { query: period } }),
+  );
   return total;
 }
 
@@ -57,17 +60,25 @@ export async function listCashTransactions(params: Partial<Period> & { page?: nu
 }
 
 export async function financeSummary(period: Period) {
-  return read(financeSummarySchema, (await api()).GET("/api/v1/cash-transactions/summary", { params: { query: period } }));
+  return read(
+    financeSummarySchema,
+    (await api()).GET("/api/v1/cash-transactions/summary", { params: { query: period } }),
+  );
 }
 
 export async function recordCashTransaction(input: CashTransactionInput, idempotencyKey: string) {
   return read(
     cashTransactionSchema,
-    (await api()).POST("/api/v1/cash-transactions", { params: { header: { "Idempotency-Key": idempotencyKey } }, body: input }),
+    (await api()).POST("/api/v1/cash-transactions", {
+      params: { header: { "Idempotency-Key": idempotencyKey } },
+      body: input,
+    }),
   );
 }
 
 /** D-035: moves the entry to the trash; true when the deletion waits for approval (D-018). */
 export async function deleteCashTransaction(id: string, input: DeleteInput) {
-  return submittedOrDone((await api()).DELETE("/api/v1/cash-transactions/{id}", { params: { path: { id } }, body: input }));
+  return submittedOrDone(
+    (await api()).DELETE("/api/v1/cash-transactions/{id}", { params: { path: { id } }, body: input }),
+  );
 }

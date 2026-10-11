@@ -113,7 +113,9 @@ export class BookingsTable {
   }
 
   async open(...rowTexts: string[]): Promise<BookingSheet> {
-    await this.row(...rowTexts).getByRole("button", { name: labels.bookings.open }).click();
+    await this.row(...rowTexts)
+      .getByRole("button", { name: labels.bookings.open })
+      .click();
     return bookingSheet(this.page);
   }
 }

@@ -35,7 +35,10 @@ export async function createUser(input: unknown) {
 }
 
 export async function changeUserRole(userId: string, input: unknown) {
-  return read(userSchema, (await api()).PUT("/api/v1/users/{id}/role", { params: { path: { id: userId } }, body: input as never }));
+  return read(
+    userSchema,
+    (await api()).PUT("/api/v1/users/{id}/role", { params: { path: { id: userId } }, body: input as never }),
+  );
 }
 
 export async function setUserStatus(userId: string, input: unknown) {
@@ -74,5 +77,7 @@ export async function listLoginHistory(userId: string, params: { page?: number }
 }
 
 export async function resetUserPassword(userId: string, input: unknown) {
-  return done((await api()).PUT("/api/v1/users/{id}/password", { params: { path: { id: userId } }, body: input as never }));
+  return done(
+    (await api()).PUT("/api/v1/users/{id}/password", { params: { path: { id: userId } }, body: input as never }),
+  );
 }

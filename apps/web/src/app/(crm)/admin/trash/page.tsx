@@ -67,7 +67,9 @@ export default async function TrashPage({ searchParams }: PageProps<"/admin/tras
           <TrashTable
             entries={result.items}
             empty={<EmptyState icon={Trash2Icon} title={t("empty")} />}
-            footer={<TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />}
+            footer={
+              <TablePagination page={result.page} pageSize={result.pageSize} total={result.total} hrefFor={hrefFor} />
+            }
           />
         </div>
       </div>

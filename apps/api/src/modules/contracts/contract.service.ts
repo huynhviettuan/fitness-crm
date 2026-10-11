@@ -87,7 +87,9 @@ export async function createContract(
   if (!key.success) throw new AppError("IDEMPOTENCY_KEY_REQUIRED");
   const data = parseInput(contractInputSchema, input);
   // Only for a customer the actor can see; the contract belongs to the customer's branch (D-014).
-  const customer = z.uuid().safeParse(customerId).success ? await findCustomer(prisma, customerId, customersVisibleTo(actor)) : null;
+  const customer = z.uuid().safeParse(customerId).success
+    ? await findCustomer(prisma, customerId, customersVisibleTo(actor))
+    : null;
   if (!customer) throw new AppError("NOT_FOUND");
 
   const replay = await replayOf(key.data, customerId, data, actor);
@@ -143,7 +145,13 @@ export async function updateContract(actor: Actor, id: string, input: unknown): 
     const after = await getOrThrow(tx, actor, id);
     const changes = diffFields(before, after, AUDITED_FIELDS);
     if (changes) {
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "contract", entityId: id, action: "contract.updated", ...changes });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "contract",
+        entityId: id,
+        action: "contract.updated",
+        ...changes,
+      });
     }
     return presentOne(tx, after, today);
   });
@@ -226,7 +234,12 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
   }, LOCKING_TRANSACTION);
 }
 
-async function replayOf(key: string, customerId: string, data: ContractData, actor: Actor): Promise<ContractView | null> {
+async function replayOf(
+  key: string,
+  customerId: string,
+  data: ContractData,
+  actor: Actor,
+): Promise<ContractView | null> {
   const existing = await repo.findContractByIdempotencyKey(prisma, key);
   if (!existing) return null;
   const same =
@@ -250,7 +263,10 @@ async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.Contra
 
 /** Contract views with their confirmed payments (BR-013), read with `db`. */
 async function present(db: Db, contracts: repo.ContractRecord[], today: Date): Promise<ContractView[]> {
-  const paid = await validPaidByContract(db, contracts.map((c) => c.id));
+  const paid = await validPaidByContract(
+    db,
+    contracts.map((c) => c.id),
+  );
   return contracts.map((contract) => toView(contract, today, paid.get(contract.id) ?? 0));
 }
 

@@ -58,7 +58,7 @@ pnpm db:deploy && pnpm db:seed              # migrations and the first admin
 pnpm dev                                    # web on :3000, API on :4000 (docs at :4000/api/docs)
 ```
 
-Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:integration`, `pnpm test:e2e`, `pnpm security:audit`. See `AGENTS.md` §8.
+Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`, `pnpm format`, `pnpm test`, `pnpm test:integration`, `pnpm test:e2e`, `pnpm security:audit`. See `AGENTS.md` §8.
 
 ## Documentation map
 

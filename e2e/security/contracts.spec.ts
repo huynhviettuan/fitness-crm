@@ -18,7 +18,10 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
   for (const [role, status] of createExpectations) {
     test(`${role} creating a contract gets ${status}`, async ({ apiAs, testTag }) => {
       // A consultant sees only customers they created (A-029), so they create this one.
-      const customer = await createCustomerViaApi(await apiAs(role === "CONSULTING" ? "CONSULTING" : "RECEPTIONIST"), testTag);
+      const customer = await createCustomerViaApi(
+        await apiAs(role === "CONSULTING" ? "CONSULTING" : "RECEPTIONIST"),
+        testTag,
+      );
       const api = await apiAs(role);
       const response = await api.post(`/api/v1/customers/${customer.id}/contracts`, {
         headers: { "idempotency-key": randomUUID() },
@@ -37,7 +40,11 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
   for (const [role, status] of cancelExpectations) {
     test(`${role} cancelling a contract gets ${status}`, async ({ apiAs, testTag }) => {
       const reception = await apiAs("RECEPTIONIST");
-      const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id, { activateWith: await apiAs("ADMIN") });
+      const contract = await createContractViaApi(
+        await apiAs("FITNESS_MANAGER"),
+        (await createCustomerViaApi(reception, testTag)).id,
+        { activateWith: await apiAs("ADMIN") },
+      );
 
       const response = await (await apiAs(role)).post(`/api/v1/contracts/${contract.id}/cancel`);
       expect(response.status()).toBe(status);
@@ -46,18 +53,30 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
 
   test("a trainer cannot open a contract by its real id (OQ-006 interim)", async ({ apiAs, testTag }) => {
     const reception = await apiAs("RECEPTIONIST");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(reception, testTag)).id);
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(reception, testTag)).id,
+    );
 
     expect((await (await apiAs("PT")).get(`/api/v1/contracts/${contract.id}`)).status()).toBe(404);
   });
 
-  test("status, code, and opening balances cannot be set by the client (mass assignment)", async ({ apiAs, testTag }) => {
+  test("status, code, and opening balances cannot be set by the client (mass assignment)", async ({
+    apiAs,
+    testTag,
+  }) => {
     const seller = await apiAs("FITNESS_MANAGER");
     const customer = await createCustomerViaApi(seller, testTag);
 
     const response = await seller.post(`/api/v1/customers/${customer.id}/contracts`, {
       headers: { "idempotency-key": randomUUID() },
-      data: { ...PT24, status: "ACTIVE", contractCode: "HD999999", openingSessionsUsed: 20, openingPaidAmount: 12_000_000 },
+      data: {
+        ...PT24,
+        status: "ACTIVE",
+        contractCode: "HD999999",
+        openingSessionsUsed: 20,
+        openingPaidAmount: 12_000_000,
+      },
     });
 
     expect(await response.json()).toMatchObject({
@@ -82,7 +101,10 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
     expect(await response.json()).toMatchObject({ code: "IDEMPOTENCY_KEY_REQUIRED" });
   });
 
-  test("a replay returns the original with 200; reusing the key for other content is 409", async ({ apiAs, testTag }) => {
+  test("a replay returns the original with 200; reusing the key for other content is 409", async ({
+    apiAs,
+    testTag,
+  }) => {
     const seller = await apiAs("FITNESS_MANAGER");
     const customer = await createCustomerViaApi(seller, testTag);
     const headers = { "idempotency-key": randomUUID() };
@@ -128,7 +150,11 @@ test.describe("A10 contract input errors", () => {
 
   test("an active contract cannot be edited, and an unknown customer is 404", async ({ apiAs, testTag }) => {
     const seller = await apiAs("FITNESS_MANAGER");
-    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), (await createCustomerViaApi(seller, testTag)).id, { activateWith: await apiAs("ADMIN") });
+    const contract = await createContractViaApi(
+      await apiAs("FITNESS_MANAGER"),
+      (await createCustomerViaApi(seller, testTag)).id,
+      { activateWith: await apiAs("ADMIN") },
+    );
 
     const edit = await seller.patch(`/api/v1/contracts/${contract.id}`, { data: PT24 });
     expect(edit.status()).toBe(409);

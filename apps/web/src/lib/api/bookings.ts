@@ -29,7 +29,10 @@ export async function listBookings(params: BookingQuery) {
 
 /** One gym day (dd/MM/yyyy) of the PT calendar. */
 export async function listDayBookings(params: { date: string; trainerId?: string }) {
-  const { items } = await read(bookingListSchema, (await api()).GET("/api/v1/schedule", { params: { query: query(params) } }));
+  const { items } = await read(
+    bookingListSchema,
+    (await api()).GET("/api/v1/schedule", { params: { query: query(params) } }),
+  );
   return items;
 }
 
@@ -55,5 +58,8 @@ export async function checkIn(id: string) {
 
 /** Returns the booking and the contract with its new remaining sessions. */
 export async function completeSession(id: string) {
-  return read(sessionCompletionSchema, (await api()).POST("/api/v1/bookings/{id}/complete", { params: { path: { id } } }));
+  return read(
+    sessionCompletionSchema,
+    (await api()).POST("/api/v1/bookings/{id}/complete", { params: { path: { id } } }),
+  );
 }

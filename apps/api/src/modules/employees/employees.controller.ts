@@ -69,7 +69,11 @@ export class EmployeesController {
   @Patch(":id")
   @RequirePermission("employee.manage")
   @ApiResult(employeeSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: employeeInputSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: employeeInputSchema }) body: unknown,
+  ) {
     return encode(employeeSchema, await updateEmployee(actor, id, body));
   }
 
@@ -85,14 +89,22 @@ export class EmployeesController {
   @Put(":id/shifts")
   @RequirePermission("employee.manage")
   @ApiResult(workScheduleSchema)
-  async shifts(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: shiftsInputSchema }) body: unknown) {
+  async shifts(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: shiftsInputSchema }) body: unknown,
+  ) {
     return encode(workScheduleSchema, await replaceShifts(actor, id, body));
   }
 
   @Post(":id/days-off")
   @RequirePermission("employee.manage")
   @ApiResult(dayOffSchema, 201, "Created")
-  async addDayOff(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: dayOffInputSchema }) body: unknown) {
+  async addDayOff(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: dayOffInputSchema }) body: unknown,
+  ) {
     return encode(dayOffSchema, await addDayOff(actor, id, body));
   }
 
@@ -100,7 +112,11 @@ export class EmployeesController {
   @RequirePermission("employee.manage")
   @HttpCode(204)
   @ApiNoContentResponse({ description: "The employee works that day again" })
-  async removeDayOff(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Param("dayOffId") dayOffId: string): Promise<void> {
+  async removeDayOff(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Param("dayOffId") dayOffId: string,
+  ): Promise<void> {
     await removeDayOff(actor, id, dayOffId);
   }
 }

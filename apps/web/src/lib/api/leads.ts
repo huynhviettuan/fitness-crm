@@ -15,7 +15,14 @@ import { api, query, read } from "./client";
 
 // Leads (brief §4.1): people before Show, in the record they keep as customers (D-019).
 
-export type LeadQuery = { q?: string; status?: LeadStatus; channelId?: string; sourceId?: string; needGroupId?: string; page?: number };
+export type LeadQuery = {
+  q?: string;
+  status?: LeadStatus;
+  channelId?: string;
+  sourceId?: string;
+  needGroupId?: string;
+  page?: number;
+};
 export type LeadBoardQuery = Omit<LeadQuery, "status" | "page">;
 
 export async function listLeads(params: LeadQuery) {
@@ -31,7 +38,10 @@ export async function createLead(input: LeadInput) {
 }
 
 export async function updateLead(id: string, input: LeadUpdateInput) {
-  return read(leadSchema, (await api()).PATCH("/api/v1/leads/{id}", { params: { path: { id } }, body: input as never }));
+  return read(
+    leadSchema,
+    (await api()).PATCH("/api/v1/leads/{id}", { params: { path: { id } }, body: input as never }),
+  );
 }
 
 /** The Kanban board (FR-LEAD-006). */
@@ -44,11 +54,17 @@ export async function getLeadTimeline(id: string) {
 }
 
 export async function changeLeadStatus(id: string, input: LeadStatusChangeInput) {
-  return read(leadSchema, (await api()).POST("/api/v1/leads/{id}/status", { params: { path: { id } }, body: input as never }));
+  return read(
+    leadSchema,
+    (await api()).POST("/api/v1/leads/{id}/status", { params: { path: { id } }, body: input as never }),
+  );
 }
 
 export async function listLeadAssignees(id: string) {
-  const { items } = await read(leadAssigneesSchema, (await api()).GET("/api/v1/leads/{id}/assignees", { params: { path: { id } } }));
+  const { items } = await read(
+    leadAssigneesSchema,
+    (await api()).GET("/api/v1/leads/{id}/assignees", { params: { path: { id } } }),
+  );
   return items;
 }
 

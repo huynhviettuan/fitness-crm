@@ -24,7 +24,13 @@ export async function createBranch(actor: Actor, input: unknown): Promise<Branch
   return withNameConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
       const branch = await tx.branch.create({ data, select: branchSelect });
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "branch", entityId: branch.id, action: "branch.created", after: data });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "branch",
+        entityId: branch.id,
+        action: "branch.created",
+        after: data,
+      });
       return branch;
     }),
   );
@@ -39,7 +45,13 @@ export async function updateBranch(actor: Actor, id: string, input: unknown): Pr
       const before = await tx.branch.findUnique({ where: { id }, select: branchSelect });
       if (!before) throw new AppError("NOT_FOUND");
       const after = await tx.branch.update({ where: { id }, data, select: branchSelect });
-      await recordAudit(tx, { actorUserId: actor.id, entityType: "branch", entityId: id, action: "branch.updated", ...diffFields(before, after, ["name", "address", "active"]) });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "branch",
+        entityId: id,
+        action: "branch.updated",
+        ...diffFields(before, after, ["name", "address", "active"]),
+      });
       return after;
     }),
   );
@@ -58,7 +70,8 @@ async function withNameConflictsMapped<T>(body: () => Promise<T>): Promise<T> {
   try {
     return await body();
   } catch (error) {
-    if (isUniqueViolation(error)) throw new AppError("VALIDATION_FAILED", { fieldErrors: { name: ["nameAlreadyUsed"] } });
+    if (isUniqueViolation(error))
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { name: ["nameAlreadyUsed"] } });
     throw error;
   }
 }

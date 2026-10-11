@@ -48,7 +48,10 @@ export const optionInputSchema = z.object({
 
 /** The whole list in its new order. */
 export const optionOrderSchema = z.object({
-  optionIds: z.array(z.uuid({ error: "invalidChoice" })).min(1, { error: "required" }).max(500, { error: "tooLong" }),
+  optionIds: z
+    .array(z.uuid({ error: "invalidChoice" }))
+    .min(1, { error: "required" })
+    .max(500, { error: "tooLong" }),
 });
 
 export const listOptionsQuerySchema = z.object({

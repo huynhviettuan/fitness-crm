@@ -56,7 +56,11 @@ export class ApprovalsController {
   @AnySignedInUser()
   @HttpCode(204)
   @ApiNoContentResponse({ description: "Rejected; nothing changed" })
-  async reject(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: rejectSchema }) body: unknown): Promise<void> {
+  async reject(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: rejectSchema }) body: unknown,
+  ): Promise<void> {
     await rejectRequest(actor, id, body);
   }
 }
@@ -77,7 +81,11 @@ export class ApprovalRulesController {
   @Put(":action")
   @RequirePermission("approval.manage")
   @ApiResult(approvalRuleSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("action") action: string, @Body({ schema: approvalRuleInputSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("action") action: string,
+    @Body({ schema: approvalRuleInputSchema }) body: unknown,
+  ) {
     return encode(approvalRuleSchema, await updateRule(actor, action, body));
   }
 }

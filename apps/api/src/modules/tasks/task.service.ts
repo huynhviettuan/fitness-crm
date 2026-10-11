@@ -34,7 +34,15 @@ import * as repo from "./task.repository.js";
 // department) accepts → in progress → done; the assigner can cancel. Everyone sees what
 // they gave, what they got, and their department's; "all" scope sees the branch's.
 
-const AUDITED_FIELDS = ["title", "description", "assigneeUserId", "assigneeDepartmentId", "dueAt", "priority", "status"] as const;
+const AUDITED_FIELDS = [
+  "title",
+  "description",
+  "assigneeUserId",
+  "assigneeDepartmentId",
+  "dueAt",
+  "priority",
+  "status",
+] as const;
 
 type Me = { actor: Actor; departmentId: string | null };
 
@@ -45,16 +53,28 @@ async function me(db: Db, actor: Actor): Promise<Me> {
 /** The tasks an actor may see (D-017 scope "tasks"). */
 function tasksVisibleTo({ actor, departmentId }: Me): Prisma.TaskWhereInput {
   const own: Prisma.TaskWhereInput = {
-    OR: [{ assignerId: actor.id }, { assigneeUserId: actor.id }, ...(departmentId ? [{ assigneeDepartmentId: departmentId }] : [])],
+    OR: [
+      { assignerId: actor.id },
+      { assigneeUserId: actor.id },
+      ...(departmentId ? [{ assigneeDepartmentId: departmentId }] : []),
+    ],
   };
   return { AND: [inBranches(actor), isOwnOnly(actor, "tasks") ? own : {}] };
 }
 
-function viewWhere({ actor, departmentId }: Me, view: "mine" | "assigned" | "department" | "all"): Prisma.TaskWhereInput {
+function viewWhere(
+  { actor, departmentId }: Me,
+  view: "mine" | "assigned" | "department" | "all",
+): Prisma.TaskWhereInput {
   switch (view) {
     case "mine":
       // Given to me, or waiting in my department for someone to accept it.
-      return { OR: [{ assigneeUserId: actor.id }, ...(departmentId ? [{ assigneeUserId: null, assigneeDepartmentId: departmentId }] : [])] };
+      return {
+        OR: [
+          { assigneeUserId: actor.id },
+          ...(departmentId ? [{ assigneeUserId: null, assigneeDepartmentId: departmentId }] : []),
+        ],
+      };
     case "assigned":
       return { assignerId: actor.id };
     case "department":
@@ -65,7 +85,10 @@ function viewWhere({ actor, departmentId }: Me, view: "mine" | "assigned" | "dep
   }
 }
 
-const openWhere = (now: Date): Prisma.TaskWhereInput => ({ status: { in: [...OPEN_TASK_STATUSES] }, dueAt: { lt: now } });
+const openWhere = (now: Date): Prisma.TaskWhereInput => ({
+  status: { in: [...OPEN_TASK_STATUSES] },
+  dueAt: { lt: now },
+});
 
 export async function listTasks(actor: Actor, rawQuery: unknown) {
   assertCan(actor, "task.view");
@@ -80,7 +103,10 @@ export async function listTasks(actor: Actor, rawQuery: unknown) {
       query.q ? { title: { contains: query.q, mode: "insensitive" } } : {},
     ],
   };
-  const { items, total } = await repo.listTasks(prisma, where, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  const { items, total } = await repo.listTasks(prisma, where, {
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  });
   return { items: await toViews(prisma, self, items), total, page: query.page, pageSize: query.pageSize };
 }
 
@@ -109,7 +135,9 @@ export async function createTask(actor: Actor, input: unknown): Promise<TaskDeta
   return prisma.$transaction(async (tx) => {
     // A task about a record belongs to the record's branch (A-031); otherwise to the chosen one.
     const branchId =
-      data.entityType && data.entityId ? await entityBranch(tx, actor, data.entityType, data.entityId) : await resolveBranch(tx, actor, data.branchId);
+      data.entityType && data.entityId
+        ? await entityBranch(tx, actor, data.entityType, data.entityId)
+        : await resolveBranch(tx, actor, data.branchId);
     await assertAssignee(tx, data, branchId);
     const task = await repo.createTask(tx, {
       branchId,
@@ -130,7 +158,11 @@ export async function createTask(actor: Actor, input: unknown): Promise<TaskDeta
       action: "task.created",
       after: { ...pick(task, AUDITED_FIELDS), entityType: task.entityType, entityId: task.entityId },
     });
-    await notifyAssignees(tx, task, actor.id, { kind: "taskAssigned", params: { title: task.title, by: task.assigner.name }, link: link(task) });
+    await notifyAssignees(tx, task, actor.id, {
+      kind: "taskAssigned",
+      params: { title: task.title, by: task.assigner.name },
+      link: link(task),
+    });
     return detail(tx, await me(tx, actor), task);
   });
 }
@@ -143,7 +175,8 @@ export async function updateTask(actor: Actor, id: string, input: unknown): Prom
     if (!actionsFor(self, before).includes("edit")) throw notAllowed(actor, before, "edit");
     await assertAssignee(tx, data, before.branchId);
     const dueAt = instantAt(data.dueDate, data.dueTime, env.GYM_TIMEZONE);
-    const reassigned = data.assigneeUserId !== before.assigneeUserId || data.assigneeDepartmentId !== before.assigneeDepartmentId;
+    const reassigned =
+      data.assigneeUserId !== before.assigneeUserId || data.assigneeDepartmentId !== before.assigneeDepartmentId;
     const after = await repo.updateTask(tx, id, {
       title: data.title,
       description: data.description,
@@ -156,9 +189,20 @@ export async function updateTask(actor: Actor, id: string, input: unknown): Prom
       ...(dueAt.getTime() !== before.dueAt.getTime() ? { dueSoonNotifiedAt: null, overdueNotifiedAt: null } : {}),
     });
     const changes = diffFields(before, after, AUDITED_FIELDS);
-    if (changes) await recordAudit(tx, { actorUserId: actor.id, entityType: "task", entityId: id, action: "task.updated", ...changes });
+    if (changes)
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "task",
+        entityId: id,
+        action: "task.updated",
+        ...changes,
+      });
     if (reassigned) {
-      await notifyAssignees(tx, after, actor.id, { kind: "taskAssigned", params: { title: after.title, by: after.assigner.name }, link: link(after) });
+      await notifyAssignees(tx, after, actor.id, {
+        kind: "taskAssigned",
+        params: { title: after.title, by: after.assigner.name },
+        link: link(after),
+      });
     }
     return after;
   });
@@ -202,8 +246,10 @@ export async function moveTask(actor: Actor, id: string, action: keyof typeof TR
     });
     const params = { title: after.title, by: actorName(after, actor.id) };
     if (action === "accept") await notify(tx, [after.assignerId], { kind: "taskAccepted", params, link: link(after) });
-    if (action === "complete") await notify(tx, [after.assignerId], { kind: "taskCompleted", params, link: link(after) });
-    if (action === "cancel") await notifyAssignees(tx, after, actor.id, { kind: "taskCancelled", params, link: link(after) });
+    if (action === "complete")
+      await notify(tx, [after.assignerId], { kind: "taskCompleted", params, link: link(after) });
+    if (action === "cancel")
+      await notifyAssignees(tx, after, actor.id, { kind: "taskCancelled", params, link: link(after) });
     return after;
   });
 }
@@ -216,7 +262,8 @@ export async function addComment(actor: Actor, id: string, input: unknown): Prom
     if (!actionsFor(self, task).includes("comment")) throw notAllowed(actor, task, "comment");
     const mentions = [...new Set(data.mentions)];
     const usable = await repo.usableUsers(tx, mentions, task.branchId);
-    if (mentions.some((userId) => !usable.has(userId))) throw new AppError("VALIDATION_FAILED", { fieldErrors: { mentions: ["invalidChoice"] } });
+    if (mentions.some((userId) => !usable.has(userId)))
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { mentions: ["invalidChoice"] } });
     const comment = await repo.createComment(tx, { taskId: id, authorId: actor.id, body: data.body, mentions });
     await recordAudit(tx, {
       actorUserId: actor.id,
@@ -227,8 +274,14 @@ export async function addComment(actor: Actor, id: string, input: unknown): Prom
     });
     const author = (await repo.namesOf(tx, [actor.id]))[0]?.name ?? "";
     const params = { title: task.title, by: author };
-    const others = [task.assignerId, task.assigneeUserId].filter((userId) => userId && userId !== actor.id && !mentions.includes(userId));
-    await notify(tx, mentions.filter((userId) => userId !== actor.id), { kind: "taskMentioned", params, link: link(task) });
+    const others = [task.assignerId, task.assigneeUserId].filter(
+      (userId) => userId && userId !== actor.id && !mentions.includes(userId),
+    );
+    await notify(
+      tx,
+      mentions.filter((userId) => userId !== actor.id),
+      { kind: "taskMentioned", params, link: link(task) },
+    );
     await notify(tx, others, { kind: "taskCommented", params, link: link(task) });
     return task;
   });
@@ -237,7 +290,10 @@ export async function addComment(actor: Actor, id: string, input: unknown): Prom
 /** People and departments a task can go to in the actor's branches. */
 export async function taskAssignees(actor: Actor): Promise<TaskAssignees> {
   assertCan(actor, "task.view");
-  const [users, departments] = await Promise.all([repo.assignableUsers(prisma, actor.branches), repo.activeDepartments(prisma)]);
+  const [users, departments] = await Promise.all([
+    repo.assignableUsers(prisma, actor.branches),
+    repo.activeDepartments(prisma),
+  ]);
   return {
     users: users.map((user) => ({
       id: user.id,
@@ -260,12 +316,20 @@ export async function remindTasks(now: Date = new Date()): Promise<{ dueSoon: nu
   return prisma.$transaction(async (tx) => {
     const overdue = await repo.claimOverdue(tx, now);
     for (const row of overdue) {
-      const notification: NewNotification = { kind: "taskOverdue", params: { title: row.title, due: due(row.due_at) }, link: `/tasks/${row.id}` };
+      const notification: NewNotification = {
+        kind: "taskOverdue",
+        params: { title: row.title, due: due(row.due_at) },
+        link: `/tasks/${row.id}`,
+      };
       await notify(tx, [...(await rowAssignees(tx, row)), row.assigner_id], notification);
     }
     const dueSoon = await repo.claimDueSoon(tx, now, new Date(now.getTime() + hours * 3_600_000));
     for (const row of dueSoon) {
-      await notify(tx, await rowAssignees(tx, row), { kind: "taskDueSoon", params: { title: row.title, due: due(row.due_at) }, link: `/tasks/${row.id}` });
+      await notify(tx, await rowAssignees(tx, row), {
+        kind: "taskDueSoon",
+        params: { title: row.title, due: due(row.due_at) },
+        link: `/tasks/${row.id}`,
+      });
     }
     return { dueSoon: dueSoon.length, overdue: overdue.length };
   });
@@ -273,7 +337,9 @@ export async function remindTasks(now: Date = new Date()): Promise<{ dueSoon: nu
 
 async function rowAssignees(db: Db, row: repo.ReminderRow): Promise<string[]> {
   if (row.assignee_user_id) return [row.assignee_user_id];
-  return row.assignee_department_option_id ? repo.departmentMembers(db, row.assignee_department_option_id, row.branch_id) : [];
+  return row.assignee_department_option_id
+    ? repo.departmentMembers(db, row.assignee_department_option_id, row.branch_id)
+    : [];
 }
 
 // ---------------------------------------------------------------- helpers
@@ -283,7 +349,8 @@ function actionsFor({ actor, departmentId }: Me, task: repo.TaskRecord): TaskAct
   const actions: TaskAction[] = [];
   const open = (OPEN_TASK_STATUSES as readonly string[]).includes(task.status);
   const mine = task.assigneeUserId === actor.id;
-  const waitingInMyDepartment = task.assigneeUserId === null && departmentId !== null && task.assigneeDepartmentId === departmentId;
+  const waitingInMyDepartment =
+    task.assigneeUserId === null && departmentId !== null && task.assigneeDepartmentId === departmentId;
   const oversees = task.assignerId === actor.id || !isOwnOnly(actor, "tasks");
   if (task.status === "NEW" && (mine || waitingInMyDepartment)) actions.push("accept");
   if (task.status === "ACCEPTED" && mine) actions.push("start");
@@ -317,18 +384,24 @@ async function visibleTask(db: Db, self: Me, id: string): Promise<repo.TaskRecor
 
 /** A done or cancelled task is a conflict; anything else the actor may not do is forbidden. */
 function notAllowed(actor: Actor, task: repo.TaskRecord, what: string): AppError {
-  if (!(OPEN_TASK_STATUSES as readonly string[]).includes(task.status)) return new AppError("INVALID_STATUS_TRANSITION");
+  if (!(OPEN_TASK_STATUSES as readonly string[]).includes(task.status))
+    return new AppError("INVALID_STATUS_TRANSITION");
   return forbidden(actor, "task.view", `task ${what} not allowed`);
 }
 
 /** One active person who works in the branch, or an active department (not "Khác"). */
-async function assertAssignee(db: Db, data: { assigneeUserId: string | null; assigneeDepartmentId: string | null }, branchId: string) {
+async function assertAssignee(
+  db: Db,
+  data: { assigneeUserId: string | null; assigneeDepartmentId: string | null },
+  branchId: string,
+) {
   if (data.assigneeUserId && !(await repo.usableUsers(db, [data.assigneeUserId], branchId)).has(data.assigneeUserId)) {
     throw new AppError("VALIDATION_FAILED", { fieldErrors: { assigneeUserId: ["invalidChoice"] } });
   }
   if (data.assigneeDepartmentId) {
     const department = await repo.findDepartment(db, data.assigneeDepartmentId);
-    if (!department?.active || department.isOther) throw new AppError("VALIDATION_FAILED", { fieldErrors: { assigneeDepartmentId: ["invalidChoice"] } });
+    if (!department?.active || department.isOther)
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { assigneeDepartmentId: ["invalidChoice"] } });
   }
 }
 
@@ -337,7 +410,10 @@ async function entityBranch(db: Db, actor: Actor, type: TaskEntityType, id: stri
   const found =
     type === "customer"
       ? await db.customer.findFirst({ where: { AND: [{ id }, customersVisibleTo(actor)] }, select: { branchId: true } })
-      : await db.contract.findFirst({ where: { AND: [{ id }, contractsVisibleTo(actor)] }, select: { branchId: true } });
+      : await db.contract.findFirst({
+          where: { AND: [{ id }, contractsVisibleTo(actor)] },
+          select: { branchId: true },
+        });
   if (!found) throw new AppError("VALIDATION_FAILED", { fieldErrors: { entityId: ["invalidChoice"] } });
   return found.branchId;
 }
@@ -348,7 +424,11 @@ async function notifyAssignees(db: Db, task: repo.TaskRecord, except: string, no
     : task.assigneeDepartmentId
       ? await repo.departmentMembers(db, task.assigneeDepartmentId, task.branchId)
       : [];
-  await notify(db, users.filter((userId) => userId !== except), notification);
+  await notify(
+    db,
+    users.filter((userId) => userId !== except),
+    notification,
+  );
 }
 
 function actorName(task: repo.TaskRecord, actorId: string): string {
@@ -382,7 +462,9 @@ function pick<T extends object, K extends keyof T>(value: T, keys: readonly K[])
 async function toViews(db: Db, self: Me, tasks: repo.TaskRecord[]): Promise<TaskView[]> {
   const labels = await repo.entityLabels(
     db,
-    tasks.filter((task) => task.entityType && task.entityId).map((task) => ({ type: task.entityType!, id: task.entityId! })),
+    tasks
+      .filter((task) => task.entityType && task.entityId)
+      .map((task) => ({ type: task.entityType!, id: task.entityId! })),
   );
   const now = Date.now();
   return tasks.map((task) => ({
@@ -399,7 +481,11 @@ async function toViews(db: Db, self: Me, tasks: repo.TaskRecord[]): Promise<Task
     department: task.assigneeDepartment && chosen(task.assigneeDepartment, null),
     entity:
       task.entityType && task.entityId
-        ? { type: task.entityType as TaskEntityType, id: task.entityId, label: labels.get(task.entityId) ?? task.entityId }
+        ? {
+            type: task.entityType as TaskEntityType,
+            id: task.entityId,
+            label: labels.get(task.entityId) ?? task.entityId,
+          }
         : null,
     createdAt: task.createdAt,
     acceptedAt: task.acceptedAt,
@@ -419,9 +505,10 @@ async function detail(db: Db, self: Me, task: repo.TaskRecord): Promise<TaskDeta
       id: comment.id,
       author: comment.author,
       body: comment.body,
-      mentions: comment.mentions.map((userId) => names.get(userId)).filter((user): user is { id: string; name: string } => Boolean(user)),
+      mentions: comment.mentions
+        .map((userId) => names.get(userId))
+        .filter((user): user is { id: string; name: string } => Boolean(user)),
       createdAt: comment.createdAt,
     })),
   };
 }
-

@@ -43,7 +43,8 @@ test.describe("A02 the app works under its Content Security Policy", () => {
   test("no CSP violations while using the main screens", async ({ page, shell, customersPage }) => {
     const violations: string[] = [];
     page.on("console", (message) => {
-      if (/Content Security Policy|Refused to (load|execute|apply)/i.test(message.text())) violations.push(message.text());
+      if (/Content Security Policy|Refused to (load|execute|apply)/i.test(message.text()))
+        violations.push(message.text());
     });
 
     await page.goto("/dashboard");

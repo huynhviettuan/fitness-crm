@@ -38,7 +38,9 @@ export const taskCommentViewSchema = z
   .object({ id: z.uuid(), author: person, body: z.string(), mentions: z.array(person), createdAt: instant })
   .meta({ id: "TaskComment" });
 
-export const taskDetailSchema = taskSchema.extend({ comments: z.array(taskCommentViewSchema) }).meta({ id: "TaskDetail" });
+export const taskDetailSchema = taskSchema
+  .extend({ comments: z.array(taskCommentViewSchema) })
+  .meta({ id: "TaskDetail" });
 
 /** Who a task can go to in the user's branches: active people, and departments. */
 export const taskAssigneesSchema = z

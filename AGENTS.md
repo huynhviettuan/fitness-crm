@@ -60,6 +60,7 @@ In `docs/18_DECISIONS_ASSUMPTIONS.md`:
 ## 4. Engineering rules
 
 - TypeScript strict mode everywhere.
+- Code is formatted by Prettier (`prettier.config.mjs`: 120-character lines, Tailwind classes sorted) and linted with the readability rules in `packages/config/eslint.mjs`. Run `pnpm format` before committing; CI runs `pnpm format:check`.
 - Validate all external input at the API boundary with Zod schemas shared from `packages/shared`.
 - Every endpoint declares a permission key and is checked by the API guards: effective permissions, branch access, login hours, data scope, field masking (T-046). Hiding UI is never authorization. Controllers declare `@RequirePermission(...)` or `@AnySignedInUser()`; services check data scope and branches through `platform/permissions` (T-054), and the web hides UI from the permissions `GET /me` returns.
 - Use database transactions for operations that change more than one record; keep lock order contract → session/booking (T-013, T-036, T-040, T-050).
@@ -151,6 +152,7 @@ pnpm db:migrate           # create/apply a migration (prisma migrate dev, in app
 pnpm db:seed              # first admin; pnpm db:seed:demo adds demo data (local only)
 pnpm typecheck
 pnpm lint
+pnpm format               # Prettier on the whole repository; pnpm format:check only checks
 pnpm test                 # unit (Vitest) in every package
 pnpm test:integration     # API integration tests against TEST_DATABASE_URL
 pnpm test:e2e             # builds both apps, then Playwright against E2E_DATABASE_URL

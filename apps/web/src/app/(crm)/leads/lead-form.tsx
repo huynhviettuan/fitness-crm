@@ -48,7 +48,8 @@ type FormValues = {
 };
 
 /** Select items cannot be empty, so "none" has its own value; it is sent as "". */
-const fromNone = (values: Record<string, unknown>) => Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value === NO_OPTION ? "" : value]));
+const fromNone = (values: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value === NO_OPTION ? "" : value]));
 // The schema the server uses, after "none" becomes "" (D-016).
 const formSchema = z.preprocess((value) => fromNone(value as Record<string, unknown>), leadInputSchema);
 
@@ -134,7 +135,10 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
   const [duplicate, setDuplicate] = useState<DuplicatePerson | null>(null);
   // A new lead starts with the three things reception asks first; the rest unfolds.
   const [more, setMore] = useState(lead !== null);
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema as never, undefined, { raw: true }) as never, defaultValues: defaultsOf(lead) });
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema as never, undefined, { raw: true }) as never,
+    defaultValues: defaultsOf(lead),
+  });
   const masked = lead?.maskedFields ?? [];
   const none = t("leads.noOption");
 
@@ -173,9 +177,22 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
         )}
         <TextField control={form.control} name="fullName" label={f("fullName")} autoComplete="off" />
         {!masked.includes("phone") && (
-          <TextField control={form.control} name="phone" label={f("phone")} type="tel" inputMode="tel" placeholder={t("leads.phonePlaceholder")} />
+          <TextField
+            control={form.control}
+            name="phone"
+            label={f("phone")}
+            type="tel"
+            inputMode="tel"
+            placeholder={t("leads.phonePlaceholder")}
+          />
         )}
-        <OptionSelect control={form.control} name="channelId" noteName="channelNote" listKey="leadChannels" label={f("channel")} />
+        <OptionSelect
+          control={form.control}
+          name="channelId"
+          noteName="channelNote"
+          listKey="leadChannels"
+          label={f("channel")}
+        />
         <DuplicateNotice duplicate={duplicate} />
         {!more ? (
           <Button type="button" variant="ghost" className="justify-start" onClick={() => setMore(true)}>
@@ -184,20 +201,44 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
           </Button>
         ) : (
           <>
-            <OptionSelect control={form.control} name="sourceId" noteName="sourceNote" listKey="leadSources" label={f("source")} noneLabel={none} />
+            <OptionSelect
+              control={form.control}
+              name="sourceId"
+              noteName="sourceNote"
+              listKey="leadSources"
+              label={f("source")}
+              noneLabel={none}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectField
                 control={form.control}
                 name="sourceType"
                 label={f("sourceType")}
-                options={[{ value: NO_OPTION, label: none }, ...SOURCE_TYPES.map((value) => ({ value, label: t(`leads.sourceTypes.${value}`) }))]}
+                options={[
+                  { value: NO_OPTION, label: none },
+                  ...SOURCE_TYPES.map((value) => ({ value, label: t(`leads.sourceTypes.${value}`) })),
+                ]}
               />
               <TextField control={form.control} name="sourceDetail" label={f("sourceDetail")} autoComplete="off" />
             </div>
-            <OptionSelect control={form.control} name="needGroupId" noteName="needGroupNote" listKey="needGroups" label={f("needGroup")} noneLabel={none} />
+            <OptionSelect
+              control={form.control}
+              name="needGroupId"
+              noteName="needGroupNote"
+              listKey="needGroups"
+              label={f("needGroup")}
+              noneLabel={none}
+            />
             <TextField control={form.control} name="needDetail" label={f("needDetail")} multiline />
             <div className="grid gap-4 sm:grid-cols-2">
-              <OptionSelect control={form.control} name="painStatusId" noteName="painStatusNote" listKey="painStatuses" label={f("painStatus")} noneLabel={none} />
+              <OptionSelect
+                control={form.control}
+                name="painStatusId"
+                noteName="painStatusNote"
+                listKey="painStatuses"
+                label={f("painStatus")}
+                noneLabel={none}
+              />
               <OptionSelect
                 control={form.control}
                 name="assessmentTypeId"
@@ -212,16 +253,30 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
                 control={form.control}
                 name="gender"
                 label={f("gender")}
-                options={[{ value: NO_OPTION, label: none }, ...GENDERS.map((value) => ({ value, label: t(`leads.genders.${value}`) }))]}
+                options={[
+                  { value: NO_OPTION, label: none },
+                  ...GENDERS.map((value) => ({ value, label: t(`leads.genders.${value}`) })),
+                ]}
               />
-              <TextField control={form.control} name="birthDate" label={f("birthDate")} placeholder={t("leads.birthDatePlaceholder")} inputMode="numeric" />
+              <TextField
+                control={form.control}
+                name="birthDate"
+                label={f("birthDate")}
+                placeholder={t("leads.birthDatePlaceholder")}
+                inputMode="numeric"
+              />
             </div>
-            {!masked.includes("email") && <TextField control={form.control} name="email" label={f("email")} type="email" />}
+            {!masked.includes("email") && (
+              <TextField control={form.control} name="email" label={f("email")} type="email" />
+            )}
             <SelectField
               control={form.control}
               name="nationalityGroup"
               label={f("nationalityGroup")}
-              options={[{ value: NO_OPTION, label: none }, ...NATIONALITY_GROUPS.map((value) => ({ value, label: t(`leads.nationalityGroups.${value}`) }))]}
+              options={[
+                { value: NO_OPTION, label: none },
+                ...NATIONALITY_GROUPS.map((value) => ({ value, label: t(`leads.nationalityGroups.${value}`) })),
+              ]}
             />
             <TextField control={form.control} name="notes" label={f("notes")} multiline />
           </>

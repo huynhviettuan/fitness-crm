@@ -28,7 +28,8 @@ export function requestGuards(request: Request, response: Response, next: NextFu
   }
 
   const contentType = request.headers["content-type"];
-  const hasBody = Number(request.headers["content-length"] ?? 0) > 0 || request.headers["transfer-encoding"] !== undefined;
+  const hasBody =
+    Number(request.headers["content-length"] ?? 0) > 0 || request.headers["transfer-encoding"] !== undefined;
   if ((contentType !== undefined || hasBody) && !/^application\/json\b/i.test(contentType ?? "")) {
     return sendError(response, new AppError("UNSUPPORTED_MEDIA_TYPE"));
   }

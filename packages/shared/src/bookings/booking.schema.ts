@@ -27,7 +27,10 @@ export const bookingInputSchema = z
 /** Reschedule: a new trainer and time. The customer and contract never change. */
 export const rescheduleSchema = z.object({ trainerId: reference, ...slot }).refine(endsAfterStart, endTimeError);
 
-const optionalDate = z.union([z.literal(""), calendarDate]).optional().transform((value) => value || undefined);
+const optionalDate = z
+  .union([z.literal(""), calendarDate])
+  .optional()
+  .transform((value) => value || undefined);
 
 export const listBookingsSchema = z.object({
   /** First and last gym day, inclusive (dd/MM/yyyy). */

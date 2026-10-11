@@ -22,7 +22,10 @@ test.describe("A01 employee roles (09_RBAC.md)", () => {
     });
   }
 
-  test("a PT sees only their own profile and schedule, and changes neither (staff scope only mine)", async ({ apiAs, testTag }) => {
+  test("a PT sees only their own profile and schedule, and changes neither (staff scope only mine)", async ({
+    apiAs,
+    testTag,
+  }) => {
     const other = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), testTag);
     const pt = await apiAs("PT");
 
@@ -34,22 +37,32 @@ test.describe("A01 employee roles (09_RBAC.md)", () => {
       expect((await pt.get(path)).status(), path).toBe(404);
     }
     expect((await pt.put(`/api/v1/employees/${own.id}/shifts`, { data: { shifts: [] } })).status()).toBe(403);
-    expect((await pt.post(`/api/v1/employees/${own.id}/days-off`, { data: { date: BOOKING_DAY.date } })).status()).toBe(403);
+    expect((await pt.post(`/api/v1/employees/${own.id}/days-off`, { data: { date: BOOKING_DAY.date } })).status()).toBe(
+      403,
+    );
     expect((await pt.patch(`/api/v1/employees/${own.id}`, { data: { fullName: "X" } })).status()).toBe(403);
   });
 
-  test("the calendar's trainers are open to booking staff, and a PT gets only their own row", async ({ apiAs, testTag }) => {
+  test("the calendar's trainers are open to booking staff, and a PT gets only their own row", async ({
+    apiAs,
+    testTag,
+  }) => {
     const trainer = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), testTag);
     const day = `/api/v1/schedule/trainers?date=${BOOKING_DAY.date}`;
 
     const forReception = await (await (await apiAs("RECEPTIONIST")).get(day)).json();
     expect(forReception.items.map((item: { trainer: { id: string } }) => item.trainer.id)).toContain(trainer.id);
     const forPt = await (await (await apiAs("PT")).get(day)).json();
-    expect(forPt.items.map((item: { trainer: { fullName: string } }) => item.trainer.fullName)).toEqual([E2E_TRAINER_NAME]);
+    expect(forPt.items.map((item: { trainer: { fullName: string } }) => item.trainer.fullName)).toEqual([
+      E2E_TRAINER_NAME,
+    ]);
     expect((await (await apiAs("ACCOUNTANT")).get(day)).status()).toBe(200);
   });
 
-  test("the code, the search name, and the record id cannot be set by the client (mass assignment)", async ({ apiAs, testTag }) => {
+  test("the code, the search name, and the record id cannot be set by the client (mass assignment)", async ({
+    apiAs,
+    testTag,
+  }) => {
     const manager = await apiAs("FITNESS_MANAGER");
     const id = randomUUID();
 
@@ -62,7 +75,9 @@ test.describe("A01 employee roles (09_RBAC.md)", () => {
     expect(body.employeeCode).toMatch(/^[A-Z]{1,5}\d{3,}$/);
     expect(body.employeeCode).not.toBe("HACK001");
     expect(body.id).not.toBe(id);
-    const updated = await manager.patch(`/api/v1/employees/${body.id}`, { data: { fullName: `NV ${testTag}`, employeeCode: "HACK002" } });
+    const updated = await manager.patch(`/api/v1/employees/${body.id}`, {
+      data: { fullName: `NV ${testTag}`, employeeCode: "HACK002" },
+    });
     expect((await updated.json()).employeeCode).toBe(body.employeeCode);
   });
 
@@ -78,7 +93,10 @@ test.describe("A01 employee roles (09_RBAC.md)", () => {
 });
 
 test.describe("A10 employee input errors", () => {
-  test("unknown or malformed ids are 404, and invalid fields, shifts, and days off are 400", async ({ apiAs, testTag }) => {
+  test("unknown or malformed ids are 404, and invalid fields, shifts, and days off are 400", async ({
+    apiAs,
+    testTag,
+  }) => {
     const manager = await apiAs("FITNESS_MANAGER");
     const trainer = await createTrainerViaApi(manager, testTag);
 
@@ -88,9 +106,15 @@ test.describe("A10 employee input errors", () => {
     }
     expect((await manager.delete(`/api/v1/employees/${trainer.id}/days-off/${randomUUID()}`)).status()).toBe(404);
 
-    const invalid = await manager.patch(`/api/v1/employees/${trainer.id}`, { data: { fullName: "", status: "FIRED", gender: "X" } });
+    const invalid = await manager.patch(`/api/v1/employees/${trainer.id}`, {
+      data: { fullName: "", status: "FIRED", gender: "X" },
+    });
     expect(invalid.status()).toBe(400);
-    expect((await invalid.json()).details.fieldErrors).toMatchObject({ fullName: ["required"], status: ["invalidChoice"], gender: ["invalidChoice"] });
+    expect((await invalid.json()).details.fieldErrors).toMatchObject({
+      fullName: ["required"],
+      status: ["invalidChoice"],
+      gender: ["invalidChoice"],
+    });
 
     const overlapping = await manager.put(`/api/v1/employees/${trainer.id}/shifts`, {
       data: {
@@ -102,8 +126,16 @@ test.describe("A10 employee input errors", () => {
     });
     expect(overlapping.status()).toBe(400);
     expect((await overlapping.json()).details.fieldErrors).toMatchObject({ shifts: ["shiftsOverlap"] });
-    expect((await manager.put(`/api/v1/employees/${trainer.id}/shifts`, { data: { shifts: [{ weekday: 9, start: "25:00", end: "x" }] } })).status()).toBe(400);
-    expect((await manager.post(`/api/v1/employees/${trainer.id}/days-off`, { data: { date: "31/02/2030" } })).status()).toBe(400);
+    expect(
+      (
+        await manager.put(`/api/v1/employees/${trainer.id}/shifts`, {
+          data: { shifts: [{ weekday: 9, start: "25:00", end: "x" }] },
+        })
+      ).status(),
+    ).toBe(400);
+    expect(
+      (await manager.post(`/api/v1/employees/${trainer.id}/days-off`, { data: { date: "31/02/2030" } })).status(),
+    ).toBe(400);
     expect((await manager.get("/api/v1/schedule/trainers")).status()).toBe(400);
   });
 
@@ -111,7 +143,9 @@ test.describe("A10 employee input errors", () => {
     const manager = await apiAs("FITNESS_MANAGER");
     const trainer = await createTrainerViaApi(manager, testTag);
 
-    expect((await manager.post(`/api/v1/employees/${trainer.id}/days-off`, { data: { date: BOOKING_DAY.date } })).status()).toBe(201);
+    expect(
+      (await manager.post(`/api/v1/employees/${trainer.id}/days-off`, { data: { date: BOOKING_DAY.date } })).status(),
+    ).toBe(201);
     const again = await manager.post(`/api/v1/employees/${trainer.id}/days-off`, { data: { date: BOOKING_DAY.date } });
 
     expect(again.status()).toBe(400);

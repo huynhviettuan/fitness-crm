@@ -37,7 +37,10 @@ export const cashTransactionInputSchema = z.object({
   description: text(500).transform(emptyToNull).prefault(""),
 });
 
-const optionalDate = z.union([z.literal(""), calendarDate]).optional().transform((value) => value || undefined);
+const optionalDate = z
+  .union([z.literal(""), calendarDate])
+  .optional()
+  .transform((value) => value || undefined);
 const paging = {
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),

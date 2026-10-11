@@ -54,7 +54,10 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
     }
   });
 
-  test("a trainer cannot open or act on another trainer's booking, even with its real id (A-007)", async ({ apiAs, testTag }) => {
+  test("a trainer cannot open or act on another trainer's booking, even with its real id (A-007)", async ({
+    apiAs,
+    testTag,
+  }) => {
     const { refs } = await bookingSetup(apiAs, testTag);
     const booking = await createBookingViaApi(await apiAs("RECEPTIONIST"), refs, SLOT);
     const trainer = await apiAs("PT");
@@ -85,12 +88,18 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
     const other = await bookingSetup(apiAs, `${testTag}b`);
     const moved = await (
       await reception.patch(`/api/v1/bookings/${created.id}`, {
-        data: { ...SLOT, trainerId: refs.trainerId, customerId: other.refs.customerId, contractId: other.refs.contractId, startTime: "20:00", endTime: "21:00" },
+        data: {
+          ...SLOT,
+          trainerId: refs.trainerId,
+          customerId: other.refs.customerId,
+          contractId: other.refs.contractId,
+          startTime: "20:00",
+          endTime: "21:00",
+        },
       })
     ).json();
     expect(moved).toMatchObject({ customer: { id: refs.customerId }, contract: { id: refs.contractId } });
   });
-
 });
 
 test.describe("A06 concurrency abuse over HTTP", () => {
@@ -100,7 +109,9 @@ test.describe("A06 concurrency abuse over HTTP", () => {
     const booking = await createBookingViaApi(manager, refs, SLOT);
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
 
-    const responses = await Promise.all(Array.from({ length: 10 }, () => manager.post(`/api/v1/bookings/${booking.id}/complete`)));
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, () => manager.post(`/api/v1/bookings/${booking.id}/complete`)),
+    );
 
     expect(responses.map((r) => r.status())).toEqual(Array(10).fill(200));
     const contract = await (await manager.get(`/api/v1/contracts/${refs.contractId}`)).json();
@@ -114,7 +125,9 @@ test.describe("A06 concurrency abuse over HTTP", () => {
 
     const responses = await Promise.all([
       manager.post("/api/v1/bookings", { data: { ...first.refs, ...SLOT } }),
-      manager.post("/api/v1/bookings", { data: { ...second.refs, trainerId: first.refs.trainerId, ...SLOT, startTime: "18:30", endTime: "19:30" } }),
+      manager.post("/api/v1/bookings", {
+        data: { ...second.refs, trainerId: first.refs.trainerId, ...SLOT, startTime: "18:30", endTime: "19:30" },
+      }),
     ]);
 
     expect(responses.map((r) => r.status()).sort()).toEqual([201, 409]);
@@ -128,13 +141,22 @@ test.describe("A10 booking input errors", () => {
     const { refs } = await bookingSetup(apiAs, testTag);
     const reception = await apiAs("RECEPTIONIST");
 
-    const backwards = await reception.post("/api/v1/bookings", { data: { ...refs, ...SLOT, startTime: "19:00", endTime: "18:00" } });
+    const backwards = await reception.post("/api/v1/bookings", {
+      data: { ...refs, ...SLOT, startTime: "19:00", endTime: "18:00" },
+    });
     expect(backwards.status()).toBe(400);
-    expect(await backwards.json()).toMatchObject({ code: "VALIDATION_FAILED", details: { fieldErrors: { endTime: ["endTimeNotAfterStart"] } } });
+    expect(await backwards.json()).toMatchObject({
+      code: "VALIDATION_FAILED",
+      details: { fieldErrors: { endTime: ["endTimeNotAfterStart"] } },
+    });
 
-    const malformed = await reception.post("/api/v1/bookings", { data: { ...refs, trainerId: "1; DROP TABLE bookings", ...SLOT, startTime: "99:99" } });
+    const malformed = await reception.post("/api/v1/bookings", {
+      data: { ...refs, trainerId: "1; DROP TABLE bookings", ...SLOT, startTime: "99:99" },
+    });
     expect(malformed.status()).toBe(400);
-    expect(await malformed.json()).toMatchObject({ details: { fieldErrors: { trainerId: ["invalidChoice"], startTime: ["invalidTime"] } } });
+    expect(await malformed.json()).toMatchObject({
+      details: { fieldErrors: { trainerId: ["invalidChoice"], startTime: ["invalidTime"] } },
+    });
   });
 
   test("business rules answer with their documented codes", async ({ apiAs, testTag }) => {
@@ -142,7 +164,9 @@ test.describe("A10 booking input errors", () => {
     const other = await bookingSetup(apiAs, `${testTag}b`);
     const reception = await apiAs("RECEPTIONIST");
 
-    const mismatch = await reception.post("/api/v1/bookings", { data: { ...refs, customerId: other.refs.customerId, ...SLOT } });
+    const mismatch = await reception.post("/api/v1/bookings", {
+      data: { ...refs, customerId: other.refs.customerId, ...SLOT },
+    });
     expect(mismatch.status()).toBe(422);
     expect(await mismatch.json()).toMatchObject({ code: "BOOKING_CUSTOMER_CONTRACT_MISMATCH" });
 
@@ -165,5 +189,4 @@ test.describe("A10 booking input errors", () => {
       }
     }
   });
-
 });

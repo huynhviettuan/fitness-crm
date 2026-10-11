@@ -28,7 +28,11 @@ export const userDetailSchema = userSchema
   .extend({
     overrides: z.array(z.object({ permission: z.enum(PERMISSION_KEYS), granted: z.boolean() })),
     accessWindows: z.array(
-      z.object({ weekdays: z.array(z.union(WEEKDAYS.map((day) => z.literal(day)))), startTime: z.string(), endTime: z.string() }),
+      z.object({
+        weekdays: z.array(z.union(WEEKDAYS.map((day) => z.literal(day)))),
+        startTime: z.string(),
+        endTime: z.string(),
+      }),
     ),
   })
   .meta({ id: "UserDetail" });

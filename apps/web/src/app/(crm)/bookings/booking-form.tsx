@@ -7,12 +7,23 @@ import { Controller, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SelectField, TextField, applyFieldErrors, useValidationMessage } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
-import { MIN_CUSTOMER_QUERY_LENGTH, useCustomerSearch, type CustomerSearchResult } from "@/components/use-customer-search";
+import {
+  MIN_CUSTOMER_QUERY_LENGTH,
+  useCustomerSearch,
+  type CustomerSearchResult,
+} from "@/components/use-customer-search";
 import type { ActionResult } from "@/lib/actions/result";
 import { formatDate, formatTime } from "@/lib/format";
 import { bookingInputSchema, rescheduleSchema } from "@flow/shared/bookings";
@@ -100,9 +111,10 @@ function BookingForm(props: BookingFormDialogProps) {
   const contracts = useBookableContracts(fixedContract ? "" : customerId);
 
   // A booking keeps its trainer in the list even if the trainer has since stopped taking bookings.
-  const trainerOptions = [...props.trainers, ...(booking && !props.trainers.some((tr) => tr.id === booking.trainer.id) ? [booking.trainer] : [])].map(
-    (trainer) => ({ value: trainer.id, label: `${trainer.fullName} · ${trainer.employeeCode}` }),
-  );
+  const trainerOptions = [
+    ...props.trainers,
+    ...(booking && !props.trainers.some((tr) => tr.id === booking.trainer.id) ? [booking.trainer] : []),
+  ].map((trainer) => ({ value: trainer.id, label: `${trainer.fullName} · ${trainer.employeeCode}` }));
 
   const submit = (values: BookingFormValues): Promise<ActionResult> =>
     booking ? rescheduleBookingAction(booking.id, values) : createBookingAction(values);
@@ -126,7 +138,10 @@ function BookingForm(props: BookingFormDialogProps) {
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <FieldGroup>
         {booking ? (
-          <ReadOnlyField label={t(`${fields}.customer`)} value={`${booking.customer.customerCode} · ${booking.customer.fullName}`} />
+          <ReadOnlyField
+            label={t(`${fields}.customer`)}
+            value={`${booking.customer.customerCode} · ${booking.customer.fullName}`}
+          />
         ) : preset.customer ? (
           <ReadOnlyField label={t(`${fields}.customer`)} value={preset.customer.label} />
         ) : (
@@ -144,7 +159,11 @@ function BookingForm(props: BookingFormDialogProps) {
             placeholder={t("bookings.choose")}
             options={(contracts ?? []).map((c) => ({
               value: c.id,
-              label: t("bookings.contractOption", { code: c.contractCode, package: c.packageName, remaining: c.remainingSessions }),
+              label: t("bookings.contractOption", {
+                code: c.contractCode,
+                package: c.packageName,
+                remaining: c.remainingSessions,
+              }),
             }))}
           />
         )}
@@ -214,7 +233,9 @@ function useBookableContracts(customerId: string): BookableContract[] | null {
     const controller = new AbortController();
     (async () => {
       try {
-        const response = await fetch(`/api/v1/customers/${customerId}/contracts?pageSize=100`, { signal: controller.signal });
+        const response = await fetch(`/api/v1/customers/${customerId}/contracts?pageSize=100`, {
+          signal: controller.signal,
+        });
         if (!response.ok) return;
         const { items } = (await response.json()) as { items: (BookableContract & { status: string })[] };
         setState({ customerId, contracts: items.filter((c) => c.status === "ACTIVE" && c.remainingSessions > 0) });

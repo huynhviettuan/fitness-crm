@@ -33,7 +33,9 @@ export async function createApp(options: { logger?: false; docs?: boolean } = {}
   await app.init();
   if (options.docs) SwaggerModule.setup("api/docs", app, () => openApiDocument(app));
   // Anything else (outside /api/v1 and /api/auth) is not ours: a documented 404.
-  app.use((_request: unknown, response: Parameters<typeof sendError>[0]) => sendError(response, new AppError("NOT_FOUND")));
+  app.use((_request: unknown, response: Parameters<typeof sendError>[0]) =>
+    sendError(response, new AppError("NOT_FOUND")),
+  );
   return app;
 }
 

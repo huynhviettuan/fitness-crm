@@ -28,8 +28,10 @@ export function present(actor: Actor, lead: repo.LeadRecord): Lead {
   const maskedFields: Lead["maskedFields"] = [];
   if (isMasked(actor, "customer.phone")) maskedFields.push("phone");
   if (isMasked(actor, "customer.email")) maskedFields.push("email");
-  const option = <T extends { id: string; labelVi: string; labelEn: string; isOther: boolean } | null>(value: T, note: string | null) =>
-    value ? chosen(value, note) : null;
+  const option = <T extends { id: string; labelVi: string; labelEn: string; isOther: boolean } | null>(
+    value: T,
+    note: string | null,
+  ) => (value ? chosen(value, note) : null);
   return {
     id: lead.id,
     // A lead always has its code, status, and status time (database check customers_stage_codes).
@@ -47,7 +49,10 @@ export function present(actor: Actor, lead: repo.LeadRecord): Lead {
     birthDate: lead.dateOfBirth,
     phone: maskedFields.includes("phone") ? null : lead.phone,
     email: maskedFields.includes("email") ? null : lead.email,
-    channel: chosen(lead.channel ?? { id: lead.channelId ?? "", labelVi: "", labelEn: "", isOther: false }, lead.channelNote),
+    channel: chosen(
+      lead.channel ?? { id: lead.channelId ?? "", labelVi: "", labelEn: "", isOther: false },
+      lead.channelNote,
+    ),
     source: option(lead.source, lead.sourceNote),
     sourceType: lead.sourceType,
     sourceDetail: lead.sourceDetail,

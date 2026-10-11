@@ -34,5 +34,8 @@ export async function listApprovalRules() {
 }
 
 export async function updateApprovalRule(action: ApprovalAction, input: ApprovalRuleInput) {
-  return read(approvalRuleSchema, (await api()).PUT("/api/v1/approval-rules/{action}", { params: { path: { action } }, body: input as never }));
+  return read(
+    approvalRuleSchema,
+    (await api()).PUT("/api/v1/approval-rules/{action}", { params: { path: { action } }, body: input as never }),
+  );
 }

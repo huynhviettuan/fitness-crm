@@ -29,7 +29,11 @@ export class BranchesController {
   @Patch(":id")
   @RequirePermission("branch.manage")
   @ApiResult(branchSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: branchInputSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: branchInputSchema }) body: unknown,
+  ) {
     return encode(branchSchema, await updateBranch(actor, id, body));
   }
 }

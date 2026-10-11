@@ -11,7 +11,10 @@ const errors = (schema: z.ZodType, input: unknown) => {
 describe("deleting to the trash (D-035)", () => {
   it("needs a reason from the list; the note is optional here and required with Khác by the API", () => {
     const reasonId = "6f1c2a8e-3b4d-4c5e-9f60-7a8b9c0d1e2f";
-    expect(deleteSchema.parse({ reasonId, reasonNote: " Nhập trùng " })).toEqual({ reasonId, reasonNote: "Nhập trùng" });
+    expect(deleteSchema.parse({ reasonId, reasonNote: " Nhập trùng " })).toEqual({
+      reasonId,
+      reasonNote: "Nhập trùng",
+    });
     expect(errors(deleteSchema, { reasonId: "" })).toEqual({ reasonId: ["required"] });
   });
 
@@ -24,6 +27,9 @@ describe("deleting to the trash (D-035)", () => {
 describe("action history filters (FR-PLT-008)", () => {
   it("ignores empty filters and refuses unknown ones", () => {
     expect(listAuditSchema.parse({ entityType: "", entityId: "", actorUserId: "" })).toEqual({ page: 1, pageSize: 20 });
-    expect(errors(listAuditSchema, { entityType: "invoice", entityId: "x" })).toEqual({ entityType: ["invalidChoice"], entityId: ["invalidChoice"] });
+    expect(errors(listAuditSchema, { entityType: "invoice", entityId: "x" })).toEqual({
+      entityType: ["invalidChoice"],
+      entityId: ["invalidChoice"],
+    });
   });
 });

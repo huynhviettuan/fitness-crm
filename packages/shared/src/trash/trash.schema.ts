@@ -18,10 +18,16 @@ export const deleteSchema = z.object({
 export const TRASH_ENTITY_TYPES = ["payment", "cash_transaction"] as const;
 export type TrashEntityType = (typeof TRASH_ENTITY_TYPES)[number];
 
-const optionalDate = z.union([z.literal(""), calendarDate]).optional().transform((value) => value || undefined);
+const optionalDate = z
+  .union([z.literal(""), calendarDate])
+  .optional()
+  .transform((value) => value || undefined);
 
 export const listTrashSchema = z.object({
-  entityType: z.preprocess((value) => (value === "" ? undefined : value), z.enum(TRASH_ENTITY_TYPES, { error: "invalidChoice" }).optional()),
+  entityType: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.enum(TRASH_ENTITY_TYPES, { error: "invalidChoice" }).optional(),
+  ),
   /** First and last day deleted, inclusive (dd/MM/yyyy). */
   from: optionalDate,
   to: optionalDate,

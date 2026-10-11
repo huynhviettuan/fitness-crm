@@ -32,7 +32,13 @@ const DAY_MS = 86_400_000;
  * branch's lead managers. Without anyone to receive it the lead stays New.
  */
 export async function startJourney(db: Db, actor: Actor, lead: repo.LeadRecord, now: Date): Promise<repo.LeadRecord> {
-  await repo.addStatusChange(db, { customerId: lead.id, fromStatus: null, toStatus: "NEW", changedById: actor.id, changedAt: now });
+  await repo.addStatusChange(db, {
+    customerId: lead.id,
+    fromStatus: null,
+    toStatus: "NEW",
+    changedById: actor.id,
+    changedAt: now,
+  });
   const receiver = await nextReceiver(db, lead.branchId);
   const assigned = receiver ? await assign(db, actor, lead, receiver, null, now) : lead;
   const managers = (await repo.leadManagers(db, lead.branchId)).filter((id) => id !== actor.id);
@@ -59,7 +65,11 @@ export async function leadAssignees(actor: Actor, id: string): Promise<{ items: 
   assertCan(actor, "lead.assign");
   const lead = await visibleLead(prisma, actor, id);
   const users = await repo.receivers(prisma, lead.branchId);
-  return { items: users.map(({ id: userId, name }) => ({ id: userId, name })).sort((a, b) => a.name.localeCompare(b.name, "vi")) };
+  return {
+    items: users
+      .map(({ id: userId, name }) => ({ id: userId, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi")),
+  };
 }
 
 /**
@@ -68,7 +78,12 @@ export async function leadAssignees(actor: Actor, id: string): Promise<{ items: 
  * to contact them again, `recareDays` after today. A repeated request finds the lead
  * already moved and is refused, so nothing is recorded twice.
  */
-export async function changeLeadStatus(actor: Actor, id: string, input: unknown, now: Date = new Date()): Promise<Lead> {
+export async function changeLeadStatus(
+  actor: Actor,
+  id: string,
+  input: unknown,
+  now: Date = new Date(),
+): Promise<Lead> {
   assertCan(actor, "lead.manage");
   const change = parseInput(leadStatusChangeSchema, input);
   return prisma.$transaction(async (tx) => {
@@ -76,7 +91,9 @@ export async function changeLeadStatus(actor: Actor, id: string, input: unknown,
     const from = lead.leadStatus ?? "NEW";
     if (!canChangeLeadStatus(from, change.status)) throw new AppError("INVALID_STATUS_TRANSITION");
 
-    const appointmentAt = change.appointment ? instantAt(change.appointment.date, change.appointment.time, env.GYM_TIMEZONE) : null;
+    const appointmentAt = change.appointment
+      ? instantAt(change.appointment.date, change.appointment.time, env.GYM_TIMEZONE)
+      : null;
     if (appointmentAt && appointmentAt.getTime() <= now.getTime()) {
       throw new AppError("VALIDATION_FAILED", { fieldErrors: { appointmentDate: ["notInFuture"] } });
     }
@@ -84,7 +101,10 @@ export async function changeLeadStatus(actor: Actor, id: string, input: unknown,
       ? await resolveChoice(tx, "leadRefuseReasons", "refuseReasonId", change.refuseReason, lead.refuseReasonId)
       : { optionId: null, note: null };
     const contactAgainOn = isRecareStatus(change.status)
-      ? new Date(calendarDateInTimeZone(env.GYM_TIMEZONE, now).getTime() + Number(await readParameter(tx, "recareDays")) * DAY_MS)
+      ? new Date(
+          calendarDateInTimeZone(env.GYM_TIMEZONE, now).getTime() +
+            Number(await readParameter(tx, "recareDays")) * DAY_MS,
+        )
       : null;
 
     const after = await repo.updateJourney(tx, id, {
@@ -161,18 +181,43 @@ async function nextReceiver(db: Db, branchId: string): Promise<string | null> {
   if (receivers.length === 0) return null;
   const last = await repo.lastReceiver(db, branchId);
   const after = (user: { id: string; createdAt: Date }) =>
-    last !== null && (user.createdAt.getTime() > last.createdAt.getTime() || (user.createdAt.getTime() === last.createdAt.getTime() && user.id > last.id));
+    last !== null &&
+    (user.createdAt.getTime() > last.createdAt.getTime() ||
+      (user.createdAt.getTime() === last.createdAt.getTime() && user.id > last.id));
   const next = (last && receivers.find(after)) || receivers[0];
   await repo.setLastReceiver(db, branchId, next.id);
   return next.id;
 }
 
 /** Gives the lead to `userId`; a New lead starts Consulting (brief §3). `by` is null for the round-robin. */
-async function assign(db: Db, actor: Actor, lead: repo.LeadRecord, userId: string, by: string | null, now: Date): Promise<repo.LeadRecord> {
+async function assign(
+  db: Db,
+  actor: Actor,
+  lead: repo.LeadRecord,
+  userId: string,
+  by: string | null,
+  now: Date,
+): Promise<repo.LeadRecord> {
   const starts = lead.leadStatus === "NEW";
-  const after = await repo.updateJourney(db, lead.id, { picUserId: userId, ...(starts ? { leadStatus: "CONSULTING", leadStatusChangedAt: now } : {}) });
-  await repo.addAssignment(db, { customerId: lead.id, fromUserId: lead.picUserId, toUserId: userId, assignedById: by, assignedAt: now });
-  if (starts) await repo.addStatusChange(db, { customerId: lead.id, fromStatus: "NEW", toStatus: "CONSULTING", changedById: by, changedAt: now });
+  const after = await repo.updateJourney(db, lead.id, {
+    picUserId: userId,
+    ...(starts ? { leadStatus: "CONSULTING", leadStatusChangedAt: now } : {}),
+  });
+  await repo.addAssignment(db, {
+    customerId: lead.id,
+    fromUserId: lead.picUserId,
+    toUserId: userId,
+    assignedById: by,
+    assignedAt: now,
+  });
+  if (starts)
+    await repo.addStatusChange(db, {
+      customerId: lead.id,
+      fromStatus: "NEW",
+      toStatus: "CONSULTING",
+      changedById: by,
+      changedAt: now,
+    });
   await recordAudit(db, {
     actorUserId: actor.id,
     entityType: "lead",
@@ -182,7 +227,8 @@ async function assign(db: Db, actor: Actor, lead: repo.LeadRecord, userId: strin
     after: { picUserId: userId, leadStatus: after.leadStatus },
     context: by === null ? { assignment: "roundRobin" } : undefined,
   });
-  if (userId !== actor.id) await notify(db, [userId], { kind: "leadAssigned", params: params(after), link: link(after) });
+  if (userId !== actor.id)
+    await notify(db, [userId], { kind: "leadAssigned", params: params(after), link: link(after) });
   return after;
 }
 

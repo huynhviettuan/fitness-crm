@@ -37,14 +37,22 @@ export class RolesController {
   @Put(":id")
   @RequirePermission("role.manage")
   @ApiResult(roleSchema)
-  async update(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: roleInputSchema }) body: unknown) {
+  async update(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: roleInputSchema }) body: unknown,
+  ) {
     return encode(roleSchema, await updateRole(actor, id, body));
   }
 
   @Post(":id/clone")
   @RequirePermission("role.manage")
   @ApiResult(roleSchema, 201, "Created")
-  async clone(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Body({ schema: cloneRoleSchema }) body: unknown) {
+  async clone(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: cloneRoleSchema }) body: unknown,
+  ) {
     return encode(roleSchema, await cloneRole(actor, id, body));
   }
 }

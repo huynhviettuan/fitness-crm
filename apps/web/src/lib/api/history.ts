@@ -11,7 +11,14 @@ export async function listTrash(params: TrashQuery) {
   return read(trashPageSchema, (await api()).GET("/api/v1/trash", { params: { query: query(params) } }));
 }
 
-type AuditQuery = { entityType?: string; entityId?: string; actorUserId?: string; from?: string; to?: string; page?: number };
+type AuditQuery = {
+  entityType?: string;
+  entityId?: string;
+  actorUserId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+};
 
 export async function listAuditEvents(params: AuditQuery) {
   return read(auditPageSchema, (await api()).GET("/api/v1/audit-events", { params: { query: query(params) } }));

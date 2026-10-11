@@ -44,12 +44,14 @@ export function CustomerSearch() {
     <>
       <Button
         variant="outline"
-        className="h-9 w-full min-w-0 max-w-72 justify-start gap-2 text-muted-foreground"
+        className="h-9 w-full max-w-72 min-w-0 justify-start gap-2 text-muted-foreground"
         onClick={() => changeOpen(true)}
       >
         <SearchIcon />
         <span className="truncate">{t("trigger")}</span>
-        <kbd className="ml-auto hidden rounded border bg-muted px-1.5 text-[10px] font-medium sm:inline">{t("shortcut")}</kbd>
+        <kbd className="ml-auto hidden rounded border bg-muted px-1.5 text-[10px] font-medium sm:inline">
+          {t("shortcut")}
+        </kbd>
       </Button>
       <Dialog open={open} onOpenChange={changeOpen}>
         <DialogContent className="top-1/3 translate-y-0 overflow-hidden p-0" showCloseButton={false}>

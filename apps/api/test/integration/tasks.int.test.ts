@@ -25,7 +25,11 @@ afterEach(async () => {
 const DUE = { dueDate: "20/10/2026", dueTime: "17:00" };
 
 const notificationsOf = (userId: string) =>
-  prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { kind: true, params: true, link: true } });
+  prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: { kind: true, params: true, link: true },
+  });
 
 /** A user whose employee is in the department, as tasks see them. */
 async function member(manager: Actor, departmentId: string, role: "RECEPTIONIST" | "PT" = "RECEPTIONIST") {
@@ -39,7 +43,12 @@ describe("creating a task (brief §8.2)", () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER", { name: "Quản lý Bảo" });
     const { actor: reception } = await createTestUser("RECEPTIONIST");
 
-    const task = await createTask(manager, { title: "Gọi lại khách An", assigneeUserId: reception.id, ...DUE, priority: "HIGH" });
+    const task = await createTask(manager, {
+      title: "Gọi lại khách An",
+      assigneeUserId: reception.id,
+      ...DUE,
+      priority: "HIGH",
+    });
 
     expect(task).toMatchObject({
       status: "NEW",
@@ -74,11 +83,19 @@ describe("creating a task (brief §8.2)", () => {
         fieldErrors: { assigneeUserId: ["invalidChoice"] },
       });
     }
-    await expect(createTask(manager, { title: "A", assigneeDepartmentId: otherDepartment, ...DUE })).rejects.toMatchObject({
+    await expect(
+      createTask(manager, { title: "A", assigneeDepartmentId: otherDepartment, ...DUE }),
+    ).rejects.toMatchObject({
       fieldErrors: { assigneeDepartmentId: ["invalidChoice"] },
     });
     await expect(
-      createTask(manager, { title: "A", assigneeUserId: manager.id, ...DUE, entityType: "customer", entityId: hidden.id }),
+      createTask(manager, {
+        title: "A",
+        assigneeUserId: manager.id,
+        ...DUE,
+        entityType: "customer",
+        entityId: hidden.id,
+      }),
     ).rejects.toMatchObject({ fieldErrors: { entityId: ["invalidChoice"] } });
   });
 
@@ -86,9 +103,19 @@ describe("creating a task (brief §8.2)", () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(manager, { fullName: "Nguyễn Văn An", phone: "0909123456" });
 
-    const task = await createTask(manager, { title: "Hẹn lại", assigneeUserId: manager.id, ...DUE, entityType: "customer", entityId: customer.id });
+    const task = await createTask(manager, {
+      title: "Hẹn lại",
+      assigneeUserId: manager.id,
+      ...DUE,
+      entityType: "customer",
+      entityId: customer.id,
+    });
 
-    expect(task.entity).toEqual({ type: "customer", id: customer.id, label: `${customer.customerCode} · Nguyễn Văn An` });
+    expect(task.entity).toEqual({
+      type: "customer",
+      id: customer.id,
+      label: `${customer.customerCode} · Nguyễn Văn An`,
+    });
   });
 
   it("is refused without task.create", async () => {
@@ -96,12 +123,22 @@ describe("creating a task (brief §8.2)", () => {
     const role = await createRole(admin, {
       name: "Chỉ xem việc",
       permissions: ["task.view"],
-      dataScopes: { leads: "ALL", customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL", tasks: "OWN" },
+      dataScopes: {
+        leads: "ALL",
+        customers: "ALL",
+        contracts: "ALL",
+        schedule: "ALL",
+        vouchers: "ALL",
+        staff: "ALL",
+        tasks: "OWN",
+      },
       fieldMasks: [],
     });
     const { actor } = await createTestUser("RECEPTIONIST", { roleId: role.id });
 
-    await expect(createTask(actor, { title: "A", assigneeUserId: admin.id, ...DUE })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(createTask(actor, { title: "A", assigneeUserId: admin.id, ...DUE })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -112,7 +149,10 @@ describe("the task flow", () => {
     const task = await createTask(manager, { title: "Gọi lại", assigneeUserId: reception.id, ...DUE });
 
     await expect(moveTask(manager, task.id, "accept")).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(await moveTask(reception, task.id, "accept")).toMatchObject({ status: "ACCEPTED", actions: ["start", "complete", "comment"] });
+    expect(await moveTask(reception, task.id, "accept")).toMatchObject({
+      status: "ACCEPTED",
+      actions: ["start", "complete", "comment"],
+    });
     expect(await moveTask(reception, task.id, "start")).toMatchObject({ status: "IN_PROGRESS" });
     const done = await moveTask(reception, task.id, "complete");
     expect(done).toMatchObject({ status: "DONE", doneAt: expect.any(Date), actions: ["comment"] });
@@ -121,7 +161,11 @@ describe("the task flow", () => {
     await expect(moveTask(manager, task.id, "cancel")).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
 
     expect((await notificationsOf(manager.id)).map((n) => n.kind)).toEqual(["taskAccepted", "taskCompleted"]);
-    const actions = await prisma.auditEvent.findMany({ where: { entityId: task.id }, orderBy: { createdAt: "asc" }, select: { action: true } });
+    const actions = await prisma.auditEvent.findMany({
+      where: { entityId: task.id },
+      orderBy: { createdAt: "asc" },
+      select: { action: true },
+    });
     expect(actions.map((a) => a.action)).toEqual(["task.created", "task.accepted", "task.started", "task.completed"]);
   });
 
@@ -135,7 +179,12 @@ describe("the task flow", () => {
     await expect(moveTask(reception, first.id, "cancel")).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(await moveTask(consulting, first.id, "cancel")).toMatchObject({ status: "CANCELLED" });
     expect(await moveTask(manager, second.id, "cancel")).toMatchObject({ status: "CANCELLED" });
-    expect((await notificationsOf(reception.id)).map((n) => n.kind)).toEqual(["taskAssigned", "taskAssigned", "taskCancelled", "taskCancelled"]);
+    expect((await notificationsOf(reception.id)).map((n) => n.kind)).toEqual([
+      "taskAssigned",
+      "taskAssigned",
+      "taskCancelled",
+      "taskCancelled",
+    ]);
   });
 
   it("a department's task waits for one member to accept it, also when two accept at once", async () => {
@@ -153,7 +202,9 @@ describe("the task flow", () => {
 
     const results = await Promise.allSettled([moveTask(hong, task.id, "accept"), moveTask(lan, task.id, "accept")]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { code: "INVALID_STATUS_TRANSITION" } });
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({
+      reason: { code: "INVALID_STATUS_TRANSITION" },
+    });
     const after = await getTask(manager, task.id);
     expect(after.status).toBe("ACCEPTED");
     expect([hong.id, lan.id]).toContain(after.assignee?.id);
@@ -168,13 +219,23 @@ describe("the task flow", () => {
     const task = await createTask(manager, { title: "Gọi lại", assigneeUserId: hong.id, ...DUE });
     await moveTask(hong, task.id, "accept");
 
-    await expect(updateTask(hong, task.id, { title: "X", assigneeUserId: hong.id, ...DUE })).rejects.toMatchObject({ code: "FORBIDDEN" });
-    const moved = await updateTask(manager, task.id, { title: "Gọi lại gấp", assigneeUserId: lan.id, dueDate: "21/10/2026", dueTime: "09:00" });
+    await expect(updateTask(hong, task.id, { title: "X", assigneeUserId: hong.id, ...DUE })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    const moved = await updateTask(manager, task.id, {
+      title: "Gọi lại gấp",
+      assigneeUserId: lan.id,
+      dueDate: "21/10/2026",
+      dueTime: "09:00",
+    });
 
     expect(moved).toMatchObject({ title: "Gọi lại gấp", status: "NEW", assignee: { id: lan.id }, acceptedAt: null });
     expect((await notificationsOf(lan.id)).map((n) => n.kind)).toEqual(["taskAssigned"]);
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: task.id, action: "task.updated" } });
-    expect(audit).toMatchObject({ before: { title: "Gọi lại", assigneeUserId: hong.id }, after: { title: "Gọi lại gấp", assigneeUserId: lan.id } });
+    expect(audit).toMatchObject({
+      before: { title: "Gọi lại", assigneeUserId: hong.id },
+      after: { title: "Gọi lại gấp", assigneeUserId: lan.id },
+    });
   });
 });
 
@@ -201,7 +262,12 @@ describe("seeing tasks (data scope tasks)", () => {
   it("counts my open and overdue tasks, and lists overdue ones on their own", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { actor: hong } = await createTestUser("RECEPTIONIST");
-    const late = await createTask(manager, { title: "Trễ", assigneeUserId: hong.id, dueDate: "01/01/2020", dueTime: "09:00" });
+    const late = await createTask(manager, {
+      title: "Trễ",
+      assigneeUserId: hong.id,
+      dueDate: "01/01/2020",
+      dueTime: "09:00",
+    });
     await createTask(manager, { title: "Còn hạn", assigneeUserId: hong.id, dueDate: "01/01/2099", dueTime: "09:00" });
 
     expect(await taskSummary(hong)).toEqual({ open: 2, overdue: 1 });
@@ -232,10 +298,16 @@ describe("comments", () => {
     const commented = await addComment(hong, task.id, { body: "Khách hẹn chiều mai", mentions: [master.id] });
 
     expect(commented.comments).toEqual([
-      expect.objectContaining({ author: { id: hong.id, name: "Hồng" }, body: "Khách hẹn chiều mai", mentions: [{ id: master.id, name: "Master Tùng" }] }),
+      expect.objectContaining({
+        author: { id: hong.id, name: "Hồng" },
+        body: "Khách hẹn chiều mai",
+        mentions: [{ id: master.id, name: "Master Tùng" }],
+      }),
     ]);
     expect((await notificationsOf(master.id)).map((n) => n.kind)).toEqual(["taskMentioned"]);
-    expect((await notificationsOf(manager.id)).map((n) => [n.kind, (n.params as { by: string }).by])).toEqual([["taskCommented", "Hồng"]]);
+    expect((await notificationsOf(manager.id)).map((n) => [n.kind, (n.params as { by: string }).by])).toEqual([
+      ["taskCommented", "Hồng"],
+    ]);
     expect((await notificationsOf(hong.id)).map((n) => n.kind)).toEqual(["taskAssigned"]);
   });
 
@@ -275,7 +347,11 @@ describe("reminders (worker, T-059)", () => {
       { kind: "taskDueSoon", params: { title: "Gọi lại", due: "20/10/2026 17:00" }, link: `/tasks/${task.id}` },
       { kind: "taskOverdue", params: { title: "Gọi lại", due: "20/10/2026 17:00" }, link: `/tasks/${task.id}` },
     ]);
-    expect((await notificationsOf(manager.id)).map((n) => n.kind)).toEqual(["taskAccepted", "taskCompleted", "taskOverdue"]);
+    expect((await notificationsOf(manager.id)).map((n) => n.kind)).toEqual([
+      "taskAccepted",
+      "taskCompleted",
+      "taskOverdue",
+    ]);
   });
 
   it("the reminder time is a parameter", async () => {

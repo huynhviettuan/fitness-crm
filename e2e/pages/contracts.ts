@@ -76,7 +76,10 @@ export class ContractDetailPage {
   }
 
   get bookings(): BookingsTable {
-    return new BookingsTable(this.page, this.sessionHistory.getByRole("table", { name: labels.contracts.sessionHistory }));
+    return new BookingsTable(
+      this.page,
+      this.sessionHistory.getByRole("table", { name: labels.contracts.sessionHistory }),
+    );
   }
 
   get paymentHistory(): Locator {
@@ -84,7 +87,10 @@ export class ContractDetailPage {
   }
 
   get payments(): PaymentsTable {
-    return new PaymentsTable(this.page, this.paymentHistory.getByRole("table", { name: labels.contracts.paymentHistory }));
+    return new PaymentsTable(
+      this.page,
+      this.paymentHistory.getByRole("table", { name: labels.contracts.paymentHistory }),
+    );
   }
 
   async openRecordPayment(): Promise<PaymentDialog> {

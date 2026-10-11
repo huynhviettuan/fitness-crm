@@ -6,7 +6,11 @@ export const BOOKING_STATUSES = ["BOOKED", "CHECKED_IN", "COMPLETED", "CANCELLED
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
 /** A-005: these statuses hold the trainer's time slot (BR-010). */
-export const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN", "COMPLETED"] as const satisfies readonly BookingStatus[];
+export const ACTIVE_BOOKING_STATUSES = [
+  "BOOKED",
+  "CHECKED_IN",
+  "COMPLETED",
+] as const satisfies readonly BookingStatus[];
 
 /** OQ-008 interim: bookings that will still use one of the contract's sessions. */
 export const OPEN_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as const satisfies readonly BookingStatus[];

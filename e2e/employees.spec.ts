@@ -20,7 +20,9 @@ test.describe("employees as a manager", () => {
     const name = `PT ${testTag}`;
     const toasts = page.getByRole("region", { name: labels.common.notifications });
     const slot = (time: string) =>
-      calendarPage.column(name).getByRole("button", { name: fill(labels.bookings.addAt, { trainer: name, time }), exact: true });
+      calendarPage
+        .column(name)
+        .getByRole("button", { name: fill(labels.bookings.addAt, { trainer: name, time }), exact: true });
 
     await employeesPage.goto();
     const form = await employeesPage.openAdd();
@@ -46,14 +48,20 @@ test.describe("employees as a manager", () => {
     await page.goBack();
     await employeePage.addDayOff(BOOKING_DAY.date, "Nghỉ phép");
     await expect(toasts.getByText(fill(s.dayOffAdded, { date: BOOKING_DAY.date }))).toBeVisible();
-    await expect(employeePage.daysOff.getByRole("row").filter({ hasText: BOOKING_DAY.date })).toContainText("Nghỉ phép");
+    await expect(employeePage.daysOff.getByRole("row").filter({ hasText: BOOKING_DAY.date })).toContainText(
+      "Nghỉ phép",
+    );
 
     await calendarPage.goto(BOOKING_DAY.url);
     await expect(calendarPage.column(name)).toBeVisible();
     await expect(slot("08:00")).toHaveCount(0);
   });
 
-  test("the list finds an employee by name without diacritics and filters PTs", async ({ apiAs, testTag, employeesPage }) => {
+  test("the list finds an employee by name without diacritics and filters PTs", async ({
+    apiAs,
+    testTag,
+    employeesPage,
+  }) => {
     const manager = await apiAs("FITNESS_MANAGER");
     await manager.post("/api/v1/employees", { data: { fullName: `Lễ tân Hồng ${testTag}` } });
     await manager.post("/api/v1/employees", { data: { fullName: `PT Đức ${testTag}`, isTrainer: true } });
@@ -71,7 +79,10 @@ test.describe("employees as a manager", () => {
 test.describe("employees as a PT", () => {
   test.use(signedInAs("PT"));
 
-  test("a PT sees only their own profile and working schedule, and cannot change it (09_RBAC.md)", async ({ employeesPage, employeePage }) => {
+  test("a PT sees only their own profile and working schedule, and cannot change it (09_RBAC.md)", async ({
+    employeesPage,
+    employeePage,
+  }) => {
     await employeesPage.goto();
     await expect(employeesPage.table.getByRole("row")).toHaveCount(2); // the header and their own row
     await expect(employeesPage.addButton).toHaveCount(0);
@@ -94,7 +105,11 @@ test.describe("bookings and working hours", () => {
   }) => {
     const { contract, trainer } = await bookingSetup(apiAs, testTag);
     const shifts = [{ weekday, start: "06:00", end: "10:00" }];
-    expect((await (await apiAs("FITNESS_MANAGER")).put(`/api/v1/employees/${trainer.id}/shifts`, { data: { shifts } })).status()).toBe(200);
+    expect(
+      (
+        await (await apiAs("FITNESS_MANAGER")).put(`/api/v1/employees/${trainer.id}/shifts`, { data: { shifts } })
+      ).status(),
+    ).toBe(200);
 
     await contractDetailPage.goto(contract.id);
     const form = await contractDetailPage.openAddBooking();
@@ -102,10 +117,13 @@ test.describe("bookings and working hours", () => {
     await form.fillSlot({ date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" });
     await form.save();
 
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.errors.BOOKING_OUTSIDE_WORKING_HOURS)).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: labels.common.notifications })
+        .getByText(labels.errors.BOOKING_OUTSIDE_WORKING_HOURS),
+    ).toBeVisible();
     await form.fillSlot({ startTime: "08:00", endTime: "09:00" });
     await form.save();
     await expect(contractDetailPage.bookings.row("08:00")).toContainText(labels.status.booking.BOOKED);
   });
 });
-

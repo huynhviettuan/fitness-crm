@@ -32,7 +32,16 @@ export function AuditTable({ events, empty, footer }: { events: AuditEvent[]; em
     { id: "changes", header: t("fields.changes"), cell: ({ row }) => <Changes event={row.original} /> },
   ];
 
-  return <DataTable columns={columns} data={events} label={t("title")} empty={empty} footer={footer} getRowId={(row) => row.id} />;
+  return (
+    <DataTable
+      columns={columns}
+      data={events}
+      label={t("title")}
+      empty={empty}
+      footer={footer}
+      getRowId={(row) => row.id}
+    />
+  );
 }
 
 /** "Receipt · Deleted": the kind of record and what happened, in the user's language. */
@@ -41,7 +50,9 @@ function ActionLabel({ event }: { event: AuditEvent }) {
   const verb = event.action.slice(event.action.indexOf(".") + 1);
   const entityKey = `entities.${event.entityType}`;
   const verbKey = `verbs.${verb}`;
-  const entity = t.has(entityKey as Parameters<typeof t.has>[0]) ? t(entityKey as Parameters<typeof t>[0]) : event.entityType;
+  const entity = t.has(entityKey as Parameters<typeof t.has>[0])
+    ? t(entityKey as Parameters<typeof t>[0])
+    : event.entityType;
   const action = t.has(verbKey as Parameters<typeof t.has>[0]) ? t(verbKey as Parameters<typeof t>[0]) : verb;
   return (
     <span className="whitespace-nowrap">

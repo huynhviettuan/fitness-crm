@@ -59,7 +59,13 @@ export async function createUser(actor: Actor, input: unknown): Promise<User> {
         entityType: "user",
         entityId: user.id,
         action: "user.created",
-        after: { name: user.name, email: user.email, roleId: user.role.id, allBranches: data.allBranches, branchIds: data.branchIds },
+        after: {
+          name: user.name,
+          email: user.email,
+          roleId: user.role.id,
+          allBranches: data.allBranches,
+          branchIds: data.branchIds,
+        },
       });
       return toUser(user);
     });
@@ -190,7 +196,10 @@ export async function listLoginHistory(
   const query = parseInput(loginHistoryQuerySchema, rawQuery);
   if (!z.uuid().safeParse(userId).success) throw new AppError("NOT_FOUND");
   await getUserOrThrow(prisma, userId);
-  const { items, total } = await repo.listLoginEvents(prisma, userId, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  const { items, total } = await repo.listLoginEvents(prisma, userId, {
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  });
   return { items, total, page: query.page, pageSize: query.pageSize };
 }
 
@@ -239,7 +248,8 @@ async function getUserOrThrow(db: Db, id: string) {
 }
 
 async function assertRoleExists(db: Db, roleId: string) {
-  if (!(await repo.findRole(db, roleId))) throw new AppError("VALIDATION_FAILED", { fieldErrors: { roleId: ["invalidChoice"] } });
+  if (!(await repo.findRole(db, roleId)))
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { roleId: ["invalidChoice"] } });
 }
 
 async function assertBranchesExist(db: Db, branchIds: string[]) {

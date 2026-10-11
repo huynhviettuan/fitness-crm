@@ -20,7 +20,8 @@ export class PaymentDialog {
   async fill(input: { amount: string; method: string; methodNote?: string; paidOn?: string }): Promise<void> {
     await this.root.getByLabel(f.amount, { exact: true }).fill(input.amount);
     await choose(this.page, this.root, f.method, input.method);
-    if (input.methodNote !== undefined) await this.root.getByLabel(labels.options.otherNote, { exact: true }).fill(input.methodNote);
+    if (input.methodNote !== undefined)
+      await this.root.getByLabel(labels.options.otherNote, { exact: true }).fill(input.methodNote);
     if (input.paidOn !== undefined) await this.root.getByLabel(f.paidOn, { exact: true }).fill(input.paidOn);
   }
 
@@ -133,7 +134,9 @@ export class FinancePage {
 
   /** A month total card on the income/expense tab. */
   total(label: string): Locator {
-    return this.shell.main.getByRole("heading", { name: label, exact: true }).locator("xpath=ancestor::*[@data-slot='card'][1]");
+    return this.shell.main
+      .getByRole("heading", { name: label, exact: true })
+      .locator("xpath=ancestor::*[@data-slot='card'][1]");
   }
 
   async openRecordCash(): Promise<CashDialog> {

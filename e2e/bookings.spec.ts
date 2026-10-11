@@ -1,11 +1,5 @@
 import { expect, signedInAs, test } from "./fixtures";
-import {
-  BOOKING_DAY,
-  bookingSetup,
-  createBookingViaApi,
-  gymToday,
-  randomBookingDay,
-} from "./support/data";
+import { BOOKING_DAY, bookingSetup, createBookingViaApi, gymToday, randomBookingDay } from "./support/data";
 import { E2E_TRAINER_NAME } from "./support/db";
 import { fill, labels } from "./support/labels";
 
@@ -82,7 +76,11 @@ test.describe("bookings as a receptionist", () => {
     await expect(calendarPage.column(trainer.fullName).getByTestId("booking-block")).toHaveCount(1);
   });
 
-  test("an end time before the start is explained before anything is saved", async ({ apiAs, testTag, customerBookingsTab }) => {
+  test("an end time before the start is explained before anything is saved", async ({
+    apiAs,
+    testTag,
+    customerBookingsTab,
+  }) => {
     const { customer, contract, trainer } = await bookingSetup(apiAs, testTag);
 
     await customerBookingsTab.open(customer.id);
@@ -108,7 +106,11 @@ test.describe("sessions as a manager", () => {
   }) => {
     const { contract, refs } = await bookingSetup(apiAs, testTag);
     const manager = await apiAs("FITNESS_MANAGER");
-    const booking = await createBookingViaApi(manager, refs, { date: BOOKING_DAY.date, startTime: "07:00", endTime: "08:00" });
+    const booking = await createBookingViaApi(manager, refs, {
+      date: BOOKING_DAY.date,
+      startTime: "07:00",
+      endTime: "08:00",
+    });
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
 
     await contractDetailPage.goto(contract.id);
@@ -118,7 +120,9 @@ test.describe("sessions as a manager", () => {
     await expect(confirmation).toContainText("24 → 23");
     await confirmation.getByRole("button", { name: b.complete, exact: true }).click();
 
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(fill(b.completed, { remaining: 23 }))).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(fill(b.completed, { remaining: 23 })),
+    ).toBeVisible();
     await sheet.close();
     // E2E-004
     await expect(contractDetailPage.figure(cf.completedSessions)).toHaveText("1");
@@ -140,7 +144,11 @@ test.describe("sessions as a manager", () => {
   }) => {
     const { contract, trainer, refs } = await bookingSetup(apiAs, testTag, { totalSessions: "1" });
     const manager = await apiAs("FITNESS_MANAGER");
-    const booking = await createBookingViaApi(manager, refs, { date: BOOKING_DAY.date, startTime: "07:00", endTime: "08:00" });
+    const booking = await createBookingViaApi(manager, refs, {
+      date: BOOKING_DAY.date,
+      startTime: "07:00",
+      endTime: "08:00",
+    });
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
     await manager.post(`/api/v1/bookings/${booking.id}/complete`);
 
@@ -151,7 +159,11 @@ test.describe("sessions as a manager", () => {
     await form.fillSlot({ date: BOOKING_DAY.date, startTime: "09:00", endTime: "10:00" });
     await form.save();
 
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(labels.errors.CONTRACT_NO_REMAINING_SESSIONS)).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: labels.common.notifications })
+        .getByText(labels.errors.CONTRACT_NO_REMAINING_SESSIONS),
+    ).toBeVisible();
     await form.cancel();
     await expect(contractDetailPage.figure(cf.remainingSessions)).toHaveText("0");
   });
@@ -227,7 +239,11 @@ test.describe("as a trainer on a phone", () => {
     // The PT books as the employee their login belongs to.
     const { employeeId: trainerId } = await (await (await apiAs("PT")).get("/api/v1/me")).json();
     const day = randomBookingDay();
-    const booking = await createBookingViaApi(reception, { ...refs, trainerId }, { date: day.date, startTime: "10:00", endTime: "11:00" });
+    const booking = await createBookingViaApi(
+      reception,
+      { ...refs, trainerId },
+      { date: day.date, startTime: "10:00", endTime: "11:00" },
+    );
     await reception.post(`/api/v1/bookings/${booking.id}/check-in`);
 
     await calendarPage.goto(day.url);
@@ -237,7 +253,9 @@ test.describe("as a trainer on a phone", () => {
     const sheet = await calendarPage.openBlock(E2E_TRAINER_NAME, customer.fullName);
     await sheet.confirm(b.complete);
 
-    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(fill(b.completed, { remaining: 23 }))).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(fill(b.completed, { remaining: 23 })),
+    ).toBeVisible();
     await expect(sheet.detail(b.fields.status)).toHaveText(status.COMPLETED);
     await sheet.close();
     await expect(calendarPage.block(E2E_TRAINER_NAME, customer.fullName)).toContainText(status.COMPLETED);

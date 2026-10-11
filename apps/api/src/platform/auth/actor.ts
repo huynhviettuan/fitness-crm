@@ -76,12 +76,13 @@ export async function loadCurrentUser(db: Db, userId: string): Promise<CurrentUs
 
   const scopeRows = new Map(user.role.dataScopes.map((row) => [row.resource, row.scope]));
   // A resource without a row is OWN: closed until admin opens it (schema.prisma).
-  const scopes = Object.fromEntries(DATA_SCOPE_RESOURCES.map((resource) => [resource, scopeRows.get(resource) ?? "OWN"])) as Record<
-    DataScopeResource,
-    DataScope
-  >;
+  const scopes = Object.fromEntries(
+    DATA_SCOPE_RESOURCES.map((resource) => [resource, scopeRows.get(resource) ?? "OWN"]),
+  ) as Record<DataScopeResource, DataScope>;
   const masks = new Set(
-    user.role.fieldMasks.map((m) => m.field).filter((field): field is MaskableField => (MASKABLE_FIELDS as readonly string[]).includes(field)),
+    user.role.fieldMasks
+      .map((m) => m.field)
+      .filter((field): field is MaskableField => (MASKABLE_FIELDS as readonly string[]).includes(field)),
   );
 
   return {

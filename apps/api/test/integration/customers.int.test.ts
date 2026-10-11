@@ -32,7 +32,9 @@ describe("createCustomer", () => {
     const { actor } = await createTestUser("RECEPTIONIST");
 
     const customers = await Promise.all(
-      Array.from({ length: 10 }, (_, i) => createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}`, phone: uniquePhone() })),
+      Array.from({ length: 10 }, (_, i) =>
+        createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}`, phone: uniquePhone() }),
+      ),
     );
 
     const codes = new Set(customers.map((c) => c.customerCode));
@@ -61,7 +63,6 @@ beforeEach(async () => {
   await withoutApprovals();
 });
 
-
 describe("updateCustomer", () => {
   it("audits only the fields that changed, with before and after", async () => {
     const { actor } = await createTestUser("FITNESS_MANAGER");
@@ -86,7 +87,10 @@ describe("updateCustomer", () => {
     const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);
 
-    const { customer: updated } = await updateCustomer(actor, customer.id, { customerCode: "KH999999", status: "INACTIVE" });
+    const { customer: updated } = await updateCustomer(actor, customer.id, {
+      customerCode: "KH999999",
+      status: "INACTIVE",
+    });
 
     expect(updated.customerCode).toBe(customer.customerCode);
     expect(updated.status).toBe("INACTIVE");
@@ -121,7 +125,8 @@ describe("listCustomers search (FR-CUS-002)", () => {
 
   it("paginates newest first", async () => {
     const { actor } = await createTestUser("RECEPTIONIST");
-    for (let i = 0; i < 3; i++) await createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}`, phone: uniquePhone() });
+    for (let i = 0; i < 3; i++)
+      await createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}`, phone: uniquePhone() });
 
     const page = await listCustomers(actor, { page: 2, pageSize: 2 });
 

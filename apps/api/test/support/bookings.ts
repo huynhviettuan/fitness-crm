@@ -42,7 +42,9 @@ export async function activeContract(actor: Actor, customerId: string, overrides
  */
 export async function createTrainer(actor: Actor, input: { fullName: string; userId?: string }) {
   const trainer = await createEmployee(actor, { ...input, isTrainer: true });
-  await replaceShifts(actor, trainer.id, { shifts: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "00:00", end: "24:00" })) });
+  await replaceShifts(actor, trainer.id, {
+    shifts: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "00:00", end: "24:00" })),
+  });
   return trainer;
 }
 
@@ -56,7 +58,12 @@ export async function linkedTrainer(manager: Actor, fullName = "PT Linh") {
 type Slot = { date?: string; startTime?: string; endTime?: string };
 
 /** Books the scenario's customer and contract with `trainerId` (default: the scenario's trainer). */
-export function book(actor: Actor, scenario: Pick<Scenario, "customer" | "contract" | "trainer">, slot: Slot = {}, trainerId?: string) {
+export function book(
+  actor: Actor,
+  scenario: Pick<Scenario, "customer" | "contract" | "trainer">,
+  slot: Slot = {},
+  trainerId?: string,
+) {
   return createBooking(actor, {
     customerId: scenario.customer.id,
     contractId: scenario.contract.id,

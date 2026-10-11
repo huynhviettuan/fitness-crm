@@ -15,7 +15,13 @@ export class TaskFormDialog {
     return this.root.getByLabel(label, { exact: true });
   }
 
-  async fill(input: { title: string; assignee: string; dueDate: string; dueTime?: string; priority?: string }): Promise<void> {
+  async fill(input: {
+    title: string;
+    assignee: string;
+    dueDate: string;
+    dueTime?: string;
+    priority?: string;
+  }): Promise<void> {
     await this.field(k.fields.title).fill(input.title);
     await this.choose(k.fields.assignee, input.assignee);
     await this.field(k.fields.dueDate).fill(input.dueDate);
@@ -60,7 +66,9 @@ export class TasksPage {
   }
 
   async open(viewName: string, title: string): Promise<void> {
-    await this.table(viewName).getByRole("link", { name: fill(k.open, { title }), exact: true }).click();
+    await this.table(viewName)
+      .getByRole("link", { name: fill(k.open, { title }), exact: true })
+      .click();
   }
 }
 
@@ -87,7 +95,10 @@ export class TaskPage {
 
   /** The value (<dd>) next to a label (<dt>). */
   detail(label: string): Locator {
-    return this.details.locator("dt").filter({ hasText: new RegExp(`^${label}$`) }).locator("xpath=following-sibling::dd[1]");
+    return this.details
+      .locator("dt")
+      .filter({ hasText: new RegExp(`^${label}$`) })
+      .locator("xpath=following-sibling::dd[1]");
   }
 
   move(name: string): Locator {
@@ -114,7 +125,9 @@ export class NotificationsPage {
   constructor(private readonly page: Page) {}
 
   get bell(): Locator {
-    return this.page.getByRole("banner").getByRole("button", { name: new RegExp(`^${labels.notifications.title} \\(`) });
+    return this.page
+      .getByRole("banner")
+      .getByRole("button", { name: new RegExp(`^${labels.notifications.title} \\(`) });
   }
 
   async openBell(): Promise<Locator> {

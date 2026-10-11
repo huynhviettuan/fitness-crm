@@ -32,13 +32,33 @@ describe("employeeInputSchema", () => {
   });
 
   it("normalizes phone and email and parses the birth date", () => {
-    const parsed = employeeInputSchema.parse({ fullName: "A", phone: "090 123.4567", email: " Minh@Flow.VN ", birthDate: "02/03/1995" });
-    expect(parsed).toMatchObject({ phone: "0901234567", email: "minh@flow.vn", birthDate: new Date(Date.UTC(1995, 2, 2)) });
+    const parsed = employeeInputSchema.parse({
+      fullName: "A",
+      phone: "090 123.4567",
+      email: " Minh@Flow.VN ",
+      birthDate: "02/03/1995",
+    });
+    expect(parsed).toMatchObject({
+      phone: "0901234567",
+      email: "minh@flow.vn",
+      birthDate: new Date(Date.UTC(1995, 2, 2)),
+    });
   });
 
   it("rejects a bad phone, email, gender, and a birth date in the future", () => {
-    const result = employeeInputSchema.safeParse({ fullName: "A", phone: "12", email: "x@", gender: "X", birthDate: "01/01/2999" });
-    expect(fieldErrors(result)).toEqual({ phone: "invalidPhone", email: "invalidEmail", gender: "invalidChoice", birthDate: "invalidDate" });
+    const result = employeeInputSchema.safeParse({
+      fullName: "A",
+      phone: "12",
+      email: "x@",
+      gender: "X",
+      birthDate: "01/01/2999",
+    });
+    expect(fieldErrors(result)).toEqual({
+      phone: "invalidPhone",
+      email: "invalidEmail",
+      gender: "invalidChoice",
+      birthDate: "invalidDate",
+    });
   });
 
   it("never accepts an employee code from the client", () => {
@@ -52,16 +72,24 @@ describe("working schedule (D-030)", () => {
   });
 
   it("rejects times off the 30-minute cells, an end not after the start, and a bad weekday", () => {
-    expect(fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 1, start: "08:15", end: "12:00" }] }))).toEqual({
+    expect(
+      fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 1, start: "08:15", end: "12:00" }] })),
+    ).toEqual({
       "shifts.0.start": "notOnHalfHour",
     });
-    expect(fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 2, start: "12:00", end: "12:00" }] }))).toEqual({
+    expect(
+      fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 2, start: "12:00", end: "12:00" }] })),
+    ).toEqual({
       "shifts.0.end": "endTimeNotAfterStart",
     });
-    expect(fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 8, start: "08:00", end: "12:00" }] }))).toEqual({
+    expect(
+      fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 8, start: "08:00", end: "12:00" }] })),
+    ).toEqual({
       "shifts.0.weekday": "invalidChoice",
     });
-    expect(fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 1, start: "24:00", end: "24:00" }] }))).toMatchObject({
+    expect(
+      fieldErrors(shiftsInputSchema.safeParse({ shifts: [{ weekday: 1, start: "24:00", end: "24:00" }] })),
+    ).toMatchObject({
       "shifts.0.start": "invalidTime",
     });
   });
@@ -102,7 +130,10 @@ describe("working schedule (D-030)", () => {
   });
 
   it("takes a day off with an optional note", () => {
-    expect(dayOffInputSchema.parse({ date: "20/10/2026" })).toEqual({ date: new Date(Date.UTC(2026, 9, 20)), note: null });
+    expect(dayOffInputSchema.parse({ date: "20/10/2026" })).toEqual({
+      date: new Date(Date.UTC(2026, 9, 20)),
+      note: null,
+    });
     expect(fieldErrors(dayOffInputSchema.safeParse({ date: "" }))).toEqual({ date: "required" });
   });
 });

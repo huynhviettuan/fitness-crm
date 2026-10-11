@@ -75,7 +75,10 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     },
     { label: t("fields.status"), value: <StatusBadge entity="customer" status={customer.status} /> },
     { label: t("fields.createdAt"), value: <DateTime value={customer.createdAt} format="dateTime" /> },
-    { label: t("fields.notes"), value: customer.notes && <span className="whitespace-pre-line">{customer.notes}</span> },
+    {
+      label: t("fields.notes"),
+      value: customer.notes && <span className="whitespace-pre-line">{customer.notes}</span>,
+    },
   ];
 
   // Brief §8.2: a task about this customer.
@@ -104,9 +107,12 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
         <p role="status" className="mb-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
           {t("pendingIdentity", {
             changes: [
-              customer.pendingIdentity.fullName !== undefined && `${t("fields.fullName")}: ${customer.pendingIdentity.fullName}`,
-              customer.pendingIdentity.phone !== undefined && `${t("fields.phone")}: ${customer.pendingIdentity.phone ?? "—"}`,
-              customer.pendingIdentity.email !== undefined && `${t("fields.email")}: ${customer.pendingIdentity.email ?? "—"}`,
+              customer.pendingIdentity.fullName !== undefined &&
+                `${t("fields.fullName")}: ${customer.pendingIdentity.fullName}`,
+              customer.pendingIdentity.phone !== undefined &&
+                `${t("fields.phone")}: ${customer.pendingIdentity.phone ?? "—"}`,
+              customer.pendingIdentity.email !== undefined &&
+                `${t("fields.email")}: ${customer.pendingIdentity.email ?? "—"}`,
             ]
               .filter(Boolean)
               .join("; "),

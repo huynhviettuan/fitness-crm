@@ -22,7 +22,10 @@ export default async function ApprovalRulesPage() {
   if (!can(user, "approval.manage")) return <ForbiddenState />;
 
   const t = await getTranslations("approvalRules");
-  const [rules, roles] = await Promise.all([listApprovalRules(), can(user, "role.manage") ? listRoles() : Promise.resolve([])]);
+  const [rules, roles] = await Promise.all([
+    listApprovalRules(),
+    can(user, "role.manage") ? listRoles() : Promise.resolve([]),
+  ]);
 
   return (
     <>

@@ -45,7 +45,11 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} actions={<RecordCashButton branches={user.branches} />} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={<RecordCashButton branches={user.branches} />}
+      />
       <FinanceTabs active="cash" showCash />
       <MonthNav path="/finance/cash" month={month.from} thisMonth={month.thisMonth} />
       <section aria-label={t("month", { month: formatMonth(month.from) })} className="mb-2 grid gap-4 sm:grid-cols-3">

@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, signedInAs, test } from "./fixtures";
 import { createCustomerViaApi, uniquePhone } from "./support/data";
 import { E2E_USERS } from "./support/db";
@@ -6,7 +7,7 @@ import { fill, labels } from "./support/labels";
 // Leads (brief §3, §4.1; D-019, D-020; docs/13 E2E-116). The journey across consultants is in
 // leads.branch.spec.ts (E2E-117).
 const l = labels.leads;
-const toasts = (page: import("@playwright/test").Page) => page.getByRole("region", { name: labels.common.notifications });
+const toasts = (page: Page) => page.getByRole("region", { name: labels.common.notifications });
 
 test.describe("leads as a receptionist", () => {
   test.use(signedInAs("RECEPTIONIST"));
@@ -41,21 +42,37 @@ test.describe("leads as a receptionist", () => {
     await expect(leadsPage.row(name)).toContainText(labels.status.lead.CONSULTING);
   });
 
-  test("D-019: a phone that is already a customer's is refused, and the form links to that customer", async ({ page, apiAs, testTag, leadsPage }) => {
+  test("D-019: a phone that is already a customer's is refused, and the form links to that customer", async ({
+    page,
+    apiAs,
+    testTag,
+    leadsPage,
+  }) => {
     const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
-    const phone = ((await (await (await apiAs("RECEPTIONIST")).get(`/api/v1/customers/${customer.id}`)).json()) as { phone: string }).phone;
+    const phone = (
+      (await (await (await apiAs("RECEPTIONIST")).get(`/api/v1/customers/${customer.id}`)).json()) as { phone: string }
+    ).phone;
 
     await leadsPage.goto();
     const form = await leadsPage.openAdd();
     await form.fill({ fullName: `Trùng ${testTag}`, phone, channel: "Zalo" });
     await form.save();
 
-    await expect(form.duplicate).toContainText(fill(labels.people.duplicateCustomer, { code: customer.customerCode, name: customer.fullName }));
-    await form.duplicate.getByRole("link", { name: fill(labels.people.openExisting, { code: customer.customerCode }) }).click();
+    await expect(form.duplicate).toContainText(
+      fill(labels.people.duplicateCustomer, { code: customer.customerCode, name: customer.fullName }),
+    );
+    await form.duplicate
+      .getByRole("link", { name: fill(labels.people.openExisting, { code: customer.customerCode }) })
+      .click();
     await expect(page).toHaveURL(new RegExp(`/customers/${customer.id}$`));
   });
 
-  test("Khác needs a note, and an edit keeps the lead's code (D-016)", async ({ page, testTag, leadsPage, leadPage }) => {
+  test("Khác needs a note, and an edit keeps the lead's code (D-016)", async ({
+    page,
+    testTag,
+    leadsPage,
+    leadPage,
+  }) => {
     const name = `Hội chợ ${testTag}`;
 
     await leadsPage.goto();

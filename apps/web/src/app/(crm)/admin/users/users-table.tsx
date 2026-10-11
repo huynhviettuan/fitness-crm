@@ -7,7 +7,12 @@ import { useTranslations } from "next-intl";
 import { MoreHorizontalIcon, UserPlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
@@ -80,7 +85,9 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
       header: t("users.fields.branches"),
       // D-014: every branch, or the granted ones.
       cell: ({ row }) =>
-        row.original.allBranches ? t("users.allBranches") : row.original.branches.map((branch) => branch.name).join(", "),
+        row.original.allBranches
+          ? t("users.allBranches")
+          : row.original.branches.map((branch) => branch.name).join(", "),
     },
     {
       id: "status",

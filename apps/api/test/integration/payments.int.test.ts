@@ -3,8 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
-import { cancelContract, createContract, getContract, listContracts } from "../../src/modules/contracts/contract.service.js";
-import { collectedBetween, deletePayment, listDebts, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
+import {
+  cancelContract,
+  createContract,
+  getContract,
+  listContracts,
+} from "../../src/modules/contracts/contract.service.js";
+import {
+  collectedBetween,
+  deletePayment,
+  listDebts,
+  listPayments,
+  recordPayment,
+} from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestOption, createTestUser, optionId, withoutApprovals } from "../support/factories.js";
 import { activeContract, CONTRACT } from "../support/bookings.js";
@@ -17,7 +28,6 @@ afterEach(async () => {
 beforeEach(async () => {
   await withoutApprovals();
 });
-
 
 // Seeded by the migration (D-016), so their ids stay the same between tests.
 const CASH = await optionId("paymentMethods", "Tiền mặt");
@@ -44,8 +54,16 @@ describe("recordPayment", () => {
     await pay(reception, contract.id, 3_000_000);
 
     expect(replayed).toBe(false);
-    expect(payment).toMatchObject({ amount: 5_000_000, method: { id: CASH, labelVi: "Tiền mặt", note: null }, createdBy: "RECEPTIONIST test user" });
-    expect(await getContract(reception, contract.id)).toMatchObject({ confirmedPaidAmount: 8_000_000, paidAmount: 8_000_000, debt: 4_000_000 });
+    expect(payment).toMatchObject({
+      amount: 5_000_000,
+      method: { id: CASH, labelVi: "Tiền mặt", note: null },
+      createdBy: "RECEPTIONIST test user",
+    });
+    expect(await getContract(reception, contract.id)).toMatchObject({
+      confirmedPaidAmount: 8_000_000,
+      paidAmount: 8_000_000,
+      debt: 4_000_000,
+    });
     const audit = await prisma.auditEvent.findFirst({ where: { entityId: payment.id } });
     expect(audit).toMatchObject({ action: "payment.created", after: { amount: 5_000_000, paidOn: "2026-10-05" } });
   });
@@ -53,7 +71,9 @@ describe("recordPayment", () => {
   it("needs an idempotency key", async () => {
     const { reception, contract } = await setup();
 
-    await expect(recordPayment(reception, contract.id, { amount: 1, methodId: CASH, paidOn: "05/10/2026" }, undefined)).rejects.toMatchObject({
+    await expect(
+      recordPayment(reception, contract.id, { amount: 1, methodId: CASH, paidOn: "05/10/2026" }, undefined),
+    ).rejects.toMatchObject({
       code: "IDEMPOTENCY_KEY_REQUIRED",
     });
   });
@@ -94,7 +114,9 @@ describe("recordPayment", () => {
     await prisma.contract.update({ where: { id: contract.id }, data: { openingPaidAmount: 4_000_000 } });
     await pay(reception, contract.id, 7_000_000);
 
-    await expect(pay(reception, contract.id, 1_000_001)).rejects.toMatchObject({ code: "PAYMENT_EXCEEDS_CONTRACT_VALUE" });
+    await expect(pay(reception, contract.id, 1_000_001)).rejects.toMatchObject({
+      code: "PAYMENT_EXCEEDS_CONTRACT_VALUE",
+    });
     await expect(pay(reception, contract.id, 1_000_000)).resolves.toBeDefined();
     expect(await getContract(reception, contract.id)).toMatchObject({ paidAmount: 12_000_000, debt: 0 });
   });
@@ -103,10 +125,15 @@ describe("recordPayment", () => {
     const { reception, contract } = await setup();
     await pay(reception, contract.id, 10_000_000);
 
-    const results = await Promise.allSettled([pay(reception, contract.id, 2_000_000), pay(reception, contract.id, 2_000_000)]);
+    const results = await Promise.allSettled([
+      pay(reception, contract.id, 2_000_000),
+      pay(reception, contract.id, 2_000_000),
+    ]);
 
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(results.find((r) => r.status === "rejected")).toMatchObject({ reason: { code: "PAYMENT_EXCEEDS_CONTRACT_VALUE" } });
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({
+      reason: { code: "PAYMENT_EXCEEDS_CONTRACT_VALUE" },
+    });
     expect((await getContract(reception, contract.id)).debt).toBe(0);
   });
 
@@ -122,17 +149,23 @@ describe("recordPayment", () => {
   it("returns field errors for invalid input, and refuses a day after today", async () => {
     const { reception, contract } = await setup();
     const fields = async (input: object) =>
-      recordPayment(reception, contract.id, input, randomUUID()).catch((error: { code: string; fieldErrors: object }) => error);
+      recordPayment(reception, contract.id, input, randomUUID()).catch(
+        (error: { code: string; fieldErrors: object }) => error,
+      );
 
     expect(await fields({ amount: "0", methodId: "GOLD", paidOn: "31/02/2026" })).toMatchObject({
       code: "VALIDATION_FAILED",
       fieldErrors: { amount: ["amountNotPositive"], methodId: ["required"], paidOn: ["invalidDate"] },
     });
-    expect(await fields({ amount: "-5", methodId: CASH, paidOn: "05/10/2026" })).toMatchObject({ fieldErrors: { amount: ["invalidAmount"] } });
+    expect(await fields({ amount: "-5", methodId: CASH, paidOn: "05/10/2026" })).toMatchObject({
+      fieldErrors: { amount: ["invalidAmount"] },
+    });
 
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-10T16:59:00Z")); // 23:59 on 10/10 in the gym
-    expect(await fields({ amount: 1, methodId: CASH, paidOn: "11/10/2026" })).toMatchObject({ fieldErrors: { paidOn: ["futureDate"] } });
+    expect(await fields({ amount: 1, methodId: CASH, paidOn: "11/10/2026" })).toMatchObject({
+      fieldErrors: { paidOn: ["futureDate"] },
+    });
     vi.useRealTimers();
     expect(await prisma.payment.count()).toBe(0);
   });
@@ -144,25 +177,50 @@ describe("recordPayment", () => {
         (error: { code: string; fieldErrors: object }) => error,
       );
 
-    expect(await fields({ methodId: OTHER_METHOD, methodNote: "  " })).toMatchObject({ fieldErrors: { methodNote: ["otherNeedsNote"] } });
-    expect(await fields({ methodId: await optionId("paymentMethods", "Ví điện tử") })).toMatchObject({ fieldErrors: { methodId: ["invalidChoice"] } });
+    expect(await fields({ methodId: OTHER_METHOD, methodNote: "  " })).toMatchObject({
+      fieldErrors: { methodNote: ["otherNeedsNote"] },
+    });
+    expect(await fields({ methodId: await optionId("paymentMethods", "Ví điện tử") })).toMatchObject({
+      fieldErrors: { methodId: ["invalidChoice"] },
+    });
     expect(await fields({ methodId: OTHER_REASON })).toMatchObject({ fieldErrors: { methodId: ["invalidChoice"] } });
     expect(await fields({ methodId: randomUUID() })).toMatchObject({ fieldErrors: { methodId: ["invalidChoice"] } });
     expect(await prisma.payment.count()).toBe(0);
 
-    const { payment } = await recordPayment(reception, contract.id, { amount: 1, methodId: OTHER_METHOD, methodNote: "Ví MoMo", paidOn: "05/10/2026" }, randomUUID());
-    expect(payment.method).toEqual({ id: OTHER_METHOD, labelVi: "Khác", labelEn: "Other", isOther: true, note: "Ví MoMo" });
+    const { payment } = await recordPayment(
+      reception,
+      contract.id,
+      { amount: 1, methodId: OTHER_METHOD, methodNote: "Ví MoMo", paidOn: "05/10/2026" },
+      randomUUID(),
+    );
+    expect(payment.method).toEqual({
+      id: OTHER_METHOD,
+      labelVi: "Khác",
+      labelEn: "Other",
+      isOther: true,
+      note: "Ví MoMo",
+    });
   });
 
   it("an option made inactive later stays on the payments that have it (D-016, AC-03)", async () => {
     const { reception, contract } = await setup();
     const momo = await createTestOption("paymentMethods", "Ví MoMo");
-    const { payment } = await recordPayment(reception, contract.id, { amount: 1, methodId: momo, paidOn: "05/10/2026" }, randomUUID());
+    const { payment } = await recordPayment(
+      reception,
+      contract.id,
+      { amount: 1, methodId: momo, paidOn: "05/10/2026" },
+      randomUUID(),
+    );
 
     await prisma.option.update({ where: { id: momo }, data: { active: false } });
 
-    expect((await listPayments(reception, { contractId: contract.id })).items[0]).toMatchObject({ id: payment.id, method: { id: momo, labelVi: "Ví MoMo" } });
-    await expect(recordPayment(reception, contract.id, { amount: 1, methodId: momo, paidOn: "05/10/2026" }, randomUUID())).rejects.toMatchObject({
+    expect((await listPayments(reception, { contractId: contract.id })).items[0]).toMatchObject({
+      id: payment.id,
+      method: { id: momo, labelVi: "Ví MoMo" },
+    });
+    await expect(
+      recordPayment(reception, contract.id, { amount: 1, methodId: momo, paidOn: "05/10/2026" }, randomUUID()),
+    ).rejects.toMatchObject({
       fieldErrors: { methodId: ["invalidChoice"] },
     });
   });
@@ -187,8 +245,12 @@ describe("deletePayment (D-035)", () => {
     const { actor: accountant } = await createTestUser("ACCOUNTANT");
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await expect(deletePayment(accountant, payment.id, { reasonId: "" })).rejects.toMatchObject({ fieldErrors: { reasonId: ["required"] } });
-    await expect(deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: " " })).rejects.toMatchObject({
+    await expect(deletePayment(accountant, payment.id, { reasonId: "" })).rejects.toMatchObject({
+      fieldErrors: { reasonId: ["required"] },
+    });
+    await expect(
+      deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: " " }),
+    ).rejects.toMatchObject({
       fieldErrors: { reasonNote: ["otherNeedsNote"] },
     });
     await deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Ghi nhầm hợp đồng" });
@@ -201,9 +263,16 @@ describe("deletePayment (D-035)", () => {
       reasonId: OTHER_REASON,
       reasonNote: "Ghi nhầm hợp đồng",
       deletedById: accountant.id,
-      snapshot: { id: payment.id, amount: 5_000_000, paidOn: "2026-10-05T00:00:00.000Z", createdBy: "RECEPTIONIST test user" },
+      snapshot: {
+        id: payment.id,
+        amount: 5_000_000,
+        paidOn: "2026-10-05T00:00:00.000Z",
+        createdBy: "RECEPTIONIST test user",
+      },
     });
-    expect(await prisma.auditEvent.findFirst({ where: { entityId: payment.id, action: "payment.deleted" } })).toMatchObject({
+    expect(
+      await prisma.auditEvent.findFirst({ where: { entityId: payment.id, action: "payment.deleted" } }),
+    ).toMatchObject({
       before: { id: payment.id, amount: 5_000_000 },
       after: null,
       metadata: { reason: { optionId: OTHER_REASON, note: "Ghi nhầm hợp đồng" } },
@@ -216,16 +285,15 @@ describe("deletePayment (D-035)", () => {
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
     const results = await Promise.allSettled(
-      Array.from({ length: 5 }, () => deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" })),
+      Array.from({ length: 5 }, () =>
+        deletePayment(accountant, payment.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" }),
+      ),
     );
 
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(results.filter((r) => r.status === "rejected").map((r) => (r as PromiseRejectedResult).reason.code)).toEqual([
-      "NOT_FOUND",
-      "NOT_FOUND",
-      "NOT_FOUND",
-      "NOT_FOUND",
-    ]);
+    expect(results.filter((r) => r.status === "rejected").map((r) => (r as PromiseRejectedResult).reason.code)).toEqual(
+      ["NOT_FOUND", "NOT_FOUND", "NOT_FOUND", "NOT_FOUND"],
+    );
     expect(await prisma.trashEntry.count({ where: { entityId: payment.id } })).toBe(1);
     expect(await prisma.auditEvent.count({ where: { entityId: payment.id, action: "payment.deleted" } })).toBe(1);
   });
@@ -236,15 +304,21 @@ describe("deletePayment (D-035)", () => {
     const { actor } = await createTestUser(role);
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await expect(deletePayment(actor, payment.id, { reasonId: OTHER_REASON, reasonNote: "x" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(deletePayment(actor, payment.id, { reasonId: OTHER_REASON, reasonNote: "x" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("the database refuses a deletion without who and why, and a non-positive amount", async () => {
     const { reception, contract } = await setup();
     const { payment } = await pay(reception, contract.id, 5_000_000);
 
-    await expect(prisma.payment.update({ where: { id: payment.id }, data: { deletedAt: new Date() } })).rejects.toThrow(/payments_delete_complete/);
-    await expect(prisma.payment.update({ where: { id: payment.id }, data: { amount: 0 } })).rejects.toThrow(/payments_amount_positive/);
+    await expect(prisma.payment.update({ where: { id: payment.id }, data: { deletedAt: new Date() } })).rejects.toThrow(
+      /payments_delete_complete/,
+    );
+    await expect(prisma.payment.update({ where: { id: payment.id }, data: { amount: 0 } })).rejects.toThrow(
+      /payments_amount_positive/,
+    );
   });
 });
 
@@ -257,7 +331,10 @@ describe("reading", () => {
     const c = await pay(reception, contract.id, 3_000_000, randomUUID(), "03/10/2026");
     await deletePayment(accountant, c.payment.id, { reasonId: OTHER_REASON, reasonNote: "Sai" });
 
-    expect((await listPayments(reception, { customerId: customer.id })).items.map((p) => p.id)).toEqual([b.payment.id, a.payment.id]);
+    expect((await listPayments(reception, { customerId: customer.id })).items.map((p) => p.id)).toEqual([
+      b.payment.id,
+      a.payment.id,
+    ]);
     expect((await listPayments(reception, { from: "02/10/2026", to: "31/10/2026" })).total).toBe(1);
     expect(await collectedBetween(reception, { from: "01/10/2026", to: "31/10/2026" })).toBe(3_000_000);
   });
@@ -291,6 +368,9 @@ describe("reading", () => {
     await pay(reception, contract.id, 3_000_000);
 
     const items = (await listContracts(reception, { customerId: customer.id })).items;
-    expect(Object.fromEntries(items.map((c) => [c.id, c.paidAmount]))).toEqual({ [contract.id]: 3_000_000, [other.id]: 0 });
+    expect(Object.fromEntries(items.map((c) => [c.id, c.paidAmount]))).toEqual({
+      [contract.id]: 3_000_000,
+      [other.id]: 0,
+    });
   });
 });

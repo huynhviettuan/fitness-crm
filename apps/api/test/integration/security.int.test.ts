@@ -42,10 +42,17 @@ describe("A09 security events are logged", () => {
   it("a permission denial records who, which role, and what was attempted", async () => {
     const { actor } = await createTestUser("PT");
 
-    await expect(createCustomer(actor, { fullName: "X", phone: "0909000000" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(createCustomer(actor, { fullName: "X", phone: "0909000000" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
 
     expect(securityEvents()).toContainEqual(
-      expect.objectContaining({ event: "authz.denied", userId: actor.id, roleId: actor.roleId, permission: "customer.manage" }),
+      expect.objectContaining({
+        event: "authz.denied",
+        userId: actor.id,
+        roleId: actor.roleId,
+        permission: "customer.manage",
+      }),
     );
   });
 
@@ -55,7 +62,9 @@ describe("A09 security events are logged", () => {
 
     await expect(auth.api.signInEmail({ body: { email: user.email, password: wrongPassword } })).rejects.toThrow();
 
-    expect(securityEvents()).toContainEqual(expect.objectContaining({ event: "auth.sign_in.failed", email: user.email }));
+    expect(securityEvents()).toContainEqual(
+      expect.objectContaining({ event: "auth.sign_in.failed", email: user.email }),
+    );
     expect(rawLog()).not.toContain(wrongPassword);
   });
 
@@ -66,7 +75,9 @@ describe("A09 security events are logged", () => {
 
     await expect(auth.api.signInEmail({ body: { email: user.email, password: TEST_PASSWORD } })).rejects.toThrow();
 
-    expect(securityEvents()).toContainEqual(expect.objectContaining({ event: "auth.sign_in.failed", email: user.email }));
+    expect(securityEvents()).toContainEqual(
+      expect.objectContaining({ event: "auth.sign_in.failed", email: user.email }),
+    );
   });
 
   it("a successful sign-in is logged without the password", async () => {
@@ -74,7 +85,9 @@ describe("A09 security events are logged", () => {
 
     await auth.api.signInEmail({ body: { email: user.email, password: TEST_PASSWORD } });
 
-    expect(securityEvents()).toContainEqual(expect.objectContaining({ event: "auth.sign_in.succeeded", userId: user.id }));
+    expect(securityEvents()).toContainEqual(
+      expect.objectContaining({ event: "auth.sign_in.succeeded", userId: user.id }),
+    );
     expect(rawLog()).not.toContain(TEST_PASSWORD);
   });
 
@@ -82,7 +95,13 @@ describe("A09 security events are logged", () => {
     const { actor: admin } = await createTestUser("ADMIN");
     const password = "Initial-secret-456";
 
-    await createUser(admin, { name: "Log Test", email: "log-test@fitness-crm.test", roleId: await roleId("PT"), branchIds: [DEFAULT_BRANCH_ID], password });
+    await createUser(admin, {
+      name: "Log Test",
+      email: "log-test@fitness-crm.test",
+      roleId: await roleId("PT"),
+      branchIds: [DEFAULT_BRANCH_ID],
+      password,
+    });
 
     expect(rawLog()).not.toContain(password);
   });
@@ -105,7 +124,11 @@ describe("A05/A10 control characters are rejected before reaching the database",
   it("line breaks and tabs in notes are still allowed", async () => {
     const { actor } = await createTestUser("RECEPTIONIST");
 
-    const customer = await createCustomer(actor, { fullName: "An", phone: "0909000000", notes: "Line 1\nLine 2\tTabbed" });
+    const customer = await createCustomer(actor, {
+      fullName: "An",
+      phone: "0909000000",
+      notes: "Line 1\nLine 2\tTabbed",
+    });
 
     expect(customer.notes).toBe("Line 1\nLine 2\tTabbed");
   });

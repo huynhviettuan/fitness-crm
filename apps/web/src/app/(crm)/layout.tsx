@@ -41,7 +41,12 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       <AppSidebar mainItems={mainItems} adminItems={adminItems} />
       {/* min-w-0: wide content (e.g. the PT calendar) scrolls inside the page, not the page itself. */}
       <SidebarInset className="min-w-0">
-        <AppHeader user={user} showSearch={can(user, "customer.view")} approvals={approvals} notifications={{ unread, recent: recent.items }} />
+        <AppHeader
+          user={user}
+          showSearch={can(user, "customer.view")}
+          approvals={approvals}
+          notifications={{ unread, recent: recent.items }}
+        />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
