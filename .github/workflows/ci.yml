@@ -12,6 +12,8 @@ env:
   E2E_DATABASE_URL: postgresql://fitness:fitness@localhost:5432/fitness_crm_e2e
   BETTER_AUTH_SECRET: ci-only-secret-that-protects-nothing-real
   BETTER_AUTH_URL: http://localhost:3000
+  # The web app reads it when the build collects page data; E2E sets its own port.
+  API_URL: http://localhost:4000
   GYM_TIMEZONE: Asia/Ho_Chi_Minh
   TURBO_TELEMETRY_DISABLED: 1
 

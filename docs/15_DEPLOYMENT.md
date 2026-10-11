@@ -43,7 +43,7 @@ R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
 SENTRY_DSN, LOG_LEVEL
 
 # Web (apps/web/.env.example)
-API_URL                 # where the web server reaches the API; browsers never call it directly (T-053)
+API_URL                 # where the web server reaches the API; browsers never call it directly (T-053). Needed at build time too: `next build` reads it
 GYM_TIMEZONE            # for showing dates and times
 SENTRY_DSN
 ```
