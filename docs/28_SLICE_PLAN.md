@@ -11,7 +11,7 @@ Each slice lists:
 - **Builds** — the behavior, in the brief's terms.
 - **Source** — brief sections, FR, BR, decisions; the acceptance criteria (doc 14) it moves forward.
 - **Data / API / Web** — tables, endpoints, and screens it adds or changes.
-- **Tests** — the E2E and integration scenarios (doc 13) the test agent writes from this plan, before reading the implementation.
+- **Tests** — the scenarios (doc 13) to write.
 - **Decide first** — rules the brief does not settle. Each becomes an A-entry (or an OQ when it can change money, sessions, PT pay, or permissions) in doc 18 before coding. Interim behavior only for an open OQ.
 - **Depends on** — slices that must be done first.
 

@@ -2,7 +2,7 @@
 
 ## 2026-10-11 — Slice plan
 
-- New `docs/28_SLICE_PLAN.md`: every remaining slice from M2.5 to M11. Each slice lists what it builds, its sources, data, API, and screens, the tests the test agent writes, the decisions to settle before coding, and what it depends on. Plan-level proposals: the consulting-Excel import moves to M3 for AC-08; a shared Excel export in M3.1; file storage in M4.1; staging before the M2 trial; an email outbox from M5.4.
+- New `docs/28_SLICE_PLAN.md`: every remaining slice from M2.5 to M11. Each slice lists what it builds, its sources, data, API, and screens, the tests to write, the decisions to settle before coding, and what it depends on. Plan-level proposals: the consulting-Excel import moves to M3 for AC-08; a shared Excel export in M3.1; file storage in M4.1; staging before the M2 trial; an email outbox from M5.4.
 - Docs: 16, README.
 
 ## 2026-10-11 — M2 slice 4: Show, No show, Báo Studio, ID encryption
