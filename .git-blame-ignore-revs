@@ -1,0 +1,5 @@
+# Commits that only reformatted code; git blame skips them:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Code style: Prettier and ESLint readability rules
+711abbf862d92bcf86ca1a2c72fe424661348536
