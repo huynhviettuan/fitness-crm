@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import createClient from "openapi-fetch";
 import type { z } from "zod";
 import { env } from "@/lib/env";
@@ -14,8 +15,13 @@ const FORWARDED_HEADERS = ["cookie", "origin", "user-agent", "accept-language", 
  * the signed-in user by forwarding the request's session cookie; the API authenticates
  * and authorizes every call. Server Actions also forward the Origin, which Next.js has
  * already checked, so the API's own Origin check (T-033) passes.
+ *
+ * Every call waits for the real request (`connection()`): the answer depends on who is
+ * signed in, and Node's fetch reads the clock when a response ends, which Next.js would
+ * otherwise report as `Date.now()` during the prerender.
  */
 export async function api() {
+  await connection();
   const incoming = await headers();
   const forwarded: Record<string, string> = {};
   for (const name of FORWARDED_HEADERS) {
