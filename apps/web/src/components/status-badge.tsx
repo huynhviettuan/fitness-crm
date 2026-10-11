@@ -7,6 +7,18 @@ type BadgeVariant = "success" | "warning" | "info" | "muted" | "destructive";
 // their phase is built.
 const STATUS_VARIANTS = {
   customer: { ACTIVE: "success", INACTIVE: "muted" },
+  // D-020: open journeys in info and warning colors, re-care cases in muted, outcomes in their own.
+  lead: {
+    NEW: "info",
+    CONSULTING: "info",
+    CONSIDERING: "warning",
+    NO_RESPONSE: "muted",
+    BOOKED: "warning",
+    SHOWED: "success",
+    NO_SHOW: "destructive",
+    REFUSED: "muted",
+    CONTRACTED: "success",
+  },
   user: { ACTIVE: "success", DISABLED: "muted" },
   contract: { DRAFT: "muted", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted" },
   employee: { ACTIVE: "success", INACTIVE: "muted" },

@@ -8,6 +8,8 @@ export const PERMISSION_GROUPS = {
   system: ["user.manage", "role.manage", "branch.manage", "approval.manage"],
   configuration: ["config.manage"],
   history: ["audit.view", "trash.view"],
+  // Leads and consulting (brief §4.1): seeing, adding, and editing leads.
+  leads: ["lead.view", "lead.create", "lead.manage"],
   customers: ["customer.view", "customer.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
@@ -32,7 +34,7 @@ export function isPermission(value: string): value is Permission {
  * Data scope (D-017): per resource, a role sees ALL records in the user's branches or
  * only its OWN — the ones the user is responsible for (A-029).
  */
-export const DATA_SCOPE_RESOURCES = ["customers", "contracts", "schedule", "vouchers", "staff", "tasks"] as const;
+export const DATA_SCOPE_RESOURCES = ["leads", "customers", "contracts", "schedule", "vouchers", "staff", "tasks"] as const;
 export type DataScopeResource = (typeof DATA_SCOPE_RESOURCES)[number];
 export const DATA_SCOPES = ["ALL", "OWN"] as const;
 export type DataScope = (typeof DATA_SCOPES)[number];

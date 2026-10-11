@@ -1,5 +1,6 @@
 // OWASP A01:2025 Broken Access Control, A04:2025 Cryptographic Failures (secrets in responses).
 import { expect, test } from "../fixtures";
+import { uniquePhone } from "../support/data";
 import { discoverApiRoutes } from "../support/routes";
 import { E2E_BRANCH_ID, type Role } from "../support/db";
 
@@ -37,7 +38,7 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
   for (const [role, status] of createExpectations) {
     test(`${role} creating a customer gets ${status}`, async ({ apiAs, testTag }) => {
       const api = await apiAs(role);
-      const response = await api.post("/api/v1/customers", { data: { fullName: `RBAC ${testTag}`, phone: "0909000111" } });
+      const response = await api.post("/api/v1/customers", { data: { fullName: `RBAC ${testTag}`, phone: uniquePhone() } });
 
       expect(response.status()).toBe(status);
     });
@@ -47,7 +48,7 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
     test(`${role} cannot update a customer`, async ({ apiAs, testTag }) => {
       const reception = await apiAs("RECEPTIONIST");
       const customer = await (
-        await reception.post("/api/v1/customers", { data: { fullName: `Target ${testTag}`, phone: "0909000222" } })
+        await reception.post("/api/v1/customers", { data: { fullName: `Target ${testTag}`, phone: uniquePhone() } })
       ).json();
 
       const api = await apiAs(role);
@@ -61,7 +62,7 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
   test("a trainer cannot open a customer by id, even with the real id (OQ-006 interim)", async ({ apiAs, testTag }) => {
     const reception = await apiAs("RECEPTIONIST");
     const customer = await (
-      await reception.post("/api/v1/customers", { data: { fullName: `Hidden ${testTag}`, phone: "0909000333" } })
+      await reception.post("/api/v1/customers", { data: { fullName: `Hidden ${testTag}`, phone: uniquePhone() } })
     ).json();
 
     const trainer = await apiAs("PT");
@@ -74,7 +75,7 @@ test.describe("A01 roles are enforced on the server (docs/09)", () => {
     const api = await apiAs("RECEPTIONIST");
     const forged = {
       fullName: `Forged ${testTag}`,
-      phone: "0909000444",
+      phone: uniquePhone(),
       id: "00000000-0000-4000-8000-000000000000",
       customerCode: "KH999999",
       status: "INACTIVE",
@@ -106,7 +107,7 @@ test.describe("A04 responses never expose secrets", () => {
   test("the current-user and customer APIs return only safe fields", async ({ apiAs, testTag }) => {
     const api = await apiAs("ADMIN");
     // An admin with every branch names the branch, since other tests may add branches.
-    await api.post("/api/v1/customers", { data: { fullName: `Secrets ${testTag}`, phone: "0909000555", branchId: E2E_BRANCH_ID } });
+    await api.post("/api/v1/customers", { data: { fullName: `Secrets ${testTag}`, phone: uniquePhone(), branchId: E2E_BRANCH_ID } });
 
     const me = await api.get("/api/v1/me");
     expect(Object.keys(await me.json()).sort()).toEqual([

@@ -7,7 +7,7 @@ import {
   updateCustomer,
 } from "../../src/modules/customers/customer.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestUser, withoutApprovals } from "../support/factories.js";
+import { createTestUser, withoutApprovals, uniquePhone } from "../support/factories.js";
 
 afterEach(resetDatabase);
 
@@ -32,7 +32,7 @@ describe("createCustomer", () => {
     const { actor } = await createTestUser("RECEPTIONIST");
 
     const customers = await Promise.all(
-      Array.from({ length: 10 }, (_, i) => createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}` })),
+      Array.from({ length: 10 }, (_, i) => createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}`, phone: uniquePhone() })),
     );
 
     const codes = new Set(customers.map((c) => c.customerCode));
@@ -121,7 +121,7 @@ describe("listCustomers search (FR-CUS-002)", () => {
 
   it("paginates newest first", async () => {
     const { actor } = await createTestUser("RECEPTIONIST");
-    for (let i = 0; i < 3; i++) await createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}` });
+    for (let i = 0; i < 3; i++) await createCustomer(actor, { ...validCustomer, fullName: `Khách ${i}`, phone: uniquePhone() });
 
     const page = await listCustomers(actor, { page: 2, pageSize: 2 });
 

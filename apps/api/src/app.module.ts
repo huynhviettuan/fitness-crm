@@ -15,6 +15,7 @@ import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
 import { CustomersController } from "./modules/customers/customers.controller.js";
+import { LeadsController } from "./modules/leads/leads.controller.js";
 import { CashTransactionsController, DebtsController, PaymentsController } from "./modules/finance/finance.controller.js";
 import { EmployeesController } from "./modules/employees/employees.controller.js";
 import { UsersController } from "./modules/users/users.controller.js";
@@ -26,6 +27,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
 @Module({
   controllers: [
     MeController,
+    LeadsController,
     CustomersController,
     ContractsController,
     EmployeesController,

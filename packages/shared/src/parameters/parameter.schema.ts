@@ -14,6 +14,7 @@ export const PARAMETER_DEFAULTS = {
   calendarDayStart: "05:00",
   calendarDayEnd: "22:00",
   /** Prefixes of generated codes (D-038); the number after them never repeats. */
+  leadCodePrefix: "LD",
   customerCodePrefix: "KH",
   contractCodePrefix: "HD",
   employeeCodePrefix: "NV",
@@ -45,6 +46,7 @@ export const parametersInputSchema = z
   .object({
     calendarDayStart: calendarTime,
     calendarDayEnd: calendarTime,
+    leadCodePrefix: codePrefix,
     customerCodePrefix: codePrefix,
     contractCodePrefix: codePrefix,
     employeeCodePrefix: codePrefix,
@@ -56,6 +58,7 @@ export const parametersSchema = z
   .object({
     calendarDayStart: z.string(),
     calendarDayEnd: z.string(),
+    leadCodePrefix: z.string(),
     customerCodePrefix: z.string(),
     contractCodePrefix: z.string(),
     employeeCodePrefix: z.string(),

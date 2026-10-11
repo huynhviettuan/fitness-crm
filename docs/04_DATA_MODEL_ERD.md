@@ -78,7 +78,7 @@ erDiagram
 
 | Table | Key fields |
 |---|---|
-| `people` | lead_code, customer_code (set at Show), stage (LEAD, CUSTOMER), status (lead statuses, D-020), pic_employee_id, full_name, gender, birth_date, phone (unique per active person), email, nationality_group, nationality, id_document (encrypted), address, health_basic (encrypted), customer_group_option_id, channel_option_id, source_option_id, source_type (ORGANIC, PAID), source_detail, need_group_option_id, need_detail_option_id, need_note, pain_status_option_id, assessment_type_option_id, emergency_contact, consent_at, notes |
+| `people` (built as `customers`, T-061) | lead_code, customer_code (set at Show), stage (LEAD, CUSTOMER), status (lead statuses, D-020), pic_employee_id, full_name, gender, birth_date, phone (unique per active person), email, nationality_group, nationality, id_document (encrypted), address, health_basic (encrypted), customer_group_option_id, channel_option_id, source_option_id, source_type (ORGANIC, PAID), source_detail, need_group_option_id, need_detail_option_id, need_note, pain_status_option_id, assessment_type_option_id, emergency_contact, consent_at, notes |
 | `person_merges` | kept_person_id, merged_person_id, by, at |
 | `lead_status_history` | person_id, from_status, to_status, reason_option_id, reason_note, by, at |
 | `consulting_checklists` / `consulting_step_templates` | versioned checklist; step key, order, label, trigger, delay, required, result list |

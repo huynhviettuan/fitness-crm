@@ -5,6 +5,7 @@
   "nav": {
     "main": "Điều hướng",
     "dashboard": "Tổng quan",
+    "leads": "Lead",
     "customers": "Khách hàng",
     "administration": "Quản trị",
     "users": "Người dùng",
@@ -78,6 +79,17 @@
       "LOW": "Thấp",
       "NORMAL": "Bình thường",
       "HIGH": "Cao"
+    },
+    "lead": {
+      "NEW": "Mới",
+      "CONSULTING": "Đang tư vấn",
+      "CONSIDERING": "Cân nhắc",
+      "NO_RESPONSE": "Chưa phản hồi",
+      "BOOKED": "Đã đặt lịch",
+      "SHOWED": "Show",
+      "NO_SHOW": "No show",
+      "REFUSED": "Từ chối",
+      "CONTRACTED": "Đã ký hợp đồng"
     }
   },
   "common": {
@@ -129,6 +141,75 @@
     "comingTitle": "Bảng điều khiển đang được xây dựng",
     "comingBody": "Số liệu lịch hẹn, buổi tập và tài chính sẽ xuất hiện ở đây khi các phần đó hoàn thành.",
     "goToCustomers": "Mở danh sách khách hàng"
+  },
+  "leads": {
+    "title": "Lead",
+    "description": "Khách tiềm năng trước khi đến phòng tập. Khi khách Show, lead thành khách hàng và giữ nguyên hồ sơ.",
+    "create": "Thêm lead",
+    "createDescription": "Nhập nhanh khách vãng lai hoặc từ kênh chưa kết nối. Chỉ cần họ tên và kênh liên hệ; các thông tin khác bổ sung sau.",
+    "created": "Đã thêm lead {code}",
+    "edit": "Sửa thông tin",
+    "editDescription": "Mọi thay đổi đều được ghi vào lịch sử thao tác.",
+    "updated": "Đã lưu thay đổi",
+    "emptyTitle": "Chưa có lead nào",
+    "emptyBody": "Thêm lead đầu tiên bằng nút \"Thêm lead\".",
+    "noResultsTitle": "Không tìm thấy lead",
+    "noResultsBody": "Không có lead nào khớp bộ lọc.",
+    "searchPlaceholder": "Tìm theo mã, tên hoặc SĐT",
+    "filters": "Bộ lọc",
+    "apply": "Lọc",
+    "all": "Tất cả",
+    "open": "Xem lead {name}",
+    "backToList": "Danh sách lead",
+    "profile": "Hồ sơ lead",
+    "need": "Nhu cầu",
+    "moreDetails": "Thêm thông tin",
+    "noPic": "Chưa phân công",
+    "noPhone": "Chưa có SĐT",
+    "birthDatePlaceholder": "dd/MM/yyyy",
+    "phonePlaceholder": "Ví dụ: 0909 123 456",
+    "noOption": "Không chọn",
+    "sourceTypes": {
+      "ORGANIC": "Organic",
+      "PAID": "Paid"
+    },
+    "nationalityGroups": {
+      "VIETNAM": "Việt Nam",
+      "FOREIGN": "Nước ngoài"
+    },
+    "genders": {
+      "MALE": "Nam",
+      "FEMALE": "Nữ",
+      "OTHER": "Khác"
+    },
+    "fields": {
+      "leadCode": "Mã lead",
+      "createdAt": "Ngày",
+      "fullName": "Họ và tên",
+      "gender": "Giới tính",
+      "birthDate": "Ngày sinh",
+      "phone": "Số điện thoại",
+      "email": "Email",
+      "channel": "Kênh liên hệ",
+      "source": "Nguồn lead",
+      "sourceType": "Phân loại nguồn",
+      "sourceDetail": "Chi tiết nguồn",
+      "nationalityGroup": "Nhóm quốc tịch",
+      "needGroup": "Nhóm nhu cầu",
+      "needDetail": "Chi tiết nhu cầu",
+      "painStatus": "Pain Status",
+      "assessmentType": "Loại Assessment",
+      "pic": "Người phụ trách",
+      "status": "Trạng thái",
+      "branch": "Chi nhánh",
+      "notes": "Ghi chú",
+      "createdBy": "Người nhập"
+    }
+  },
+  "people": {
+    "duplicateLead": "Số điện thoại này đã thuộc lead {code} · {name}. Mỗi người chỉ có một hồ sơ.",
+    "duplicateCustomer": "Số điện thoại này đã thuộc khách hàng {code} · {name}. Mỗi người chỉ có một hồ sơ.",
+    "openExisting": "Mở hồ sơ {code}"
   },
   "customers": {
     "title": "Khách hàng",
@@ -291,7 +372,8 @@
     "APPROVAL_OWN_REQUEST": "Bạn không thể tự duyệt yêu cầu do chính mình gửi.",
     "APPROVAL_NOT_PENDING": "Yêu cầu này đã được xử lý.",
     "APPROVAL_ALREADY_PENDING": "Đã có một yêu cầu đang chờ duyệt cho dữ liệu này.",
-    "BOOKING_OUTSIDE_WORKING_HOURS": "Ngoài giờ làm việc của huấn luyện viên, hoặc là ngày nghỉ của họ."
+    "BOOKING_OUTSIDE_WORKING_HOURS": "Ngoài giờ làm việc của huấn luyện viên, hoặc là ngày nghỉ của họ.",
+    "PHONE_ALREADY_USED": "Số điện thoại này đã có trong hệ thống."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -322,7 +404,8 @@
     "outOfRange": "Nhập một số từ 1 đến 720.",
     "shiftsOverlap": "Các ca trong cùng một ngày không được chồng lên nhau.",
     "dayOffExists": "Ngày này đã là ngày nghỉ.",
-    "oneAssigneeOnly": "Chỉ chọn một người hoặc một phòng ban."
+    "oneAssigneeOnly": "Chỉ chọn một người hoặc một phòng ban.",
+    "phoneAlreadyUsed": "Số điện thoại đã thuộc một hồ sơ khác."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -596,6 +679,7 @@
   "permissions": {
     "groups": {
       "system": "Hệ thống",
+      "leads": "Lead và tư vấn",
       "customers": "Khách hàng",
       "contracts": "Hợp đồng",
       "schedule": "Lịch PT và buổi tập",
@@ -661,9 +745,15 @@
       "task": {
         "view": "Xem và làm việc được giao",
         "create": "Giao việc"
+      },
+      "lead": {
+        "view": "Xem lead",
+        "create": "Thêm lead",
+        "manage": "Sửa thông tin lead"
       }
     },
     "resources": {
+      "leads": "Lead",
       "customers": "Khách hàng",
       "contracts": "Hợp đồng",
       "schedule": "Lịch PT",
@@ -704,7 +794,7 @@
       "description": "Mô tả",
       "permissions": "Quyền",
       "dataScopes": "Phạm vi dữ liệu",
-      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi. Nhân viên \"chỉ của mình\": hồ sơ và lịch làm việc của chính mình. Công việc \"chỉ của mình\": việc mình giao, mình nhận và của phòng ban mình.",
+      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi. Nhân viên \"chỉ của mình\": hồ sơ và lịch làm việc của chính mình. Công việc \"chỉ của mình\": việc mình giao, mình nhận và của phòng ban mình. Lead \"chỉ của mình\": lead mình nhập hoặc mình phụ trách.",
       "fieldMasks": "Thông tin bị ẩn",
       "fieldMasksHint": "Ẩn trên mọi màn hình và không tìm kiếm được.",
       "users": "Người dùng"
@@ -740,7 +830,12 @@
       "deleteReasons": "Lý do xóa, hủy phiếu",
       "rejectReasons": "Lý do từ chối duyệt",
       "departments": "Phòng ban",
-      "jobTitles": "Chức danh"
+      "jobTitles": "Chức danh",
+      "leadChannels": "Kênh liên hệ",
+      "leadSources": "Nguồn lead",
+      "needGroups": "Nhóm nhu cầu",
+      "painStatuses": "Pain Status",
+      "assessmentTypes": "Loại Assessment"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -783,6 +878,7 @@
     "fields": {
       "calendarDayStart": "Giờ bắt đầu",
       "calendarDayEnd": "Giờ kết thúc",
+      "leadCodePrefix": "Mã lead",
       "customerCodePrefix": "Mã khách hàng",
       "contractCodePrefix": "Mã hợp đồng",
       "employeeCodePrefix": "Mã nhân viên",
@@ -840,6 +936,7 @@
       "branch": "Chi nhánh",
       "option": "Lựa chọn",
       "parameter": "Tham số",
+      "lead": "Lead",
       "customer": "Khách hàng",
       "contract": "Hợp đồng",
       "employee": "Nhân viên",

@@ -25,10 +25,11 @@ export function AppHeader({ user, showSearch, approvals, notifications }: Header
   const ta = useTranslations("approvals");
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-1 border-b bg-background/95 px-4 backdrop-blur sm:gap-3">
       <SidebarTrigger aria-label={t("toggleSidebar")} />
       <Separator orientation="vertical" className="h-5!" />
-      <div className="flex flex-1 items-center">{showSearch && <CustomerSearch />}</div>
+      {/* min-w-0: on a phone the search shrinks so the bar never overflows (AC-23). */}
+      <div className="flex min-w-0 flex-1 items-center">{showSearch && <CustomerSearch />}</div>
       {/* The approvals inbox (docs/08): what waits for this user's decision (D-018). */}
       <Button asChild variant="ghost" size="sm" className="relative">
         <Link href="/approvals" aria-label={ta("inboxLabel", { count: approvals.toDecide })}>

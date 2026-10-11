@@ -66,7 +66,7 @@ The API is the NestJS app `apps/api`, under `/api/v1`, described by **OpenAPI** 
 | `APPROVAL_OWN_REQUEST` | 403 | Deciding one's own submission (D-018); also activating a contract one created (A-039) |
 | `APPROVAL_NOT_PENDING` | 409 | The request was already decided or withdrawn |
 | `APPROVAL_ALREADY_PENDING` | 409 | A request for the same record and action is waiting |
-| `DUPLICATE_PHONE` | 409 | Phone already used; `details` has the existing person for merging |
+| `PHONE_ALREADY_USED` | 409 | Phone already on a lead or customer (D-019); `details.duplicate` names the record when the user may see it (built in M2 slice 1 as this code) |
 | `IDEMPOTENCY_KEY_REUSED` | 409 | Same key, different content |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Body not JSON |
 | `PAYMENT_EXCEEDS_CONTRACT_VALUE` | 422 | Receipt above the remaining value (OQ-003 interim) |
@@ -91,6 +91,7 @@ Since M1 slice 1 the API is the NestJS app; its OpenAPI document is `apps/api/op
 | History | `/trash` (`?entityType=&from=&to=`), `/audit-events` (`?entityType=&entityId=&actorUserId=&from=&to=`); both read-only |
 | Tasks | `/tasks` (`?view=mine|assigned|department|all&status=&overdueOnly=&q=&page=`; create), `/tasks/summary`, `/tasks/assignees`, `/tasks/:id` (get, `PATCH` by the assigner), `/tasks/:id/accept`, `/start`, `/complete`, `/cancel` (repeating a move that already happened returns the task), `/tasks/:id/comments` (`{ body, mentions }`) |
 | Notifications | `/notifications` (`?unreadOnly=&page=`), `/notifications/summary`, `/notifications/:id/read`, `/notifications/read-all`; each user sees only their own |
+| Leads | `/leads` (`?q=&status=&channelId=&sourceId=&needGroupId=&page=`; create), `/leads/:id` (get, `PATCH` every field); the code, stage, status, and person in charge never come from the client |
 | Approvals | `/approvals` (`?view=toDecide|mine|all&status=`), `/approvals/summary`, `/approvals/:id/approve`, `/approvals/:id/reject` (`{ reasonId, reasonNote }`), `/approval-rules` (list), `/approval-rules/:action` (`PUT`) |
 | Users | `/users` (list, create with role and branches), `/users/:id` (detail), `/users/:id/role`, `/users/:id/status`, `/users/:id/password`, `/users/:id/branches`, `/users/:id/overrides`, `/users/:id/access-hours` (`PUT`), `/users/:id/logins` (login history, paged) |
 | Roles | `/roles` (list, create), `/roles/:id` (get, `PUT` permissions, data scopes, hidden fields), `/roles/:id/clone` |

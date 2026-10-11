@@ -96,7 +96,7 @@ describe("creating a task (brief §8.2)", () => {
     const role = await createRole(admin, {
       name: "Chỉ xem việc",
       permissions: ["task.view"],
-      dataScopes: { customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL", tasks: "OWN" },
+      dataScopes: { leads: "ALL", customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL", tasks: "OWN" },
       fieldMasks: [],
     });
     const { actor } = await createTestUser("RECEPTIONIST", { roleId: role.id });

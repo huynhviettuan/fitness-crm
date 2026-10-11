@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { customerRef } from "../customers/person.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { isUniqueViolation } from "../../platform/db/errors.js";
@@ -262,7 +263,7 @@ function toView(contract: repo.ContractRecord, today: Date, confirmedPaidAmount:
   return {
     id: contract.id,
     contractCode: contract.contractCode,
-    customer: contract.customer,
+    customer: customerRef(contract.customer),
     packageName: contract.packageName,
     startDate: contract.startDate,
     endDate: contract.endDate,

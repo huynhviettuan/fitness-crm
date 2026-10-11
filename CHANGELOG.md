@@ -1,5 +1,17 @@
 # Documentation Changelog
 
+## 2026-10-11 — M2 slice 1: leads
+
+- **One person, one record** (D-019): a lead and a customer are the same record; the customers table gains a stage, a lead code (prefix LD, a parameter), the lead status, and the lead profile of brief §4.1. Existing customers stay customers. Customer screens show only customers; a lead cannot have a contract before Show.
+- **Lead** menu: list with filters (status, channel, source, need) and search; quick intake form, phone-first and full-screen on phones (name, phone, channel; the rest folds out); lead page; edit. Every lead starts as New with nobody in charge (assignment arrives in slice 2).
+- New option lists with the brief's values: contact channels, lead sources, need groups, Pain Status, Assessment types. Source type (Organic/Paid) and nationality group are fixed values (A-049).
+- **A phone belongs to one person**: adding a lead or customer with a phone already in the system is refused, and the form links to that record (A-051). The merge arrives in slice 5.
+- Fixed: on a phone, the top bar no longer makes every page scroll sideways.
+- Permissions `lead.view`, `lead.create`, `lead.manage`; data scope "leads" (Consulting: only their own).
+- API: `/leads`, `/leads/:id`; error `PHONE_ALREADY_USED`.
+- Tests: unit (shared 105, web 264, API 103), integration 247, E2E and security 277.
+- Docs: 04, 07, 09, 13, 16, 18 (T-061, A-049 to A-051), 24, 25.
+
 ## 2026-10-11 — M1 slice 7: tasks and notifications
 
 - **Công việc** (brief §8.2, D-037): give a task to a person or a department, with a deadline and priority, optionally about a customer or contract (a "Giao việc" button on their pages). The assignee — or the first member of the department — accepts it, starts, and completes it; the assigner can edit or cancel it. Views: my tasks, tasks I gave, my department's, and all (Admin, Fitness Manager); filters by status and overdue; overdue tasks are marked. Comments with mentions.

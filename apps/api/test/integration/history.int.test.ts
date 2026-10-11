@@ -6,7 +6,7 @@ import { listTrash } from "../../src/platform/trash/trash.service.js";
 import { createCustomer, updateCustomer } from "../../src/modules/customers/customer.service.js";
 import { deletePayment, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, createTestBranch, createTestUser, optionId, roleId, withoutApprovals } from "../support/factories.js";
+import { DEFAULT_BRANCH_ID, createTestBranch, createTestUser, optionId, roleId, withoutApprovals, uniquePhone } from "../support/factories.js";
 import { activeContract } from "../support/bookings.js";
 
 afterEach(async () => {
@@ -24,7 +24,7 @@ const CASH = await optionId("paymentMethods", "Tiền mặt");
 /** A payment of 5,000,000 that an admin deleted with the note "Trùng". */
 async function deletedPayment() {
   const { actor: admin } = await createTestUser("ADMIN");
-  const customer = await createCustomer(admin, { fullName: "Nguyễn Văn An", phone: "0909123456" });
+  const customer = await createCustomer(admin, { fullName: "Nguyễn Văn An", phone: uniquePhone() });
   const contract = await activeContract(admin, customer.id);
   const { payment } = await recordPayment(admin, contract.id, { amount: 5_000_000, methodId: CASH, paidOn: "05/10/2026" }, randomUUID());
   await deletePayment(admin, payment.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" });

@@ -80,6 +80,475 @@
         "x-permission": "authenticated"
       }
     },
+    "/api/v1/leads": {
+      "get": {
+        "operationId": "LeadsController_list",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sourceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needGroupId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      },
+      "post": {
+        "operationId": "LeadsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "fullName": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "gender": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ]
+                  },
+                  "birthDate": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "email": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channelNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceType": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "ORGANIC",
+                      "PAID"
+                    ]
+                  },
+                  "sourceDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "nationalityGroup": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "VIETNAM",
+                      "FOREIGN"
+                    ]
+                  },
+                  "needGroupId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "needGroupNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "needDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "painStatusId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "painStatusNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "assessmentTypeId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assessmentTypeNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "fullName",
+                  "channelId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.create"
+      }
+    },
+    "/api/v1/leads/{id}": {
+      "get": {
+        "operationId": "LeadsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      },
+      "patch": {
+        "operationId": "LeadsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "gender": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "MALE",
+                      "FEMALE",
+                      "OTHER"
+                    ]
+                  },
+                  "birthDate": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "email": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channelNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sourceType": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "ORGANIC",
+                      "PAID"
+                    ]
+                  },
+                  "sourceDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "nationalityGroup": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "VIETNAM",
+                      "FOREIGN"
+                    ]
+                  },
+                  "needGroupId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "needGroupNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "needDetail": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "painStatusId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "painStatusNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "assessmentTypeId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assessmentTypeNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "fullName",
+                  "channelId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.manage"
+      }
+    },
     "/api/v1/customers": {
       "get": {
         "operationId": "CustomersController_list",
@@ -3105,6 +3574,9 @@
                             "config.manage",
                             "audit.view",
                             "trash.view",
+                            "lead.view",
+                            "lead.create",
+                            "lead.manage",
                             "customer.view",
                             "customer.manage",
                             "contract.view",
@@ -3476,6 +3948,9 @@
                         "config.manage",
                         "audit.view",
                         "trash.view",
+                        "lead.view",
+                        "lead.create",
+                        "lead.manage",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -3501,6 +3976,13 @@
                   "dataScopes": {
                     "type": "object",
                     "properties": {
+                      "leads": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
                       "customers": {
                         "type": "string",
                         "enum": [
@@ -3545,6 +4027,7 @@
                       }
                     },
                     "required": [
+                      "leads",
                       "customers",
                       "contracts",
                       "schedule",
@@ -3684,6 +4167,9 @@
                         "config.manage",
                         "audit.view",
                         "trash.view",
+                        "lead.view",
+                        "lead.create",
+                        "lead.manage",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -3709,6 +4195,13 @@
                   "dataScopes": {
                     "type": "object",
                     "properties": {
+                      "leads": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
+                      },
                       "customers": {
                         "type": "string",
                         "enum": [
@@ -3753,6 +4246,7 @@
                       }
                     },
                     "required": [
+                      "leads",
                       "customers",
                       "contracts",
                       "schedule",
@@ -4381,6 +4875,10 @@
                     "minLength": 1,
                     "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
                   },
+                  "leadCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  },
                   "customerCodePrefix": {
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
@@ -4401,6 +4899,7 @@
                 "required": [
                   "calendarDayStart",
                   "calendarDayEnd",
+                  "leadCodePrefix",
                   "customerCodePrefix",
                   "contractCodePrefix",
                   "employeeCodePrefix",
@@ -5703,6 +6202,7 @@
               "APPROVAL_OWN_REQUEST",
               "NOT_FOUND",
               "EMAIL_ALREADY_USED",
+              "PHONE_ALREADY_USED",
               "CANNOT_CHANGE_OWN_ACCESS",
               "INVALID_STATUS_TRANSITION",
               "CONTRACT_NOT_EDITABLE",
@@ -5736,6 +6236,34 @@
                     "type": "string"
                   }
                 }
+              },
+              "duplicate": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "stage": {
+                    "type": "string",
+                    "enum": [
+                      "LEAD",
+                      "CUSTOMER"
+                    ]
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "fullName": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "stage",
+                  "code",
+                  "fullName"
+                ]
               }
             }
           }
@@ -5786,6 +6314,9 @@
                 "config.manage",
                 "audit.view",
                 "trash.view",
+                "lead.view",
+                "lead.create",
+                "lead.manage",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -5818,6 +6349,7 @@
               ]
             },
             "required": [
+              "leads",
               "customers",
               "contracts",
               "schedule",
@@ -5891,6 +6423,264 @@
         "required": [
           "id",
           "name"
+        ]
+      },
+      "LeadPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Lead"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "Lead": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "leadCode": {
+            "type": "string"
+          },
+          "customerCode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "CUSTOMER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "CONSULTING",
+              "CONSIDERING",
+              "NO_RESPONSE",
+              "BOOKED",
+              "SHOWED",
+              "NO_SHOW",
+              "REFUSED",
+              "CONTRACTED"
+            ]
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "gender": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "OTHER"
+            ]
+          },
+          "birthDate": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string"
+          },
+          "email": {
+            "nullable": true,
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ChosenOption"
+          },
+          "source": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "sourceType": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "ORGANIC",
+              "PAID"
+            ]
+          },
+          "sourceDetail": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nationalityGroup": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "VIETNAM",
+              "FOREIGN"
+            ]
+          },
+          "needGroup": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "needDetail": {
+            "nullable": true,
+            "type": "string"
+          },
+          "painStatus": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "assessmentType": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "pic": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "createdBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maskedFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "phone",
+                "email"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "leadCode",
+          "customerCode",
+          "stage",
+          "status",
+          "branch",
+          "fullName",
+          "gender",
+          "birthDate",
+          "phone",
+          "email",
+          "channel",
+          "source",
+          "sourceType",
+          "sourceDetail",
+          "nationalityGroup",
+          "needGroup",
+          "needDetail",
+          "painStatus",
+          "assessmentType",
+          "pic",
+          "notes",
+          "createdBy",
+          "createdAt",
+          "maskedFields"
+        ]
+      },
+      "ChosenOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "labelVi": {
+            "type": "string"
+          },
+          "labelEn": {
+            "type": "string"
+          },
+          "isOther": {
+            "type": "boolean"
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "labelVi",
+          "labelEn",
+          "isOther",
+          "note"
         ]
       },
       "CustomerPage": {
@@ -6241,35 +7031,6 @@
           "createdBy",
           "contract",
           "customer"
-        ]
-      },
-      "ChosenOption": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "labelVi": {
-            "type": "string"
-          },
-          "labelEn": {
-            "type": "string"
-          },
-          "isOther": {
-            "type": "boolean"
-          },
-          "note": {
-            "nullable": true,
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "labelVi",
-          "labelEn",
-          "isOther",
-          "note"
         ]
       },
       "EmployeePage": {
@@ -7036,6 +7797,9 @@
                     "config.manage",
                     "audit.view",
                     "trash.view",
+                    "lead.view",
+                    "lead.create",
+                    "lead.manage",
                     "customer.view",
                     "customer.manage",
                     "contract.view",
@@ -7256,6 +8020,9 @@
                 "config.manage",
                 "audit.view",
                 "trash.view",
+                "lead.view",
+                "lead.create",
+                "lead.manage",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -7288,6 +8055,7 @@
               ]
             },
             "required": [
+              "leads",
               "customers",
               "contracts",
               "schedule",
@@ -7391,7 +8159,12 @@
               "deleteReasons",
               "rejectReasons",
               "departments",
-              "jobTitles"
+              "jobTitles",
+              "leadChannels",
+              "leadSources",
+              "needGroups",
+              "painStatuses",
+              "assessmentTypes"
             ]
           },
           "labelVi": {
@@ -7460,6 +8233,9 @@
           "calendarDayEnd": {
             "type": "string"
           },
+          "leadCodePrefix": {
+            "type": "string"
+          },
           "customerCodePrefix": {
             "type": "string"
           },
@@ -7476,6 +8252,7 @@
         "required": [
           "calendarDayStart",
           "calendarDayEnd",
+          "leadCodePrefix",
           "customerCodePrefix",
           "contractCodePrefix",
           "employeeCodePrefix",

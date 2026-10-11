@@ -14,7 +14,15 @@ export const PT24 = {
   endDate: "31/12/2030",
 };
 
-export async function createCustomerViaApi(api: APIRequestContext, tag: string, phone = "0909400100") {
+/**
+ * A phone number nobody else has: one phone belongs to one person (D-019), and tests
+ * run in parallel against one database.
+ */
+export function uniquePhone(): string {
+  return `09${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`;
+}
+
+export async function createCustomerViaApi(api: APIRequestContext, tag: string, phone = uniquePhone()) {
   const response = await api.post("/api/v1/customers", { data: { fullName: `Khách ${tag}`, phone } });
   if (response.status() !== 201) throw new Error(`Customer setup failed: ${response.status()}`);
   return response.json() as Promise<{ id: string; customerCode: string; fullName: string }>;

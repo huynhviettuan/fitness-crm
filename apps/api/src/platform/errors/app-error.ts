@@ -1,16 +1,19 @@
-import { ERROR_HTTP_STATUS, type ErrorCode, type FieldErrors } from "@flow/shared/errors";
+import { ERROR_HTTP_STATUS, type DuplicatePerson, type ErrorCode, type FieldErrors } from "@flow/shared/errors";
 
 export type { ErrorCode, FieldErrors };
 
 export class AppError extends Error {
   readonly code: ErrorCode;
   readonly fieldErrors?: FieldErrors;
+  /** PHONE_ALREADY_USED: the record that has the phone, when the user may see it (D-019). */
+  readonly duplicate?: DuplicatePerson;
 
-  constructor(code: ErrorCode, options?: { message?: string; fieldErrors?: FieldErrors }) {
+  constructor(code: ErrorCode, options?: { message?: string; fieldErrors?: FieldErrors; duplicate?: DuplicatePerson }) {
     super(options?.message ?? code);
     this.name = "AppError";
     this.code = code;
     this.fieldErrors = options?.fieldErrors;
+    this.duplicate = options?.duplicate;
   }
 
   get httpStatus(): number {

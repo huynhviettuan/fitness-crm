@@ -41,6 +41,10 @@
       "types": "./dist/finance/index.d.ts",
       "default": "./dist/finance/index.js"
     },
+    "./leads": {
+      "types": "./dist/leads/index.d.ts",
+      "default": "./dist/leads/index.js"
+    },
     "./notifications": {
       "types": "./dist/notifications/index.d.ts",
       "default": "./dist/notifications/index.js"

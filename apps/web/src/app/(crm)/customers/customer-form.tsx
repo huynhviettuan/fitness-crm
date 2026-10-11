@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
+import { DuplicateNotice } from "@/components/duplicate-notice";
+import type { DuplicatePerson } from "@/lib/api/errors";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
 import {
@@ -44,6 +46,7 @@ export function CustomerForm({ mode, defaultValues, branches = [], masked = [], 
   const t = useTranslations();
   const errorMessage = useErrorMessage();
   const [pending, startTransition] = useTransition();
+  const [duplicate, setDuplicate] = useState<DuplicatePerson | null>(null);
 
   // The same schema the server uses gives instant feedback. Raw values are sent so
   // the server parses (and trusts) only its own transformation.
@@ -64,6 +67,7 @@ export function CustomerForm({ mode, defaultValues, branches = [], masked = [], 
       const input = mode === "create" ? { ...fields, phone, branchId } : { ...fields, status };
       const result = await submit(input as CreateCustomerInput & UpdateCustomerInput);
       if (result.ok) return onSaved(result.data);
+      setDuplicate(result.duplicate ?? null);
       applyFieldErrors(form.setError, result.fieldErrors);
       notify.error(errorMessage(result.code));
     });
@@ -114,6 +118,7 @@ export function CustomerForm({ mode, defaultValues, branches = [], masked = [], 
           />
         )}
         <TextField control={form.control} name="notes" label={t("customers.fields.notes")} multiline />
+        <DuplicateNotice duplicate={duplicate} />
       </FieldGroup>
       <div className="flex justify-end gap-2 border-t p-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>

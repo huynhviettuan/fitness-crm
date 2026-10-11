@@ -1,7 +1,7 @@
 // M1 slice 2: branches, roles with the permission tree, and per-user access (D-014, D-017).
 import { expect, signedInAs, test } from "./fixtures";
 import { ADMIN_MADE_PASSWORD, anotherWeekday, createUserViaApi, roleIdOf } from "./support/admin";
-import { createCustomerViaApi } from "./support/data";
+import { createCustomerViaApi, uniquePhone } from "./support/data";
 import { labels } from "./support/labels";
 
 const p = labels.permissions;
@@ -51,7 +51,7 @@ test.describe("administration", () => {
 
     const admin = await apiAs("ADMIN");
     const user = await createUserViaApi(admin, testTag, { roleId: await roleIdOf(admin, { name: roleName }), label: "Marketing" });
-    await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag, "0909777888");
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag, uniquePhone());
 
     await page.context().clearCookies();
     await loginPage.goto();
@@ -62,7 +62,8 @@ test.describe("administration", () => {
     await customersPage.search(testTag);
     const row = customersPage.table.getByRole("row").filter({ hasText: testTag });
     await expect(row).toContainText(labels.common.hidden);
-    await expect(row).not.toContainText("0909777888");
+    const phone = ((await (await admin.get(`/api/v1/customers/${customer.id}`)).json()) as { phone: string }).phone;
+    await expect(row).not.toContainText(phone);
     await expect(customersPage.addButton).toHaveCount(0);
     await expect(shell.navLink(labels.nav.users)).toHaveCount(0);
     await expect(shell.navLink(labels.nav.roles)).toHaveCount(0);

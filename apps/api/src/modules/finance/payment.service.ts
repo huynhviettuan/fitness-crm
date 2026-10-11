@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { customerRef } from "../customers/person.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { isUniqueViolation } from "../../platform/db/errors.js";
@@ -325,7 +326,7 @@ function toView(payment: repo.PaymentRecord): PaymentView {
     createdAt: payment.createdAt,
     createdBy: payment.createdBy.name,
     contract,
-    customer,
+    customer: customerRef(customer),
   };
 }
 

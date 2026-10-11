@@ -51,6 +51,39 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   { id: "c0000000-0000-4000-8000-000000000012", labelVi: "Chuyển khoản", labelEn: "Bank transfer", sortOrder: 2, active: true },
   { id: "c0000000-0000-4000-8000-000000000013", labelVi: "Thẻ", labelEn: "Card", sortOrder: 3, active: true },
   { id: "c0000000-0000-4000-8000-000000000014", labelVi: "Ví điện tử", labelEn: "E-wallet", sortOrder: 4, active: false },
+  // The lead profile's lists (M2 slice 1).
+  { id: "c0000000-0000-4000-8000-000000000008", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000111", labelVi: "WhatsApp", labelEn: "WhatsApp", sortOrder: 1, active: true },
+  { id: "c0000000-0000-4000-8000-000000000112", labelVi: "Messenger", labelEn: "Messenger", sortOrder: 2, active: true },
+  { id: "c0000000-0000-4000-8000-000000000113", labelVi: "Zalo", labelEn: "Zalo", sortOrder: 3, active: true },
+  { id: "c0000000-0000-4000-8000-000000000114", labelVi: "Gọi điện", labelEn: "Phone call", sortOrder: 4, active: true },
+  { id: "c0000000-0000-4000-8000-000000000115", labelVi: "Instagram", labelEn: "Instagram", sortOrder: 5, active: true },
+  { id: "c0000000-0000-4000-8000-000000000116", labelVi: "Threads", labelEn: "Threads", sortOrder: 6, active: true },
+  { id: "c0000000-0000-4000-8000-000000000117", labelVi: "TikTok", labelEn: "TikTok", sortOrder: 7, active: true },
+  { id: "c0000000-0000-4000-8000-000000000118", labelVi: "Gmail", labelEn: "Gmail", sortOrder: 8, active: true },
+  { id: "c0000000-0000-4000-8000-000000000119", labelVi: "Khách tự tìm đến Flow", labelEn: "Walked in to Flow", sortOrder: 9, active: true },
+  { id: "c0000000-0000-4000-8000-000000000009", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000121", labelVi: "Website", labelEn: "Website", sortOrder: 1, active: true },
+  { id: "c0000000-0000-4000-8000-000000000122", labelVi: "Fanpage", labelEn: "Fanpage", sortOrder: 2, active: true },
+  { id: "c0000000-0000-4000-8000-000000000123", labelVi: "Google Ads", labelEn: "Google Ads", sortOrder: 3, active: true },
+  { id: "c0000000-0000-4000-8000-000000000124", labelVi: "Instagram", labelEn: "Instagram", sortOrder: 4, active: true },
+  { id: "c0000000-0000-4000-8000-000000000125", labelVi: "Threads", labelEn: "Threads", sortOrder: 5, active: true },
+  { id: "c0000000-0000-4000-8000-000000000126", labelVi: "TikTok", labelEn: "TikTok", sortOrder: 6, active: true },
+  { id: "c0000000-0000-4000-8000-000000000127", labelVi: "Người quen", labelEn: "Referral", sortOrder: 7, active: true },
+  { id: "c0000000-0000-4000-8000-000000000128", labelVi: "ChatGPT", labelEn: "ChatGPT", sortOrder: 8, active: true },
+  { id: "c0000000-0000-4000-8000-000000000129", labelVi: "Google Maps", labelEn: "Google Maps", sortOrder: 9, active: true },
+  { id: "c0000000-0000-4000-8000-00000000000a", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000131", labelVi: "1 - Body Transformation", labelEn: "1 - Body Transformation", sortOrder: 1, active: true },
+  { id: "c0000000-0000-4000-8000-000000000132", labelVi: "2 - Pain Relief & Better Movement", labelEn: "2 - Pain Relief & Better Movement", sortOrder: 2, active: true },
+  { id: "c0000000-0000-4000-8000-000000000133", labelVi: "3 - Energy, Longevity & Performance", labelEn: "3 - Energy, Longevity & Performance", sortOrder: 3, active: true },
+  { id: "c0000000-0000-4000-8000-000000000134", labelVi: "4 - Group Class", labelEn: "4 - Group Class", sortOrder: 4, active: true },
+  { id: "c0000000-0000-4000-8000-00000000000b", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000141", labelVi: "No", labelEn: "No", sortOrder: 1, active: true },
+  { id: "c0000000-0000-4000-8000-000000000142", labelVi: "2.1 (Coach)", labelEn: "2.1 (Coach)", sortOrder: 2, active: true },
+  { id: "c0000000-0000-4000-8000-000000000143", labelVi: "2.2 (Expert)", labelEn: "2.2 (Expert)", sortOrder: 3, active: true },
+  { id: "c0000000-0000-4000-8000-00000000000c", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000151", labelVi: "Physical Assessment", labelEn: "Physical Assessment", sortOrder: 1, active: true },
+  { id: "c0000000-0000-4000-8000-000000000152", labelVi: "Pain Assessment", labelEn: "Pain Assessment", sortOrder: 2, active: true },
 ];
 
 /** The approval matrix the migration creates (09_RBAC.md). */
@@ -83,4 +116,9 @@ export async function createTestOption(listKey: OptionListKey, labelVi: string, 
 /** A second branch, for branch-access tests. Removed by resetDatabase(). */
 export function createTestBranch(name = `Chi nhánh ${randomUUID().slice(0, 8)}`) {
   return prisma.branch.create({ data: { name }, select: { id: true, name: true } });
+}
+
+/** A phone number no other test person has: a phone belongs to one person (D-019). */
+export function uniquePhone(): string {
+  return `09${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`;
 }

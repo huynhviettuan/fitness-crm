@@ -22,6 +22,12 @@ export const OPTION_LISTS = [
   "rejectReasons",
   "departments",
   "jobTitles",
+  // The lead profile (brief §4.1), M2 slice 1.
+  "leadChannels",
+  "leadSources",
+  "needGroups",
+  "painStatuses",
+  "assessmentTypes",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

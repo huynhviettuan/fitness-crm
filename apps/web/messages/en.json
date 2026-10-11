@@ -5,6 +5,7 @@
   "nav": {
     "main": "Navigation",
     "dashboard": "Dashboard",
+    "leads": "Leads",
     "customers": "Customers",
     "administration": "Administration",
     "users": "Users",
@@ -78,6 +79,17 @@
       "LOW": "Low",
       "NORMAL": "Normal",
       "HIGH": "High"
+    },
+    "lead": {
+      "NEW": "New",
+      "CONSULTING": "Consulting",
+      "CONSIDERING": "Considering",
+      "NO_RESPONSE": "No response",
+      "BOOKED": "Appointment booked",
+      "SHOWED": "Show",
+      "NO_SHOW": "No show",
+      "REFUSED": "Refused",
+      "CONTRACTED": "Contracted"
     }
   },
   "common": {
@@ -129,6 +141,75 @@
     "comingTitle": "The dashboard is on its way",
     "comingBody": "Booking, session, and finance figures will appear here once those parts are built.",
     "goToCustomers": "Open customers"
+  },
+  "leads": {
+    "title": "Leads",
+    "description": "Prospects before they visit. At Show a lead becomes a customer and keeps the same record.",
+    "create": "Add lead",
+    "createDescription": "Quick entry for walk-ins and channels not connected yet. A name and a contact channel are enough; the rest can follow.",
+    "created": "Lead {code} added",
+    "edit": "Edit details",
+    "editDescription": "Every change is kept in the action history.",
+    "updated": "Changes saved",
+    "emptyTitle": "No leads yet",
+    "emptyBody": "Add the first one with \"Add lead\".",
+    "noResultsTitle": "No leads found",
+    "noResultsBody": "No lead matches these filters.",
+    "searchPlaceholder": "Search by code, name, or phone",
+    "filters": "Filters",
+    "apply": "Apply",
+    "all": "All",
+    "open": "Open lead {name}",
+    "backToList": "Lead list",
+    "profile": "Lead profile",
+    "need": "Need",
+    "moreDetails": "More details",
+    "noPic": "Not assigned",
+    "noPhone": "No phone yet",
+    "birthDatePlaceholder": "dd/MM/yyyy",
+    "phonePlaceholder": "e.g. 0909 123 456",
+    "noOption": "None",
+    "sourceTypes": {
+      "ORGANIC": "Organic",
+      "PAID": "Paid"
+    },
+    "nationalityGroups": {
+      "VIETNAM": "Vietnamese",
+      "FOREIGN": "Foreign"
+    },
+    "genders": {
+      "MALE": "Male",
+      "FEMALE": "Female",
+      "OTHER": "Other"
+    },
+    "fields": {
+      "leadCode": "Lead code",
+      "createdAt": "Date",
+      "fullName": "Full name",
+      "gender": "Gender",
+      "birthDate": "Date of birth",
+      "phone": "Phone",
+      "email": "Email",
+      "channel": "Contact channel",
+      "source": "Lead source",
+      "sourceType": "Source type",
+      "sourceDetail": "Source detail",
+      "nationalityGroup": "Nationality",
+      "needGroup": "Need group",
+      "needDetail": "Need detail",
+      "painStatus": "Pain Status",
+      "assessmentType": "Assessment type",
+      "pic": "Person in charge",
+      "status": "Status",
+      "branch": "Branch",
+      "notes": "Notes",
+      "createdBy": "Entered by"
+    }
+  },
+  "people": {
+    "duplicateLead": "This phone already belongs to lead {code} · {name}. Each person has one record.",
+    "duplicateCustomer": "This phone already belongs to customer {code} · {name}. Each person has one record.",
+    "openExisting": "Open {code}"
   },
   "customers": {
     "title": "Customers",
@@ -291,7 +372,8 @@
     "APPROVAL_OWN_REQUEST": "You cannot approve a request you submitted.",
     "APPROVAL_NOT_PENDING": "This request has already been decided.",
     "APPROVAL_ALREADY_PENDING": "A request for this record is already waiting for approval.",
-    "BOOKING_OUTSIDE_WORKING_HOURS": "That time is outside the trainer's working hours, or on their day off."
+    "BOOKING_OUTSIDE_WORKING_HOURS": "That time is outside the trainer's working hours, or on their day off.",
+    "PHONE_ALREADY_USED": "This phone number is already in the system."
   },
   "validation": {
     "required": "Required.",
@@ -322,7 +404,8 @@
     "outOfRange": "Enter a number from 1 to 720.",
     "shiftsOverlap": "Shifts on the same day can't overlap.",
     "dayOffExists": "That day is already a day off.",
-    "oneAssigneeOnly": "Choose one person or one department, not both."
+    "oneAssigneeOnly": "Choose one person or one department, not both.",
+    "phoneAlreadyUsed": "This phone belongs to another record."
   },
   "contracts": {
     "title": "Contracts",
@@ -596,6 +679,7 @@
   "permissions": {
     "groups": {
       "system": "System",
+      "leads": "Leads and consulting",
       "customers": "Customers",
       "contracts": "Contracts",
       "schedule": "PT schedule and sessions",
@@ -661,9 +745,15 @@
       "task": {
         "view": "See and work on tasks",
         "create": "Give tasks"
+      },
+      "lead": {
+        "view": "View leads",
+        "create": "Add leads",
+        "manage": "Edit leads"
       }
     },
     "resources": {
+      "leads": "Lead",
       "customers": "Customers",
       "contracts": "Contracts",
       "schedule": "PT schedule",
@@ -704,7 +794,7 @@
       "description": "Description",
       "permissions": "Permissions",
       "dataScopes": "Data scope",
-      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered. Staff \"only mine\": one's own profile and working schedule. Tasks \"only mine\": tasks one gave, got, or that went to one's department.",
+      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered. Staff \"only mine\": one's own profile and working schedule. Tasks \"only mine\": tasks one gave, got, or that went to one's department. Leads \"only mine\": leads one entered or is in charge of.",
       "fieldMasks": "Hidden fields",
       "fieldMasksHint": "Hidden on every screen, and not searchable.",
       "users": "Users"
@@ -740,7 +830,12 @@
       "deleteReasons": "Reasons for deleting or voiding",
       "rejectReasons": "Reasons for rejecting",
       "departments": "Departments",
-      "jobTitles": "Job titles"
+      "jobTitles": "Job titles",
+      "leadChannels": "Contact channels",
+      "leadSources": "Lead sources",
+      "needGroups": "Need groups",
+      "painStatuses": "Pain Status",
+      "assessmentTypes": "Assessment types"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -783,6 +878,7 @@
     "fields": {
       "calendarDayStart": "Start time",
       "calendarDayEnd": "End time",
+      "leadCodePrefix": "Lead code",
       "customerCodePrefix": "Customer code",
       "contractCodePrefix": "Contract code",
       "employeeCodePrefix": "Employee code",
@@ -840,6 +936,7 @@
       "branch": "Branch",
       "option": "Option",
       "parameter": "Parameter",
+      "lead": "Lead",
       "customer": "Customer",
       "contract": "Contract",
       "employee": "Employee",

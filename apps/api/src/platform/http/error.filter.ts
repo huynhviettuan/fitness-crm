@@ -9,7 +9,10 @@ export function sendError(response: Response, error: AppError): void {
   const body: ApiErrorBody = {
     code: error.code,
     message: error.message,
-    details: error.fieldErrors ? { fieldErrors: error.fieldErrors } : {},
+    details: {
+      ...(error.fieldErrors ? { fieldErrors: error.fieldErrors } : {}),
+      ...(error.duplicate ? { duplicate: error.duplicate } : {}),
+    },
   };
   response.status(error.httpStatus).json(body);
 }

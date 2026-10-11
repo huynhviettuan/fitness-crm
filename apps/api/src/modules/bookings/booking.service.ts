@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { customerRef } from "../customers/person.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { isExclusionViolation } from "../../platform/db/errors.js";
@@ -315,7 +316,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
     scheduledStart: booking.scheduledStart,
     scheduledEnd: booking.scheduledEnd,
     createdAt: booking.createdAt,
-    customer: booking.customer,
+    customer: customerRef(booking.customer),
     contract: {
       id: contract.id,
       contractCode: contract.contractCode,

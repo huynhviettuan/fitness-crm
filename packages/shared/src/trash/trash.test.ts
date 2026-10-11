@@ -24,6 +24,6 @@ describe("deleting to the trash (D-035)", () => {
 describe("action history filters (FR-PLT-008)", () => {
   it("ignores empty filters and refuses unknown ones", () => {
     expect(listAuditSchema.parse({ entityType: "", entityId: "", actorUserId: "" })).toEqual({ page: 1, pageSize: 20 });
-    expect(errors(listAuditSchema, { entityType: "lead", entityId: "x" })).toEqual({ entityType: ["invalidChoice"], entityId: ["invalidChoice"] });
+    expect(errors(listAuditSchema, { entityType: "invoice", entityId: "x" })).toEqual({ entityType: ["invalidChoice"], entityId: ["invalidChoice"] });
   });
 });

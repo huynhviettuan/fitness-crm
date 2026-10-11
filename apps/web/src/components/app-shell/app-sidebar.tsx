@@ -9,6 +9,7 @@ import {
   CalendarDaysIcon,
   ClipboardCheckIcon,
   ListTodoIcon,
+  MegaphoneIcon,
   ClipboardListIcon,
   DumbbellIcon,
   FileTextIcon,
@@ -39,6 +40,7 @@ import {
 // hiding an item is UX only, the server enforces access.
 const NAV_ITEMS = {
   dashboard: { href: "/dashboard", icon: LayoutDashboardIcon },
+  leads: { href: "/leads", icon: MegaphoneIcon },
   customers: { href: "/customers", icon: UsersIcon },
   contracts: { href: "/contracts", icon: FileTextIcon },
   calendar: { href: "/calendar", icon: CalendarDaysIcon },

@@ -8,6 +8,7 @@ export const AUDIT_ENTITY_TYPES = [
   "branch",
   "option",
   "parameter",
+  "lead",
   "customer",
   "contract",
   "employee",

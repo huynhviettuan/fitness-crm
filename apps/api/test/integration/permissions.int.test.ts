@@ -11,7 +11,7 @@ import { listBookings } from "../../src/modules/bookings/booking.service.js";
 import { collectedBetween, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { financeSummary } from "../../src/modules/finance/cash.service.js";
 import { resetDatabase } from "../support/database.js";
-import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser, optionId, withoutApprovals } from "../support/factories.js";
+import { DEFAULT_BRANCH_ID, actorOf, createTestBranch, createTestUser, optionId, withoutApprovals, uniquePhone } from "../support/factories.js";
 import { CONTRACT, activeContract, book, bookingScenario, linkedTrainer } from "../support/bookings.js";
 
 afterEach(resetDatabase);
@@ -41,7 +41,7 @@ describe("roles (FR-PLT-002)", () => {
       ["ACCOUNTANT", "ADMIN", "CONSULTING", "FITNESS_MANAGER", "MARKETING", "MASTER", "PT", "RECEPTIONIST"],
     );
     const pt = roles.find((r) => r.code === "PT")!;
-    expect(pt.dataScopes).toEqual({ customers: "OWN", contracts: "OWN", schedule: "OWN", vouchers: "OWN", staff: "OWN", tasks: "OWN" });
+    expect(pt.dataScopes).toEqual({ customers: "OWN", contracts: "OWN", schedule: "OWN", vouchers: "OWN", staff: "OWN", tasks: "OWN", leads: "OWN" });
     expect(roles.find((r) => r.code === "MARKETING")!.fieldMasks).toEqual(["customer.email", "customer.phone"]);
   });
 
@@ -188,7 +188,7 @@ describe("branches (D-014, FR-PLT-004)", () => {
       fieldErrors: { branchId: ["invalidChoice"] },
     });
     // With one active branch left, it is chosen for them.
-    expect((await createCustomer(actor, customer)).branch.id).toBe(DEFAULT_BRANCH_ID);
+    expect((await createCustomer(actor, { ...customer, phone: uniquePhone() })).branch.id).toBe(DEFAULT_BRANCH_ID);
   });
 
   it("contracts take their customer's branch", async () => {

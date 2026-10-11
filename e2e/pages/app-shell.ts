@@ -17,6 +17,11 @@ export class AppShell {
     return this.sidebar.getByRole("link", { name, exact: true });
   }
 
+  /** The page's full width; wider than the viewport means sideways scrolling (AC-23). */
+  async scrollWidth(): Promise<number> {
+    return this.page.evaluate(() => document.documentElement.scrollWidth);
+  }
+
   pageHeading(name: string): Locator {
     return this.main.getByRole("heading", { level: 1, name });
   }

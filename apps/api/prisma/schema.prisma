@@ -38,6 +38,35 @@ enum ContractStatus {
   CANCELLED
 }
 
+// D-019: one record per person; a lead becomes a customer at Show.
+enum PersonStage {
+  LEAD
+  CUSTOMER
+}
+
+// D-020, brief §3.
+enum LeadStatus {
+  NEW
+  CONSULTING
+  CONSIDERING
+  NO_RESPONSE
+  BOOKED
+  SHOWED
+  NO_SHOW
+  REFUSED
+  CONTRACTED
+}
+
+enum SourceType {
+  ORGANIC
+  PAID
+}
+
+enum NationalityGroup {
+  VIETNAM
+  FOREIGN
+}
+
 // A-013
 enum CustomerStatus {
   ACTIVE
@@ -132,6 +161,7 @@ model User {
   approvalsSubmitted ApprovalRequest[]        @relation("ApprovalSubmittedBy")
   approvalsDecided   ApprovalRequest[]        @relation("ApprovalDecidedBy")
   customersCreated   Customer[]
+  leadsInCharge      Customer[]               @relation("PersonPic")
   branches           UserBranch[]
   overrides          UserPermissionOverride[]
   accessWindows      UserAccessWindow[]
@@ -301,6 +331,11 @@ model Option {
   approvalRejections   ApprovalRequest[]
   employeeDepartments  Employee[]        @relation("EmployeeDepartment")
   employeeTitles       Employee[]        @relation("EmployeeTitle")
+  personChannels       Customer[]        @relation("PersonChannel")
+  personSources        Customer[]        @relation("PersonSource")
+  personNeedGroups     Customer[]        @relation("PersonNeedGroup")
+  personPainStatuses   Customer[]        @relation("PersonPainStatus")
+  personAssessments    Customer[]        @relation("PersonAssessmentType")
   taskDepartments      Task[]
 
   @@unique([listKey, labelVi])
@@ -487,25 +522,57 @@ model ApprovalRequest {
 // Customers
 // ---------------------------------------------------------------------------
 
+// A person: a lead until Show, then a customer, in this one record (D-019, T-061). The
+// table keeps its name; checks in the migration tie the codes and phone to the stage.
 model Customer {
-  id           String         @id @default(uuid()) @db.Uuid
-  branchId     String         @map("branch_id") @db.Uuid
-  branch       Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  // Generated from the customer_code_seq sequence (T-019, A-003). Never updated.
-  customerCode String         @unique @map("customer_code")
-  fullName     String         @map("full_name")
+  id                 String            @id @default(uuid()) @db.Uuid
+  branchId           String            @map("branch_id") @db.Uuid
+  branch             Branch            @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  stage              PersonStage       @default(CUSTOMER)
+  // From lead_code_seq (D-038); only people who came in as leads have one. Never updated.
+  leadCode           String?           @unique @map("lead_code")
+  // From customer_code_seq (T-019), given at Show. Never updated.
+  customerCode       String?           @unique @map("customer_code")
+  // The lead journey (D-020); null for customers who never were leads.
+  leadStatus         LeadStatus?       @map("lead_status")
+  fullName           String            @map("full_name")
   // fullName lowercased without Vietnamese diacritics, for accent-insensitive search.
-  searchName   String         @map("search_name")
-  phone        String
-  email        String?
-  dateOfBirth  DateTime?      @map("date_of_birth") @db.Date
-  status       CustomerStatus @default(ACTIVE)
-  notes        String?
+  searchName         String            @map("search_name")
+  // Required of customers; a lead may not have one yet.
+  phone              String?
+  email              String?
+  dateOfBirth        DateTime?         @map("date_of_birth") @db.Date
+  gender             Gender?
+  // The lead profile (brief §4.1): choices from option lists, "Khác" with a note (D-016).
+  channelId          String?           @map("channel_option_id") @db.Uuid
+  channel            Option?           @relation("PersonChannel", fields: [channelId], references: [id], onDelete: Restrict)
+  channelNote        String?           @map("channel_note")
+  sourceId           String?           @map("source_option_id") @db.Uuid
+  source             Option?           @relation("PersonSource", fields: [sourceId], references: [id], onDelete: Restrict)
+  sourceNote         String?           @map("source_note")
+  sourceType         SourceType?       @map("source_type")
+  sourceDetail       String?           @map("source_detail")
+  nationalityGroup   NationalityGroup? @map("nationality_group")
+  needGroupId        String?           @map("need_group_option_id") @db.Uuid
+  needGroup          Option?           @relation("PersonNeedGroup", fields: [needGroupId], references: [id], onDelete: Restrict)
+  needGroupNote      String?           @map("need_group_note")
+  needDetail         String?           @map("need_detail")
+  painStatusId       String?           @map("pain_status_option_id") @db.Uuid
+  painStatus         Option?           @relation("PersonPainStatus", fields: [painStatusId], references: [id], onDelete: Restrict)
+  painStatusNote     String?           @map("pain_status_note")
+  assessmentTypeId   String?           @map("assessment_type_option_id") @db.Uuid
+  assessmentType     Option?           @relation("PersonAssessmentType", fields: [assessmentTypeId], references: [id], onDelete: Restrict)
+  assessmentTypeNote String?           @map("assessment_type_note")
+  // The person in charge (PIC); assignment arrives in M2 slice 2.
+  picUserId          String?           @map("pic_user_id") @db.Uuid
+  pic                User?             @relation("PersonPic", fields: [picUserId], references: [id], onDelete: Restrict)
+  status             CustomerStatus    @default(ACTIVE)
+  notes              String?
   // D-017 data scope "own" (A-029); null for customers created before it was recorded.
-  createdById  String?        @map("created_by") @db.Uuid
-  createdBy    User?          @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById        String?           @map("created_by") @db.Uuid
+  createdBy          User?             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   contracts Contract[]
   bookings  Booking[]
@@ -513,6 +580,8 @@ model Customer {
   @@index([phone])
   @@index([searchName])
   @@index([branchId])
+  @@index([stage, leadStatus])
+  @@index([picUserId])
   @@map("customers")
 }
 

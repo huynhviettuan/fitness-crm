@@ -44,7 +44,7 @@ export function CustomerSearch() {
     <>
       <Button
         variant="outline"
-        className="h-9 w-full max-w-72 justify-start gap-2 text-muted-foreground"
+        className="h-9 w-full min-w-0 max-w-72 justify-start gap-2 text-muted-foreground"
         onClick={() => changeOpen(true)}
       >
         <SearchIcon />

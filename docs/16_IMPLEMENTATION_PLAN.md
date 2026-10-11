@@ -31,7 +31,9 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M1 | 5. Approvals: engine, matrix screen, inbox with top-bar count; receipts, income and expenses, deletions, and customer identity edits under approval; a contract's creator cannot activate it (D-018, T-057) | **Done** 2026-10-11 |
 | M1 | 6. Employees: trainers turned into employees with profiles, departments and job titles, linked logins; weekly shifts and days off; bookings only inside working hours; grey cells on the PT calendar (T-058, A-041 to A-043) | **Done** 2026-10-11 |
 | M1 | 7. Tasks and notifications: give tasks to a person or department, accept, work, complete, cancel, comments with mentions; bell and Notifications page; reminders before and after deadlines and for overdue approvals, run by pg-boss (D-037, T-059, T-060, A-044 to A-048) | **Done** 2026-10-11 |
-| M1 | All slices built; next: the owner checks AC-01 to AC-05 and AC-13 on staging, then M2 (leads and consulting) | — |
+| M1 | All slices built; next: the owner checks AC-01 to AC-05 and AC-13 on staging | — |
+| M2 | 1. One person record and lead intake: the customers table gains the stage, lead code, lead status, and lead profile; quick form (phone-first), lead list and page; five option lists with the brief's values; one phone per person (T-061, A-049 to A-051) | **Done** 2026-10-11 |
+| M2 | Next: 2 assignment and statuses, 3 consulting checklist, 4 appointment and Show, 5 re-care and merge, 6 scripts and customer profile | Not started |
 
 ## Open questions per milestone
 

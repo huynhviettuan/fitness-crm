@@ -11,6 +11,8 @@ export const ERROR_HTTP_STATUS = {
   APPROVAL_OWN_REQUEST: 403,
   NOT_FOUND: 404,
   EMAIL_ALREADY_USED: 409,
+  // D-019: one person, one record; the answer names the record that has the phone.
+  PHONE_ALREADY_USED: 409,
   CANNOT_CHANGE_OWN_ACCESS: 409,
   INVALID_STATUS_TRANSITION: 409,
   CONTRACT_NOT_EDITABLE: 409,
@@ -35,12 +37,25 @@ export type ErrorCode = keyof typeof ERROR_HTTP_STATUS;
 
 export type FieldErrors = Record<string, string[]>;
 
+/** The existing record a duplicate phone belongs to (D-019): open it instead of adding another. */
+export const duplicatePersonSchema = z.object({
+  id: z.uuid(),
+  stage: z.enum(["LEAD", "CUSTOMER"]),
+  code: z.string(),
+  fullName: z.string(),
+});
+export type DuplicatePerson = z.output<typeof duplicatePersonSchema>;
+
 /** The body of every error response (docs/07 "Error contract"). */
 export const apiErrorSchema = z
   .object({
     code: z.enum(Object.keys(ERROR_HTTP_STATUS) as ErrorCode[]),
     message: z.string(),
-    details: z.object({ fieldErrors: z.record(z.string(), z.array(z.string())).optional() }),
+    details: z.object({
+      fieldErrors: z.record(z.string(), z.array(z.string())).optional(),
+      /** PHONE_ALREADY_USED: the person who has the phone, when the user may see them. */
+      duplicate: duplicatePersonSchema.optional(),
+    }),
   })
   .meta({ id: "ApiError" });
 

@@ -1,6 +1,7 @@
 // OWASP A05:2025 Injection — SQL and script payloads are stored as plain text and
 // rendered inert.
 import { expect, signedInAs, test } from "../fixtures";
+import { uniquePhone } from "../support/data";
 
 const PAYLOADS = [
   "'; DROP TABLE customers; --",
@@ -17,7 +18,7 @@ test.describe("A05 injection payloads", () => {
     test(`payload ${index + 1} is stored verbatim and rendered as text`, async ({ page, apiAs, testTag, customerDetailPage }) => {
       const api = await apiAs("RECEPTIONIST");
       const fullName = `${payload} ${testTag}`;
-      const response = await api.post("/api/v1/customers", { data: { fullName, phone: "0909200100", notes: payload } });
+      const response = await api.post("/api/v1/customers", { data: { fullName, phone: uniquePhone(), notes: payload } });
       expect(response.status()).toBe(201);
       const customer = await response.json();
       expect(customer).toMatchObject({ fullName, notes: payload });
@@ -37,7 +38,7 @@ test.describe("A05 injection payloads", () => {
 
   test("SQL in the search box matches nothing instead of everything", async ({ apiAs, testTag }) => {
     const api = await apiAs("RECEPTIONIST");
-    await api.post("/api/v1/customers", { data: { fullName: `Search ${testTag}`, phone: "0909200200" } });
+    await api.post("/api/v1/customers", { data: { fullName: `Search ${testTag}`, phone: uniquePhone() } });
 
     for (const search of ["' OR '1'='1", "%' OR 1=1 --", "\\' UNION SELECT * FROM users --"]) {
       const response = await api.get(`/api/v1/customers?search=${encodeURIComponent(search)}`);

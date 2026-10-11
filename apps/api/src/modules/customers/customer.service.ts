@@ -9,6 +9,7 @@ import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import { ruleFor, submitForApproval, withPendingConflictMapped } from "../../platform/approvals/approval.engine.js";
 import * as repo from "./customer.repository.js";
+import { assertPhoneFree } from "./person.service.js";
 import {
   createCustomerSchema,
   listCustomersSchema,
@@ -48,6 +49,7 @@ export async function createCustomer(actor: Actor, input: unknown): Promise<Cust
 
   return prisma.$transaction(async (tx) => {
     const branchId = await resolveBranch(tx, actor, requestedBranch);
+    await assertPhoneFree(tx, actor, data.phone, null, visibleTo);
     const code = await repo.nextCustomerCode(tx);
     const customer = await repo.createCustomer(tx, code, { ...data, branchId, createdById: actor.id });
     await recordAudit(tx, {
@@ -77,6 +79,7 @@ export async function updateCustomer(actor: Actor, id: string, input: unknown): 
     prisma.$transaction(async (tx) => {
       const before = await repo.findCustomer(tx, id, visibleTo(actor));
       if (!before) throw new AppError("NOT_FOUND");
+      if (data.phone !== undefined && data.phone !== before.phone) await assertPhoneFree(tx, actor, data.phone, id, visibleTo);
 
       const identity: IdentityChange = {};
       for (const field of IDENTITY_FIELDS) {
@@ -96,7 +99,7 @@ export async function updateCustomer(actor: Actor, id: string, input: unknown): 
             entityType: "customer",
             entityId: id,
             branchId: before.branchId,
-            title: `${before.customerCode} · ${before.fullName}`,
+            title: `${before.customerCode ?? ""} · ${before.fullName}`,
             amount: null,
             payload: identity,
           })
@@ -146,9 +149,12 @@ export function ownCustomers(actor: Pick<Actor, "id" | "employeeId">): Prisma.Cu
   };
 }
 
-/** Which customers an actor may see: their branches, and only their own with "own" scope (D-017). */
+/**
+ * Which customers an actor may see: people past Show (leads are on the lead screens,
+ * D-019), in their branches, and only their own with "own" scope (D-017).
+ */
 export function visibleTo(actor: Actor): Prisma.CustomerWhereInput {
-  return { AND: [inBranches(actor), isOwnOnly(actor, "customers") ? ownCustomers(actor) : {}] };
+  return { AND: [{ stage: "CUSTOMER" }, inBranches(actor), isOwnOnly(actor, "customers") ? ownCustomers(actor) : {}] };
 }
 
 /** The customer as this actor may see it: masked fields are null and listed (D-017). */
@@ -158,7 +164,8 @@ function present(actor: Actor, customer: repo.CustomerRecord, pending?: PendingI
   if (isMasked(actor, "customer.email")) maskedFields.push("email");
   return {
     id: customer.id,
-    customerCode: customer.customerCode,
+    // A customer always has a code (database check customers_stage_codes).
+    customerCode: customer.customerCode ?? "",
     branch: customer.branch,
     fullName: customer.fullName,
     phone: maskedFields.includes("phone") ? null : customer.phone,

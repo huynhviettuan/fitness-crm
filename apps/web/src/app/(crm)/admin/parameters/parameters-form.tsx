@@ -54,7 +54,8 @@ export function ParametersForm({ parameters }: { parameters: Parameters }) {
           <CardTitle>{t("parameters.codes")}</CardTitle>
           <CardDescription>{t("parameters.codesHint")}</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          {field("leadCodePrefix")}
           {field("customerCodePrefix")}
           {field("contractCodePrefix")}
           {field("employeeCodePrefix")}

@@ -1,6 +1,7 @@
 // OWASP A10:2025 Mishandling of Exceptional Conditions — bad input fails closed with
 // the documented error shape and never leaks internals.
 import { expect, test } from "../fixtures";
+import { uniquePhone } from "../support/data";
 
 const LEAKS = /\bat\s+\S+\s+\(|node_modules|prisma|stack|Error:|SELECT |INSERT /i;
 
@@ -37,14 +38,14 @@ test.describe("A10 exceptional input", () => {
 
   test("an oversized field", async ({ apiAs }) => {
     const api = await apiAs("RECEPTIONIST");
-    const response = await api.post("/api/v1/customers", { data: { fullName: "A".repeat(50_000), phone: "0909300100" } });
+    const response = await api.post("/api/v1/customers", { data: { fullName: "A".repeat(50_000), phone: uniquePhone() } });
     await expectDocumentedError(response, 400, "VALIDATION_FAILED");
   });
 
   test("control characters such as NUL, which PostgreSQL cannot store", async ({ apiAs }) => {
     const api = await apiAs("RECEPTIONIST");
     for (const fullName of ["Nul\u0000byte", "Bell\u0007char"]) {
-      const response = await api.post("/api/v1/customers", { data: { fullName, phone: "0909300200" } });
+      const response = await api.post("/api/v1/customers", { data: { fullName, phone: uniquePhone() } });
       await expectDocumentedError(response, 400, "VALIDATION_FAILED");
     }
   });
