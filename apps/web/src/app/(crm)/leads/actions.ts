@@ -1,13 +1,22 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { assignLead, changeLeadStatus, completeLeadStep, createLead, updateLead } from "@/lib/api/leads";
+import {
+  assignLead,
+  changeLeadStatus,
+  completeLeadStep,
+  createLead,
+  noShowLead,
+  showLead,
+  updateLead,
+} from "@/lib/api/leads";
 import type {
   LeadAssignInput,
   LeadInput,
   LeadStatusChangeInput,
   LeadUpdateInput,
   StepCompleteInput,
+  ShowInput,
 } from "@flow/shared/leads";
 
 export async function createLeadAction(input: LeadInput): Promise<ActionResult<{ id: string; leadCode: string }>> {
@@ -42,5 +51,16 @@ export async function completeLeadStepAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     await completeLeadStep(id, stepId, input);
+  });
+}
+
+/** Returns the customer's id: after Show the record is a customer (D-019). */
+export async function showLeadAction(id: string, input: ShowInput): Promise<ActionResult<{ customerId: string }>> {
+  return runAction(async () => showLead(id, input));
+}
+
+export async function noShowLeadAction(id: string): Promise<ActionResult> {
+  return runAction(async () => {
+    await noShowLead(id);
   });
 }

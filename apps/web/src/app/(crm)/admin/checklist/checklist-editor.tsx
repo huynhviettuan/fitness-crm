@@ -10,8 +10,11 @@ import { FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field";
 import { SelectField, SwitchField, TextField } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
+import { NO_OPTION } from "@/components/option-select";
 import {
   OFFSET_UNITS,
+  RESULT_EFFECTS,
+  STEP_ACTIONS,
   STEP_TRIGGERS,
   STEP_TRIGGER_STATUSES,
   checklistInputSchema,
@@ -26,6 +29,15 @@ type Values = { steps: (Omit<ChecklistInput["steps"][number], "offsetValue"> & {
 
 const newKey = () => `buoc-${Math.random().toString(36).slice(2, 8)}`;
 
+/** A drop-down cannot hold "", so "none" (no effect, no action) is NO_OPTION on screen. */
+const fromForm = (values: Values): Values => ({
+  steps: values.steps.map((step) => ({
+    ...step,
+    action: step.action === NO_OPTION ? "" : step.action,
+    results: step.results.map((result) => ({ ...result, effect: result.effect === NO_OPTION ? "" : result.effect })),
+  })),
+});
+
 /**
  * The checklist as a form (D-020): steps in order, each with its names, what opens it,
  * its delay, whether it is required or done by what opens it, and its results. Saving makes the next version;
@@ -37,7 +49,12 @@ export function ChecklistEditor({ checklist }: { checklist: Checklist }) {
   const router = useRouter();
   const errorMessage = useErrorMessage();
   const form = useForm<Values>({
-    resolver: zodResolver(checklistInputSchema, undefined, { raw: true }) as never,
+    resolver: (values, context, options) =>
+      zodResolver(checklistInputSchema, undefined, { raw: true })(
+        fromForm(values) as never,
+        context,
+        options as never,
+      ) as never,
     defaultValues: {
       steps: checklist.steps.map((step) => {
         const { offsetValue, offsetUnit } = offsetParts(step.offsetMinutes);
@@ -52,14 +69,15 @@ export function ChecklistEditor({ checklist }: { checklist: Checklist }) {
           offsetUnit,
           required: step.required,
           autoComplete: step.autoComplete,
-          results: step.results,
+          action: step.action ?? NO_OPTION,
+          results: step.results.map((result) => ({ ...result, effect: result.effect ?? NO_OPTION })),
         };
       }),
     },
   });
   const steps = useFieldArray({ control: form.control, name: "steps" });
   const onSubmit = form.handleSubmit(async (values) => {
-    const result = await saveChecklistAction(values as unknown as ChecklistInput);
+    const result = await saveChecklistAction(fromForm(values) as unknown as ChecklistInput);
     if (!result.ok) return void notify.error(errorMessage(result.code));
     notify.success(t("saved", { version: result.data.version }));
     router.refresh();
@@ -123,7 +141,8 @@ export function ChecklistEditor({ checklist }: { checklist: Checklist }) {
               offsetUnit: "MINUTES",
               required: true,
               autoComplete: false,
-              results: [{ labelVi: "Done", labelEn: "Done" }],
+              action: NO_OPTION,
+              results: [{ labelVi: "Done", labelEn: "Done", effect: NO_OPTION }],
             })
           }
         >
@@ -195,7 +214,17 @@ function StepFields({ control, index }: { control: Control<Values>; index: numbe
         )}
       </div>
       {trigger === "RECARE" && <p className="text-sm text-muted-foreground">{t("recareHint")}</p>}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <SelectField
+          control={control}
+          name={`steps.${index}.action`}
+          label={t("action")}
+          description={t("actionHint")}
+          options={[
+            { value: NO_OPTION, label: t("noAction") },
+            ...STEP_ACTIONS.map((value) => ({ value, label: t(`actions.${value}`) })),
+          ]}
+        />
         <SwitchField control={control} name={`steps.${index}.required`} label={t("required")} />
         <SwitchField
           control={control}
@@ -207,7 +236,10 @@ function StepFields({ control, index }: { control: Control<Values>; index: numbe
       <FieldSet>
         <FieldLegend variant="label">{t("results")}</FieldLegend>
         {results.fields.map((result, resultIndex) => (
-          <div key={result.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
+          <div
+            key={result.id}
+            className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem_auto]"
+          >
             <TextField
               control={control}
               name={`steps.${index}.results.${resultIndex}.labelVi`}
@@ -220,6 +252,17 @@ function StepFields({ control, index }: { control: Control<Values>; index: numbe
               label={t("resultEn", { number: resultIndex + 1 })}
               autoComplete="off"
             />
+            <div className="col-span-2 sm:col-span-1">
+              <SelectField
+                control={control}
+                name={`steps.${index}.results.${resultIndex}.effect`}
+                label={t("resultEffect", { number: resultIndex + 1 })}
+                options={[
+                  { value: NO_OPTION, label: t("noEffect") },
+                  ...RESULT_EFFECTS.map((value) => ({ value, label: t(`effects.${value}`) })),
+                ]}
+              />
+            </div>
             <Button
               type="button"
               size="icon"
@@ -238,7 +281,7 @@ function StepFields({ control, index }: { control: Control<Values>; index: numbe
             size="sm"
             variant="ghost"
             disabled={results.fields.length >= 10}
-            onClick={() => results.append({ labelVi: "", labelEn: "" })}
+            onClick={() => results.append({ labelVi: "", labelEn: "", effect: NO_OPTION })}
           >
             <PlusIcon />
             {t("addResult")}

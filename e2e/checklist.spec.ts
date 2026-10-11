@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, signedInAs, test } from "./fixtures";
 import { createLeadViaApi } from "./support/data";
-import { E2E_USERS } from "./support/db";
+import { E2E_USERS, makeStepDueNow } from "./support/db";
 import { labels } from "./support/labels";
 
 // The consulting checklist and "Việc hôm nay" (brief §4.1; D-020; FR-LEAD-004/005; docs/13 E2E-118).
@@ -11,7 +11,7 @@ const toasts = (page: Page) => page.getByRole("region", { name: labels.common.no
 test.describe("the consulting checklist on a phone (AC-23)", () => {
   test.use({ ...signedInAs("CONSULTING"), viewport: { width: 375, height: 812 } });
 
-  test("E2E-118: booking does 'Đặt lịch'; a reminder is recorded on time; Báo Studio comes due and is done from today's tasks", async ({
+  test("E2E-118: booking does 'Đặt lịch'; a reminder is recorded on time and Báo Studio follows; a due step is done from today's tasks", async ({
     page,
     apiAs,
     testTag,
@@ -39,17 +39,19 @@ test.describe("the consulting checklist on a phone (AC-23)", () => {
     await expect(toasts(page).getByText(c.completed)).toBeVisible();
     await expect(leadPage.checklistStep("Nhắc trước hẹn lần 1")).toContainText(labels.status.stepTiming.ON_TIME);
     await expect(leadPage.checklistStep("Nhắc trước hẹn lần 1")).toContainText("Xác nhận qua Zalo");
-    await expect(leadPage.checklistStep("Báo Studio lần 1")).toContainText(labels.status.leadStep.OPEN);
+    // Báo Studio is sent by the system right after (A-059).
+    await expect(leadPage.checklistStep("Báo Studio lần 1")).toContainText(labels.status.leadStep.DONE);
 
+    await makeStepDueNow(lead.id, "tu-van");
     await todayPage.goto();
-    await expect(todayPage.item(lead.fullName, "Báo Studio lần 1")).toBeVisible();
+    await expect(todayPage.item(lead.fullName, "Tư vấn sản phẩm phù hợp")).toBeVisible();
     // Nothing on the page is wider than the phone.
     expect(await shell.scrollWidth()).toBeLessThanOrEqual(375);
     // Its only result is chosen already.
-    const studio = await todayPage.complete(lead.fullName, "Báo Studio lần 1");
-    await studio.save();
+    const first = await todayPage.complete(lead.fullName, "Tư vấn sản phẩm phù hợp");
+    await first.save();
     await expect(toasts(page).getByText(c.completed)).toBeVisible();
-    await expect(todayPage.item(lead.fullName, "Báo Studio lần 1")).toHaveCount(0);
+    await expect(todayPage.item(lead.fullName, "Tư vấn sản phẩm phù hợp")).toHaveCount(0);
   });
 });
 
@@ -61,22 +63,13 @@ test.describe("today's tasks of the whole team", () => {
     testTag,
     todayPage,
   }) => {
-    const consultant = await apiAs("CONSULTING");
     const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: `Lead ${testTag}` });
-    await consultant.post(`/api/v1/leads/${lead.id}/status`, {
-      data: { status: "BOOKED", appointmentDate: "20/10/2030", appointmentTime: "18:30" },
-    });
-    const { items } = (await (await consultant.get(`/api/v1/leads/${lead.id}/steps`)).json()) as {
-      items: { id: string; key: string }[];
-    };
-    // Done, the reminder opens Báo Studio, due at once.
-    const reminder = items.find((item) => item.key === "nhac-truoc-hen-1")!;
-    await consultant.post(`/api/v1/leads/${lead.id}/steps/${reminder.id}/complete`, { data: { resultIndex: 0 } });
+    await makeStepDueNow(lead.id, "tu-van");
 
     await todayPage.goto();
-    await expect(todayPage.item(lead.fullName, "Báo Studio lần 1")).toHaveCount(0);
+    await expect(todayPage.item(lead.fullName, "Tư vấn sản phẩm phù hợp")).toHaveCount(0);
     await todayPage.goto("all");
-    await expect(todayPage.item(lead.fullName, "Báo Studio lần 1")).toContainText(E2E_USERS.CONSULTING.name);
+    await expect(todayPage.item(lead.fullName, "Tư vấn sản phẩm phù hợp")).toContainText(E2E_USERS.CONSULTING.name);
   });
 });
 

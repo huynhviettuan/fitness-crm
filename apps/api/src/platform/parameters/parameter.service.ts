@@ -10,6 +10,7 @@ import type { Actor } from "../auth/session.js";
 import { prisma, type Db } from "../db/prisma.js";
 import { assertCan } from "../permissions/assert.js";
 import { parseInput } from "../validation/parse.js";
+import { AppError } from "../errors/app-error.js";
 
 // FR-PLT-006, T-049. A parameter without a row has its default (the brief's initial
 // value). Changes apply to the next request; nothing is cached.
@@ -37,6 +38,15 @@ export async function updateParameters(actor: Actor, input: unknown): Promise<Pa
   const data = parseInput(parametersInputSchema, input);
   return prisma.$transaction(async (tx) => {
     const before = await readParameters(tx);
+    // Báo Studio's department must be an active department (not "Khác"), or none.
+    if (data.studioDepartmentId && data.studioDepartmentId !== before.studioDepartmentId) {
+      const department = await tx.option.findFirst({
+        where: { id: data.studioDepartmentId, listKey: "departments", active: true, isOther: false },
+        select: { id: true },
+      });
+      if (!department)
+        throw new AppError("VALIDATION_FAILED", { fieldErrors: { studioDepartmentId: ["invalidChoice"] } });
+    }
     for (const key of PARAMETER_KEYS) {
       if (before[key] === data[key]) continue;
       const row = await tx.systemParameter.upsert({

@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { instant } from "../validation/index.js";
-import { STEP_STATES, STEP_TIMINGS, STEP_TRIGGERS } from "./checklist.schema.js";
+import { RESULT_EFFECTS, STEP_ACTIONS, STEP_STATES, STEP_TIMINGS, STEP_TRIGGERS } from "./checklist.schema.js";
 import { LEAD_STATUSES } from "./lead.schema.js";
 
 const person = z.object({ id: z.uuid(), name: z.string() });
 const label = z.object({ labelVi: z.string(), labelEn: z.string() });
+/** A result, and what choosing it does besides recording it. */
+const result = label.extend({ effect: z.enum(RESULT_EFFECTS).nullable() });
 
 const stepTemplate = z.object({
   key: z.string(),
@@ -17,7 +19,8 @@ const stepTemplate = z.object({
   offsetMinutes: z.int(),
   required: z.boolean(),
   autoComplete: z.boolean(),
-  results: z.array(label),
+  action: z.enum(STEP_ACTIONS).nullable(),
+  results: z.array(result),
 });
 
 /** The checklist new leads get (D-020). */

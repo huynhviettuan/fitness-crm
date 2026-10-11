@@ -1,5 +1,7 @@
 import "server-only";
 import {
+  showResultSchema,
+  type ShowInput,
   checklistSchema,
   leadChecklistSchema,
   todayStepsSchema,
@@ -104,4 +106,16 @@ export async function getChecklist() {
 
 export async function saveChecklist(input: ChecklistInput) {
   return read(checklistSchema, (await api()).POST("/api/v1/consulting-checklist", { body: input as never }));
+}
+
+/** Show (D-019): the lead becomes a customer in the same record. */
+export async function showLead(id: string, input: ShowInput) {
+  return read(
+    showResultSchema,
+    (await api()).POST("/api/v1/leads/{id}/show", { params: { path: { id } }, body: input as never }),
+  );
+}
+
+export async function noShowLead(id: string) {
+  return read(leadSchema, (await api()).POST("/api/v1/leads/{id}/no-show", { params: { path: { id } } }));
 }

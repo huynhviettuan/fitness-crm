@@ -288,7 +288,11 @@
       "status": "Status",
       "notes": "Notes",
       "createdAt": "Created",
-      "branch": "Branch"
+      "branch": "Branch",
+      "nationality": "Nationality",
+      "idDocument": "ID document",
+      "healthNote": "Basic health",
+      "dataConsentAt": "Data consent"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
@@ -462,7 +466,9 @@
     "phoneAlreadyUsed": "This phone belongs to another record.",
     "notInFuture": "The appointment must be later than now.",
     "daysOutOfRange": "Enter a number of days from 1 to 365.",
-    "invalidKey": "Invalid step key."
+    "invalidKey": "Invalid step key.",
+    "consentRequired": "The customer's consent is needed before the ID document and health information are kept.",
+    "invalidIdDocument": "Invalid document number: a citizen ID has 12 digits, a passport 6 to 20 letters and digits."
   },
   "contracts": {
     "title": "Contracts",
@@ -827,7 +833,9 @@
     "masks": {
       "customer": {
         "phone": "Customer phone",
-        "email": "Customer email"
+        "email": "Customer email",
+        "idDocument": "Customer ID documents",
+        "health": "Customer health"
       },
       "receipts": {
         "totals": "Totals on receipt and expense lists"
@@ -943,13 +951,16 @@
       "contractCodePrefix": "Contract code",
       "employeeCodePrefix": "Employee code",
       "taskDueSoonHours": "Reminder before the deadline (hours)",
-      "recareDays": "Re-care after (days)"
+      "recareDays": "Re-care after (days)",
+      "studioDepartmentId": "Department told by Báo Studio"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
     "tasksHint": "The assignee is reminded this many hours before the deadline; once it passes, the assignee and the assigner are told.",
     "leads": "Leads",
-    "leadsHint": "Leads with No response, Refused, or No show are due to be contacted again after this many days."
+    "leadsHint": "Leads with No response, Refused, or No show are due to be contacted again after this many days.",
+    "studioHint": "Báo Studio creates a task for this department in Tasks. With none chosen, nothing is sent.",
+    "noDepartment": "Not chosen"
   },
   "trash": {
     "title": "Trash",
@@ -1041,7 +1052,8 @@
       "commented": "Commented",
       "status_changed": "Status changed",
       "assigned": "Assigned",
-      "step_completed": "Consulting step completed"
+      "step_completed": "Consulting step completed",
+      "converted": "Converted to customer"
     },
     "fields": {
       "at": "When",
@@ -1208,7 +1220,8 @@
     "mentioned": "Mentioned: {names}",
     "entityTypes": {
       "customer": "Customer",
-      "contract": "Contract"
+      "contract": "Contract",
+      "lead": "Lead"
     },
     "details": "Task details"
   },
@@ -1319,6 +1332,47 @@
       "DAYS": "Days"
     },
     "autoComplete": "Done when it opens",
-    "autoCompleteHint": "What opens the step also does it, e.g. booking the visit completes \"Book the visit\". Records the first result, on time."
+    "autoCompleteHint": "What opens the step also does it, e.g. booking the visit completes \"Book the visit\". Records the first result, on time.",
+    "action": "The system does",
+    "actionHint": "What the system does when the step is done.",
+    "noAction": "Nothing",
+    "actions": {
+      "STUDIO_TASK": "Báo Studio"
+    },
+    "resultEffect": "Effect {number}",
+    "noEffect": "None",
+    "effects": {
+      "SHOW": "Show – convert to customer",
+      "NO_SHOW": "No show"
+    }
+  },
+  "visit": {
+    "show": "Show – convert to customer",
+    "showTitle": "Show: {name}",
+    "showDescription": "The customer came in. Enter the ID document and what is missing; the lead becomes a customer and keeps the same record.",
+    "convert": "Convert to customer",
+    "converted": "{name} is now a customer",
+    "noShow": "No show",
+    "noShowTitle": "No show: {name}",
+    "noShowDescription": "The customer missed the appointment. The lead becomes No show and goes to re-care.",
+    "noShowConfirm": "Record No show",
+    "noShowRecorded": "No show recorded",
+    "vietnam": "Vietnam",
+    "datePlaceholder": "dd/MM/yyyy",
+    "consentHint": "ID documents and health information are sensitive personal data; they are encrypted and only permitted roles can see them.",
+    "idDocumentTypes": {
+      "CCCD": "Citizen ID",
+      "PASSPORT": "Passport"
+    },
+    "fields": {
+      "idDocumentType": "Document type",
+      "idDocumentNumber": "Document number",
+      "birthDate": "Date of birth",
+      "nationality": "Nationality",
+      "email": "Email",
+      "phone": "Phone",
+      "healthNote": "Basic health (optional)",
+      "consent": "The customer agrees that Flow keeps the ID document and health information"
+    }
   }
 }

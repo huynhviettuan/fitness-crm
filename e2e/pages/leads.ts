@@ -68,6 +68,43 @@ export class ChangeStatusDialog {
   }
 }
 
+/** Show (D-019): the details that convert the lead. Scoped to the dialog. */
+export class ShowDialog {
+  constructor(
+    private readonly page: Page,
+    readonly root: Locator,
+  ) {}
+
+  field(label: string): Locator {
+    return this.root.getByLabel(label, { exact: true });
+  }
+
+  async fill(input: {
+    idDocumentNumber: string;
+    birthDate: string;
+    nationality: string;
+    email: string;
+    phone?: string;
+    healthNote?: string;
+  }) {
+    const f = labels.visit.fields;
+    await this.field(f.idDocumentNumber).fill(input.idDocumentNumber);
+    await this.field(f.birthDate).fill(input.birthDate);
+    await this.field(f.nationality).fill(input.nationality);
+    await this.field(f.email).fill(input.email);
+    if (input.phone !== undefined) await this.field(f.phone).fill(input.phone);
+    if (input.healthNote !== undefined) await this.field(f.healthNote).fill(input.healthNote);
+  }
+
+  async consent(): Promise<void> {
+    await this.root.getByRole("checkbox", { name: labels.visit.fields.consent }).check();
+  }
+
+  async convert(): Promise<void> {
+    await this.root.getByRole("button", { name: labels.visit.convert, exact: true }).click();
+  }
+}
+
 /** Reassigning a lead (BR-203). Scoped to the dialog. */
 export class AssignLeadDialog {
   constructor(
@@ -190,6 +227,20 @@ export class LeadPage {
       this.page,
       this.page.getByRole("dialog", { name: fill(l.changeStatusTitle, { name }) }),
     );
+  }
+
+  async openShow(name: string): Promise<ShowDialog> {
+    await this.journey.getByRole("button", { name: labels.visit.show, exact: true }).click();
+    return new ShowDialog(this.page, this.page.getByRole("dialog", { name: fill(labels.visit.showTitle, { name }) }));
+  }
+
+  /** No show, confirmed in its dialog (BR-204). */
+  async noShow(name: string): Promise<void> {
+    await this.journey.getByRole("button", { name: labels.visit.noShow, exact: true }).click();
+    await this.page
+      .getByRole("alertdialog", { name: fill(labels.visit.noShowTitle, { name }) })
+      .getByRole("button", { name: labels.visit.noShowConfirm })
+      .click();
   }
 
   async openAssign(name: string, button: string = l.reassign): Promise<AssignLeadDialog> {

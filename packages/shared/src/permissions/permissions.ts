@@ -49,5 +49,12 @@ export const DATA_SCOPES = ["ALL", "OWN"] as const;
 export type DataScope = (typeof DATA_SCOPES)[number];
 
 /** Fields a role can have hidden on every screen and in every export (D-017). */
-export const MASKABLE_FIELDS = ["customer.phone", "customer.email", "receipts.totals"] as const;
+// ID documents and health notes are sensitive personal data (D-042).
+export const MASKABLE_FIELDS = [
+  "customer.phone",
+  "customer.email",
+  "customer.idDocument",
+  "customer.health",
+  "receipts.totals",
+] as const;
 export type MaskableField = (typeof MASKABLE_FIELDS)[number];

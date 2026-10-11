@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { hasNoControlCharacters } from "../validation/index.js";
 import { type LEAD_STATUSES } from "./lead.schema.js";
+import { showInputSchema } from "./show.schema.js";
 
 // The consulting checklist (brief §4.1, D-020, FR-LEAD-004). What can open a step is code
 // (D-015); the steps, their names, delays, results, and whether they are required are
@@ -22,6 +23,18 @@ export type StepTrigger = (typeof STEP_TRIGGERS)[number];
 export const OFFSET_UNITS = ["MINUTES", "HOURS", "DAYS"] as const;
 export type OffsetUnit = (typeof OFFSET_UNITS)[number];
 const MINUTES_PER: Record<OffsetUnit, number> = { MINUTES: 1, HOURS: 60, DAYS: 1440 };
+
+/**
+ * What choosing a result does besides recording it: SHOW converts the lead to a customer
+ * (it then needs the Show details), NO_SHOW marks it No show; the same as the lead's own
+ * Show and No show buttons (M2 slice 4).
+ */
+export const RESULT_EFFECTS = ["SHOW", "NO_SHOW"] as const;
+export type ResultEffect = (typeof RESULT_EFFECTS)[number];
+
+/** What the system does when the step is done: STUDIO_TASK tells the studio through Giao việc (brief §4.1, §8.2). */
+export const STEP_ACTIONS = ["STUDIO_TASK"] as const;
+export type StepAction = (typeof STEP_ACTIONS)[number];
 
 /** A step is waiting for its trigger, open with a deadline, or done. */
 export const STEP_STATES = ["WAITING", "OPEN", "DONE"] as const;
@@ -55,7 +68,11 @@ const emptyToNull = (value: string) => (value === "" ? null : value);
 const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
   z.preprocess((value) => (value === "" ? null : value), z.enum(values, { error: "invalidChoice" }).nullable());
 
-const result = z.object({ labelVi: text(60), labelEn: text(60) });
+const result = z.object({
+  labelVi: text(60),
+  labelEn: text(60),
+  effect: optionalEnum(RESULT_EFFECTS).prefault(""),
+});
 
 const stepInput = z.object({
   /** Stable within the checklist; AFTER_STEP refers to it. */
@@ -78,6 +95,7 @@ const stepInput = z.object({
   required: z.boolean({ error: "invalidChoice" }).prefault(false),
   /** What opens the step also does it, e.g. booking the visit is "Đặt lịch": done with the first result, on time. */
   autoComplete: z.boolean({ error: "invalidChoice" }).prefault(false),
+  action: optionalEnum(STEP_ACTIONS).prefault(""),
   results: z.array(result).min(1, { error: "required" }).max(10, { error: "tooLong" }),
 });
 
@@ -88,6 +106,10 @@ export const checklistInputSchema = z
     const seen = new Set<string>();
     steps.forEach((step, index) => {
       if (seen.has(step.key)) ctx.addIssue({ code: "custom", path: ["steps", index, "key"], message: "duplicate" });
+      const effects = step.results.map((result) => result.effect).filter(Boolean);
+      if (new Set(effects).size !== effects.length) {
+        ctx.addIssue({ code: "custom", path: ["steps", index, "results"], message: "duplicate" });
+      }
       if (step.trigger === "STATUS" && !step.triggerStatus) {
         ctx.addIssue({ code: "custom", path: ["steps", index, "triggerStatus"], message: "required" });
       }
@@ -116,6 +138,8 @@ export const stepCompleteSchema = z.object({
     .number({ error: "required" })
     .int({ error: "invalidChoice" })
     .min(0, { error: "invalidChoice" }),
+  /** Needed when the result converts the lead (effect SHOW). */
+  show: showInputSchema.optional(),
   note: z
     .string()
     .trim()

@@ -69,7 +69,14 @@ describe("roles (FR-PLT-002)", () => {
       tasks: "OWN",
       leads: "OWN",
     });
-    expect(roles.find((r) => r.code === "MARKETING")!.fieldMasks).toEqual(["customer.email", "customer.phone"]);
+    expect(roles.find((r) => r.code === "MARKETING")!.fieldMasks).toEqual([
+      "customer.email",
+      "customer.health",
+      "customer.idDocument",
+      "customer.phone",
+    ]);
+    // D-042, A-060: a PT sees health notes, to train safely, but not ID documents.
+    expect(roles.find((r) => r.code === "PT")!.fieldMasks).toEqual(["customer.idDocument"]);
   });
 
   it("a change to a role applies to its users on their next request (AC-02), and is audited", async () => {

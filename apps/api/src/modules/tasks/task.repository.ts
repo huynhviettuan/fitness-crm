@@ -23,7 +23,13 @@ export type TaskWrite = {
 
 export function createTask(
   db: Db,
-  data: TaskWrite & { branchId: string; assignerId: string; entityType: string | null; entityId: string | null },
+  data: TaskWrite & {
+    branchId: string;
+    assignerId: string;
+    entityType: string | null;
+    entityId: string | null;
+    source?: string;
+  },
 ): Promise<TaskRecord> {
   return db.task.create({ data, include: withRefs });
 }
@@ -137,23 +143,53 @@ export function findDepartment(db: Db, id: string) {
   });
 }
 
-/** Labels of the records tasks are about, by id. */
-export async function entityLabels(db: Db, refs: { type: string; id: string }[]): Promise<Map<string, string>> {
-  const ids = (type: string) => refs.filter((ref) => ref.type === type).map((ref) => ref.id);
-  const [customers, contracts] = await Promise.all([
+/**
+ * The records tasks are about, by id: how they are shown and what they are now. A task
+ * about a lead is about a customer once the lead showed (D-019, same id).
+ */
+export async function entityRefs(
+  db: Db,
+  refs: { type: string; id: string }[],
+): Promise<Map<string, { label: string; type: "lead" | "customer" | "contract" }>> {
+  const ids = (...types: string[]) => refs.filter((ref) => types.includes(ref.type)).map((ref) => ref.id);
+  const [people, contracts] = await Promise.all([
     db.customer.findMany({
-      where: { id: { in: ids("customer") } },
-      select: { id: true, customerCode: true, fullName: true },
+      where: { id: { in: ids("lead", "customer") } },
+      select: { id: true, stage: true, leadCode: true, customerCode: true, fullName: true },
     }),
     db.contract.findMany({
       where: { id: { in: ids("contract") } },
       select: { id: true, contractCode: true, packageName: true },
     }),
   ]);
-  return new Map([
-    ...customers.map((c) => [c.id, `${c.customerCode} · ${c.fullName}`] as const),
-    ...contracts.map((c) => [c.id, `${c.contractCode} · ${c.packageName}`] as const),
-  ]);
+  type Ref = { label: string; type: "lead" | "customer" | "contract" };
+  const entries: [string, Ref][] = [
+    ...people.map((p): [string, Ref] =>
+      p.stage === "LEAD"
+        ? [p.id, { label: `${p.leadCode} · ${p.fullName}`, type: "lead" }]
+        : [p.id, { label: `${p.customerCode} · ${p.fullName}`, type: "customer" }],
+    ),
+    ...contracts.map((c): [string, Ref] => [c.id, { label: `${c.contractCode} · ${c.packageName}`, type: "contract" }]),
+  ];
+  return new Map(entries);
+}
+
+/** The open task the system made for a record, e.g. Báo Studio's for a lead. */
+export function findSystemTask(
+  db: Db,
+  source: string,
+  entityType: string,
+  entityId: string,
+): Promise<TaskRecord | null> {
+  return db.task.findFirst({
+    where: { source, entityType, entityId, status: { in: ["NEW", "ACCEPTED", "IN_PROGRESS"] } },
+    include: withRefs,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export function updateSystemTask(db: Db, id: string, data: { title: string; description: string | null; dueAt: Date }) {
+  return db.task.update({ where: { id }, data, include: withRefs });
 }
 
 /** Claims open tasks whose reminder is due and marks them, so each goes out once (T-059). */

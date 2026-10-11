@@ -22,6 +22,8 @@ export const PARAMETER_DEFAULTS = {
   taskDueSoonHours: "24",
   /** Days after No response, Refused, or No show before the lead is contacted again (BR-204, OQ-018). */
   recareDays: "15",
+  /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
+  studioDepartmentId: "",
 } as const;
 
 export type ParameterKey = keyof typeof PARAMETER_DEFAULTS;
@@ -64,6 +66,7 @@ export const parametersInputSchema = z
     employeeCodePrefix: codePrefix,
     taskDueSoonHours: hours,
     recareDays: days,
+    studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
   })
   .refine((value) => value.calendarDayEnd > value.calendarDayStart, {
     path: ["calendarDayEnd"],
@@ -80,6 +83,7 @@ export const parametersSchema = z
     employeeCodePrefix: z.string(),
     taskDueSoonHours: z.string(),
     recareDays: z.string(),
+    studioDepartmentId: z.string(),
   })
   .meta({ id: "Parameters" });
 

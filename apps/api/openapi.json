@@ -962,6 +962,55 @@
                     "type": "integer",
                     "minimum": 0
                   },
+                  "show": {
+                    "type": "object",
+                    "properties": {
+                      "idDocumentType": {
+                        "type": "string",
+                        "enum": [
+                          "CCCD",
+                          "PASSPORT"
+                        ]
+                      },
+                      "idDocumentNumber": {
+                        "type": "string"
+                      },
+                      "birthDate": {
+                        "type": "string"
+                      },
+                      "nationality": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "healthNote": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "consent": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      }
+                    },
+                    "required": [
+                      "idDocumentType",
+                      "idDocumentNumber",
+                      "birthDate",
+                      "nationality",
+                      "email",
+                      "phone",
+                      "consent"
+                    ]
+                  },
                   "note": {
                     "default": "",
                     "type": "string",
@@ -982,6 +1031,144 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LeadChecklist"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.manage"
+      }
+    },
+    "/api/v1/leads/{id}/show": {
+      "post": {
+        "operationId": "LeadsController_show",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "idDocumentType": {
+                    "type": "string",
+                    "enum": [
+                      "CCCD",
+                      "PASSPORT"
+                    ]
+                  },
+                  "idDocumentNumber": {
+                    "type": "string"
+                  },
+                  "birthDate": {
+                    "type": "string"
+                  },
+                  "nationality": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "healthNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "consent": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "idDocumentType",
+                  "idDocumentNumber",
+                  "birthDate",
+                  "nationality",
+                  "email",
+                  "phone",
+                  "consent"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadShown"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.manage"
+      }
+    },
+    "/api/v1/leads/{id}/no-show": {
+      "post": {
+        "operationId": "LeadsController_noShow",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
                 }
               }
             }
@@ -1113,6 +1300,14 @@
                           "default": false,
                           "type": "boolean"
                         },
+                        "action": {
+                          "default": "",
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "STUDIO_TASK"
+                          ]
+                        },
                         "results": {
                           "minItems": 1,
                           "maxItems": 10,
@@ -1127,6 +1322,15 @@
                               "labelEn": {
                                 "type": "string",
                                 "maxLength": 60
+                              },
+                              "effect": {
+                                "default": "",
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "SHOW",
+                                  "NO_SHOW"
+                                ]
                               }
                             },
                             "required": [
@@ -4681,6 +4885,8 @@
                       "enum": [
                         "customer.phone",
                         "customer.email",
+                        "customer.idDocument",
+                        "customer.health",
                         "receipts.totals"
                       ]
                     }
@@ -4902,6 +5108,8 @@
                       "enum": [
                         "customer.phone",
                         "customer.email",
+                        "customer.idDocument",
+                        "customer.health",
                         "receipts.totals"
                       ]
                     }
@@ -5538,6 +5746,20 @@
                   "recareDays": {
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
+                  },
+                  "studioDepartmentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -5548,7 +5770,8 @@
                   "contractCodePrefix",
                   "employeeCodePrefix",
                   "taskDueSoonHours",
-                  "recareDays"
+                  "recareDays",
+                  "studioDepartmentId"
                 ]
               }
             }
@@ -6187,6 +6410,7 @@
                     "nullable": true,
                     "type": "string",
                     "enum": [
+                      "lead",
                       "customer",
                       "contract"
                     ]
@@ -7021,6 +7245,8 @@
               "enum": [
                 "customer.phone",
                 "customer.email",
+                "customer.idDocument",
+                "customer.health",
                 "receipts.totals"
               ]
             }
@@ -7528,6 +7754,13 @@
           "autoComplete": {
             "type": "boolean"
           },
+          "action": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "STUDIO_TASK"
+            ]
+          },
           "results": {
             "type": "array",
             "items": {
@@ -7538,11 +7771,20 @@
                 },
                 "labelEn": {
                   "type": "string"
+                },
+                "effect": {
+                  "nullable": true,
+                  "type": "string",
+                  "enum": [
+                    "SHOW",
+                    "NO_SHOW"
+                  ]
                 }
               },
               "required": [
                 "labelVi",
-                "labelEn"
+                "labelEn",
+                "effect"
               ]
             }
           },
@@ -7632,6 +7874,7 @@
           "offsetMinutes",
           "required",
           "autoComplete",
+          "action",
           "results",
           "id",
           "state",
@@ -7876,6 +8119,18 @@
           "items"
         ]
       },
+      "LeadShown": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "customerId"
+        ]
+      },
       "ConsultingChecklist": {
         "type": "object",
         "properties": {
@@ -7955,6 +8210,13 @@
                 "autoComplete": {
                   "type": "boolean"
                 },
+                "action": {
+                  "nullable": true,
+                  "type": "string",
+                  "enum": [
+                    "STUDIO_TASK"
+                  ]
+                },
                 "results": {
                   "type": "array",
                   "items": {
@@ -7965,11 +8227,20 @@
                       },
                       "labelEn": {
                         "type": "string"
+                      },
+                      "effect": {
+                        "nullable": true,
+                        "type": "string",
+                        "enum": [
+                          "SHOW",
+                          "NO_SHOW"
+                        ]
                       }
                     },
                     "required": [
                       "labelVi",
-                      "labelEn"
+                      "labelEn",
+                      "effect"
                     ]
                   }
                 },
@@ -7988,6 +8259,7 @@
                 "offsetMinutes",
                 "required",
                 "autoComplete",
+                "action",
                 "results",
                 "id"
               ]
@@ -8063,6 +8335,31 @@
               "INACTIVE"
             ]
           },
+          "idDocumentType": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "CCCD",
+              "PASSPORT"
+            ]
+          },
+          "idDocumentNumber": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nationality": {
+            "nullable": true,
+            "type": "string"
+          },
+          "healthNote": {
+            "nullable": true,
+            "type": "string"
+          },
+          "dataConsentAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
           "notes": {
             "nullable": true,
             "type": "string"
@@ -8081,7 +8378,9 @@
               "type": "string",
               "enum": [
                 "phone",
-                "email"
+                "email",
+                "idDocument",
+                "health"
               ]
             }
           },
@@ -8119,6 +8418,11 @@
           "email",
           "dateOfBirth",
           "status",
+          "idDocumentType",
+          "idDocumentNumber",
+          "nationality",
+          "healthNote",
+          "dataConsentAt",
           "notes",
           "createdAt",
           "updatedAt",
@@ -9393,6 +9697,8 @@
               "enum": [
                 "customer.phone",
                 "customer.email",
+                "customer.idDocument",
+                "customer.health",
                 "receipts.totals"
               ]
             }
@@ -9573,6 +9879,9 @@
           },
           "recareDays": {
             "type": "string"
+          },
+          "studioDepartmentId": {
+            "type": "string"
           }
         },
         "required": [
@@ -9583,7 +9892,8 @@
           "contractCodePrefix",
           "employeeCodePrefix",
           "taskDueSoonHours",
-          "recareDays"
+          "recareDays",
+          "studioDepartmentId"
         ]
       },
       "AuditPage": {
@@ -10097,6 +10407,7 @@
               "type": {
                 "type": "string",
                 "enum": [
+                  "lead",
                   "customer",
                   "contract"
                 ]
@@ -10338,6 +10649,7 @@
               "type": {
                 "type": "string",
                 "enum": [
+                  "lead",
                   "customer",
                   "contract"
                 ]

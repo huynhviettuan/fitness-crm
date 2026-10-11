@@ -71,6 +71,17 @@ enum StepTiming {
   LATE
 }
 
+// What the system does when a consulting step is done (packages/shared/src/leads/checklist.schema.ts).
+enum StepAction {
+  STUDIO_TASK
+}
+
+// Citizen ID card or passport (brief §3 stage 3).
+enum IdDocumentType {
+  CCCD
+  PASSPORT
+}
+
 enum SourceType {
   ORGANIC
   PAID
@@ -176,6 +187,7 @@ model User {
   approvalsDecided   ApprovalRequest[]        @relation("ApprovalDecidedBy")
   customersCreated   Customer[]
   leadsInCharge      Customer[]               @relation("PersonPic")
+  dataConsentsTaken  Customer[]               @relation("PersonDataConsent")
   branches           UserBranch[]
   overrides          UserPermissionOverride[]
   accessWindows      UserAccessWindow[]
@@ -603,6 +615,16 @@ model Customer {
   // The checklist version the lead started with; later versions apply to new leads only (D-020).
   checklistId         String?              @map("checklist_id") @db.Uuid
   checklist           ConsultingChecklist? @relation(fields: [checklistId], references: [id], onDelete: Restrict)
+  // Given at Show (D-019, D-042). The number and the health note are encrypted in the
+  // application (platform/security/field-crypto.ts); the database never sees them in plain text.
+  idDocumentType      IdDocumentType?      @map("id_document_type")
+  idDocumentNumber    String?              @map("id_document_number")
+  nationality         String?
+  healthNote          String?              @map("health_note")
+  // The customer agreed that the ID and health data are kept (D-042): when, and who recorded it.
+  dataConsentAt       DateTime?            @map("data_consent_at") @db.Timestamptz(3)
+  dataConsentById     String?              @map("data_consent_by") @db.Uuid
+  dataConsentBy       User?                @relation("PersonDataConsent", fields: [dataConsentById], references: [id], onDelete: Restrict)
   status              CustomerStatus       @default(ACTIVE)
   notes               String?
   // D-017 data scope "own" (A-029); null for customers created before it was recorded.
@@ -695,7 +717,8 @@ model ConsultingStepTemplate {
   required       Boolean
   // What opens the step also does it (done with the first result, on time).
   autoComplete   Boolean             @default(false) @map("auto_complete")
-  // [{ labelVi, labelEn }]; a step's result is its index here.
+  action         StepAction?
+  // [{ labelVi, labelEn, effect }]; a step's result is its index here.
   results        Json
   leadSteps      LeadStep[]
 
@@ -989,9 +1012,11 @@ model Task {
   dueAt                DateTime     @map("due_at") @db.Timestamptz(3)
   priority             TaskPriority @default(NORMAL)
   status               TaskStatus   @default(NEW)
-  // The record the task is about: "customer" or "contract" (more with later modules).
+  // The record the task is about: "lead", "customer", or "contract" (more with later modules).
   entityType           String?      @map("entity_type")
   entityId             String?      @map("entity_id") @db.Uuid
+  // Set when the system made the task: "studio" for Báo Studio (brief §4.1), which updates its own.
+  source               String?
   acceptedAt           DateTime?    @map("accepted_at") @db.Timestamptz(3)
   startedAt            DateTime?    @map("started_at") @db.Timestamptz(3)
   doneAt               DateTime?    @map("done_at") @db.Timestamptz(3)

@@ -21,6 +21,14 @@ const envSchema = z.object({
   // A-001
   GYM_TIMEZONE: z.string().default("Asia/Ho_Chi_Minh").refine(isValidTimeZone, "Unknown IANA timezone"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  // D-042, T-052: the AES-256-GCM key for ID numbers and health notes; 32 bytes, base64.
+  // One per environment, kept out of the repository; losing it loses those fields.
+  FIELD_ENCRYPTION_KEY: z
+    .string()
+    .refine(
+      (value) => Buffer.from(value, "base64").length === 32,
+      "FIELD_ENCRYPTION_KEY must be 32 bytes, base64-encoded",
+    ),
   // T-059: run the background jobs (reminders) inside the API. Production sets it to
   // false and runs the worker process (`node dist/worker.js`) instead.
   RUN_JOBS: z

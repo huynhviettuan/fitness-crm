@@ -288,7 +288,11 @@
       "status": "Trạng thái",
       "notes": "Ghi chú",
       "createdAt": "Ngày tạo",
-      "branch": "Chi nhánh"
+      "branch": "Chi nhánh",
+      "nationality": "Quốc tịch",
+      "idDocument": "Giấy tờ",
+      "healthNote": "Sức khỏe cơ bản",
+      "dataConsentAt": "Đồng ý lưu dữ liệu"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
@@ -462,7 +466,9 @@
     "phoneAlreadyUsed": "Số điện thoại đã thuộc một hồ sơ khác.",
     "notInFuture": "Giờ hẹn phải sau thời điểm hiện tại.",
     "daysOutOfRange": "Nhập số ngày từ 1 đến 365.",
-    "invalidKey": "Mã bước không hợp lệ."
+    "invalidKey": "Mã bước không hợp lệ.",
+    "consentRequired": "Cần khách đồng ý trước khi lưu giấy tờ và thông tin sức khỏe.",
+    "invalidIdDocument": "Số giấy tờ không hợp lệ: CCCD gồm 12 chữ số, hộ chiếu 6 đến 20 chữ và số."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -827,7 +833,9 @@
     "masks": {
       "customer": {
         "phone": "Số điện thoại khách hàng",
-        "email": "Email khách hàng"
+        "email": "Email khách hàng",
+        "idDocument": "Giấy tờ tùy thân của khách hàng",
+        "health": "Sức khỏe của khách hàng"
       },
       "receipts": {
         "totals": "Tổng tiền trên danh sách thu chi"
@@ -943,13 +951,16 @@
       "contractCodePrefix": "Mã hợp đồng",
       "employeeCodePrefix": "Mã nhân viên",
       "taskDueSoonHours": "Nhắc trước hạn (giờ)",
-      "recareDays": "Tái chăm sóc sau (ngày)"
+      "recareDays": "Tái chăm sóc sau (ngày)",
+      "studioDepartmentId": "Phòng ban nhận Báo Studio"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
     "tasksHint": "Người nhận được nhắc trước hạn bấy nhiêu giờ; khi quá hạn, cả người nhận và người giao đều được báo.",
     "leads": "Lead",
-    "leadsHint": "Lead Chưa phản hồi, Từ chối hoặc No show được hẹn liên hệ lại sau bấy nhiêu ngày."
+    "leadsHint": "Lead Chưa phản hồi, Từ chối hoặc No show được hẹn liên hệ lại sau bấy nhiêu ngày.",
+    "studioHint": "Báo Studio tạo việc cho phòng ban này trong Giao việc. Chưa chọn thì không gửi.",
+    "noDepartment": "Chưa chọn"
   },
   "trash": {
     "title": "Thùng rác",
@@ -1041,7 +1052,8 @@
       "commented": "Bình luận",
       "status_changed": "Đổi trạng thái",
       "assigned": "Phân công",
-      "step_completed": "Hoàn thành bước tư vấn"
+      "step_completed": "Hoàn thành bước tư vấn",
+      "converted": "Chuyển thành khách hàng"
     },
     "fields": {
       "at": "Thời điểm",
@@ -1208,7 +1220,8 @@
     "mentioned": "Đã nhắc: {names}",
     "entityTypes": {
       "customer": "Khách hàng",
-      "contract": "Hợp đồng"
+      "contract": "Hợp đồng",
+      "lead": "Lead"
     },
     "details": "Chi tiết công việc"
   },
@@ -1319,6 +1332,47 @@
       "DAYS": "Ngày"
     },
     "autoComplete": "Tự hoàn thành khi mở",
-    "autoCompleteHint": "Việc mở bước cũng là làm bước, ví dụ đặt lịch là xong \"Đặt lịch\". Ghi nhận kết quả đầu tiên, đúng hạn."
+    "autoCompleteHint": "Việc mở bước cũng là làm bước, ví dụ đặt lịch là xong \"Đặt lịch\". Ghi nhận kết quả đầu tiên, đúng hạn.",
+    "action": "Hệ thống làm",
+    "actionHint": "Việc hệ thống tự làm khi bước xong.",
+    "noAction": "Không",
+    "actions": {
+      "STUDIO_TASK": "Báo Studio"
+    },
+    "resultEffect": "Tác dụng {number}",
+    "noEffect": "Không",
+    "effects": {
+      "SHOW": "Show – chuyển thành khách hàng",
+      "NO_SHOW": "No show"
+    }
+  },
+  "visit": {
+    "show": "Show – chuyển thành khách hàng",
+    "showTitle": "Show: {name}",
+    "showDescription": "Khách đã đến. Nhập giấy tờ và thông tin còn thiếu; lead thành khách hàng và giữ nguyên hồ sơ.",
+    "convert": "Chuyển thành khách hàng",
+    "converted": "{name} đã là khách hàng",
+    "noShow": "No show",
+    "noShowTitle": "No show: {name}",
+    "noShowDescription": "Khách không đến theo lịch hẹn. Lead chuyển sang No show và vào tái chăm sóc.",
+    "noShowConfirm": "Ghi nhận No show",
+    "noShowRecorded": "Đã ghi nhận No show",
+    "vietnam": "Việt Nam",
+    "datePlaceholder": "dd/MM/yyyy",
+    "consentHint": "Giấy tờ và thông tin sức khỏe là dữ liệu cá nhân nhạy cảm; hệ thống mã hóa và chỉ người được phép mới xem được.",
+    "idDocumentTypes": {
+      "CCCD": "CCCD",
+      "PASSPORT": "Hộ chiếu"
+    },
+    "fields": {
+      "idDocumentType": "Loại giấy tờ",
+      "idDocumentNumber": "Số giấy tờ",
+      "birthDate": "Ngày sinh",
+      "nationality": "Quốc tịch",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "healthNote": "Sức khỏe cơ bản (không bắt buộc)",
+      "consent": "Khách đồng ý cho Flow lưu giấy tờ và thông tin sức khỏe"
+    }
   }
 }

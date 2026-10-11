@@ -152,6 +152,36 @@ export function SwitchField<T extends FieldValues>({ control, name, label, descr
   );
 }
 
+/** One yes/no that must be ticked on purpose, e.g. the customer's consent. */
+export function CheckboxField<T extends FieldValues>({ control, name, label, description }: BaseFieldProps<T>) {
+  const id = useId();
+  const validationMessage = useValidationMessage();
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <Field orientation="horizontal" data-invalid={fieldState.invalid || undefined}>
+          <Checkbox
+            id={id}
+            checked={field.value === true}
+            onCheckedChange={(on) => field.onChange(on === true)}
+            onBlur={field.onBlur}
+            aria-invalid={fieldState.invalid}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor={id} className="font-normal">
+              {label}
+            </FieldLabel>
+            {description && <FieldDescription>{description}</FieldDescription>}
+            {fieldState.error?.message && <FieldError>{validationMessage(fieldState.error.message)}</FieldError>}
+          </FieldContent>
+        </Field>
+      )}
+    />
+  );
+}
+
 type CheckboxListFieldProps<T extends FieldValues> = BaseFieldProps<T> & {
   options: { value: string; label: string }[];
   disabled?: boolean;

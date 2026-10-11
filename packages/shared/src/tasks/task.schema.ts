@@ -16,7 +16,7 @@ export const TASK_PRIORITIES = ["LOW", "NORMAL", "HIGH"] as const;
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 /** Records a task can be about. Leads and sessions join when their modules are built. */
-export const TASK_ENTITY_TYPES = ["customer", "contract"] as const;
+export const TASK_ENTITY_TYPES = ["lead", "customer", "contract"] as const;
 export type TaskEntityType = (typeof TASK_ENTITY_TYPES)[number];
 
 /** What a user may do with a task; the API decides and the screen shows only these. */

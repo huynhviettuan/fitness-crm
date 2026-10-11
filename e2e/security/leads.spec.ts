@@ -5,7 +5,7 @@
 import { randomUUID } from "node:crypto";
 import type { APIRequestContext } from "@playwright/test";
 import { expect, test } from "../fixtures";
-import { createLeadViaApi } from "../support/data";
+import { createLeadViaApi, uniquePhone } from "../support/data";
 import type { Role } from "../support/db";
 
 async function whatsApp(api: APIRequestContext): Promise<string> {
@@ -215,6 +215,90 @@ test.describe("A01 consulting checklist (D-020, FR-LEAD-004)", () => {
   });
 });
 
+const SHOW = {
+  idDocumentType: "CCCD",
+  idDocumentNumber: "079201001234",
+  birthDate: "15/03/1990",
+  nationality: "Việt Nam",
+  email: "khach@example.com",
+  consent: true,
+};
+
+/** A lead booked for a visit, in the E2E consultant's charge. */
+async function bookedLead(apiAs: (role: Role) => Promise<APIRequestContext>, name: string) {
+  const lead = await createLeadViaApi(await apiAs("RECEPTIONIST"), { fullName: name });
+  await (
+    await apiAs("CONSULTING")
+  ).post(`/api/v1/leads/${lead.id}/status`, {
+    data: { status: "BOOKED", appointmentDate: "20/10/2030", appointmentTime: "18:30" },
+  });
+  return lead;
+}
+
+test.describe("A01 Show and No show (D-019, D-042)", () => {
+  const recorders: [Role, number][] = [
+    ["ADMIN", 200],
+    ["FITNESS_MANAGER", 200],
+    ["CONSULTING", 200],
+    ["RECEPTIONIST", 200],
+    ["PT", 403],
+    ["ACCOUNTANT", 403],
+  ];
+  for (const [role, status] of recorders) {
+    test(`${role} recording Show gets ${status} (09_RBAC.md)`, async ({ apiAs, testTag }) => {
+      const lead = await bookedLead(apiAs, `Lead ${testTag}`);
+      const response = await (
+        await apiAs(role)
+      ).post(`/api/v1/leads/${lead.id}/show`, { data: { ...SHOW, phone: uniquePhone() } });
+      expect(response.status()).toBe(status);
+    });
+  }
+
+  test("the customer code, stage, and consent time come from the server (mass assignment)", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const lead = await bookedLead(apiAs, `Lead ${testTag}`);
+    const reception = await apiAs("RECEPTIONIST");
+
+    const response = await reception.post(`/api/v1/leads/${lead.id}/show`, {
+      data: {
+        ...SHOW,
+        phone: uniquePhone(),
+        customerCode: "KH999999",
+        stage: "LEAD",
+        dataConsentAt: "2020-01-01T00:00:00Z",
+        branchId: randomUUID(),
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const customer = (await (await reception.get(`/api/v1/customers/${lead.id}`)).json()) as {
+      customerCode: string;
+      dataConsentAt: string;
+    };
+    expect(customer.customerCode).not.toBe("KH999999");
+    expect(new Date(customer.dataConsentAt).getFullYear()).toBeGreaterThan(2020);
+  });
+
+  test("a role with the ID document and health note hidden never receives them (D-042)", async ({ apiAs, testTag }) => {
+    const lead = await bookedLead(apiAs, `Lead ${testTag}`);
+    await (
+      await apiAs("RECEPTIONIST")
+    ).post(`/api/v1/leads/${lead.id}/show`, {
+      data: { ...SHOW, phone: uniquePhone(), healthNote: "Đau gối" },
+    });
+
+    // Kế toán sees customers, with ID documents and health notes hidden (A-060).
+    const accountant = await (await apiAs("ACCOUNTANT")).get(`/api/v1/customers/${lead.id}`);
+    expect(accountant.status()).toBe(200);
+    const body = await accountant.text();
+    expect(body).not.toContain("079201001234");
+    expect(body).not.toContain("Đau gối");
+    expect(JSON.parse(body)).toMatchObject({ idDocumentType: "CCCD", idDocumentNumber: null, healthNote: null });
+  });
+});
+
 test.describe("A10 consulting step input errors", () => {
   test("a result outside the step's list is 400; a waiting or done step is 409; another lead's step is 404", async ({
     apiAs,
@@ -244,6 +328,43 @@ test.describe("A10 consulting step input errors", () => {
     expect((await complete(lead.id, open.id, { resultIndex: 0 })).status()).toBe(200);
     expect((await complete(lead.id, open.id, { resultIndex: 0 })).status()).toBe(409);
     expect((await manager.get("/api/v1/leads/today?scope=team")).status()).toBe(400);
+  });
+
+  test("Show needs every detail and the consent; No show needs an appointment; a lead converts once", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const lead = await bookedLead(apiAs, `Lead ${testTag}`);
+    const show = (data: unknown) => reception.post(`/api/v1/leads/${lead.id}/show`, { data });
+
+    const missing = await show({});
+    expect(missing.status()).toBe(400);
+    expect((await missing.json()).details.fieldErrors).toMatchObject({
+      consent: ["consentRequired"],
+      idDocumentType: ["invalidChoice"],
+    });
+    const noConsent = await show({ ...SHOW, phone: uniquePhone(), consent: false });
+    expect(noConsent.status()).toBe(400);
+    expect((await noConsent.json()).details.fieldErrors).toEqual({ consent: ["consentRequired"] });
+    const wrongNumber = await show({ ...SHOW, phone: uniquePhone(), idDocumentNumber: "12345" });
+    expect(wrongNumber.status()).toBe(400);
+    expect((await wrongNumber.json()).details.fieldErrors).toEqual({ idDocumentNumber: ["invalidIdDocument"] });
+
+    const walkIn = await createLeadViaApi(reception, { fullName: `Lead 2 ${testTag}` });
+    const notBooked = await reception.post(`/api/v1/leads/${walkIn.id}/no-show`);
+    expect(notBooked.status()).toBe(409);
+    expect((await notBooked.json()).code).toBe("INVALID_STATUS_TRANSITION");
+
+    expect((await show({ ...SHOW, phone: uniquePhone() })).status()).toBe(200);
+    // A customer now, no longer a lead.
+    expect((await show({ ...SHOW, phone: uniquePhone() })).status()).toBe(404);
+    expect((await reception.post(`/api/v1/leads/${lead.id}/no-show`)).status()).toBe(404);
+    for (const id of [randomUUID(), "not-a-uuid"]) {
+      expect(
+        (await reception.post(`/api/v1/leads/${id}/show`, { data: { ...SHOW, phone: uniquePhone() } })).status(),
+      ).toBe(404);
+    }
   });
 
   test("a checklist that waits on a missing step, or repeats a key, is 400", async ({ apiAs }) => {

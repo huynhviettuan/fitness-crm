@@ -2,6 +2,8 @@ import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from "@nestj
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import {
+  showInputSchema,
+  showResultSchema,
   leadChecklistSchema,
   stepCompleteSchema,
   todayStepsSchema,
@@ -23,6 +25,7 @@ import { queryOf } from "../../platform/http/query.js";
 import { createLead, getLead, leadBoard, listLeads, updateLead } from "./lead.service.js";
 import { assignLead, changeLeadStatus, leadAssignees, leadTimeline } from "./lead-journey.service.js";
 import { completeLeadStep, leadChecklist, todaySteps } from "./checklist.service.js";
+import { noShowLead, showLead } from "./lead-outcome.service.js";
 
 const FILTERS = ["q", "status", "channelId", "sourceId", "needGroupId", "page", "pageSize"] as const;
 const BOARD_FILTERS = ["q", "channelId", "sourceId", "needGroupId"] as const;
@@ -150,5 +153,31 @@ export class LeadsController {
     @Body({ schema: stepCompleteSchema }) body: unknown,
   ) {
     return encode(leadChecklistSchema, await completeLeadStep(actor, id, stepId, body));
+  }
+
+  /**
+   * Show (D-019): the lead came in and becomes a customer in the same record, with a
+   * customer code. Needs the ID document, birth date, nationality, email, phone, and the
+   * customer's consent (D-042); the ID number and health note are stored encrypted.
+   */
+  @Post(":id/show")
+  @RequirePermission("lead.manage")
+  @HttpCode(200)
+  @ApiResult(showResultSchema)
+  async show(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: showInputSchema }) body: unknown,
+  ) {
+    return encode(showResultSchema, await showLead(actor, id, body));
+  }
+
+  /** A booked lead did not come: No show, due for re-care (BR-204); not booked is INVALID_STATUS_TRANSITION. */
+  @Post(":id/no-show")
+  @RequirePermission("lead.manage")
+  @HttpCode(200)
+  @ApiResult(leadSchema)
+  async noShow(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(leadSchema, await noShowLead(actor, id));
   }
 }

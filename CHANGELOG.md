@@ -1,5 +1,17 @@
 # Documentation Changelog
 
+## 2026-10-11 — M2 slice 4: Show, No show, Báo Studio, ID encryption
+
+- **Show** (D-019, brief §3): "Show – chuyển thành khách hàng" on the lead asks for the CCCD or passport, birth date, nationality, email, phone, an optional basic health note, and the customer's consent to keep them (D-042). The lead becomes a customer in the same record, with a KH code, and its page opens. Any lead in its journey can show, walk-ins too (A-061).
+- **No show**: a booked lead that did not come goes to No show, due for re-care.
+- The checklist step "Ghi nhận Show / No show" does the same: its results carry the effect, so recording it on the lead or in "Việc hôm nay" converts or sends to re-care. Admin sets effects per result.
+- **Báo Studio** (brief §4.1, §8.2): right after each pre-visit reminder the system tells the studio through Giao việc: one task about the lead (appointment, Assessment type, Pain Status), made the first time and updated with a comment the second. Its department is a new parameter, "Phòng ban nhận Báo Studio"; who the coach Manager is is OQ-032.
+- **Encryption** (D-042, T-052): ID numbers and health notes are encrypted with AES-256-GCM before they reach the database; the history only records that they were given. New setting `FIELD_ENCRYPTION_KEY`. New hideable fields: ID document and health note (A-060).
+- The customer page shows the nationality, ID document, health note, and consent date.
+- API: `/leads/:id/show`, `/leads/:id/no-show`; tasks can be about a lead.
+- Tests: unit (shared 126, web 281, API 119), integration 289, E2E and security 335.
+- Docs: 04, 07, 09, 13, 15, 16, 18 (T-064, A-059 to A-061, OQ-032), 24, 25.
+
 ## 2026-10-11 — M2 slice 3: consulting checklist
 
 - **Checklist per lead** (brief §4.1, D-020): every new lead gets the brief's ten steps. A step opens, with a deadline, when its moment comes: the lead is assigned, goes to No response, gets an appointment (reminders 3 hours and 60 minutes before), an earlier step is done (Báo Studio), or enters re-care. The consultant records each step with a result from its own list and an optional note; it is marked on time or late, with who and when. "Đặt lịch" is done by booking the visit itself (A-057).

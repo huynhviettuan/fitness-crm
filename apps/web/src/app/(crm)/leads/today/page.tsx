@@ -77,7 +77,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/leads/toda
                   {scope === "all" && <span>{lead.pic?.name ?? t("noPic")}</span>}
                 </p>
               </div>
-              {can(user, "lead.manage") && <CompleteStepButton leadId={lead.id} step={step} />}
+              {can(user, "lead.manage") && <CompleteStepButton leadId={lead.id} leadName={lead.fullName} step={step} />}
             </li>
           ))}
         </ul>

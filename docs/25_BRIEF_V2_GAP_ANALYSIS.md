@@ -17,7 +17,7 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Trash and soft delete (D-035) | Built (M1 slice 4) for receipts and cash entries; other records join as their modules are built | M1 |
 | Employees, PT working schedules | Built (M1 slice 6, T-058); ID documents in M2 (A-041); calendar rows per PT and week view in M5 | M1 |
 | In-app notifications and Tasks (D-037) | Built (M1 slice 7, T-060); system-generated tasks join with their modules; task report in M9 (A-045) | M1 |
-| Leads, consulting journey, re-care, scripts (D-019, D-020) | Intake, profile, one person per phone (M2 slice 1, T-061); round-robin, reassignment, status flow, timeline, Kanban (M2 slice 2, T-062); consulting checklist and "Việc hôm nay" (M2 slice 3, T-063); the rest in M2 slices 4–6 | M2 |
+| Leads, consulting journey, re-care, scripts (D-019, D-020) | Intake, profile, one person per phone (M2 slice 1, T-061); round-robin, reassignment, status flow, timeline, Kanban (M2 slice 2, T-062); consulting checklist and "Việc hôm nay" (M2 slice 3, T-063); Show, No show, Báo Studio, ID encryption (M2 slice 4, T-064); the rest in M2 slices 5–6 | M2 |
 | Consulting audit and dashboard (D-045) | New | M3 |
 | Customers (simple profile → full profile from lead, derived status) | Partly | M2, M4 |
 | Services and price tiers, promotions, vouchers (D-021) | New | M4 |

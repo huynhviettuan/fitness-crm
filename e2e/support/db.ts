@@ -72,3 +72,19 @@ export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
     }
   }
 }
+
+/**
+ * Setup for "Việc hôm nay": makes one of a lead's open consulting steps due now, so the
+ * test does not depend on the time of day (a step due in an hour may fall after midnight).
+ */
+export async function makeStepDueNow(leadId: string, key: string): Promise<void> {
+  const prisma = connect();
+  try {
+    await prisma.leadStep.updateMany({
+      where: { customerId: leadId, template: { key }, doneAt: null },
+      data: { dueAt: new Date() },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}

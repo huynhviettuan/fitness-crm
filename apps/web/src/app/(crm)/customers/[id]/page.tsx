@@ -51,6 +51,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
   if (!can(user, "customer.view")) return <ForbiddenState />;
   const customer = await loadCustomer(user, (await params).id);
   const t = await getTranslations("customers");
+  const tVisit = await getTranslations("visit");
   const tc = await getTranslations("contracts");
   const canSeeContracts = can(user, "contract.view");
   const contracts = canSeeContracts ? await listContracts({ customerId: customer.id, pageSize: 100 }) : null;
@@ -72,6 +73,34 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     {
       label: t("fields.dateOfBirth"),
       value: customer.dateOfBirth && <DateTime value={customer.dateOfBirth} format="dateOnly" />,
+    },
+    { label: t("fields.nationality"), value: customer.nationality },
+    // D-042: hidden from roles that may not see them; only the type shows then.
+    {
+      label: t("fields.idDocument"),
+      value:
+        customer.idDocumentType &&
+        (customer.maskedFields.includes("idDocument") ? (
+          <>
+            {tVisit(`idDocumentTypes.${customer.idDocumentType}`)} · <HiddenValue />
+          </>
+        ) : (
+          <span className="font-mono">
+            {tVisit(`idDocumentTypes.${customer.idDocumentType}`)} {customer.idDocumentNumber}
+          </span>
+        )),
+    },
+    {
+      label: t("fields.healthNote"),
+      value: customer.maskedFields.includes("health") ? (
+        <HiddenValue />
+      ) : (
+        customer.healthNote && <span className="whitespace-pre-line">{customer.healthNote}</span>
+      ),
+    },
+    {
+      label: t("fields.dataConsentAt"),
+      value: customer.dataConsentAt && <DateTime value={customer.dataConsentAt} format="dateTime" />,
     },
     { label: t("fields.status"), value: <StatusBadge entity="customer" status={customer.status} /> },
     { label: t("fields.createdAt"), value: <DateTime value={customer.createdAt} format="dateTime" /> },

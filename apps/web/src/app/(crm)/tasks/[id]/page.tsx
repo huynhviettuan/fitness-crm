@@ -49,7 +49,7 @@ export default async function TaskPage({ params }: PageProps<"/tasks/[id]">) {
       : task.department.labelEn
     : null;
   const entityHref = task.entity
-    ? `/${task.entity.type === "customer" ? "customers" : "contracts"}/${task.entity.id}`
+    ? `/${{ lead: "leads", customer: "customers", contract: "contracts" }[task.entity.type]}/${task.entity.id}`
     : null;
 
   const details: { label: string; value: React.ReactNode }[] = [

@@ -19,7 +19,7 @@ import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { notify } from "../../platform/notifications/notification.service.js";
 import * as repo from "./lead.repository.js";
 import { lockedLead, present, visibleLead } from "./lead.present.js";
-import { applyJourneyEvent } from "./checklist.service.js";
+import { applyJourneyEvent } from "./checklist.engine.js";
 
 // The lead journey (brief §3, §4.1; D-020): round-robin assignment, reassignment by
 // managers, and status changes, each kept with who and when. Daily work, so no approval
@@ -101,12 +101,7 @@ export async function changeLeadStatus(
     const reason = change.refuseReason
       ? await resolveChoice(tx, "leadRefuseReasons", "refuseReasonId", change.refuseReason, lead.refuseReasonId)
       : { optionId: null, note: null };
-    const contactAgainOn = isRecareStatus(change.status)
-      ? new Date(
-          calendarDateInTimeZone(env.GYM_TIMEZONE, now).getTime() +
-            Number(await readParameter(tx, "recareDays")) * DAY_MS,
-        )
-      : null;
+    const contactAgainOn = isRecareStatus(change.status) ? await contactAgainDay(tx, now) : null;
 
     const after = await repo.updateJourney(tx, id, {
       leadStatus: change.status,
@@ -140,6 +135,12 @@ export async function changeLeadStatus(
     });
     return present(actor, after);
   });
+}
+
+/** The day a lead in re-care is due to be contacted again: `recareDays` after the gym's today (BR-204). */
+export async function contactAgainDay(db: Db, now: Date): Promise<Date> {
+  const days = Number(await readParameter(db, "recareDays"));
+  return new Date(calendarDateInTimeZone(env.GYM_TIMEZONE, now).getTime() + days * DAY_MS);
 }
 
 /** Every status change and assignment of the lead, newest first (D-020). */

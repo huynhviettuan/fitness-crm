@@ -13,7 +13,7 @@ import { visibleTo as customersVisibleTo } from "../customers/customer.service.j
 import * as repo from "./lead.repository.js";
 import { present, visibleLead } from "./lead.present.js";
 import { startJourney } from "./lead-journey.service.js";
-import { startChecklist } from "./checklist.service.js";
+import { startChecklist } from "./checklist.engine.js";
 import {
   BOARD_STATUSES,
   leadBoardQuerySchema,

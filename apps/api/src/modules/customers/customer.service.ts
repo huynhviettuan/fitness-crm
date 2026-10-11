@@ -4,6 +4,7 @@ import { prisma, type Db } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
 import { inBranches, isMasked, isOwnOnly, resolveBranch } from "../../platform/permissions/scope.js";
+import { unseal } from "../../platform/security/sensitive.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
@@ -191,6 +192,8 @@ function present(actor: Actor, customer: repo.CustomerRecord, pending?: PendingI
   const maskedFields: Customer["maskedFields"] = [];
   if (isMasked(actor, "customer.phone")) maskedFields.push("phone");
   if (isMasked(actor, "customer.email")) maskedFields.push("email");
+  if (isMasked(actor, "customer.idDocument")) maskedFields.push("idDocument");
+  if (isMasked(actor, "customer.health")) maskedFields.push("health");
   return {
     id: customer.id,
     // A customer always has a code (database check customers_stage_codes).
@@ -201,6 +204,12 @@ function present(actor: Actor, customer: repo.CustomerRecord, pending?: PendingI
     email: maskedFields.includes("email") ? null : customer.email,
     dateOfBirth: customer.dateOfBirth,
     status: customer.status,
+    idDocumentType: customer.idDocumentType,
+    // Decrypted only for someone who may see it (D-042).
+    idDocumentNumber: maskedFields.includes("idDocument") ? null : unseal(customer.idDocumentNumber),
+    nationality: customer.nationality,
+    healthNote: maskedFields.includes("health") ? null : unseal(customer.healthNote),
+    dataConsentAt: customer.dataConsentAt,
     notes: customer.notes,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,

@@ -4,7 +4,7 @@ import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
-import { getParameters } from "@/lib/api/configuration";
+import { getParameters, listOptions } from "@/lib/api/configuration";
 import { ParametersForm } from "./parameters-form";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
@@ -21,12 +21,12 @@ export default async function ParametersPage() {
   if (!can(user, "config.manage")) return <ForbiddenState />;
 
   const t = await getTranslations("parameters");
-  const parameters = await getParameters();
+  const [parameters, departments] = await Promise.all([getParameters(), listOptions("departments")]);
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <ParametersForm parameters={parameters} />
+      <ParametersForm parameters={parameters} departments={departments} />
     </>
   );
 }

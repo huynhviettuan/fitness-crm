@@ -167,7 +167,13 @@ describe("completing a step (FR-LEAD-004)", () => {
       timing: "ON_TIME",
     });
     // Báo Studio follows right after (brief §4.1).
-    expect(step(checklist, "bao-studio-1")).toMatchObject({ state: "OPEN", dueAt: doneAt });
+    // Báo Studio follows at once and is sent by the system (A-059).
+    expect(step(checklist, "bao-studio-1")).toMatchObject({
+      state: "DONE",
+      doneAt,
+      doneBy: { id: consultant.id },
+      timing: "ON_TIME",
+    });
     expect(
       await prisma.auditEvent.findFirst({ where: { entityId: lead.id, action: "lead.step_completed" } }),
     ).toMatchObject({

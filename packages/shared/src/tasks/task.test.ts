@@ -40,7 +40,7 @@ describe("taskInputSchema (brief §8.2)", () => {
     expect(fieldErrors(taskInputSchema.safeParse({ ...base, entityType: "customer" }))).toEqual({
       entityId: "invalidChoice",
     });
-    expect(fieldErrors(taskInputSchema.safeParse({ ...base, entityType: "lead", entityId: USER }))).toEqual({
+    expect(fieldErrors(taskInputSchema.safeParse({ ...base, entityType: "booking", entityId: USER }))).toEqual({
       entityType: "invalidChoice",
     });
     expect(taskInputSchema.parse({ ...base, entityType: "contract", entityId: USER })).toMatchObject({

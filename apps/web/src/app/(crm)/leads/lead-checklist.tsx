@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -21,9 +21,23 @@ import { DateTime } from "@/components/date-time";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { StatusBadge } from "@/components/status-badge";
-import { offsetParts, stepCompleteSchema, type LeadStep } from "@flow/shared/leads";
+import { offsetParts, showInputSchema, stepCompleteSchema, type Lead, type LeadStep } from "@flow/shared/leads";
 import { useSubmit } from "../admin/users/user-dialogs";
 import { completeLeadStepAction } from "./actions";
+import { ShowFields, showDefaults, type ShowValues } from "./lead-visit";
+
+const withShow = stepCompleteSchema.extend({ show: showInputSchema });
+const withoutShow = stepCompleteSchema.omit({ show: true });
+const emptyShow: ShowValues = {
+  idDocumentType: "CCCD",
+  idDocumentNumber: "",
+  birthDate: "",
+  nationality: "",
+  email: "",
+  phone: "",
+  healthNote: "",
+  consent: false,
+};
 
 type Labelled = { labelVi: string; labelEn: string };
 type Trigger = Pick<LeadStep, "trigger" | "triggerStatus" | "triggerStepKey" | "offsetMinutes">;
@@ -67,15 +81,7 @@ export function useTriggerText(): (step: Trigger, steps: (Labelled & { key: stri
 }
 
 /** The lead's checklist (FR-LEAD-004): every step in order, what it waits for, its deadline or result. */
-export function ChecklistSteps({
-  leadId,
-  steps,
-  canComplete,
-}: {
-  leadId: string;
-  steps: LeadStep[];
-  canComplete: boolean;
-}) {
+export function ChecklistSteps({ lead, steps, canComplete }: { lead: Lead; steps: LeadStep[]; canComplete: boolean }) {
   const t = useTranslations("checklist");
   const label = useLabel();
   const triggerText = useTriggerText();
@@ -116,7 +122,9 @@ export function ChecklistSteps({
             )}
             {step.note && <p className="text-sm whitespace-pre-line text-muted-foreground">{step.note}</p>}
           </div>
-          {canComplete && step.state === "OPEN" && <CompleteStepButton leadId={leadId} step={step} />}
+          {canComplete && step.state === "OPEN" && (
+            <CompleteStepButton leadId={lead.id} leadName={lead.fullName} step={step} lead={lead} />
+          )}
         </li>
       ))}
     </ol>
@@ -124,21 +132,53 @@ export function ChecklistSteps({
 }
 
 /** Records an open step's result (FR-LEAD-004); the note goes with it, never instead of it. */
-export function CompleteStepButton({ leadId, step }: { leadId: string; step: LeadStep }) {
+export function CompleteStepButton({
+  leadId,
+  leadName,
+  step,
+  lead,
+}: {
+  leadId: string;
+  leadName: string;
+  step: LeadStep;
+  /** Fills the Show details from what the lead already has. */
+  lead?: Lead;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const label = useLabel();
   const [open, setOpen] = useState(false);
   const { pending, run } = useSubmit();
-  const form = useForm<{ resultIndex: string; note: string }>({
-    resolver: zodResolver(stepCompleteSchema, undefined, { raw: true }) as never,
-    defaultValues: { resultIndex: step.results.length === 1 ? "0" : "", note: "" },
+  const form = useForm<{ resultIndex: string; note: string; show: ShowValues }>({
+    // The Show details are checked only when the chosen result converts the lead (D-019).
+    resolver: (values, context, options) =>
+      zodResolver(converts(values.resultIndex) ? withShow : withoutShow, undefined, { raw: true })(
+        values as never,
+        context,
+        options as never,
+      ) as never,
+    defaultValues: {
+      resultIndex: step.results.length === 1 ? "0" : "",
+      note: "",
+      show: lead ? showDefaults(lead, t("visit.vietnam")) : { ...emptyShow, nationality: "" },
+    },
   });
+  const converts = (resultIndex: string) => step.results[Number(resultIndex)]?.effect === "SHOW";
+  const chosen = useWatch({ control: form.control, name: "resultIndex" });
   const onSubmit = form.handleSubmit((values) =>
     run(
-      () => completeLeadStepAction(leadId, step.id, values),
+      () =>
+        completeLeadStepAction(leadId, step.id, {
+          resultIndex: values.resultIndex,
+          note: values.note,
+          ...(converts(values.resultIndex) ? { show: values.show as never } : {}),
+        }),
       (fieldErrors) => applyFieldErrors(form.setError, fieldErrors),
       () => {
+        if (converts(values.resultIndex)) {
+          notify.success(t("visit.converted", { name: leadName }));
+          return router.push(`/customers/${leadId}`);
+        }
         notify.success(t("checklist.completed"));
         setOpen(false);
         router.refresh();
@@ -158,7 +198,7 @@ export function CompleteStepButton({ leadId, step }: { leadId: string; step: Lea
         {t("checklist.complete")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90svh] overflow-y-auto">
           <form onSubmit={onSubmit} noValidate className="space-y-6">
             <DialogHeader>
               <DialogTitle>{label(step)}</DialogTitle>
@@ -171,6 +211,7 @@ export function CompleteStepButton({ leadId, step }: { leadId: string; step: Lea
                 label={t("checklist.result")}
                 options={step.results.map((result, index) => ({ value: String(index), label: label(result) }))}
               />
+              {converts(chosen) && <ShowFields control={form.control} prefix="show." />}
               <TextField control={form.control} name="note" label={t("checklist.note")} multiline />
             </FieldGroup>
             <DialogFooter>

@@ -1,30 +1,46 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TextField, applyFieldErrors } from "@/components/form-fields";
+import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
+import { NO_OPTION, optionLabel } from "@/components/option-select";
+import type { Option } from "@flow/shared/options";
 import { notify } from "@/components/notify";
 import { parametersInputSchema, type Parameters } from "@flow/shared/parameters";
 import { useSubmit } from "../users/user-dialogs";
 import { updateParametersAction } from "./actions";
 
 /** All parameters on one form, grouped by what reads them; saved together. */
-export function ParametersForm({ parameters }: { parameters: Parameters }) {
+export function ParametersForm({ parameters, departments }: { parameters: Parameters; departments: Option[] }) {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const { pending, run } = useSubmit();
   const form = useForm<Parameters>({
-    resolver: zodResolver(parametersInputSchema, undefined, { raw: true }) as never,
-    defaultValues: parameters,
+    // A drop-down cannot hold "", so "no department" is NO_OPTION on screen.
+    resolver: (values, context, options) =>
+      zodResolver(parametersInputSchema, undefined, { raw: true })(
+        {
+          ...values,
+          studioDepartmentId: values.studioDepartmentId === NO_OPTION ? "" : values.studioDepartmentId,
+        } as never,
+        context,
+        options as never,
+      ) as never,
+    defaultValues: { ...parameters, studioDepartmentId: parameters.studioDepartmentId || NO_OPTION },
   });
 
   const onSubmit = form.handleSubmit((values) =>
     run(
-      () => updateParametersAction(values),
+      () =>
+        updateParametersAction({
+          ...values,
+          studioDepartmentId: values.studioDepartmentId === NO_OPTION ? "" : values.studioDepartmentId,
+        }),
       (fieldErrors) => applyFieldErrors(form.setError, fieldErrors),
       () => {
         notify.success(t("parameters.saved"));
@@ -79,7 +95,21 @@ export function ParametersForm({ parameters }: { parameters: Parameters }) {
           <CardTitle>{t("parameters.leads")}</CardTitle>
           <CardDescription>{t("parameters.leadsHint")}</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">{field("recareDays", "numeric")}</CardContent>
+        <CardContent className="grid gap-4 sm:grid-cols-3">
+          {field("recareDays", "numeric")}
+          <div className="sm:col-span-2">
+            <SelectField
+              control={form.control}
+              name="studioDepartmentId"
+              label={t("parameters.fields.studioDepartmentId")}
+              description={t("parameters.studioHint")}
+              options={[
+                { value: NO_OPTION, label: t("parameters.noDepartment") },
+                ...departments.map((department) => ({ value: department.id, label: optionLabel(department, locale) })),
+              ]}
+            />
+          </div>
+        </CardContent>
       </Card>
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>

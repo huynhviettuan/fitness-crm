@@ -20,6 +20,7 @@ import { EditLeadButton } from "../lead-form";
 import { AssignLeadButton, ChangeStatusButton } from "../lead-journey";
 import { LeadTimeline } from "../lead-timeline";
 import { ChecklistSteps } from "../lead-checklist";
+import { NoShowButton, ShowButton } from "../lead-visit";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;
@@ -143,6 +144,8 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
             {(can(user, "lead.manage") || assignees) && (
               <div className="flex flex-wrap gap-2">
                 {can(user, "lead.manage") && <ChangeStatusButton lead={lead} />}
+                {can(user, "lead.manage") && lead.status === "BOOKED" && <NoShowButton lead={lead} />}
+                {can(user, "lead.manage") && <ShowButton lead={lead} />}
                 {assignees && <AssignLeadButton lead={lead} assignees={assignees} />}
               </div>
             )}
@@ -161,7 +164,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
             <CardTitle>{t("checklist")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChecklistSteps leadId={lead.id} steps={checklist.items} canComplete={can(user, "lead.manage")} />
+            <ChecklistSteps lead={lead} steps={checklist.items} canComplete={can(user, "lead.manage")} />
           </CardContent>
         </Card>
         <Card role="region" aria-label={t("profile")}>

@@ -60,7 +60,7 @@ type EditableCustomer = {
   id: string;
   fullName: string;
   phone: string | null;
-  maskedFields: ("phone" | "email")[];
+  maskedFields: ("phone" | "email" | "idDocument" | "health")[];
   email: string | null;
   dateOfBirth: Date | null;
   notes: string | null;
@@ -96,7 +96,7 @@ export function EditCustomerButton({ customer }: { customer: EditableCustomer })
         <CustomerForm
           mode="edit"
           defaultValues={defaultValues}
-          masked={customer.maskedFields}
+          masked={customer.maskedFields.filter((field) => field === "phone" || field === "email")}
           submit={(values) => updateCustomerAction(customer.id, values)}
           onCancel={() => setOpen(false)}
           onSaved={(result) => {

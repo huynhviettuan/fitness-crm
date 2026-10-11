@@ -153,6 +153,7 @@ export const test = base.extend<Fixtures>({
                 offsetMinutes: step.offsetMinutes,
                 required: step.required,
                 autoComplete: step.autoComplete,
+                action: step.action,
                 results: step.results ?? [],
               })),
             },

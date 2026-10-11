@@ -13,6 +13,7 @@ import { notify, type NewNotification } from "../../platform/notifications/notif
 import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
+import { leadsVisibleTo } from "../customers/person.service.js";
 import { instantAt } from "@flow/shared/validation";
 import {
   OPEN_TASK_STATUSES,
@@ -408,12 +409,17 @@ async function assertAssignee(
 /** The linked record must be one the actor can see; the task takes its branch. */
 async function entityBranch(db: Db, actor: Actor, type: TaskEntityType, id: string): Promise<string> {
   const found =
-    type === "customer"
-      ? await db.customer.findFirst({ where: { AND: [{ id }, customersVisibleTo(actor)] }, select: { branchId: true } })
-      : await db.contract.findFirst({
-          where: { AND: [{ id }, contractsVisibleTo(actor)] },
-          select: { branchId: true },
-        });
+    type === "lead"
+      ? await db.customer.findFirst({ where: { AND: [{ id }, leadsVisibleTo(actor)] }, select: { branchId: true } })
+      : type === "customer"
+        ? await db.customer.findFirst({
+            where: { AND: [{ id }, customersVisibleTo(actor)] },
+            select: { branchId: true },
+          })
+        : await db.contract.findFirst({
+            where: { AND: [{ id }, contractsVisibleTo(actor)] },
+            select: { branchId: true },
+          });
   if (!found) throw new AppError("VALIDATION_FAILED", { fieldErrors: { entityId: ["invalidChoice"] } });
   return found.branchId;
 }
@@ -460,7 +466,7 @@ function pick<T extends object, K extends keyof T>(value: T, keys: readonly K[])
 }
 
 async function toViews(db: Db, self: Me, tasks: repo.TaskRecord[]): Promise<TaskView[]> {
-  const labels = await repo.entityLabels(
+  const refs = await repo.entityRefs(
     db,
     tasks
       .filter((task) => task.entityType && task.entityId)
@@ -482,9 +488,9 @@ async function toViews(db: Db, self: Me, tasks: repo.TaskRecord[]): Promise<Task
     entity:
       task.entityType && task.entityId
         ? {
-            type: task.entityType as TaskEntityType,
+            type: refs.get(task.entityId)?.type ?? (task.entityType as TaskEntityType),
             id: task.entityId,
-            label: labels.get(task.entityId) ?? task.entityId,
+            label: refs.get(task.entityId)?.label ?? task.entityId,
           }
         : null,
     createdAt: task.createdAt,
@@ -511,4 +517,79 @@ async function detail(db: Db, self: Me, task: repo.TaskRecord): Promise<TaskDeta
       createdAt: comment.createdAt,
     })),
   };
+}
+
+/**
+ * Báo Studio (brief §4.1, §8.2): the system tells the studio about a lead's visit through
+ * Giao việc. The first time it makes a task for the studio's department; later it updates
+ * that task (deadline, details) and comments, so the studio has one task per visit.
+ * Without a department set (parameter studioDepartmentId, OQ-032) nothing is sent.
+ */
+export async function upsertStudioTask(
+  db: Db,
+  input: {
+    lead: { id: string; branchId: string };
+    by: string;
+    title: string;
+    description: string;
+    dueAt: Date;
+    comment: string;
+  },
+): Promise<repo.TaskRecord | null> {
+  const departmentId = await readParameter(db, "studioDepartmentId");
+  const department = departmentId ? await repo.findDepartment(db, departmentId) : null;
+  if (!department?.active || department.isOther) return null;
+
+  const existing = await repo.findSystemTask(db, "studio", "lead", input.lead.id);
+  if (existing) {
+    const task = await repo.updateSystemTask(db, existing.id, {
+      title: input.title,
+      description: input.description,
+      dueAt: input.dueAt,
+    });
+    await repo.createComment(db, { taskId: task.id, authorId: input.by, body: input.comment, mentions: [] });
+    await recordAudit(db, {
+      actorUserId: input.by,
+      entityType: "task",
+      entityId: task.id,
+      action: "task.updated",
+      before: pick(existing, ["title", "description", "dueAt"]),
+      after: pick(task, ["title", "description", "dueAt"]),
+      context: { source: "studio" },
+    });
+    const author = (await repo.namesOf(db, [input.by]))[0]?.name ?? "";
+    await notifyAssignees(db, task, input.by, {
+      kind: "taskCommented",
+      params: { title: task.title, by: author },
+      link: link(task),
+    });
+    return task;
+  }
+  const task = await repo.createTask(db, {
+    branchId: input.lead.branchId,
+    assignerId: input.by,
+    title: input.title,
+    description: input.description,
+    assigneeUserId: null,
+    assigneeDepartmentId: department.id,
+    dueAt: input.dueAt,
+    priority: "NORMAL",
+    entityType: "lead",
+    entityId: input.lead.id,
+    source: "studio",
+  });
+  await recordAudit(db, {
+    actorUserId: input.by,
+    entityType: "task",
+    entityId: task.id,
+    action: "task.created",
+    after: { ...pick(task, AUDITED_FIELDS), entityType: "lead", entityId: input.lead.id },
+    context: { source: "studio" },
+  });
+  await notifyAssignees(db, task, input.by, {
+    kind: "taskAssigned",
+    params: { title: task.title, by: task.assigner.name },
+    link: link(task),
+  });
+  return task;
 }
