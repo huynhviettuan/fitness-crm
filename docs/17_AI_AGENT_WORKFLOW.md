@@ -1,5 +1,23 @@
 # 17 — AI Agent Workflow
 
+## How a slice is built
+
+Each slice of `28_SLICE_PLAN.md` is built by two Claude Code agents with separate jobs. The `slice` skill (`.claude/skills/slice/SKILL.md`) orchestrates them:
+
+| Role | Defined in | Owns | Never |
+|---|---|---|---|
+| Orchestrator (the main session) | `.claude/skills/slice` | The slice brief, decisions with the user, review, docs check, commit and merge | Guesses a business rule |
+| Developer | `.claude/agents/slice-dev.md` | `packages/shared`, `apps/api/src` and `prisma`, `apps/web`, unit tests, OpenAPI, docs | Edits integration, E2E, or security tests |
+| Test engineer | `.claude/agents/slice-tester.md` | `apps/api/test`, `e2e` (specs, page objects, fixtures, security suite), docs 13 and 24 | Edits product code, or weakens an assertion to pass |
+
+The flow:
+
+1. The orchestrator writes `.slice/brief.md` in a new worktree: the requirement, the rules, the files, the decisions to settle, and the expected tests. Decisions that touch money, sessions, PT pay, or permissions go to the user first.
+2. **Phase A:** the developer writes the contract (migration, shared schemas, endpoints with permissions, OpenAPI) and summarizes it in `.slice/contract.md`.
+3. **Phase B, in parallel:** the developer builds the behavior. The tester writes tests from the brief and the contract, not from the code, so the tests check the specification rather than repeat the implementation.
+4. **Phase C:** the tester runs every suite. It is the only agent that runs the database suites, which share databases and ports. Product bugs go to `.slice/bugs.md`, the developer fixes them, and the tester re-runs.
+5. The orchestrator verifies (`.claude/skills/slice-verify`: all gates, plus the migrations on a copy of the dev database), reviews the diff with the review list below, checks the docs, commits, and fast-forwards into local `main`.
+
 ## Recommended first prompt
 
 ```text

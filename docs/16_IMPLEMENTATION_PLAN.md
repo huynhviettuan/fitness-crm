@@ -2,7 +2,7 @@
 
 Phase 1 follows the brief's delivery order (brief §12). Each milestone ends as a working version on **staging** for the owner to try; the owner can cut or postpone milestones. Effort and cost per milestone: `27_ESTIMATES.md`. What is reused from the code built so far and what is reworked: `25_BRIEF_V2_GAP_ANALYSIS.md`.
 
-Work inside a milestone in **vertical slices**: schema and migration → API service with rules, permissions, audit → endpoint with OpenAPI → screen → unit, integration, E2E, and security tests → docs. Stopping between slices leaves nothing half done.
+Work inside a milestone in **vertical slices**: schema and migration → API service with rules, permissions, audit → endpoint with OpenAPI → screen → unit, integration, E2E, and security tests → docs. Stopping between slices leaves nothing half done. Every remaining slice, with its tests and the decisions to settle before coding, is in `28_SLICE_PLAN.md`; how a slice is built (a developer agent and a separate test agent) is in `17_AI_AGENT_WORKFLOW.md`.
 
 ## Milestones
 
@@ -36,7 +36,7 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M2 | 2. Assignment and statuses: round-robin to the branch's consultants, reassignment by managers, notifications; the status flow with appointment, refusal reason, and contact-again day; timeline; Kanban (T-062, A-052 to A-054) | **Done** 2026-10-11 |
 | M2 | 3. Consulting checklist: versioned steps with triggers, delays, results, and required flags; admin editor; a lead's checklist with deadlines, results, on time or late; "Việc hôm nay"; reminders when a step comes due (T-063, A-055 to A-058) | **Done** 2026-10-11 |
 | M2 | 4. Show and No show: Show converts the lead to a customer in the same record with the ID document, health note, and consent; No show to re-care; checklist results with effects; Báo Studio tasks for the studio's department; ID numbers and health notes encrypted (T-064, A-059 to A-061, OQ-032) | **Done** 2026-10-11 |
-| M2 | Next: 5 re-care and merge; 6 scripts and customer profile | Not started |
+| M2 | Next: M2.5 re-care and merge; M2.6 scripts, lead notes, and customer profile (`28_SLICE_PLAN.md`) | Not started |
 
 ## Open questions per milestone
 

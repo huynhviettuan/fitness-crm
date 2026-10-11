@@ -94,6 +94,7 @@ Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`,
 | `docs/25_BRIEF_V2_GAP_ANALYSIS.md` | What is built vs brief v2 |
 | `docs/26_TECH_PROPOSAL.md` | Technology, architecture, hosting, costs |
 | `docs/27_ESTIMATES.md` | Effort and cost per milestone |
+| `docs/28_SLICE_PLAN.md` | Every remaining slice, M2.5 to M11, with its tests and the decisions to settle first |
 | `docs/wireframes/flow-fitness-wireframes.html` | Wireframes: leads, PT calendar, workout log, permissions |
 
 ## Recommended reading order
