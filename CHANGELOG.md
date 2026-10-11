@@ -1,6 +1,6 @@
 # Documentation Changelog
 
-## 2026-10-12 — M2 slice 2: lead assignment and statuses
+## 2026-10-11 — M2 slice 2: lead assignment and statuses
 
 - **Round-robin** (BR-203): a new lead goes in turn to the branch's consultants (users with the new permission "receive leads", initially the Consulting role) and starts *Đang tư vấn*. With nobody to receive it, it stays *Mới*. The consultant is told; the branch's managers are told of every new lead (A-052).
 - **Reassigning**: Admin and Fitness Manager (new permission `lead.assign`) hand a lead to another consultant of its branch from the lead page.
@@ -8,7 +8,7 @@
 - **History**: the lead page shows the journey (status since when, person in charge, appointment, reason, contact-again day) and every status change and assignment with who and when.
 - **Kanban**: the Lead page switches between the list and a board with a column per status; it scrolls inside itself on a phone.
 - API: `/leads/board`, `/leads/:id/timeline`, `/leads/:id/status`, `/leads/:id/assignees`, `/leads/:id/assign`; notifications `leadNew`, `leadAssigned`.
-- Tests: unit (shared 117, web 269, API 108), integration 263, E2E and security (see the slice report).
+- Tests: unit (shared 117, web 269, API 108), integration 263, E2E and security 298.
 - Docs: 04, 07, 09, 13, 16, 18 (T-062, A-052 to A-054), 24, 25.
 
 ## 2026-10-11 — M2 slice 1: leads
