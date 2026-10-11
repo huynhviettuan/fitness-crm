@@ -12,6 +12,7 @@ import type { Actor } from "../auth/session.js";
 import { isUniqueViolation } from "../db/errors.js";
 import { prisma, type Db } from "../db/prisma.js";
 import { AppError } from "../errors/app-error.js";
+import { activeInBranch, notify } from "../notifications/notification.service.js";
 import { chosen, chosenSelect } from "../options/option.service.js";
 import { assertCan } from "../permissions/assert.js";
 import { hasBranch, inBranches, isMasked } from "../permissions/scope.js";
@@ -65,7 +66,58 @@ export async function submitForApproval(db: Db, actor: Pick<Actor, "id">, submis
     action: "approval_request.submitted",
     after: { action: submission.action, entityType: submission.entityType, entityId: submission.entityId, status: "PENDING" },
   });
+  // D-018: the approvers get it in their inbox, and are told.
+  const deciders = await decidersOf(db, { actionType: submission.action, branchId: submission.branchId, submittedById: actor.id });
+  await notify(db, deciders, { kind: "approvalSubmitted", params: { title: submission.title }, link: "/approvals" });
   return request;
+}
+
+type RequestRef = { actionType: string; branchId: string; submittedById: string };
+
+/** Active users who may decide a request: their role approves the action, they work in its branch, they did not submit it. */
+export async function decidersOf(db: Db, request: RequestRef): Promise<string[]> {
+  const rule = await ruleFor(db, request.actionType as ApprovalAction);
+  if (rule.approverRoleIds.length === 0) return [];
+  return usersWhere(db, request, { roleId: { in: rule.approverRoleIds } });
+}
+
+/**
+ * The approvers' superiors, told when a request is overdue (D-018). Until the business
+ * names them (OQ-031), they are the users whose role manages the approval matrix (A-047).
+ */
+export async function superiorsOf(db: Db, request: RequestRef): Promise<string[]> {
+  return usersWhere(db, request, { role: { permissions: { some: { permission: "approval.manage" } } } });
+}
+
+async function usersWhere(db: Db, request: RequestRef, where: Prisma.UserWhereInput): Promise<string[]> {
+  const users = await db.user.findMany({
+    where: { AND: [activeInBranch(request.branchId), where, { id: { not: request.submittedById } }] },
+    select: { id: true },
+  });
+  return users.map((user) => user.id);
+}
+
+/**
+ * A-037: once a pending request passes its action's overdue time, its approvers are
+ * reminded and their superiors told, once. Run by the worker (T-059).
+ */
+export async function remindOverdueApprovals(now: Date = new Date()): Promise<number> {
+  return prisma.$transaction(async (tx) => {
+    const overdue = await tx.$queryRaw<{ id: string; action_type: string; branch_id: string; submitted_by: string; title: string }[]>`
+      UPDATE approval_requests AS ar SET overdue_notified_at = ${now}
+      FROM approval_rules AS r
+      WHERE r.action_type = ar.action_type
+        AND ar.status = 'PENDING'
+        AND ar.overdue_notified_at IS NULL
+        AND ar.submitted_at + make_interval(hours => r.overdue_hours) <= ${now}
+      RETURNING ar.id, ar.action_type, ar.branch_id, ar.submitted_by, ar.title`;
+    for (const row of overdue) {
+      const request = { actionType: row.action_type, branchId: row.branch_id, submittedById: row.submitted_by };
+      const users = [...(await decidersOf(tx, request)), ...(await superiorsOf(tx, request))];
+      await notify(tx, users, { kind: "approvalOverdue", params: { title: row.title }, link: "/approvals" });
+    }
+    return overdue.length;
+  });
 }
 
 /** Maps the one-pending-request index to its error; use around a submitting transaction. */

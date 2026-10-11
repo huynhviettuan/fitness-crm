@@ -33,7 +33,7 @@ The API is the NestJS app `apps/api`, under `/api/v1`, described by **OpenAPI** 
 | Classes | `/classes`, `/class-sessions?from=&to=`, `/class-sessions/:id/enrollments`, `/class-sessions/:id/attendance` |
 | Workouts | `/catalog/equipment`, `/catalog/areas`, `/catalog/exercises`, `/catalog/stages`, `/plan-templates`, `/customers/:id/plans`, `/plans/:id`, `/sessions/:id/log`, `/escalations` (review) |
 | Cash book | `/receipts`, `/expense-vouchers`, `/payouts` (from an allocation period), `/receipts/:id/date` (date edit permission), `/cashbook?from=&to=&branch=&method=` |
-| Tasks | `/tasks` (mine, assigned by me, department), `/tasks/:id/accept`, `/tasks/:id/status`, `/tasks/:id/comments` |
+| Tasks | `/tasks` (`?view=mine|assigned|department|all`), `/tasks/:id/accept`, `/start`, `/complete`, `/cancel`, `/tasks/:id/comments`; `/notifications` |
 | Email | `/email-templates`, `/customers/:id/emails` |
 | Reports | `/reports/overview`, `/reports/consulting`, `/reports/leads`, `/reports/workouts-weekly`, `/reports/contracts`, `/reports/exception-prices`, `/reports/bookings`, `/reports/pt-revenue`, `/reports/cashbook`, `/reports/tasks` — each with `/export` |
 | Import | `/imports` (upload, dry run on staging, cleanup list, apply) |
@@ -89,6 +89,8 @@ Since M1 slice 1 the API is the NestJS app; its OpenAPI document is `apps/api/op
 | Bookings | `/bookings` (filters), `/bookings/:id` (get, reschedule), `/bookings/:id/cancel`, `/no-show`, `/check-in`, `/complete`; `/schedule?date=&trainerId=` (one gym day) |
 | Money | `/payments` (filters), `/payments/collected?from=&to=`, `/payments/:id` (`DELETE`), `/debts`, `/cash-transactions` (list; record with `Idempotency-Key`), `/cash-transactions/summary?from=&to=`, `/cash-transactions/:id` (`DELETE`) |
 | History | `/trash` (`?entityType=&from=&to=`), `/audit-events` (`?entityType=&entityId=&actorUserId=&from=&to=`); both read-only |
+| Tasks | `/tasks` (`?view=mine|assigned|department|all&status=&overdueOnly=&q=&page=`; create), `/tasks/summary`, `/tasks/assignees`, `/tasks/:id` (get, `PATCH` by the assigner), `/tasks/:id/accept`, `/start`, `/complete`, `/cancel` (repeating a move that already happened returns the task), `/tasks/:id/comments` (`{ body, mentions }`) |
+| Notifications | `/notifications` (`?unreadOnly=&page=`), `/notifications/summary`, `/notifications/:id/read`, `/notifications/read-all`; each user sees only their own |
 | Approvals | `/approvals` (`?view=toDecide|mine|all&status=`), `/approvals/summary`, `/approvals/:id/approve`, `/approvals/:id/reject` (`{ reasonId, reasonNote }`), `/approval-rules` (list), `/approval-rules/:action` (`PUT`) |
 | Users | `/users` (list, create with role and branches), `/users/:id` (detail), `/users/:id/role`, `/users/:id/status`, `/users/:id/password`, `/users/:id/branches`, `/users/:id/overrides`, `/users/:id/access-hours` (`PUT`), `/users/:id/logins` (login history, paged) |
 | Roles | `/roles` (list, create), `/roles/:id` (get, `PUT` permissions, data scopes, hidden fields), `/roles/:id/clone` |

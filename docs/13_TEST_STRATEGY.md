@@ -38,6 +38,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-111 | Session log on phone: plan and actual per row; cardio fields; escalation reaches manager and Master | AC-20, AC-21, AC-23 |
 | E2E-112 | Role without a module: menu hidden and direct URL refused; masked phone absent from screen and export | AC-01 |
 | E2E-113 | Submitter cannot approve own request; approval matrix change takes effect immediately (`e2e/approvals.spec.ts`) | AC-05 |
+| E2E-115 | A manager gives a task; the receptionist sees it in the bell, accepts, works on, and completes it; the manager is told; comments with mentions; overdue tasks are marked (`e2e/tasks.spec.ts`) | AC-05 |
 | E2E-114 | A manager adds a PT, sets a shift and a day off; the calendar books only inside the shift; a PT sees their own schedule read-only (`e2e/employees.spec.ts`) | AC-02 |
 
 ## Concurrency scenarios (integration)

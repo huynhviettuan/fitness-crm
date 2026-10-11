@@ -8,6 +8,8 @@ import { EmptyState } from "@/components/empty-state";
 import { DateTime } from "@/components/date-time";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { PageHeader } from "@/components/page-header";
+import { getTaskAssignees } from "@/lib/api/tasks";
+import { CreateTaskButton } from "../../tasks/task-form";
 import { HiddenValue } from "@/components/hidden-value";
 import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -76,12 +78,26 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     { label: t("fields.notes"), value: customer.notes && <span className="whitespace-pre-line">{customer.notes}</span> },
   ];
 
+  // Brief §8.2: a task about this customer.
+  const assignees = can(user, "task.create") ? await getTaskAssignees() : null;
+
   return (
     <>
       <PageHeader
         title={customer.fullName}
         description={[customer.customerCode, customer.phone].filter(Boolean).join(" · ")}
-        actions={can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
+        actions={
+          <>
+            {assignees && (
+              <CreateTaskButton
+                assignees={assignees}
+                branches={[]}
+                about={{ type: "customer", id: customer.id, label: `${customer.customerCode} · ${customer.fullName}` }}
+              />
+            )}
+            {can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
+          </>
+        }
       />
       {customer.pendingIdentity && (
         // D-018: the change is not in effect until an approver agrees.

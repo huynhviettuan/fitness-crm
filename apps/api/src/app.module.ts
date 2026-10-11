@@ -18,6 +18,8 @@ import { CustomersController } from "./modules/customers/customers.controller.js
 import { CashTransactionsController, DebtsController, PaymentsController } from "./modules/finance/finance.controller.js";
 import { EmployeesController } from "./modules/employees/employees.controller.js";
 import { UsersController } from "./modules/users/users.controller.js";
+import { TasksController } from "./modules/tasks/tasks.controller.js";
+import { NotificationsController } from "./platform/notifications/notifications.controller.js";
 
 // Controllers stay thin: they read the request, call a service, and encode the result
 // with its shared schema. Services authorize, validate, and own transactions (docs/22).
@@ -41,6 +43,8 @@ import { UsersController } from "./modules/users/users.controller.js";
     TrashController,
     ApprovalsController,
     ApprovalRulesController,
+    TasksController,
+    NotificationsController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

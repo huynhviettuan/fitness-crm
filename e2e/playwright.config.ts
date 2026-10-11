@@ -56,6 +56,8 @@ export default defineConfig({
         PORT: String(API_PORT),
         DATABASE_URL: process.env.E2E_DATABASE_URL ?? "",
         BETTER_AUTH_URL: baseURL,
+        // Reminders run on a clock; the integration tests drive them with a fixed time (T-059).
+        RUN_JOBS: "false",
       },
     },
     {

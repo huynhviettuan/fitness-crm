@@ -21,6 +21,12 @@ const envSchema = z.object({
   // A-001
   GYM_TIMEZONE: z.string().default("Asia/Ho_Chi_Minh").refine(isValidTimeZone, "Unknown IANA timezone"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  // T-059: run the background jobs (reminders) inside the API. Production sets it to
+  // false and runs the worker process (`node dist/worker.js`) instead.
+  RUN_JOBS: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
 });
 
 export const env = envSchema.parse(process.env);

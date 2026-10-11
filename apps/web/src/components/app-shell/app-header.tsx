@@ -7,11 +7,20 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CustomerSearch } from "@/components/app-shell/customer-search";
 import { UserMenu } from "@/components/app-shell/user-menu";
+import { NotificationBell } from "@/components/app-shell/notification-bell";
+import type { Notification } from "@flow/shared/notifications";
 import type { CurrentUser } from "@/lib/auth/current-user";
 
 type ApprovalCounts = { toDecide: number; overdue: number };
 
-export function AppHeader({ user, showSearch, approvals }: { user: CurrentUser; showSearch: boolean; approvals: ApprovalCounts }) {
+type HeaderProps = {
+  user: CurrentUser;
+  showSearch: boolean;
+  approvals: ApprovalCounts;
+  notifications: { unread: number; recent: Notification[] };
+};
+
+export function AppHeader({ user, showSearch, approvals, notifications }: HeaderProps) {
   const t = useTranslations("common");
   const ta = useTranslations("approvals");
 
@@ -28,6 +37,7 @@ export function AppHeader({ user, showSearch, approvals }: { user: CurrentUser; 
           {approvals.toDecide > 0 && <Badge variant={approvals.overdue > 0 ? "destructive" : "default"}>{approvals.toDecide}</Badge>}
         </Link>
       </Button>
+      <NotificationBell unread={notifications.unread} recent={notifications.recent} />
       <UserMenu user={{ name: user.name, email: user.email, roleName: user.role.name }} />
     </header>
   );

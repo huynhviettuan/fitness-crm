@@ -16,7 +16,7 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Audit log (exists for critical actions → before/after for everything, T-048) | Built (M1 slice 4) | M1 |
 | Trash and soft delete (D-035) | Built (M1 slice 4) for receipts and cash entries; other records join as their modules are built | M1 |
 | Employees, PT working schedules | Built (M1 slice 6, T-058); ID documents in M2 (A-041); calendar rows per PT and week view in M5 | M1 |
-| In-app notifications and Tasks (D-037) | New | M1 |
+| In-app notifications and Tasks (D-037) | Built (M1 slice 7, T-060); system-generated tasks join with their modules; task report in M9 (A-045) | M1 |
 | Leads, consulting journey, re-care, scripts (D-019, D-020) | New | M2 |
 | Consulting audit and dashboard (D-045) | New | M3 |
 | Customers (simple profile → full profile from lead, derived status) | Partly | M2, M4 |

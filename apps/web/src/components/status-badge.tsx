@@ -16,6 +16,8 @@ const STATUS_VARIANTS = {
   // D-018: only an approved record has an effect.
   approval: { PENDING: "warning", APPROVED: "success", REJECTED: "destructive", CANCELLED: "muted" },
   login: { SUCCESS: "success", FAILED: "destructive" },
+  task: { NEW: "info", ACCEPTED: "warning", IN_PROGRESS: "warning", DONE: "success", CANCELLED: "muted" },
+  taskPriority: { LOW: "muted", NORMAL: "info", HIGH: "destructive" },
 } as const satisfies Record<string, Record<string, BadgeVariant>>;
 
 // Larger surfaces in a status color, e.g. booking blocks in the PT calendar.

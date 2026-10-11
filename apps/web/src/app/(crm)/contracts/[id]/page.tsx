@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { Money } from "@/components/money";
 import { PageHeader } from "@/components/page-header";
+import { getTaskAssignees } from "@/lib/api/tasks";
+import { CreateTaskButton } from "../../tasks/task-form";
 import { StatusBadge } from "@/components/status-badge";
 import { requirePageUser } from "@/lib/auth/current-user";
 import type { CurrentUser } from "@/lib/auth/current-user";
@@ -64,8 +66,17 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     ? (await listBookings({ contractId: contract.id, status: "BOOKED", pageSize: 100 })).items
     : [];
 
+  // Brief §8.2: a task about this contract.
+  const assignees = can(user, "task.create") ? await getTaskAssignees() : null;
   const actions = (
     <>
+      {assignees && (
+        <CreateTaskButton
+          assignees={assignees}
+          branches={[]}
+          about={{ type: "contract", id: contract.id, label: `${contract.contractCode} · ${contract.packageName}` }}
+        />
+      )}
       {can(user, "contract.create") && isEditable(contract.status) && <EditContractButton contract={contract} />}
       {cancellable && <CancelContractButton contract={contract} bookings={toCancel} />}
       {can(user, "contract.approve") && canActivate(contract.status) && <ActivateContractButton contract={contract} />}

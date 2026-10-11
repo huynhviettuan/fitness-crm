@@ -3117,6 +3117,8 @@
                             "session.complete",
                             "employee.view",
                             "employee.manage",
+                            "task.view",
+                            "task.create",
                             "payment.view",
                             "payment.record",
                             "payment.delete",
@@ -3486,6 +3488,8 @@
                         "session.complete",
                         "employee.view",
                         "employee.manage",
+                        "task.view",
+                        "task.create",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -3531,6 +3535,13 @@
                           "ALL",
                           "OWN"
                         ]
+                      },
+                      "tasks": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
                       }
                     },
                     "required": [
@@ -3538,7 +3549,8 @@
                       "contracts",
                       "schedule",
                       "vouchers",
-                      "staff"
+                      "staff",
+                      "tasks"
                     ]
                   },
                   "fieldMasks": {
@@ -3684,6 +3696,8 @@
                         "session.complete",
                         "employee.view",
                         "employee.manage",
+                        "task.view",
+                        "task.create",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -3729,6 +3743,13 @@
                           "ALL",
                           "OWN"
                         ]
+                      },
+                      "tasks": {
+                        "type": "string",
+                        "enum": [
+                          "ALL",
+                          "OWN"
+                        ]
                       }
                     },
                     "required": [
@@ -3736,7 +3757,8 @@
                       "contracts",
                       "schedule",
                       "vouchers",
-                      "staff"
+                      "staff",
+                      "tasks"
                     ]
                   },
                   "fieldMasks": {
@@ -4370,6 +4392,10 @@
                   "employeeCodePrefix": {
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
+                  },
+                  "taskDueSoonHours": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
                   }
                 },
                 "required": [
@@ -4377,7 +4403,8 @@
                   "calendarDayEnd",
                   "customerCodePrefix",
                   "contractCodePrefix",
-                  "employeeCodePrefix"
+                  "employeeCodePrefix",
+                  "taskDueSoonHours"
                 ]
               }
             }
@@ -4867,6 +4894,783 @@
         ],
         "x-permission": "approval.manage"
       }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "operationId": "TasksController_list",
+        "parameters": [
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "overdueOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      },
+      "post": {
+        "operationId": "TasksController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branchId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "assigneeUserId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assigneeDepartmentId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "dueTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "priority": {
+                    "default": "NORMAL",
+                    "type": "string",
+                    "enum": [
+                      "LOW",
+                      "NORMAL",
+                      "HIGH"
+                    ]
+                  },
+                  "entityType": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "customer",
+                      "contract"
+                    ]
+                  },
+                  "entityId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "title",
+                  "dueDate",
+                  "dueTime"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.create"
+      }
+    },
+    "/api/v1/tasks/summary": {
+      "get": {
+        "operationId": "TasksController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/tasks/assignees": {
+      "get": {
+        "operationId": "TasksController_assignees",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAssignees"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/tasks/{id}": {
+      "get": {
+        "operationId": "TasksController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      },
+      "patch": {
+        "operationId": "TasksController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "assigneeUserId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assigneeDepartmentId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "dueTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "priority": {
+                    "default": "NORMAL",
+                    "type": "string",
+                    "enum": [
+                      "LOW",
+                      "NORMAL",
+                      "HIGH"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "dueDate",
+                  "dueTime"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/tasks/{id}/accept": {
+      "post": {
+        "operationId": "TasksController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/tasks/{id}/start": {
+      "post": {
+        "operationId": "TasksController_start",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/tasks/{id}/complete": {
+      "post": {
+        "operationId": "TasksController_complete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/tasks/{id}/cancel": {
+      "post": {
+        "operationId": "TasksController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/tasks/{id}/comments": {
+      "post": {
+        "operationId": "TasksController_comment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "mentions": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.view"
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/notifications/summary": {
+      "get": {
+        "operationId": "NotificationsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_readAll",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Every notification of the user is read"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_read",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Read"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
     }
   },
   "info": {
@@ -4994,6 +5798,8 @@
                 "session.complete",
                 "employee.view",
                 "employee.manage",
+                "task.view",
+                "task.create",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -5016,7 +5822,8 @@
               "contracts",
               "schedule",
               "vouchers",
-              "staff"
+              "staff",
+              "tasks"
             ]
           },
           "allBranches": {
@@ -6241,6 +7048,8 @@
                     "session.complete",
                     "employee.view",
                     "employee.manage",
+                    "task.view",
+                    "task.create",
                     "payment.view",
                     "payment.record",
                     "payment.delete",
@@ -6459,6 +7268,8 @@
                 "session.complete",
                 "employee.view",
                 "employee.manage",
+                "task.view",
+                "task.create",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -6481,7 +7292,8 @@
               "contracts",
               "schedule",
               "vouchers",
-              "staff"
+              "staff",
+              "tasks"
             ]
           },
           "fieldMasks": {
@@ -6656,6 +7468,9 @@
           },
           "employeeCodePrefix": {
             "type": "string"
+          },
+          "taskDueSoonHours": {
+            "type": "string"
           }
         },
         "required": [
@@ -6663,7 +7478,8 @@
           "calendarDayEnd",
           "customerCodePrefix",
           "contractCodePrefix",
-          "employeeCodePrefix"
+          "employeeCodePrefix",
+          "taskDueSoonHours"
         ]
       },
       "AuditPage": {
@@ -7059,6 +7875,589 @@
           "required",
           "approvers",
           "overdueHours"
+        ]
+      },
+      "TaskPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "ACCEPTED",
+              "IN_PROGRESS",
+              "DONE",
+              "CANCELLED"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH"
+            ]
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "assigner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "assignee": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "department": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "entity": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "customer",
+                  "contract"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "label"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "doneAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelledAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "accept",
+                "start",
+                "complete",
+                "cancel",
+                "edit",
+                "comment"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "branch",
+          "title",
+          "description",
+          "status",
+          "priority",
+          "dueAt",
+          "overdue",
+          "assigner",
+          "assignee",
+          "department",
+          "entity",
+          "createdAt",
+          "acceptedAt",
+          "doneAt",
+          "cancelledAt",
+          "actions"
+        ]
+      },
+      "TaskSummary": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "integer"
+          },
+          "overdue": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "open",
+          "overdue"
+        ]
+      },
+      "TaskAssignees": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "department": {
+                  "nullable": true,
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ChosenOption"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "department"
+              ]
+            }
+          },
+          "departments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "labelVi": {
+                  "type": "string"
+                },
+                "labelEn": {
+                  "type": "string"
+                },
+                "isOther": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "labelVi",
+                "labelEn",
+                "isOther"
+              ]
+            }
+          }
+        },
+        "required": [
+          "users",
+          "departments"
+        ]
+      },
+      "TaskDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "ACCEPTED",
+              "IN_PROGRESS",
+              "DONE",
+              "CANCELLED"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH"
+            ]
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "assigner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "assignee": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "department": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "entity": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "customer",
+                  "contract"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "label"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "doneAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelledAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "accept",
+                "start",
+                "complete",
+                "cancel",
+                "edit",
+                "comment"
+              ]
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskComment"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "branch",
+          "title",
+          "description",
+          "status",
+          "priority",
+          "dueAt",
+          "overdue",
+          "assigner",
+          "assignee",
+          "department",
+          "entity",
+          "createdAt",
+          "acceptedAt",
+          "doneAt",
+          "cancelledAt",
+          "actions",
+          "comments"
+        ]
+      },
+      "TaskComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "body",
+          "mentions",
+          "createdAt"
+        ]
+      },
+      "NotificationPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "taskAssigned",
+              "taskAccepted",
+              "taskCompleted",
+              "taskCancelled",
+              "taskCommented",
+              "taskMentioned",
+              "taskDueSoon",
+              "taskOverdue",
+              "approvalSubmitted",
+              "approvalDecided",
+              "approvalOverdue"
+            ]
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "link": {
+            "nullable": true,
+            "type": "string"
+          },
+          "readAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "params",
+          "link",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "NotificationSummary": {
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unread"
         ]
       }
     }

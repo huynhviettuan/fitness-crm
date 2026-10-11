@@ -60,6 +60,13 @@ export function ParametersForm({ parameters }: { parameters: Parameters }) {
           {field("employeeCodePrefix")}
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("parameters.tasks")}</CardTitle>
+          <CardDescription>{t("parameters.tasksHint")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">{field("taskDueSoonHours", "numeric")}</CardContent>
+      </Card>
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           {pending ? t("common.saving") : t("common.save")}

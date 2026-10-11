@@ -5,7 +5,7 @@ import { createUserViaApi, roleIdOf } from "../support/admin";
 import { createCustomerViaApi } from "../support/data";
 import { discoverApiRoutes } from "../support/routes";
 
-const SCOPES_ALL = { customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL" };
+const SCOPES_ALL = { customers: "ALL", contracts: "ALL", schedule: "ALL", vouchers: "ALL", staff: "ALL", tasks: "ALL" };
 
 test.describe("A01 permissions on every endpoint (T-046)", () => {
   test("a user whose role grants nothing is refused by every endpoint that declares a permission", async ({

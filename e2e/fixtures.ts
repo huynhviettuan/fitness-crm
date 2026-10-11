@@ -10,6 +10,7 @@ import { AuditPage, TrashPage } from "./pages/history";
 import { ApprovalRulesPage, ApprovalsPage } from "./pages/approvals";
 import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/bookings";
 import { EmployeePage, EmployeesPage } from "./pages/employees";
+import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
 import { CustomerDetailPage, CustomersPage } from "./pages/customers";
@@ -28,6 +29,9 @@ type Fixtures = {
   calendarPage: CalendarPage;
   sessionsPage: SessionsPage;
   employeesPage: EmployeesPage;
+  tasksPage: TasksPage;
+  taskPage: TaskPage;
+  notificationsPage: NotificationsPage;
   employeePage: EmployeePage;
   financePage: FinancePage;
   branchesPage: BranchesPage;
@@ -74,6 +78,9 @@ export const test = base.extend<Fixtures>({
   calendarPage: async ({ page }, use) => use(new CalendarPage(page)),
   sessionsPage: async ({ page }, use) => use(new SessionsPage(page)),
   employeesPage: async ({ page }, use) => use(new EmployeesPage(page)),
+  tasksPage: async ({ page }, use) => use(new TasksPage(page)),
+  taskPage: async ({ page }, use) => use(new TaskPage(page)),
+  notificationsPage: async ({ page }, use) => use(new NotificationsPage(page)),
   employeePage: async ({ page }, use) => use(new EmployeePage(page)),
   financePage: async ({ page }, use) => use(new FinancePage(page)),
   branchesPage: async ({ page }, use) => use(new BranchesPage(page)),
@@ -171,6 +178,12 @@ export const test = base.extend<Fixtures>({
           select: { id: true },
         }),
       );
+      // Tasks titled with the tag, with their comments and history; notifications about them.
+      const taskIds = ids(await prisma.task.findMany({ where: { title: { contains: tag } }, select: { id: true } }));
+      await prisma.taskComment.deleteMany({ where: { taskId: { in: taskIds } } });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: taskIds } } });
+      await prisma.task.deleteMany({ where: { id: { in: taskIds } } });
+      await prisma.notification.deleteMany({ where: { params: { path: ["title"], string_contains: tag } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).

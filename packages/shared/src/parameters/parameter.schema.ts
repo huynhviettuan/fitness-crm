@@ -17,6 +17,8 @@ export const PARAMETER_DEFAULTS = {
   customerCodePrefix: "KH",
   contractCodePrefix: "HD",
   employeeCodePrefix: "NV",
+  /** How many hours before its deadline a task reminds its assignee (brief §8.2, A-046). */
+  taskDueSoonHours: "24",
 } as const;
 
 export type ParameterKey = keyof typeof PARAMETER_DEFAULTS;
@@ -31,6 +33,14 @@ const codePrefix = z
   .toUpperCase()
   .regex(/^[A-Z]{1,5}$/, { error: "invalidCodePrefix" });
 
+/** Whole hours, 1 to 168 (a week), kept as text like every parameter. */
+const hours = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) >= 1 && Number(value) <= 168, { error: "outOfRange" })
+  .transform((value) => String(Number(value)));
+
 export const parametersInputSchema = z
   .object({
     calendarDayStart: calendarTime,
@@ -38,6 +48,7 @@ export const parametersInputSchema = z
     customerCodePrefix: codePrefix,
     contractCodePrefix: codePrefix,
     employeeCodePrefix: codePrefix,
+    taskDueSoonHours: hours,
   })
   .refine((value) => value.calendarDayEnd > value.calendarDayStart, { path: ["calendarDayEnd"], error: "endTimeNotAfterStart" });
 
@@ -48,6 +59,7 @@ export const parametersSchema = z
     customerCodePrefix: z.string(),
     contractCodePrefix: z.string(),
     employeeCodePrefix: z.string(),
+    taskDueSoonHours: z.string(),
   })
   .meta({ id: "Parameters" });
 

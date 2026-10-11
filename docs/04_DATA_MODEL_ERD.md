@@ -71,7 +71,7 @@ erDiagram
 | *(sequences)* | One PostgreSQL sequence per code (`customer_code_seq`, …); the prefix is a system parameter — codes never reused (D-038, T-055) |
 | `audit_events` | actor_user_id, entity_type, entity_id, action, before (json), after (json), at (T-048) |
 | `trash_entries` | entity_type, entity_id, snapshot (json), deleted_by, deleted_at, reason_option_id, reason_note — no update or delete path |
-| `notifications` | user_id, kind, title, link, read_at |
+| `notifications` | user_id, kind, params (json: the values the text needs), link, read_at, created_at; the web app writes the text in the user's language (T-060) |
 | `files` | storage_key, mime, size, owner entity, uploaded_by |
 
 ### Leads, consulting, customers (brief §3, §4)
@@ -137,8 +137,8 @@ erDiagram
 
 | Table | Key fields |
 |---|---|
-| `tasks` | title, description, assigner_id, assignee_user_id or assignee_department_option_id, due_at, priority, status (NEW, ACCEPTED, IN_PROGRESS, DONE, CANCELLED), accepted_at, source (MANUAL, STUDIO_NOTICE, ESCALATION, APPROVAL, FREEZE, EMAIL_FAILURE, …), entity_type, entity_id |
-| `task_comments` | task_id, author_id, body, mentions |
+| `tasks` | branch_id, title, description, assigner_id, assignee_user_id and/or assignee_department_option_id (checks: at least one; a person once accepted), due_at, priority (LOW, NORMAL, HIGH), status (NEW, ACCEPTED, IN_PROGRESS, DONE, CANCELLED), accepted_at, started_at, done_at, cancelled_at, entity_type + entity_id (both or neither), due_soon_notified_at, overdue_notified_at. Built in M1 slice 7 (T-060); system-generated sources arrive with their modules (A-045) |
+| `task_comments` | task_id, author_id, body, mentions (user ids); never edited or deleted |
 | `email_templates` | event_key, enabled, subject_vi, body_vi, subject_en, body_en |
 | `email_outbox` | person_id, event_key, language, to, subject, body, status (QUEUED, SENT, FAILED), attempts, provider_id, sent_at, error |
 

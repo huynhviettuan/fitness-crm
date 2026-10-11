@@ -1,5 +1,16 @@
 # Documentation Changelog
 
+## 2026-10-11 — M1 slice 7: tasks and notifications
+
+- **Công việc** (brief §8.2, D-037): give a task to a person or a department, with a deadline and priority, optionally about a customer or contract (a "Giao việc" button on their pages). The assignee — or the first member of the department — accepts it, starts, and completes it; the assigner can edit or cancel it. Views: my tasks, tasks I gave, my department's, and all (Admin, Fitness Manager); filters by status and overdue; overdue tasks are marked. Comments with mentions.
+- **Notifications** (FR-PLT-009): a bell in the top bar with the unread count and the latest ones, and a Notifications page. Users are told when a task is given to them, accepted, completed, cancelled, commented on, mentions them, comes due, or goes overdue; approvers when a request arrives; submitters when it is decided.
+- **Reminders** (T-059): pg-boss in PostgreSQL runs every minute. Tasks remind their assignee 24 hours before the deadline (parameter) and tell both sides when it passes (A-046); overdue approval requests remind the approvers and tell their superiors (A-037, A-047). In production the API runs with `RUN_JOBS=false` next to a worker process `node dist/worker.js`.
+- "Việc của tôi" shows how many requests wait for the user's approval and links to the inbox (A-044).
+- Permissions `task.view` and `task.create` for every role; data scope "tasks" (A-045, A-048).
+- API: `/tasks` (and `/summary`, `/assignees`, `/:id/accept|start|complete|cancel`, `/:id/comments`), `/notifications` (and `/summary`, `/:id/read`, `/read-all`). New dependency: pg-boss.
+- Tests: unit (shared 99, web 253, API 99), integration 233, E2E and security 259.
+- Docs: 04, 07, 09, 13, 15, 16, 18 (T-059, T-060, A-044 to A-048, OQ-031), 24, 25.
+
 ## 2026-10-11 — M1 slice 6: employees and PT working schedules
 
 - Trainers became **employees** (brief §8.4), keeping their ids, codes, logins, and bookings: profile with birth date, gender, phone, email, department and job title from new option lists, team, branch, working status, "teaches PT", and one linked login. New codes use the employee prefix (initially NV). Administration → **Employees** replaces Trainers: list with filters and search, detail page, add and edit.

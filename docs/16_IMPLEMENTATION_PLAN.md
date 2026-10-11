@@ -30,7 +30,8 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M1 | 4. Audit with before and after values for every change; the trash; payments and cash entries deleted to the trash instead of voided; Action history and Trash screens (T-048, D-035, T-056) | **Done** 2026-10-10 |
 | M1 | 5. Approvals: engine, matrix screen, inbox with top-bar count; receipts, income and expenses, deletions, and customer identity edits under approval; a contract's creator cannot activate it (D-018, T-057) | **Done** 2026-10-11 |
 | M1 | 6. Employees: trainers turned into employees with profiles, departments and job titles, linked logins; weekly shifts and days off; bookings only inside working hours; grey cells on the PT calendar (T-058, A-041 to A-043) | **Done** 2026-10-11 |
-| M1 | Next: 7 notifications and tasks (approval reminders, A-037) | Not started |
+| M1 | 7. Tasks and notifications: give tasks to a person or department, accept, work, complete, cancel, comments with mentions; bell and Notifications page; reminders before and after deadlines and for overdue approvals, run by pg-boss (D-037, T-059, T-060, A-044 to A-048) | **Done** 2026-10-11 |
+| M1 | All slices built; next: the owner checks AC-01 to AC-05 and AC-13 on staging, then M2 (leads and consulting) | — |
 
 ## Open questions per milestone
 

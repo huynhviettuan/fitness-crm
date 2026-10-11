@@ -76,6 +76,21 @@ enum ApprovalStatus {
   CANCELLED
 }
 
+// Brief §8.2: the assignee accepts; DONE and CANCELLED are final.
+enum TaskStatus {
+  NEW
+  ACCEPTED
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
 enum CashTransactionType {
   INCOME
   EXPENSE
@@ -121,6 +136,10 @@ model User {
   overrides          UserPermissionOverride[]
   accessWindows      UserAccessWindow[]
   loginEvents        LoginEvent[]
+  tasksAssigned      Task[]                   @relation("TaskAssigner")
+  tasksReceived      Task[]                   @relation("TaskAssignee")
+  taskComments       TaskComment[]
+  notifications      Notification[]
 
   @@index([roleId])
   @@map("users")
@@ -148,6 +167,7 @@ model Branch {
   cashTransactions CashTransaction[]
   trashEntries     TrashEntry[]
   approvalRequests ApprovalRequest[]
+  tasks            Task[]
 
   @@map("branches")
 }
@@ -281,6 +301,7 @@ model Option {
   approvalRejections   ApprovalRequest[]
   employeeDepartments  Employee[]        @relation("EmployeeDepartment")
   employeeTitles       Employee[]        @relation("EmployeeTitle")
+  taskDepartments      Task[]
 
   @@unique([listKey, labelVi])
   @@index([listKey, sortOrder])
@@ -455,6 +476,8 @@ model ApprovalRequest {
   rejectReason     Option?        @relation(fields: [rejectReasonId], references: [id], onDelete: Restrict)
   rejectReasonNote String?        @map("reject_reason_note")
 
+  // When the overdue reminder went out (A-037), so it goes out once.
+  overdueNotifiedAt     DateTime?      @map("overdue_notified_at") @db.Timestamptz(3)
   @@index([status, actionType])
   @@index([entityId])
   @@map("approval_requests")
@@ -720,4 +743,81 @@ model CashTransaction {
   @@index([occurredOn])
   @@index([branchId])
   @@map("cash_transactions")
+}
+
+// ---------------------------------------------------------------------------
+// Tasks and notifications (brief §8.2, FR-PLT-009; M1 slice 7)
+// ---------------------------------------------------------------------------
+
+// A task goes to one person or one department (D-037); a member of the department
+// accepts it and becomes its assignee. Checks in the migration.
+model Task {
+  id                   String       @id @default(uuid()) @db.Uuid
+  branchId             String       @map("branch_id") @db.Uuid
+  branch               Branch       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  title                String
+  description          String?
+  assignerId           String       @map("assigner_id") @db.Uuid
+  assigner             User         @relation("TaskAssigner", fields: [assignerId], references: [id], onDelete: Restrict)
+  assigneeUserId       String?      @map("assignee_user_id") @db.Uuid
+  assigneeUser         User?        @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+  // From the "departments" list.
+  assigneeDepartmentId String?      @map("assignee_department_option_id") @db.Uuid
+  assigneeDepartment   Option?      @relation(fields: [assigneeDepartmentId], references: [id], onDelete: Restrict)
+  dueAt                DateTime     @map("due_at") @db.Timestamptz(3)
+  priority             TaskPriority @default(NORMAL)
+  status               TaskStatus   @default(NEW)
+  // The record the task is about: "customer" or "contract" (more with later modules).
+  entityType           String?      @map("entity_type")
+  entityId             String?      @map("entity_id") @db.Uuid
+  acceptedAt           DateTime?    @map("accepted_at") @db.Timestamptz(3)
+  startedAt            DateTime?    @map("started_at") @db.Timestamptz(3)
+  doneAt               DateTime?    @map("done_at") @db.Timestamptz(3)
+  cancelledAt          DateTime?    @map("cancelled_at") @db.Timestamptz(3)
+  // When the reminders went out, so each goes out once (worker, T-059).
+  dueSoonNotifiedAt    DateTime?    @map("due_soon_notified_at") @db.Timestamptz(3)
+  overdueNotifiedAt    DateTime?    @map("overdue_notified_at") @db.Timestamptz(3)
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  comments TaskComment[]
+
+  @@index([assigneeUserId, status])
+  @@index([assigneeDepartmentId, status])
+  @@index([assignerId, status])
+  @@index([branchId])
+  @@index([status, dueAt])
+  @@map("tasks")
+}
+
+// Comments are never edited or deleted; they are the task's conversation.
+model TaskComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  authorId  String   @map("author_id") @db.Uuid
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  body      String
+  // Users named in the comment; each was notified.
+  mentions  String[] @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([taskId, createdAt])
+  @@map("task_comments")
+}
+
+// One user's in-app notification. The kind and params are turned into text by the
+// web app in the user's language.
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  params    Json      @default("{}")
+  link      String?
+  readAt    DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }

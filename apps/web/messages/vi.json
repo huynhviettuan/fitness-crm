@@ -11,6 +11,7 @@
     "contracts": "Hợp đồng",
     "calendar": "Lịch PT",
     "sessions": "Buổi tập",
+    "tasks": "Công việc",
     "employees": "Nhân viên",
     "finance": "Tài chính",
     "roles": "Vai trò và phân quyền",
@@ -19,7 +20,8 @@
     "parameters": "Tham số hệ thống",
     "trash": "Thùng rác",
     "audit": "Lịch sử thao tác",
-    "approvalRules": "Ma trận phê duyệt"
+    "approvalRules": "Ma trận phê duyệt",
+    "notifications": "Thông báo"
   },
   "status": {
     "customer": {
@@ -64,6 +66,18 @@
       "APPROVED": "Đã duyệt",
       "REJECTED": "Từ chối",
       "CANCELLED": "Đã hủy"
+    },
+    "task": {
+      "NEW": "Mới",
+      "ACCEPTED": "Đã nhận",
+      "IN_PROGRESS": "Đang làm",
+      "DONE": "Hoàn thành",
+      "CANCELLED": "Đã hủy"
+    },
+    "taskPriority": {
+      "LOW": "Thấp",
+      "NORMAL": "Bình thường",
+      "HIGH": "Cao"
     }
   },
   "common": {
@@ -307,7 +321,8 @@
     "approverRequired": "Chọn ít nhất một vai trò được duyệt.",
     "outOfRange": "Nhập một số từ 1 đến 720.",
     "shiftsOverlap": "Các ca trong cùng một ngày không được chồng lên nhau.",
-    "dayOffExists": "Ngày này đã là ngày nghỉ."
+    "dayOffExists": "Ngày này đã là ngày nghỉ.",
+    "oneAssigneeOnly": "Chỉ chọn một người hoặc một phòng ban."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -587,7 +602,8 @@
       "employees": "Nhân sự",
       "cashbook": "Sổ quỹ",
       "configuration": "Cấu hình",
-      "history": "Lịch sử và thùng rác"
+      "history": "Lịch sử và thùng rác",
+      "tasks": "Giao việc"
     },
     "labels": {
       "user": {
@@ -641,6 +657,10 @@
       },
       "approval": {
         "manage": "Quản lý ma trận phê duyệt"
+      },
+      "task": {
+        "view": "Xem và làm việc được giao",
+        "create": "Giao việc"
       }
     },
     "resources": {
@@ -648,7 +668,8 @@
       "contracts": "Hợp đồng",
       "schedule": "Lịch PT",
       "vouchers": "Phiếu thu chi",
-      "staff": "Nhân viên"
+      "staff": "Nhân viên",
+      "tasks": "Công việc"
     },
     "scopes": {
       "ALL": "Tất cả trong chi nhánh được giao",
@@ -683,7 +704,7 @@
       "description": "Mô tả",
       "permissions": "Quyền",
       "dataScopes": "Phạm vi dữ liệu",
-      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi. Nhân viên \"chỉ của mình\": hồ sơ và lịch làm việc của chính mình.",
+      "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi. Nhân viên \"chỉ của mình\": hồ sơ và lịch làm việc của chính mình. Công việc \"chỉ của mình\": việc mình giao, mình nhận và của phòng ban mình.",
       "fieldMasks": "Thông tin bị ẩn",
       "fieldMasksHint": "Ẩn trên mọi màn hình và không tìm kiếm được.",
       "users": "Người dùng"
@@ -764,9 +785,12 @@
       "calendarDayEnd": "Giờ kết thúc",
       "customerCodePrefix": "Mã khách hàng",
       "contractCodePrefix": "Mã hợp đồng",
-      "employeeCodePrefix": "Mã nhân viên"
+      "employeeCodePrefix": "Mã nhân viên",
+      "taskDueSoonHours": "Nhắc trước hạn (giờ)"
     },
-    "saved": "Đã lưu tham số"
+    "saved": "Đã lưu tham số",
+    "tasks": "Công việc",
+    "tasksHint": "Người nhận được nhắc trước hạn bấy nhiêu giờ; khi quá hạn, cả người nhận và người giao đều được báo."
   },
   "trash": {
     "title": "Thùng rác",
@@ -823,7 +847,8 @@
       "payment": "Phiếu thu",
       "cash_transaction": "Khoản thu chi",
       "approval_request": "Yêu cầu duyệt",
-      "approval_rule": "Ma trận phê duyệt"
+      "approval_rule": "Ma trận phê duyệt",
+      "task": "Công việc"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -849,7 +874,10 @@
       "rejected": "Từ chối",
       "shifts_changed": "Đổi ca làm việc",
       "day_off_added": "Thêm ngày nghỉ",
-      "day_off_removed": "Bỏ ngày nghỉ"
+      "day_off_removed": "Bỏ ngày nghỉ",
+      "accepted": "Nhận việc",
+      "started": "Bắt đầu làm",
+      "commented": "Bình luận"
     },
     "fields": {
       "at": "Thời điểm",
@@ -932,5 +960,115 @@
     "editDescription": "Người gửi không bao giờ tự duyệt được yêu cầu của mình, dù có quyền duyệt.",
     "approversHint": "Người có một trong các vai trò này, cùng chi nhánh, được duyệt.",
     "saved": "Đã lưu ma trận phê duyệt"
+  },
+  "tasks": {
+    "title": "Công việc",
+    "description": "Giao và nhận việc giữa các phòng ban và trong nội bộ. Người nhận bấm \"Nhận việc\" trước khi làm.",
+    "views": {
+      "mine": "Việc của tôi",
+      "assigned": "Việc tôi giao",
+      "department": "Việc phòng ban",
+      "all": "Tất cả"
+    },
+    "empty": {
+      "mine": "Bạn không có việc nào.",
+      "assigned": "Bạn chưa giao việc nào.",
+      "department": "Phòng ban của bạn không có việc nào.",
+      "all": "Không có việc nào."
+    },
+    "noResults": "Không có việc nào khớp bộ lọc.",
+    "searchPlaceholder": "Tìm theo tiêu đề",
+    "filters": "Bộ lọc",
+    "apply": "Lọc",
+    "allStatuses": "Tất cả",
+    "deadline": "Hạn",
+    "overdueOnly": "Chỉ việc quá hạn",
+    "anyDeadline": "Mọi hạn",
+    "overdue": "Quá hạn",
+    "awaitingApproval": "{count, plural, other {# yêu cầu}} đang chờ bạn duyệt.",
+    "openApprovals": "Mở hộp duyệt",
+    "summary": "{open, plural, other {# việc đang mở}}, {overdue, plural, other {# quá hạn}}",
+    "create": "Giao việc",
+    "createDescription": "Giao cho một người hoặc một phòng ban. Người nhận được thông báo ngay.",
+    "createAbout": "Giao việc về {label}",
+    "edit": "Sửa việc",
+    "editDescription": "Đổi người nhận thì việc quay lại trạng thái Mới và người mới phải nhận lại.",
+    "created": "Đã giao việc",
+    "updated": "Đã lưu thay đổi",
+    "open": "Mở việc {title}",
+    "backToList": "Danh sách công việc",
+    "assignTo": "Giao cho",
+    "assignToPerson": "Một người",
+    "assignToDepartment": "Một phòng ban",
+    "waitingInDepartment": "Chờ người trong phòng ban nhận",
+    "dueTimePlaceholder": "HH:mm",
+    "datePlaceholder": "dd/MM/yyyy",
+    "fields": {
+      "title": "Tiêu đề",
+      "description": "Mô tả",
+      "assignee": "Người nhận",
+      "department": "Phòng ban",
+      "assigner": "Người giao",
+      "dueDate": "Ngày hạn",
+      "dueTime": "Giờ hạn",
+      "dueAt": "Hạn",
+      "priority": "Ưu tiên",
+      "status": "Trạng thái",
+      "entity": "Liên quan đến",
+      "branch": "Chi nhánh",
+      "createdAt": "Ngày giao"
+    },
+    "actions": {
+      "accept": "Nhận việc",
+      "start": "Bắt đầu làm",
+      "complete": "Hoàn thành",
+      "cancel": "Hủy việc"
+    },
+    "moved": {
+      "accept": "Đã nhận việc",
+      "start": "Đã chuyển sang Đang làm",
+      "complete": "Đã hoàn thành",
+      "cancel": "Đã hủy việc"
+    },
+    "cancelTitle": "Hủy việc này?",
+    "cancelBody": "Người nhận được thông báo. Việc đã hủy không mở lại được.",
+    "keep": "Giữ lại",
+    "comments": "Trao đổi",
+    "noComments": "Chưa có trao đổi nào.",
+    "comment": "Bình luận",
+    "commentPlaceholder": "Viết trao đổi…",
+    "send": "Gửi",
+    "commented": "Đã gửi bình luận",
+    "mention": "Nhắc tên",
+    "mentionCount": "Nhắc tên ({count})",
+    "mentioned": "Đã nhắc: {names}",
+    "entityTypes": {
+      "customer": "Khách hàng",
+      "contract": "Hợp đồng"
+    },
+    "details": "Chi tiết công việc"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "description": "Việc được giao, sắp đến hạn, quá hạn, bình luận và yêu cầu duyệt.",
+    "bell": "Thông báo ({count} chưa đọc)",
+    "markAllRead": "Đánh dấu đã đọc tất cả",
+    "allRead": "Đã đọc tất cả",
+    "seeAll": "Xem tất cả thông báo",
+    "empty": "Chưa có thông báo nào.",
+    "unread": "Chưa đọc",
+    "kinds": {
+      "taskAssigned": "{by} giao cho bạn việc \"{title}\"",
+      "taskAccepted": "{by} đã nhận việc \"{title}\"",
+      "taskCompleted": "{by} đã hoàn thành việc \"{title}\"",
+      "taskCancelled": "Việc \"{title}\" đã bị hủy",
+      "taskCommented": "{by} bình luận trong việc \"{title}\"",
+      "taskMentioned": "{by} nhắc đến bạn trong việc \"{title}\"",
+      "taskDueSoon": "Việc \"{title}\" đến hạn lúc {due}",
+      "taskOverdue": "Việc \"{title}\" đã quá hạn ({due})",
+      "approvalSubmitted": "Có yêu cầu chờ bạn duyệt: {title}",
+      "approvalDecided": "Yêu cầu \"{title}\": {status}",
+      "approvalOverdue": "Yêu cầu chờ duyệt đã quá hạn: {title}"
+    }
   }
 }

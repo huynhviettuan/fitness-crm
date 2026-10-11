@@ -39,7 +39,7 @@ export const E2E_TRAINER_NAME = "E2E PT Huấn luyện";
 
 export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "notifications", "task_comments", "tasks", "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Roles and branches the specs created; the migration's defaults stay.

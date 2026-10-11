@@ -11,6 +11,7 @@
     "contracts": "Contracts",
     "calendar": "PT Calendar",
     "sessions": "Sessions",
+    "tasks": "Tasks",
     "employees": "Employees",
     "finance": "Finance",
     "roles": "Roles and permissions",
@@ -19,7 +20,8 @@
     "parameters": "System parameters",
     "trash": "Trash",
     "audit": "Action history",
-    "approvalRules": "Approval matrix"
+    "approvalRules": "Approval matrix",
+    "notifications": "Notifications"
   },
   "status": {
     "customer": {
@@ -64,6 +66,18 @@
       "APPROVED": "Approved",
       "REJECTED": "Rejected",
       "CANCELLED": "Withdrawn"
+    },
+    "task": {
+      "NEW": "New",
+      "ACCEPTED": "Accepted",
+      "IN_PROGRESS": "In progress",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    },
+    "taskPriority": {
+      "LOW": "Low",
+      "NORMAL": "Normal",
+      "HIGH": "High"
     }
   },
   "common": {
@@ -307,7 +321,8 @@
     "approverRequired": "Choose at least one approver role.",
     "outOfRange": "Enter a number from 1 to 720.",
     "shiftsOverlap": "Shifts on the same day can't overlap.",
-    "dayOffExists": "That day is already a day off."
+    "dayOffExists": "That day is already a day off.",
+    "oneAssigneeOnly": "Choose one person or one department, not both."
   },
   "contracts": {
     "title": "Contracts",
@@ -587,7 +602,8 @@
       "employees": "Staff",
       "cashbook": "Cash book",
       "configuration": "Configuration",
-      "history": "History and trash"
+      "history": "History and trash",
+      "tasks": "Tasks"
     },
     "labels": {
       "user": {
@@ -641,6 +657,10 @@
       },
       "approval": {
         "manage": "Manage the approval matrix"
+      },
+      "task": {
+        "view": "See and work on tasks",
+        "create": "Give tasks"
       }
     },
     "resources": {
@@ -648,7 +668,8 @@
       "contracts": "Contracts",
       "schedule": "PT schedule",
       "vouchers": "Receipts and expenses",
-      "staff": "Staff"
+      "staff": "Staff",
+      "tasks": "Tasks"
     },
     "scopes": {
       "ALL": "Everything in their branches",
@@ -683,7 +704,7 @@
       "description": "Description",
       "permissions": "Permissions",
       "dataScopes": "Data scope",
-      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered. Staff \"only mine\": one's own profile and working schedule.",
+      "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered. Staff \"only mine\": one's own profile and working schedule. Tasks \"only mine\": tasks one gave, got, or that went to one's department.",
       "fieldMasks": "Hidden fields",
       "fieldMasksHint": "Hidden on every screen, and not searchable.",
       "users": "Users"
@@ -764,9 +785,12 @@
       "calendarDayEnd": "End time",
       "customerCodePrefix": "Customer code",
       "contractCodePrefix": "Contract code",
-      "employeeCodePrefix": "Employee code"
+      "employeeCodePrefix": "Employee code",
+      "taskDueSoonHours": "Reminder before the deadline (hours)"
     },
-    "saved": "Parameters saved"
+    "saved": "Parameters saved",
+    "tasks": "Tasks",
+    "tasksHint": "The assignee is reminded this many hours before the deadline; once it passes, the assignee and the assigner are told."
   },
   "trash": {
     "title": "Trash",
@@ -823,7 +847,8 @@
       "payment": "Receipt",
       "cash_transaction": "Income or expense",
       "approval_request": "Approval request",
-      "approval_rule": "Approval matrix"
+      "approval_rule": "Approval matrix",
+      "task": "Task"
     },
     "verbs": {
       "created": "Created",
@@ -849,7 +874,10 @@
       "rejected": "Rejected",
       "shifts_changed": "Shifts changed",
       "day_off_added": "Day off added",
-      "day_off_removed": "Day off removed"
+      "day_off_removed": "Day off removed",
+      "accepted": "Accepted",
+      "started": "Started",
+      "commented": "Commented"
     },
     "fields": {
       "at": "When",
@@ -932,5 +960,115 @@
     "editDescription": "A submitter never approves their own request, even with approval rights.",
     "approversHint": "Anyone with one of these roles, in the same branch, may approve.",
     "saved": "Approval matrix saved"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "description": "Give and take work between departments and within them. The assignee presses \"Accept\" before working on it.",
+    "views": {
+      "mine": "My tasks",
+      "assigned": "Tasks I gave",
+      "department": "My department",
+      "all": "All"
+    },
+    "empty": {
+      "mine": "You have no tasks.",
+      "assigned": "You haven't given any tasks.",
+      "department": "Your department has no tasks.",
+      "all": "No tasks."
+    },
+    "noResults": "No task matches these filters.",
+    "searchPlaceholder": "Search by title",
+    "filters": "Filters",
+    "apply": "Apply",
+    "allStatuses": "All",
+    "deadline": "Deadline",
+    "overdueOnly": "Overdue only",
+    "anyDeadline": "Any deadline",
+    "overdue": "Overdue",
+    "awaitingApproval": "{count, plural, one {# request is} other {# requests are}} waiting for your approval.",
+    "openApprovals": "Open the inbox",
+    "summary": "{open, plural, one {# open task} other {# open tasks}}, {overdue} overdue",
+    "create": "New task",
+    "createDescription": "Give it to one person or one department. They are notified at once.",
+    "createAbout": "New task about {label}",
+    "edit": "Edit task",
+    "editDescription": "Changing the assignee puts the task back to New, and the new assignee has to accept it.",
+    "created": "Task given",
+    "updated": "Changes saved",
+    "open": "Open task {title}",
+    "backToList": "Task list",
+    "assignTo": "Give to",
+    "assignToPerson": "A person",
+    "assignToDepartment": "A department",
+    "waitingInDepartment": "Waiting for someone in the department",
+    "dueTimePlaceholder": "HH:mm",
+    "datePlaceholder": "dd/MM/yyyy",
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "assignee": "Assignee",
+      "department": "Department",
+      "assigner": "Given by",
+      "dueDate": "Due date",
+      "dueTime": "Due time",
+      "dueAt": "Deadline",
+      "priority": "Priority",
+      "status": "Status",
+      "entity": "About",
+      "branch": "Branch",
+      "createdAt": "Given on"
+    },
+    "actions": {
+      "accept": "Accept",
+      "start": "Start",
+      "complete": "Complete",
+      "cancel": "Cancel task"
+    },
+    "moved": {
+      "accept": "Task accepted",
+      "start": "Task in progress",
+      "complete": "Task completed",
+      "cancel": "Task cancelled"
+    },
+    "cancelTitle": "Cancel this task?",
+    "cancelBody": "The assignee is notified. A cancelled task cannot be reopened.",
+    "keep": "Keep it",
+    "comments": "Discussion",
+    "noComments": "No comments yet.",
+    "comment": "Comment",
+    "commentPlaceholder": "Write a comment…",
+    "send": "Send",
+    "commented": "Comment sent",
+    "mention": "Mention",
+    "mentionCount": "Mention ({count})",
+    "mentioned": "Mentioned: {names}",
+    "entityTypes": {
+      "customer": "Customer",
+      "contract": "Contract"
+    },
+    "details": "Task details"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Tasks given to you, coming due, overdue, comments, and approval requests.",
+    "bell": "Notifications ({count} unread)",
+    "markAllRead": "Mark all as read",
+    "allRead": "All marked as read",
+    "seeAll": "See all notifications",
+    "empty": "No notifications yet.",
+    "unread": "Unread",
+    "kinds": {
+      "taskAssigned": "{by} gave you the task \"{title}\"",
+      "taskAccepted": "{by} accepted the task \"{title}\"",
+      "taskCompleted": "{by} completed the task \"{title}\"",
+      "taskCancelled": "The task \"{title}\" was cancelled",
+      "taskCommented": "{by} commented on the task \"{title}\"",
+      "taskMentioned": "{by} mentioned you in the task \"{title}\"",
+      "taskDueSoon": "The task \"{title}\" is due at {due}",
+      "taskOverdue": "The task \"{title}\" is overdue ({due})",
+      "approvalSubmitted": "A request waits for your approval: {title}",
+      "approvalDecided": "Request \"{title}\": {status}",
+      "approvalOverdue": "A request waiting for approval is overdue: {title}"
+    }
   }
 }

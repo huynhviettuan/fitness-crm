@@ -8,7 +8,7 @@ Architecture and costs: `26_TECH_PROPOSAL.md`. Decisions: T-041, T-042.
 |---|---|---|
 | `apps/web` (Next.js) | Vercel (Pro) | Preview deployment per pull request, pointed at the staging API |
 | `apps/api` (NestJS, HTTP) | Railway or Render, Singapore region | Docker image; start `node dist/main.js`; health check `/api/auth/ok` until a dedicated `/api/v1/health` exists |
-| `apps/api` worker (pg-boss jobs) | Same platform, separate service | Same image, worker mode |
+| `apps/api` worker (pg-boss jobs) | Same platform, separate service | Same image; start `node dist/worker.js`. The API service sets `RUN_JOBS=false` so only the worker runs the reminders (T-059) |
 | PostgreSQL 17 | Same platform, managed | `btree_gist` extension; daily backups; point-in-time recovery on paid plans |
 | Files and backup copies | Cloudflare R2 | Private buckets; signed URLs |
 | Email | Resend or Amazon SES | Flow's domain with SPF, DKIM, DMARC |

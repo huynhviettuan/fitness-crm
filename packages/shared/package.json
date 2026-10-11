@@ -41,6 +41,10 @@
       "types": "./dist/finance/index.d.ts",
       "default": "./dist/finance/index.js"
     },
+    "./notifications": {
+      "types": "./dist/notifications/index.d.ts",
+      "default": "./dist/notifications/index.js"
+    },
     "./options": {
       "types": "./dist/options/index.d.ts",
       "default": "./dist/options/index.js"
@@ -56,6 +60,10 @@
     "./roles": {
       "types": "./dist/roles/index.d.ts",
       "default": "./dist/roles/index.js"
+    },
+    "./tasks": {
+      "types": "./dist/tasks/index.d.ts",
+      "default": "./dist/tasks/index.js"
     },
     "./trash": {
       "types": "./dist/trash/index.d.ts",

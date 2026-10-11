@@ -7,6 +7,7 @@ import { recordAudit } from "../../platform/audit/audit.repository.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
+import { notify } from "../../platform/notifications/notification.service.js";
 import { resolveChoice } from "../../platform/options/option.service.js";
 import { hasBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
@@ -121,6 +122,11 @@ async function decide(
       before: { status: "PENDING" },
       after: { status: decision.status },
       context: { action: request.actionType, entityType: request.entityType, entityId: request.entityId, ...(reason ? { reason } : {}) },
+    });
+    await notify(tx, [request.submittedById], {
+      kind: "approvalDecided",
+      params: { title: request.title, status: decision.status },
+      link: "/approvals?view=mine",
     });
   }, LOCKING_TRANSACTION);
 }
