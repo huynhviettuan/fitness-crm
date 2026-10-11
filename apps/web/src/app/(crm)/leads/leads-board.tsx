@@ -8,15 +8,16 @@ import type { ChosenOption } from "@flow/shared/options";
 
 /**
  * The Kanban board (FR-LEAD-006): a column per status. Columns scroll sideways inside
- * the board, so the page itself never does (AC-23). A column shows its first cards;
- * the list filtered by that status shows the rest.
+ * the board, so the page itself never does (AC-23); the board is `relative` so that
+ * absolutely positioned content, such as screen-reader labels, stays inside it too. A
+ * column shows its first cards; the list filtered by that status shows the rest.
  */
 export function LeadsBoard({ board, listHref }: { board: LeadBoard; listHref: (status: Lead["status"]) => string }) {
   const t = useTranslations("leads");
   const tStatus = useTranslations("status.lead");
 
   return (
-    <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" role="region" aria-label={t("board")}>
+    <div className="relative -mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" role="region" aria-label={t("board")}>
       <div className="flex snap-x snap-mandatory gap-4 sm:snap-none">
         {board.columns.map((column) => (
           <section
@@ -26,7 +27,7 @@ export function LeadsBoard({ board, listHref }: { board: LeadBoard; listHref: (s
           >
             <header className="flex items-center justify-between gap-2">
               <StatusBadge entity="lead" status={column.status} />
-              <span className="text-sm tabular-nums text-muted-foreground">{column.total}</span>
+              <span className="text-sm text-muted-foreground tabular-nums">{column.total}</span>
             </header>
             {column.items.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">{t("emptyColumn")}</p>
@@ -40,7 +41,10 @@ export function LeadsBoard({ board, listHref }: { board: LeadBoard; listHref: (s
               </ul>
             )}
             {column.total > column.items.length && (
-              <Link href={listHref(column.status)} className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+              <Link
+                href={listHref(column.status)}
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
                 {t("seeAllInStatus", { count: column.total })}
               </Link>
             )}
@@ -58,7 +62,11 @@ function LeadCard({ lead }: { lead: Lead }) {
 
   return (
     <article className="grid gap-1.5 rounded-md border bg-card p-3 text-sm shadow-xs">
-      <Link href={`/leads/${lead.id}`} aria-label={t("open", { name: lead.fullName })} className="font-medium underline-offset-4 hover:underline">
+      <Link
+        href={`/leads/${lead.id}`}
+        aria-label={t("open", { name: lead.fullName })}
+        className="font-medium underline-offset-4 hover:underline"
+      >
         {lead.fullName}
       </Link>
       <p className="font-mono text-xs text-muted-foreground">{lead.leadCode}</p>

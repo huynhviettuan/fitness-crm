@@ -6,6 +6,7 @@
 - **ESLint** gains readability rules shared by every package, the web app included (`packages/config/eslint.mjs`): type-only imports marked as such, `===`, braces around multi-line bodies, shorthand properties, template strings. `eslint-config-prettier` keeps ESLint out of formatting.
 - VS Code formats on save and fixes lint problems on save (`.vscode/`).
 - The one-time reformat changes no behavior; `.git-blame-ignore-revs` hides it from `git blame`.
+- Fixed: on a phone, the Kanban board could make the page scroll sideways when a column further right held an appointment; its screen-reader label escaped the board's scroll area.
 - Docs: AGENTS.md (§4, §8), README.
 
 ## 2026-10-11 — M2 slice 2: lead assignment and statuses

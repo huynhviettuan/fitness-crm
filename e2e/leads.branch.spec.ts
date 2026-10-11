@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, signedInAs, test } from "./fixtures";
 import { branchWithConsultants, createLeadViaApi, uniquePhone } from "./support/data";
 import { fill, labels } from "./support/labels";
@@ -6,7 +7,7 @@ import { fill, labels } from "./support/labels";
 // Each test makes a branch of its own with two consultants, so the round-robin is the
 // test's alone; such specs run in the "own-branch" project (playwright.config.ts).
 const l = labels.leads;
-const toasts = (page: import("@playwright/test").Page) => page.getByRole("region", { name: labels.common.notifications });
+const toasts = (page: Page) => page.getByRole("region", { name: labels.common.notifications });
 
 test.describe("the lead journey as an admin (D-020)", () => {
   test.use(signedInAs("ADMIN"));
@@ -45,10 +46,14 @@ test.describe("the lead journey as an admin (D-020)", () => {
     await refuse.save();
     await expect(toasts(page).getByText(l.statusChanged)).toBeVisible();
     await expect(leadPage.detail(l.journey, l.fields.status)).toContainText(labels.status.lead.REFUSED);
-    await expect(leadPage.detail(l.journey, l.fields.refuseReason)).toHaveText(`${labels.options.other}: Đã có PT riêng`);
+    await expect(leadPage.detail(l.journey, l.fields.refuseReason)).toHaveText(
+      `${labels.options.other}: Đã có PT riêng`,
+    );
     // BR-204: never closed; due to be contacted again.
     await expect(leadPage.detail(l.journey, l.fields.contactAgainOn)).toHaveText(/^\d{2}\/\d{2}\/\d{4}$/);
-    await expect(leadPage.history.first()).toContainText(fill(l.timeline.reason, { reason: `${labels.options.other}: Đã có PT riêng` }));
+    await expect(leadPage.history.first()).toContainText(
+      fill(l.timeline.reason, { reason: `${labels.options.other}: Đã có PT riêng` }),
+    );
 
     await leadsPage.goto(`?q=${encodeURIComponent(testTag)}`);
     await leadsPage.showBoard();
@@ -71,7 +76,8 @@ test.describe("leads on a phone (AC-23)", () => {
     const admin = await apiAs("ADMIN");
     const { branchId, consultants } = await branchWithConsultants(admin, testTag);
     const leads = [];
-    for (const name of ["Một", "Hai"]) leads.push(await createLeadViaApi(admin, { fullName: `Lead ${name} ${testTag}`, branchId }));
+    for (const name of ["Một", "Hai"])
+      leads.push(await createLeadViaApi(admin, { fullName: `Lead ${name} ${testTag}`, branchId }));
     const mine = leads[0];
     const me = consultants.find((c) => c.id === mine.pic?.id)!;
 
@@ -79,6 +85,7 @@ test.describe("leads on a phone (AC-23)", () => {
     await loginPage.signIn(me.email, me.password);
     await expect(shell.pageHeading(labels.dashboard.title)).toBeVisible();
     await leadsPage.goto();
+    await expect(leadsPage.addButton).toBeVisible();
     // Nothing on the page is wider than the phone.
     expect(await shell.scrollWidth()).toBeLessThanOrEqual(375);
     const form = await leadsPage.openAdd();
@@ -102,7 +109,8 @@ test.describe("leads on a phone (AC-23)", () => {
     await expect(leadPage.history.first()).toContainText(labels.status.lead.BOOKED);
 
     await leadsPage.goto(`?view=board&q=${encodeURIComponent(testTag)}`);
-    expect(await shell.scrollWidth()).toBeLessThanOrEqual(375);
     await expect(leadsPage.column(labels.status.lead.BOOKED)).toContainText(mine.fullName);
+    // The board scrolls sideways inside itself, never the page.
+    expect(await shell.scrollWidth()).toBeLessThanOrEqual(375);
   });
 });
