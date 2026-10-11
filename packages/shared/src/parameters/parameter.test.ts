@@ -28,6 +28,12 @@ describe("system parameters (T-049)", () => {
     });
   });
 
+  it("takes the re-care delay in whole days, 1 to 365 (BR-204)", () => {
+    expect(parametersInputSchema.parse({ ...PARAMETER_DEFAULTS, recareDays: " 016 " }).recareDays).toBe("16");
+    expect(errors({ ...PARAMETER_DEFAULTS, recareDays: "0" })).toEqual({ recareDays: ["daysOutOfRange"] });
+    expect(errors({ ...PARAMETER_DEFAULTS, recareDays: "1.5" })).toEqual({ recareDays: ["invalidNumber"] });
+  });
+
   it("formats codes and times", () => {
     expect(formatCode("KH", 42, 6)).toBe("KH000042");
     expect(minutesOfDay("05:30")).toBe(330);

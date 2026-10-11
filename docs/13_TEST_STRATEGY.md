@@ -20,6 +20,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 - Labels come from the message catalog with the locale pinned to `vi`.
 - An open dialog hides the page from the accessibility tree; close it with its own button before asserting on the page.
 - E2E runs against production builds of web and API.
+- The shared branch has one consultant, so its new leads always go to them. A test that needs its own round-robin makes a branch with its own consultants (`branchWithConsultants`) in a `*.branch.spec.ts` file; those run in the `own-branch` project after the others, since while an extra branch exists, users of every branch must say where a new record goes (D-014). The sign-in rate-limit spec runs last.
 
 ## Critical scenarios
 
@@ -38,6 +39,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-111 | Session log on phone: plan and actual per row; cardio fields; escalation reaches manager and Master | AC-20, AC-21, AC-23 |
 | E2E-112 | Role without a module: menu hidden and direct URL refused; masked phone absent from screen and export | AC-01 |
 | E2E-113 | Submitter cannot approve own request; approval matrix change takes effect immediately (`e2e/approvals.spec.ts`) | AC-05 |
+| E2E-117 | New leads go round-robin to a branch's consultants; an admin reassigns one and records a refusal with its reason; the history and the Kanban board show both; on a phone a consultant sees only their own leads, books an appointment, and finds it on the board (`e2e/leads.branch.spec.ts`) | AC-06, AC-23 |
 | E2E-116 | A walk-in is added with the quick form on a phone and on a desktop, gets an LD code and status New; a phone already on a customer is refused with a link to them (`e2e/leads.spec.ts`) | AC-06 (part), AC-23 |
 | E2E-115 | A manager gives a task; the receptionist sees it in the bell, accepts, works on, and completes it; the manager is told; comments with mentions; overdue tasks are marked (`e2e/tasks.spec.ts`) | AC-05 |
 | E2E-114 | A manager adds a PT, sets a shift and a day off; the calendar books only inside the shift; a PT sees their own schedule read-only (`e2e/employees.spec.ts`) | AC-02 |

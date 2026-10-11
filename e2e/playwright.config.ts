@@ -32,13 +32,22 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
-      testIgnore: /rate-limit\.spec\.ts/,
+      testIgnore: [/rate-limit\.spec\.ts/, /\.branch\.spec\.ts/],
+    },
+    {
+      // Specs that make a branch of their own (e.g. two consultants and their round-robin).
+      // While it exists, users of every branch must say which branch a new record goes to
+      // (D-014), so these run after the specs that rely on there being one.
+      name: "own-branch",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /\.branch\.spec\.ts/,
+      dependencies: ["chromium"],
     },
     {
       // Exhausts the sign-in rate limit, so it runs after everything else.
       name: "rate-limit",
       testMatch: /rate-limit\.spec\.ts/,
-      dependencies: ["chromium"],
+      dependencies: ["own-branch"],
     },
   ],
   // Tests run against production builds (`pnpm test:e2e` builds first): they behave like

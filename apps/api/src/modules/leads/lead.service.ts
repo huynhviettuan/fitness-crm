@@ -1,22 +1,33 @@
 import { z } from "zod";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma, type Db } from "../../platform/db/prisma.js";
-import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
 import { isMasked, resolveBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
-import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import { resolveChoice } from "../../platform/options/option.service.js";
 import type { OptionListKey } from "@flow/shared/options";
 import { assertPhoneFree, leadsVisibleTo } from "../customers/person.service.js";
 import { visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import * as repo from "./lead.repository.js";
-import { leadInputSchema, leadUpdateSchema, listLeadsSchema, type Lead, type LeadPage } from "@flow/shared/leads";
+import { present, visibleLead } from "./lead.present.js";
+import { startJourney } from "./lead-journey.service.js";
+import {
+  BOARD_STATUSES,
+  leadBoardQuerySchema,
+  leadInputSchema,
+  leadUpdateSchema,
+  listLeadsSchema,
+  type Lead,
+  type LeadBoard,
+  type LeadPage,
+} from "@flow/shared/leads";
 
 // Leads (brief §3, §4.1; D-019, D-020). A lead is a person record in the LEAD stage; it
 // becomes a customer at Show with the same id (M2 slice 4). Daily work, so no approval
-// (OQ-029 interim); every change is audited (T-048).
+// (OQ-029 interim); every change is audited (T-048). The journey (assignment, statuses)
+// is in lead-journey.service.ts.
 
 const AUDITED_FIELDS = [
   "fullName",
@@ -43,19 +54,39 @@ const AUDITED_FIELDS = [
 
 type LeadData = z.output<typeof leadUpdateSchema>;
 
+/** Cards per Kanban column; the list shows the rest of a status. */
+const BOARD_COLUMN_SIZE = 30;
+
 export async function listLeads(actor: Actor, rawQuery: unknown): Promise<LeadPage> {
   assertCan(actor, "lead.view");
   const query = parseInput(listLeadsSchema, rawQuery);
-  const where: Prisma.CustomerWhereInput = {
+  const where: Prisma.CustomerWhereInput = { AND: [filtered(actor, query), { leadStatus: query.status }] };
+  const { items, total } = await repo.listLeads(prisma, where, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
+  return { items: items.map((lead) => present(actor, lead)), total, page: query.page, pageSize: query.pageSize };
+}
+
+/** The Kanban board (FR-LEAD-006): a column per status a lead can have, with the list's filters. */
+export async function leadBoard(actor: Actor, rawQuery: unknown): Promise<LeadBoard> {
+  assertCan(actor, "lead.view");
+  const where = filtered(actor, parseInput(leadBoardQuerySchema, rawQuery));
+  const columns = await Promise.all(
+    BOARD_STATUSES.map(async (status) => {
+      const { items, total } = await repo.boardColumn(prisma, where, status, BOARD_COLUMN_SIZE);
+      return { status, total, items: items.map((lead) => present(actor, lead)) };
+    }),
+  );
+  return { columns };
+}
+
+function filtered(actor: Actor, query: z.output<typeof leadBoardQuerySchema>): Prisma.CustomerWhereInput {
+  return {
     AND: [
       leadsVisibleTo(actor),
       // A hidden phone number cannot be probed through the search box either (D-017).
       repo.searchWhere(query.q, !isMasked(actor, "customer.phone")),
-      { leadStatus: query.status, channelId: query.channelId, sourceId: query.sourceId, needGroupId: query.needGroupId },
+      { channelId: query.channelId, sourceId: query.sourceId, needGroupId: query.needGroupId },
     ],
   };
-  const { items, total } = await repo.listLeads(prisma, where, { skip: (query.page - 1) * query.pageSize, take: query.pageSize });
-  return { items: items.map((lead) => present(actor, lead)), total, page: query.page, pageSize: query.pageSize };
 }
 
 export async function getLead(actor: Actor, id: string): Promise<Lead> {
@@ -63,22 +94,25 @@ export async function getLead(actor: Actor, id: string): Promise<Lead> {
   return present(actor, await visibleLead(prisma, actor, id));
 }
 
-/** The quick intake form (FR-LEAD-001). A phone that is already someone's is refused (D-019). */
-export async function createLead(actor: Actor, input: unknown): Promise<Lead> {
+/**
+ * The quick intake form (FR-LEAD-001). A phone that is already someone's is refused
+ * (D-019). The new lead goes round-robin to the branch's next consultant (BR-203).
+ */
+export async function createLead(actor: Actor, input: unknown, now: Date = new Date()): Promise<Lead> {
   assertCan(actor, "lead.create");
   const { branchId: requested, ...data } = parseInput(leadInputSchema, input);
   return prisma.$transaction(async (tx) => {
     const branchId = await resolveBranch(tx, actor, requested);
     await assertPhoneFree(tx, actor, data.phone, null, customersVisibleTo);
-    const lead = await repo.createLead(tx, await repo.nextLeadCode(tx), { ...(await toWrite(tx, data, null)), branchId, createdById: actor.id });
+    const created = await repo.createLead(tx, await repo.nextLeadCode(tx), { ...(await toWrite(tx, data, null)), branchId, createdById: actor.id }, now);
     await recordAudit(tx, {
       actorUserId: actor.id,
       entityType: "lead",
-      entityId: lead.id,
+      entityId: created.id,
       action: "lead.created",
-      after: { leadCode: lead.leadCode, ...pick(lead, AUDITED_FIELDS), branchId },
+      after: { leadCode: created.leadCode, ...pick(created, AUDITED_FIELDS), branchId },
     });
-    return present(actor, lead);
+    return present(actor, await startJourney(tx, actor, created, now));
   });
 }
 
@@ -98,13 +132,6 @@ export async function updateLead(actor: Actor, id: string, input: unknown): Prom
     if (changes) await recordAudit(tx, { actorUserId: actor.id, entityType: "lead", entityId: id, action: "lead.updated", ...changes });
     return present(actor, after);
   });
-}
-
-async function visibleLead(db: Db, actor: Actor, id: string): Promise<repo.LeadRecord> {
-  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
-  const lead = await repo.findLead(db, id, leadsVisibleTo(actor));
-  if (!lead) throw new AppError("NOT_FOUND");
-  return lead;
 }
 
 /** Each choice must come from its own list, active or the lead's current one; "Khác" needs a note (D-016). */
@@ -142,41 +169,4 @@ async function toWrite(db: Db, data: LeadData, current: repo.LeadRecord | null):
 
 function pick<T extends object, K extends keyof T>(value: T, keys: readonly K[]): Pick<T, K> {
   return Object.fromEntries(keys.map((key) => [key, value[key]])) as Pick<T, K>;
-}
-
-/** The lead as this actor may see it: hidden fields are null and listed (D-017). */
-function present(actor: Actor, lead: repo.LeadRecord): Lead {
-  const maskedFields: Lead["maskedFields"] = [];
-  if (isMasked(actor, "customer.phone")) maskedFields.push("phone");
-  if (isMasked(actor, "customer.email")) maskedFields.push("email");
-  const option = <T extends { id: string; labelVi: string; labelEn: string; isOther: boolean } | null>(value: T, note: string | null) =>
-    value ? chosen(value, note) : null;
-  return {
-    id: lead.id,
-    // A lead always has its code and status (database check customers_stage_codes).
-    leadCode: lead.leadCode ?? "",
-    customerCode: lead.customerCode,
-    stage: lead.stage,
-    status: lead.leadStatus ?? "NEW",
-    branch: lead.branch,
-    fullName: lead.fullName,
-    gender: lead.gender,
-    birthDate: lead.dateOfBirth,
-    phone: maskedFields.includes("phone") ? null : lead.phone,
-    email: maskedFields.includes("email") ? null : lead.email,
-    channel: chosen(lead.channel ?? { id: lead.channelId ?? "", labelVi: "", labelEn: "", isOther: false }, lead.channelNote),
-    source: option(lead.source, lead.sourceNote),
-    sourceType: lead.sourceType,
-    sourceDetail: lead.sourceDetail,
-    nationalityGroup: lead.nationalityGroup,
-    needGroup: option(lead.needGroup, lead.needGroupNote),
-    needDetail: lead.needDetail,
-    painStatus: option(lead.painStatus, lead.painStatusNote),
-    assessmentType: option(lead.assessmentType, lead.assessmentTypeNote),
-    pic: lead.pic,
-    notes: lead.notes,
-    createdBy: lead.createdBy,
-    createdAt: lead.createdAt,
-    maskedFields,
-  };
 }

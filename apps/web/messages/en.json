@@ -203,7 +203,49 @@
       "status": "Status",
       "branch": "Branch",
       "notes": "Notes",
-      "createdBy": "Entered by"
+      "createdBy": "Entered by",
+      "appointmentAt": "Appointment",
+      "appointmentDate": "Appointment date",
+      "appointmentTime": "Appointment time",
+      "refuseReason": "Reason for refusing",
+      "contactAgainOn": "Contact again on",
+      "statusNote": "Note (optional)"
+    },
+    "changeStatus": "Change status",
+    "changeStatusTitle": "Change status: {name}",
+    "changeStatusDescription": "Only the moves allowed from the current status are offered. Each change records who made it and when.",
+    "newStatus": "New status",
+    "saveStatus": "Save status",
+    "statusChanged": "Status changed",
+    "datePlaceholder": "dd/MM/yyyy",
+    "timePlaceholder": "hh:mm, e.g. 18:30",
+    "assign": "Assign",
+    "reassign": "Reassign",
+    "assignTitle": "Assign lead: {name}",
+    "assignDescription": "Choose who in the branch takes this lead. They will be notified.",
+    "noAssignees": "Nobody in this branch receives leads yet. An admin can grant \"Receive leads automatically\" to a role or a user.",
+    "saveAssignment": "Save assignment",
+    "assigned": "Lead assigned",
+    "journey": "Journey",
+    "history": "History",
+    "since": "since",
+    "board": "Kanban board",
+    "statusColumn": "{status} column",
+    "emptyColumn": "No leads",
+    "seeAllInStatus": "See all {count} leads",
+    "contactAgain": "Contact again",
+    "views": "Views",
+    "listView": "List",
+    "boardView": "Kanban",
+    "timeline": {
+      "created": "Lead added",
+      "to": "to",
+      "assigned": "Assigned to {to}",
+      "reassigned": "Moved from {from} to {to}",
+      "appointment": "Appointment:",
+      "reason": "Reason: {reason}",
+      "roundRobin": "Round-robin",
+      "system": "System"
     }
   },
   "people": {
@@ -405,7 +447,9 @@
     "shiftsOverlap": "Shifts on the same day can't overlap.",
     "dayOffExists": "That day is already a day off.",
     "oneAssigneeOnly": "Choose one person or one department, not both.",
-    "phoneAlreadyUsed": "This phone belongs to another record."
+    "phoneAlreadyUsed": "This phone belongs to another record.",
+    "notInFuture": "The appointment must be later than now.",
+    "daysOutOfRange": "Enter a number of days from 1 to 365."
   },
   "contracts": {
     "title": "Contracts",
@@ -749,7 +793,9 @@
       "lead": {
         "view": "View leads",
         "create": "Add leads",
-        "manage": "Edit leads"
+        "manage": "Edit leads and change their status",
+        "assign": "Reassign leads, hear of new leads",
+        "receive": "Receive leads automatically"
       }
     },
     "resources": {
@@ -835,7 +881,8 @@
       "leadSources": "Lead sources",
       "needGroups": "Need groups",
       "painStatuses": "Pain Status",
-      "assessmentTypes": "Assessment types"
+      "assessmentTypes": "Assessment types",
+      "leadRefuseReasons": "Reasons for refusing (leads)"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -882,11 +929,14 @@
       "customerCodePrefix": "Customer code",
       "contractCodePrefix": "Contract code",
       "employeeCodePrefix": "Employee code",
-      "taskDueSoonHours": "Reminder before the deadline (hours)"
+      "taskDueSoonHours": "Reminder before the deadline (hours)",
+      "recareDays": "Re-care after (days)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
-    "tasksHint": "The assignee is reminded this many hours before the deadline; once it passes, the assignee and the assigner are told."
+    "tasksHint": "The assignee is reminded this many hours before the deadline; once it passes, the assignee and the assigner are told.",
+    "leads": "Leads",
+    "leadsHint": "Leads with No response, Refused, or No show are due to be contacted again after this many days."
   },
   "trash": {
     "title": "Trash",
@@ -974,7 +1024,9 @@
       "day_off_removed": "Day off removed",
       "accepted": "Accepted",
       "started": "Started",
-      "commented": "Commented"
+      "commented": "Commented",
+      "status_changed": "Status changed",
+      "assigned": "Assigned"
     },
     "fields": {
       "at": "When",
@@ -1165,7 +1217,9 @@
       "taskOverdue": "The task \"{title}\" is overdue ({due})",
       "approvalSubmitted": "A request waits for your approval: {title}",
       "approvalDecided": "Request \"{title}\": {status}",
-      "approvalOverdue": "A request waiting for approval is overdue: {title}"
+      "approvalOverdue": "A request waiting for approval is overdue: {title}",
+      "leadNew": "New lead {code} · {name}",
+      "leadAssigned": "Lead {code} · {name} was assigned to you"
     }
   }
 }

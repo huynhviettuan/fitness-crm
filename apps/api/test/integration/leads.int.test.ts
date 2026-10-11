@@ -6,7 +6,7 @@ import { createCustomer, getCustomer, listCustomers } from "../../src/modules/cu
 import { createContract } from "../../src/modules/contracts/contract.service.js";
 import { createRole } from "../../src/platform/roles/role.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestBranch, createTestUser, optionId, uniquePhone } from "../support/factories.js";
+import { createTestBranch, createTestUser, inRoundRobinOrder, optionId, uniquePhone } from "../support/factories.js";
 import { CONTRACT } from "../support/bookings.js";
 
 afterEach(async () => {
@@ -143,15 +143,21 @@ describe("seeing and editing leads", () => {
     expect(await ids({})).toEqual([hoa.id, mai.id]);
   });
 
-  it("shows a consultant only the leads they added (until assignment, M2 slice 2)", async () => {
-    const { actor: consulting } = await createTestUser("CONSULTING");
+  it("shows a consultant only the leads they added or are in charge of (T-061)", async () => {
+    const { actor: first } = await createTestUser("CONSULTING");
+    const { actor: second } = await createTestUser("CONSULTING");
     const { actor: reception } = await createTestUser("RECEPTIONIST");
-    const own = await createLead(consulting, { fullName: "Của tôi", channelId: WHATSAPP });
+    await inRoundRobinOrder(second.id, first.id);
+    // Round-robin: the first lead goes to `second`, the next to `first`.
+    const own = await createLead(first, { fullName: "Của tôi", channelId: WHATSAPP });
     const theirs = await createLead(reception, { fullName: "Lễ tân nhập", channelId: WHATSAPP });
+    const third = await createLead(reception, { fullName: "Lead thứ ba", channelId: WHATSAPP });
 
-    expect((await listLeads(consulting, {})).items.map((lead) => lead.id)).toEqual([own.id]);
-    await expect(getLead(consulting, theirs.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect((await listLeads(reception, {})).total).toBe(2);
+    expect([own.pic?.id, theirs.pic?.id, third.pic?.id]).toEqual([second.id, first.id, second.id]);
+    expect((await listLeads(first, {})).items.map((lead) => lead.id).sort()).toEqual([own.id, theirs.id].sort());
+    expect((await listLeads(second, {})).items.map((lead) => lead.id).sort()).toEqual([own.id, third.id].sort());
+    await expect(getLead(first, third.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect((await listLeads(reception, {})).total).toBe(3);
   });
 
   it("audits an edit with the values before and after", async () => {

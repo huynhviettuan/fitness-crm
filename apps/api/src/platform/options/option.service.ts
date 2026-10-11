@@ -136,6 +136,8 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     needGroups: Prisma.sql`SELECT "need_group_note" AS note, "created_at" AS at FROM "customers" WHERE "need_group_option_id" = ${id}::uuid`,
     painStatuses: Prisma.sql`SELECT "pain_status_note" AS note, "created_at" AS at FROM "customers" WHERE "pain_status_option_id" = ${id}::uuid`,
     assessmentTypes: Prisma.sql`SELECT "assessment_type_note" AS note, "created_at" AS at FROM "customers" WHERE "assessment_type_option_id" = ${id}::uuid`,
+    // Every refusal, also of leads that came back since (D-020).
+    leadRefuseReasons: Prisma.sql`SELECT "reason_note" AS note, "changed_at" AS at FROM "lead_status_changes" WHERE "reason_option_id" = ${id}::uuid`,
   };
   const rows = await prisma.$queryRaw<{ note: string; count: number; lastUsedAt: Date }[]>`
     SELECT MIN(btrim(note)) AS note, COUNT(*)::int AS count, MAX(at) AS "lastUsedAt"

@@ -1,9 +1,11 @@
 import type { Db } from "../../platform/db/prisma.js";
-import type { Prisma } from "../../generated/prisma/client.js";
+import type { LeadStatus, Prisma } from "../../generated/prisma/client.js";
 import { formatLeadCode } from "@flow/shared/leads";
 import { normalizeForSearch, normalizePhone } from "@flow/shared/validation";
 import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { chosenSelect } from "../../platform/options/option.service.js";
+import { activeInBranch } from "../../platform/notifications/notification.service.js";
+import { holding } from "../../platform/permissions/holders.js";
 
 const withRefs = {
   branch: { select: { id: true, name: true } },
@@ -12,6 +14,7 @@ const withRefs = {
   needGroup: { select: chosenSelect },
   painStatus: { select: chosenSelect },
   assessmentType: { select: chosenSelect },
+  refuseReason: { select: chosenSelect },
   pic: { select: { id: true, name: true } },
   createdBy: { select: { id: true, name: true } },
 } as const satisfies Prisma.CustomerInclude;
@@ -49,11 +52,116 @@ export async function nextLeadCode(db: Db): Promise<string> {
 }
 
 /** A new lead: stage LEAD, status NEW, nobody in charge yet (D-020). */
-export function createLead(db: Db, leadCode: string, data: LeadWrite & { branchId: string; createdById: string }): Promise<LeadRecord> {
+export function createLead(db: Db, leadCode: string, data: LeadWrite & { branchId: string; createdById: string }, now: Date): Promise<LeadRecord> {
   return db.customer.create({
-    data: { ...data, leadCode, stage: "LEAD", leadStatus: "NEW", searchName: normalizeForSearch(data.fullName) },
+    data: { ...data, leadCode, stage: "LEAD", leadStatus: "NEW", leadStatusChangedAt: now, searchName: normalizeForSearch(data.fullName) },
     include: withRefs,
   });
+}
+
+/** Holds the lead until the transaction ends, so two changes of its journey never interleave. */
+export async function lockLead(db: Db, id: string): Promise<void> {
+  await db.$queryRaw`SELECT "id" FROM "customers" WHERE "id" = ${id}::uuid FOR UPDATE`;
+}
+
+/** The journey's state on the lead (D-020); its history is in addStatusChange and addAssignment. */
+export type JourneyWrite = {
+  leadStatus?: LeadStatus;
+  leadStatusChangedAt?: Date;
+  appointmentAt?: Date | null;
+  contactAgainOn?: Date | null;
+  refuseReasonId?: string | null;
+  refuseReasonNote?: string | null;
+  picUserId?: string;
+};
+
+export function updateJourney(db: Db, id: string, data: JourneyWrite): Promise<LeadRecord> {
+  return db.customer.update({ where: { id }, data, include: withRefs });
+}
+
+export async function addStatusChange(
+  db: Db,
+  data: {
+    customerId: string;
+    fromStatus: LeadStatus | null;
+    toStatus: LeadStatus;
+    changedById: string | null;
+    changedAt: Date;
+    appointmentAt?: Date | null;
+    reasonId?: string | null;
+    reasonNote?: string | null;
+    note?: string | null;
+  },
+): Promise<void> {
+  await db.leadStatusChange.create({ data });
+}
+
+export async function addAssignment(
+  db: Db,
+  data: { customerId: string; fromUserId: string | null; toUserId: string; assignedById: string | null; assignedAt: Date },
+): Promise<void> {
+  await db.leadAssignment.create({ data });
+}
+
+const person = { select: { id: true, name: true } } as const;
+
+/** The lead's status changes and assignments (D-020). */
+export function timeline(db: Db, customerId: string) {
+  return Promise.all([
+    db.leadStatusChange.findMany({
+      where: { customerId },
+      include: { changedBy: person, reason: { select: chosenSelect } },
+      orderBy: { changedAt: "desc" },
+    }),
+    db.leadAssignment.findMany({
+      where: { customerId },
+      include: { fromUser: person, toUser: person, assignedBy: person },
+      orderBy: { assignedAt: "desc" },
+    }),
+  ]);
+}
+
+/** Who may be given the branch's leads (BR-203): active users of the branch who receive leads, in round-robin order. */
+export function receivers(db: Db, branchId: string): Promise<{ id: string; name: string; createdAt: Date }[]> {
+  return db.user.findMany({
+    where: { AND: [activeInBranch(branchId), holding("lead.receive")] },
+    select: { id: true, name: true, createdAt: true },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+}
+
+/** Who should hear of the branch's new leads: active users of the branch who reassign them (brief §4.1). */
+export async function leadManagers(db: Db, branchId: string): Promise<string[]> {
+  const users = await db.user.findMany({ where: { AND: [activeInBranch(branchId), holding("lead.assign")] }, select: { id: true } });
+  return users.map((user) => user.id);
+}
+
+/** Serializes the branch's round-robin; held until the transaction ends. */
+export async function lockRoundRobin(db: Db, branchId: string): Promise<void> {
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`lead-round-robin:${branchId}`}))::text AS locked`;
+}
+
+export async function lastReceiver(db: Db, branchId: string): Promise<{ id: string; createdAt: Date } | null> {
+  const row = await db.leadRoundRobin.findUnique({ where: { branchId }, select: { lastUser: { select: { id: true, createdAt: true } } } });
+  return row?.lastUser ?? null;
+}
+
+export async function setLastReceiver(db: Db, branchId: string, userId: string): Promise<void> {
+  await db.leadRoundRobin.upsert({ where: { branchId }, create: { branchId, lastUserId: userId }, update: { lastUserId: userId } });
+}
+
+/** One Kanban column (FR-LEAD-006): appointments soonest first, the rest longest in their status last. */
+export async function boardColumn(
+  db: Db,
+  where: Prisma.CustomerWhereInput,
+  status: LeadStatus,
+  take: number,
+): Promise<{ items: LeadRecord[]; total: number }> {
+  const inStatus: Prisma.CustomerWhereInput = { AND: [where, { leadStatus: status }] };
+  const orderBy: Prisma.CustomerOrderByWithRelationInput[] =
+    status === "BOOKED" ? [{ appointmentAt: "asc" }, { leadCode: "asc" }] : [{ leadStatusChangedAt: "desc" }, { leadCode: "desc" }];
+  const [items, total] = await Promise.all([db.customer.findMany({ where: inStatus, include: withRefs, orderBy, take }), db.customer.count({ where: inStatus })]);
+  return { items, total };
 }
 
 export function updateLead(db: Db, id: string, data: LeadWrite): Promise<LeadRecord> {

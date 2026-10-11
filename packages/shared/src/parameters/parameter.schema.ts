@@ -20,6 +20,8 @@ export const PARAMETER_DEFAULTS = {
   employeeCodePrefix: "NV",
   /** How many hours before its deadline a task reminds its assignee (brief §8.2, A-046). */
   taskDueSoonHours: "24",
+  /** Days after No response, Refused, or No show before the lead is contacted again (BR-204, OQ-018). */
+  recareDays: "15",
 } as const;
 
 export type ParameterKey = keyof typeof PARAMETER_DEFAULTS;
@@ -42,6 +44,14 @@ const hours = z
   .refine((value) => Number(value) >= 1 && Number(value) <= 168, { error: "outOfRange" })
   .transform((value) => String(Number(value)));
 
+/** Whole days, 1 to 365. */
+const days = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) >= 1 && Number(value) <= 365, { error: "daysOutOfRange" })
+  .transform((value) => String(Number(value)));
+
 export const parametersInputSchema = z
   .object({
     calendarDayStart: calendarTime,
@@ -51,6 +61,7 @@ export const parametersInputSchema = z
     contractCodePrefix: codePrefix,
     employeeCodePrefix: codePrefix,
     taskDueSoonHours: hours,
+    recareDays: days,
   })
   .refine((value) => value.calendarDayEnd > value.calendarDayStart, { path: ["calendarDayEnd"], error: "endTimeNotAfterStart" });
 
@@ -63,6 +74,7 @@ export const parametersSchema = z
     contractCodePrefix: z.string(),
     employeeCodePrefix: z.string(),
     taskDueSoonHours: z.string(),
+    recareDays: z.string(),
   })
   .meta({ id: "Parameters" });
 

@@ -1,8 +1,8 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { createLead, updateLead } from "@/lib/api/leads";
-import type { LeadInput, LeadUpdateInput } from "@flow/shared/leads";
+import { assignLead, changeLeadStatus, createLead, updateLead } from "@/lib/api/leads";
+import type { LeadAssignInput, LeadInput, LeadStatusChangeInput, LeadUpdateInput } from "@flow/shared/leads";
 
 export async function createLeadAction(input: LeadInput): Promise<ActionResult<{ id: string; leadCode: string }>> {
   return runAction(async () => {
@@ -14,5 +14,17 @@ export async function createLeadAction(input: LeadInput): Promise<ActionResult<{
 export async function updateLeadAction(id: string, input: LeadUpdateInput): Promise<ActionResult> {
   return runAction(async () => {
     await updateLead(id, input);
+  });
+}
+
+export async function changeLeadStatusAction(id: string, input: LeadStatusChangeInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await changeLeadStatus(id, input);
+  });
+}
+
+export async function assignLeadAction(id: string, input: LeadAssignInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await assignLead(id, input);
   });
 }

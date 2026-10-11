@@ -84,6 +84,8 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   { id: "c0000000-0000-4000-8000-00000000000c", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000151", labelVi: "Physical Assessment", labelEn: "Physical Assessment", sortOrder: 1, active: true },
   { id: "c0000000-0000-4000-8000-000000000152", labelVi: "Pain Assessment", labelEn: "Pain Assessment", sortOrder: 2, active: true },
+  // Refusal reasons (M2 slice 2).
+  { id: "c0000000-0000-4000-8000-00000000000d", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
 ];
 
 /** The approval matrix the migration creates (09_RBAC.md). */
@@ -121,4 +123,14 @@ export function createTestBranch(name = `Chi nhánh ${randomUUID().slice(0, 8)}`
 /** A phone number no other test person has: a phone belongs to one person (D-019). */
 export function uniquePhone(): string {
   return `09${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`;
+}
+
+/**
+ * Fixes the round-robin order of users who receive leads (BR-203): it follows when they
+ * were created, so users made in the same millisecond get distinct, ascending times.
+ */
+export async function inRoundRobinOrder(...userIds: string[]): Promise<void> {
+  for (const [index, id] of userIds.entries()) {
+    await prisma.user.update({ where: { id }, data: { createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, index)) } });
+  }
 }

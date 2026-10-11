@@ -17,6 +17,9 @@ export const NOTIFICATION_KINDS = [
   "approvalSubmitted",
   "approvalDecided",
   "approvalOverdue",
+  // Leads (brief §4.1): managers hear of new leads, consultants of leads given to them.
+  "leadNew",
+  "leadAssigned",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

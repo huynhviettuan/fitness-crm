@@ -8,8 +8,9 @@ export const PERMISSION_GROUPS = {
   system: ["user.manage", "role.manage", "branch.manage", "approval.manage"],
   configuration: ["config.manage"],
   history: ["audit.view", "trash.view"],
-  // Leads and consulting (brief §4.1): seeing, adding, and editing leads.
-  leads: ["lead.view", "lead.create", "lead.manage"],
+  // Leads and consulting (brief §4.1): seeing, adding, and working leads; reassigning them
+  // (managers); and receiving new leads round-robin (consultants, BR-203).
+  leads: ["lead.view", "lead.create", "lead.manage", "lead.assign", "lead.receive"],
   customers: ["customer.view", "customer.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],

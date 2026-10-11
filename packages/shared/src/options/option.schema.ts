@@ -28,6 +28,8 @@ export const OPTION_LISTS = [
   "needGroups",
   "painStatuses",
   "assessmentTypes",
+  // Why a lead refused (BR-204), M2 slice 2.
+  "leadRefuseReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

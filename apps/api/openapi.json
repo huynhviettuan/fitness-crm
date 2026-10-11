@@ -341,6 +341,71 @@
         "x-permission": "lead.create"
       }
     },
+    "/api/v1/leads/board": {
+      "get": {
+        "operationId": "LeadsController_board",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sourceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needGroupId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadBoard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
     "/api/v1/leads/{id}": {
       "get": {
         "operationId": "LeadsController_get",
@@ -547,6 +612,240 @@
           "leads"
         ],
         "x-permission": "lead.manage"
+      }
+    },
+    "/api/v1/leads/{id}/timeline": {
+      "get": {
+        "operationId": "LeadsController_timeline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadTimeline"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
+    "/api/v1/leads/{id}/status": {
+      "post": {
+        "operationId": "LeadsController_changeStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "CONSULTING",
+                      "CONSIDERING",
+                      "NO_RESPONSE",
+                      "BOOKED",
+                      "REFUSED"
+                    ]
+                  },
+                  "appointmentDate": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "appointmentTime": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 5
+                  },
+                  "refuseReasonId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "refuseReasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "note": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.manage"
+      }
+    },
+    "/api/v1/leads/{id}/assignees": {
+      "get": {
+        "operationId": "LeadsController_assignees",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadAssignees"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.assign"
+      }
+    },
+    "/api/v1/leads/{id}/assign": {
+      "post": {
+        "operationId": "LeadsController_assign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.assign"
       }
     },
     "/api/v1/customers": {
@@ -3577,6 +3876,8 @@
                             "lead.view",
                             "lead.create",
                             "lead.manage",
+                            "lead.assign",
+                            "lead.receive",
                             "customer.view",
                             "customer.manage",
                             "contract.view",
@@ -3951,6 +4252,8 @@
                         "lead.view",
                         "lead.create",
                         "lead.manage",
+                        "lead.assign",
+                        "lead.receive",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -4170,6 +4473,8 @@
                         "lead.view",
                         "lead.create",
                         "lead.manage",
+                        "lead.assign",
+                        "lead.receive",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -4894,6 +5199,10 @@
                   "taskDueSoonHours": {
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
+                  },
+                  "recareDays": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
                   }
                 },
                 "required": [
@@ -4903,7 +5212,8 @@
                   "customerCodePrefix",
                   "contractCodePrefix",
                   "employeeCodePrefix",
-                  "taskDueSoonHours"
+                  "taskDueSoonHours",
+                  "recareDays"
                 ]
               }
             }
@@ -6317,6 +6627,8 @@
                 "lead.view",
                 "lead.create",
                 "lead.manage",
+                "lead.assign",
+                "lead.receive",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -6486,6 +6798,28 @@
               "CONTRACTED"
             ]
           },
+          "statusChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "appointmentAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "contactAgainOn": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "refuseReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
           "branch": {
             "$ref": "#/components/schemas/BranchRef"
           },
@@ -6632,6 +6966,10 @@
           "customerCode",
           "stage",
           "status",
+          "statusChangedAt",
+          "appointmentAt",
+          "contactAgainOn",
+          "refuseReason",
           "branch",
           "fullName",
           "gender",
@@ -6681,6 +7019,260 @@
           "labelEn",
           "isOther",
           "note"
+        ]
+      },
+      "LeadBoard": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "NEW",
+                    "CONSULTING",
+                    "CONSIDERING",
+                    "NO_RESPONSE",
+                    "BOOKED",
+                    "NO_SHOW",
+                    "REFUSED"
+                  ]
+                },
+                "total": {
+                  "type": "integer"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Lead"
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "total",
+                "items"
+              ]
+            }
+          }
+        },
+        "required": [
+          "columns"
+        ]
+      },
+      "LeadTimeline": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "status"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "by": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    },
+                    "fromStatus": {
+                      "nullable": true,
+                      "type": "string",
+                      "enum": [
+                        "NEW",
+                        "CONSULTING",
+                        "CONSIDERING",
+                        "NO_RESPONSE",
+                        "BOOKED",
+                        "SHOWED",
+                        "NO_SHOW",
+                        "REFUSED",
+                        "CONTRACTED"
+                      ]
+                    },
+                    "toStatus": {
+                      "type": "string",
+                      "enum": [
+                        "NEW",
+                        "CONSULTING",
+                        "CONSIDERING",
+                        "NO_RESPONSE",
+                        "BOOKED",
+                        "SHOWED",
+                        "NO_SHOW",
+                        "REFUSED",
+                        "CONTRACTED"
+                      ]
+                    },
+                    "appointmentAt": {
+                      "nullable": true,
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "refuseReason": {
+                      "nullable": true,
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/ChosenOption"
+                        }
+                      ]
+                    },
+                    "note": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "id",
+                    "at",
+                    "by",
+                    "fromStatus",
+                    "toStatus",
+                    "appointmentAt",
+                    "refuseReason",
+                    "note"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "assignment"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "by": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    },
+                    "from": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    },
+                    "to": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "id",
+                    "at",
+                    "by",
+                    "from",
+                    "to"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "LeadAssignees": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "CustomerPage": {
@@ -7800,6 +8392,8 @@
                     "lead.view",
                     "lead.create",
                     "lead.manage",
+                    "lead.assign",
+                    "lead.receive",
                     "customer.view",
                     "customer.manage",
                     "contract.view",
@@ -8023,6 +8617,8 @@
                 "lead.view",
                 "lead.create",
                 "lead.manage",
+                "lead.assign",
+                "lead.receive",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -8164,7 +8760,8 @@
               "leadSources",
               "needGroups",
               "painStatuses",
-              "assessmentTypes"
+              "assessmentTypes",
+              "leadRefuseReasons"
             ]
           },
           "labelVi": {
@@ -8247,6 +8844,9 @@
           },
           "taskDueSoonHours": {
             "type": "string"
+          },
+          "recareDays": {
+            "type": "string"
           }
         },
         "required": [
@@ -8256,7 +8856,8 @@
           "customerCodePrefix",
           "contractCodePrefix",
           "employeeCodePrefix",
-          "taskDueSoonHours"
+          "taskDueSoonHours",
+          "recareDays"
         ]
       },
       "AuditPage": {
@@ -9194,7 +9795,9 @@
               "taskOverdue",
               "approvalSubmitted",
               "approvalDecided",
-              "approvalOverdue"
+              "approvalOverdue",
+              "leadNew",
+              "leadAssigned"
             ]
           },
           "params": {

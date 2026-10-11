@@ -3,7 +3,8 @@ import { branchChoice } from "../branches/branch.schema.js";
 import { GENDERS } from "../employees/employee.schema.js";
 import { optionNote } from "../options/option.schema.js";
 import { formatCode } from "../parameters/parameter.schema.js";
-import { hasNoControlCharacters, normalizePhone, parseDateOnly } from "../validation/index.js";
+import { calendarDate, hasNoControlCharacters, normalizePhone, parseDateOnly, timeOfDay } from "../validation/index.js";
+import { MANUAL_LEAD_STATUSES } from "./lead.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Form inputs send "" for an empty optional field; it is stored as null.
@@ -16,7 +17,7 @@ const emptyToNull = (value: string) => (value === "" ? null : value);
 export const PERSON_STAGES = ["LEAD", "CUSTOMER"] as const;
 export type PersonStage = (typeof PERSON_STAGES)[number];
 
-/** The lead journey (D-020, brief §3). Moving between them arrives in M2 slice 2. */
+/** The lead journey (D-020, brief §3); which moves are allowed is in lead.domain.ts. */
 export const LEAD_STATUSES = [
   "NEW",
   "CONSULTING",
@@ -125,6 +126,50 @@ export const listLeadsSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 
+/** The Kanban board (FR-LEAD-006) takes the list's filters; its columns are the statuses. */
+export const leadBoardQuerySchema = listLeadsSchema.omit({ status: true, page: true, pageSize: true });
+
+/**
+ * Moving a lead along its journey (D-020). Appointment booked needs the day and time
+ * they come in (gym-local); Refused needs a reason from "leadRefuseReasons" (BR-204).
+ * The note is optional and goes with the change, never instead of a result.
+ */
+export const leadStatusChangeSchema = z
+  .object({
+    status: z.enum(MANUAL_LEAD_STATUSES, { error: "invalidChoice" }),
+    appointmentDate: text(10).prefault(""),
+    appointmentTime: text(5).prefault(""),
+    refuseReasonId: optionalChoice.prefault(""),
+    refuseReasonNote: optionNote,
+    note: text(1000).transform(emptyToNull).prefault(""),
+  })
+  .transform((value, ctx) => {
+    let appointment: { date: Date; time: string } | null = null;
+    if (value.status === "BOOKED") {
+      const date = calendarDate.safeParse(value.appointmentDate);
+      const time = timeOfDay.safeParse(value.appointmentTime);
+      if (!date.success) ctx.addIssue({ code: "custom", path: ["appointmentDate"], message: date.error.issues[0].message });
+      if (!time.success) ctx.addIssue({ code: "custom", path: ["appointmentTime"], message: time.error.issues[0].message });
+      if (!date.success || !time.success) return z.NEVER;
+      appointment = { date: date.data, time: time.data };
+    }
+    if (value.status === "REFUSED" && !value.refuseReasonId) {
+      ctx.addIssue({ code: "custom", path: ["refuseReasonId"], message: "required" });
+      return z.NEVER;
+    }
+    return {
+      status: value.status,
+      appointment,
+      refuseReason: value.status === "REFUSED" && value.refuseReasonId ? { optionId: value.refuseReasonId, note: value.refuseReasonNote } : null,
+      note: value.note,
+    };
+  });
+
+/** A manager hands the lead to someone who receives leads (BR-203). */
+export const leadAssignSchema = z.object({ userId: z.uuid({ error: "required" }) });
+
+export type LeadStatusChangeInput = z.input<typeof leadStatusChangeSchema>;
+export type LeadAssignInput = z.input<typeof leadAssignSchema>;
 export type LeadInput = z.input<typeof leadInputSchema>;
 export type LeadData = z.output<typeof leadInputSchema>;
 export type LeadUpdateInput = z.input<typeof leadUpdateSchema>;

@@ -80,7 +80,9 @@ erDiagram
 |---|---|
 | `people` (built as `customers`, T-061) | lead_code, customer_code (set at Show), stage (LEAD, CUSTOMER), status (lead statuses, D-020), pic_employee_id, full_name, gender, birth_date, phone (unique per active person), email, nationality_group, nationality, id_document (encrypted), address, health_basic (encrypted), customer_group_option_id, channel_option_id, source_option_id, source_type (ORGANIC, PAID), source_detail, need_group_option_id, need_detail_option_id, need_note, pain_status_option_id, assessment_type_option_id, emergency_contact, consent_at, notes |
 | `person_merges` | kept_person_id, merged_person_id, by, at |
-| `lead_status_history` | person_id, from_status, to_status, reason_option_id, reason_note, by, at |
+| `lead_status_history` (built as `lead_status_changes`, T-062) | person_id, from_status (null at creation), to_status, appointment_at, reason_option_id, reason_note, note, by (null: the system), at |
+| `lead_assignments` (T-062) | person_id, from_user_id, to_user_id, by (null: round-robin), at |
+| `lead_round_robin` (T-062) | branch_id, last_user_id: the branch's last receiver of a new lead |
 | `consulting_checklists` / `consulting_step_templates` | versioned checklist; step key, order, label, trigger, delay, required, result list |
 | `consulting_steps` | person_id, template_step_id, due_at, done_at, done_by, result_option_id, note, timing (ON_TIME, LATE, SKIPPED) |
 | `appointments` | person_id, at, assessment_type_option_id, confirmation_1, confirmation_2, outcome (SHOW, NO_SHOW) |

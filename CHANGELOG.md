@@ -1,5 +1,16 @@
 # Documentation Changelog
 
+## 2026-10-12 — M2 slice 2: lead assignment and statuses
+
+- **Round-robin** (BR-203): a new lead goes in turn to the branch's consultants (users with the new permission "receive leads", initially the Consulting role) and starts *Đang tư vấn*. With nobody to receive it, it stays *Mới*. The consultant is told; the branch's managers are told of every new lead (A-052).
+- **Reassigning**: Admin and Fitness Manager (new permission `lead.assign`) hand a lead to another consultant of its branch from the lead page.
+- **Status flow** (D-020): "Đổi trạng thái" offers only the moves allowed from the current status. *Đã đặt lịch* needs the appointment's day and time (in the future); *Từ chối* needs a reason from the new list "Lý do từ chối (lead)"; *Chưa phản hồi*, *Từ chối*, and *No show* get a day to contact them again, 15 days later (new parameter "Tái chăm sóc sau", OQ-018). A note can go with any change. Show and No show arrive with appointments (slice 4).
+- **History**: the lead page shows the journey (status since when, person in charge, appointment, reason, contact-again day) and every status change and assignment with who and when.
+- **Kanban**: the Lead page switches between the list and a board with a column per status; it scrolls inside itself on a phone.
+- API: `/leads/board`, `/leads/:id/timeline`, `/leads/:id/status`, `/leads/:id/assignees`, `/leads/:id/assign`; notifications `leadNew`, `leadAssigned`.
+- Tests: unit (shared 117, web 269, API 108), integration 263, E2E and security (see the slice report).
+- Docs: 04, 07, 09, 13, 16, 18 (T-062, A-052 to A-054), 24, 25.
+
 ## 2026-10-11 — M2 slice 1: leads
 
 - **One person, one record** (D-019): a lead and a customer are the same record; the customers table gains a stage, a lead code (prefix LD, a parameter), the lead status, and the lead profile of brief §4.1. Existing customers stay customers. Customer screens show only customers; a lead cannot have a contract before Show.

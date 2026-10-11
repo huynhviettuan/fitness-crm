@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { otherOptionId } from "./options";
 import { approvePendingViaApi } from "./approvals";
 import type { APIRequestContext } from "@playwright/test";
+import { createUserViaApi, roleIdOf } from "./admin";
 
 // Test data created through the public API. Names carry the test's tag so the
 // `testTag` fixture removes them afterwards.
@@ -142,4 +143,35 @@ export async function recordPaymentViaApi(
   const payment = (await response.json()) as { id: string; amount: number; approvalStatus: string };
   if (options.approver && payment.approvalStatus === "PENDING") await approvePendingViaApi(options.approver, payment.id);
   return payment;
+}
+
+/** A lead contact channel's id by its Vietnamese label. */
+export async function leadChannelId(api: APIRequestContext, label: string): Promise<string> {
+  const { items } = (await (await api.get("/api/v1/option-lists/leadChannels/options")).json()) as { items: { id: string; labelVi: string }[] };
+  return items.find((option) => option.labelVi === label)!.id;
+}
+
+export type CreatedLead = { id: string; leadCode: string; fullName: string; status: string; pic: { id: string; name: string } | null };
+
+export async function createLeadViaApi(api: APIRequestContext, data: { fullName: string; branchId?: string; phone?: string }): Promise<CreatedLead> {
+  const response = await api.post("/api/v1/leads", { data: { ...data, channelId: await leadChannelId(api, "WhatsApp") } });
+  if (response.status() !== 201) throw new Error(`Lead setup failed: ${response.status()} ${await response.text()}`);
+  return response.json() as Promise<CreatedLead>;
+}
+
+/**
+ * A branch of the test's own with two consultants, who receive its leads round-robin
+ * (BR-203) without touching the shared branch's turn. Named with the tag, so teardown
+ * removes them. Specs that use it are *.branch.spec.ts (playwright.config.ts).
+ */
+export async function branchWithConsultants(admin: APIRequestContext, tag: string) {
+  const branch = await admin.post("/api/v1/branches", { data: { name: `CN ${tag}` } });
+  if (branch.status() !== 201) throw new Error(`Branch setup failed: ${branch.status()}`);
+  const branchId = ((await branch.json()) as { id: string }).id;
+  const roleId = await roleIdOf(admin, { code: "CONSULTING" });
+  const consultants = [];
+  for (const label of ["Consultant A", "Consultant B"]) {
+    consultants.push({ ...(await createUserViaApi(admin, tag, { roleId, branchIds: [branchId], label })), name: `${label} ${tag}` });
+  }
+  return { branchId, consultants };
 }

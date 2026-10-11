@@ -42,7 +42,49 @@ export class LeadFormSheet {
   }
 }
 
-/** Leads (FR-LEAD-006): the list and the quick intake form. */
+/** "Change status" (D-020): only the moves allowed from the lead's status are offered. Scoped to the dialog. */
+export class ChangeStatusDialog {
+  constructor(
+    private readonly page: Page,
+    readonly root: Locator,
+  ) {}
+
+  async choose(label: string, option: string): Promise<void> {
+    await this.root.getByRole("combobox", { name: label, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: option, exact: true }).click();
+  }
+
+  async status(status: string): Promise<void> {
+    await this.choose(l.newStatus, status);
+  }
+
+  field(label: string): Locator {
+    return this.root.getByLabel(label, { exact: true });
+  }
+
+  async save(): Promise<void> {
+    await this.root.getByRole("button", { name: l.saveStatus, exact: true }).click();
+  }
+}
+
+/** Reassigning a lead (BR-203). Scoped to the dialog. */
+export class AssignLeadDialog {
+  constructor(
+    private readonly page: Page,
+    readonly root: Locator,
+  ) {}
+
+  async choose(name: string): Promise<void> {
+    await this.root.getByRole("combobox", { name: l.fields.pic, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name, exact: true }).click();
+  }
+
+  async save(): Promise<void> {
+    await this.root.getByRole("button", { name: l.saveAssignment, exact: true }).click();
+  }
+}
+
+/** Leads (FR-LEAD-006): the list, the Kanban board, and the quick intake form. */
 export class LeadsPage {
   private readonly shell: AppShell;
 
@@ -60,6 +102,19 @@ export class LeadsPage {
 
   row(text: string): Locator {
     return this.table.getByRole("row").filter({ hasText: text });
+  }
+
+  get board(): Locator {
+    return this.shell.main.getByRole("region", { name: l.board });
+  }
+
+  /** A Kanban column by its status label. */
+  column(status: string): Locator {
+    return this.board.getByRole("region", { name: fill(l.statusColumn, { status }) });
+  }
+
+  async showBoard(): Promise<void> {
+    await this.shell.main.getByRole("navigation", { name: l.views }).getByRole("link", { name: l.boardView }).click();
   }
 
   get addButton(): Locator {
@@ -104,5 +159,24 @@ export class LeadPage {
   async openEdit(): Promise<LeadFormSheet> {
     await this.shell.main.getByRole("button", { name: l.edit, exact: true }).click();
     return new LeadFormSheet(this.page, this.page.getByRole("dialog", { name: l.edit }));
+  }
+
+  private get journey(): Locator {
+    return this.shell.main.getByRole("region", { name: l.journey });
+  }
+
+  /** The status change and assignment history, newest first (D-020). */
+  get history(): Locator {
+    return this.shell.main.getByRole("region", { name: l.history }).getByRole("listitem");
+  }
+
+  async openChangeStatus(name: string): Promise<ChangeStatusDialog> {
+    await this.journey.getByRole("button", { name: l.changeStatus, exact: true }).click();
+    return new ChangeStatusDialog(this.page, this.page.getByRole("dialog", { name: fill(l.changeStatusTitle, { name }) }));
+  }
+
+  async openAssign(name: string, button: string = l.reassign): Promise<AssignLeadDialog> {
+    await this.journey.getByRole("button", { name: button, exact: true }).click();
+    return new AssignLeadDialog(this.page, this.page.getByRole("dialog", { name: fill(l.assignTitle, { name }) }));
   }
 }

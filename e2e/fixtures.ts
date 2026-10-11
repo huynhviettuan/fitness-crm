@@ -57,7 +57,8 @@ type Fixtures = {
    * A unique marker for names this test creates. Teardown deletes every customer and
    * trainer whose name contains it, with their contracts, bookings, and payments, and
    * every cash transaction whose category, note, or reference contains it, even if the
-   * test failed halfway. Users, roles, branches, and options whose name contains it go too.
+   * test failed halfway. Leads go with their journey. Users, roles, branches, and options
+   * whose name contains it go too.
    */
   testTag: string;
   /**
@@ -189,6 +190,10 @@ export const test = base.extend<Fixtures>({
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: taskIds } } });
       await prisma.task.deleteMany({ where: { id: { in: taskIds } } });
       await prisma.notification.deleteMany({ where: { params: { path: ["title"], string_contains: tag } } });
+      // Notifications about tagged leads (their name), and the leads' journey (D-020).
+      await prisma.notification.deleteMany({ where: { params: { path: ["name"], string_contains: tag } } });
+      await prisma.leadStatusChange.deleteMany({ where: { customerId: { in: customerIds } } });
+      await prisma.leadAssignment.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).
@@ -207,11 +212,18 @@ export const test = base.extend<Fixtures>({
       const userIds = ids(await prisma.user.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
       await prisma.auditEvent.deleteMany({ where: { OR: [{ actorUserId: { in: userIds } }, { entityId: { in: userIds } }] } });
       await prisma.approvalRequest.deleteMany({ where: { OR: [{ submittedById: { in: userIds } }, { decidedById: { in: userIds } }] } });
+      // Their part in other leads' journeys (restricted), and the round-robin's memory of them.
+      const asUser = { in: userIds };
+      await prisma.leadStatusChange.updateMany({ where: { changedById: asUser }, data: { changedById: null } });
+      await prisma.leadAssignment.deleteMany({ where: { OR: [{ fromUserId: asUser }, { toUserId: asUser }, { assignedById: asUser }] } });
+      await prisma.customer.updateMany({ where: { picUserId: asUser }, data: { picUserId: null } });
+      await prisma.leadRoundRobin.deleteMany({ where: { lastUserId: asUser } });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
       const roleIds = ids(await prisma.role.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
       const branchIds = ids(await prisma.branch.findMany({ where: { name: { contains: tag } }, select: { id: true } }));
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...roleIds, ...branchIds] } } });
       await prisma.role.deleteMany({ where: { id: { in: roleIds } } });
+      await prisma.leadRoundRobin.deleteMany({ where: { branchId: { in: branchIds } } });
       await prisma.branch.deleteMany({ where: { id: { in: branchIds } } });
 
       // Options the test added, once nothing uses them.

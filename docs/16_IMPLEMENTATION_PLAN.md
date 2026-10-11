@@ -33,7 +33,8 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M1 | 7. Tasks and notifications: give tasks to a person or department, accept, work, complete, cancel, comments with mentions; bell and Notifications page; reminders before and after deadlines and for overdue approvals, run by pg-boss (D-037, T-059, T-060, A-044 to A-048) | **Done** 2026-10-11 |
 | M1 | All slices built; next: the owner checks AC-01 to AC-05 and AC-13 on staging | — |
 | M2 | 1. One person record and lead intake: the customers table gains the stage, lead code, lead status, and lead profile; quick form (phone-first), lead list and page; five option lists with the brief's values; one phone per person (T-061, A-049 to A-051) | **Done** 2026-10-11 |
-| M2 | Next: 2 assignment and statuses, 3 consulting checklist, 4 appointment and Show, 5 re-care and merge, 6 scripts and customer profile | Not started |
+| M2 | 2. Assignment and statuses: round-robin to the branch's consultants, reassignment by managers, notifications; the status flow with appointment, refusal reason, and contact-again day; timeline; Kanban (T-062, A-052 to A-054) | **Done** 2026-10-12 |
+| M2 | Next: 3 consulting checklist, 4 appointment and Show, 5 re-care and merge, 6 scripts and customer profile | Not started |
 
 ## Open questions per milestone
 

@@ -203,7 +203,49 @@
       "status": "Trạng thái",
       "branch": "Chi nhánh",
       "notes": "Ghi chú",
-      "createdBy": "Người nhập"
+      "createdBy": "Người nhập",
+      "appointmentAt": "Giờ hẹn",
+      "appointmentDate": "Ngày hẹn",
+      "appointmentTime": "Giờ hẹn",
+      "refuseReason": "Lý do từ chối",
+      "contactAgainOn": "Ngày liên hệ lại",
+      "statusNote": "Ghi chú (không bắt buộc)"
+    },
+    "changeStatus": "Đổi trạng thái",
+    "changeStatusTitle": "Đổi trạng thái: {name}",
+    "changeStatusDescription": "Chỉ có các bước được phép từ trạng thái hiện tại. Mỗi lần đổi đều lưu người làm và thời điểm.",
+    "newStatus": "Trạng thái mới",
+    "saveStatus": "Lưu trạng thái",
+    "statusChanged": "Đã đổi trạng thái",
+    "datePlaceholder": "dd/MM/yyyy",
+    "timePlaceholder": "hh:mm, ví dụ 18:30",
+    "assign": "Phân công",
+    "reassign": "Phân công lại",
+    "assignTitle": "Phân công lead: {name}",
+    "assignDescription": "Chọn người nhận lead trong chi nhánh. Người được giao sẽ nhận thông báo.",
+    "noAssignees": "Chi nhánh chưa có ai nhận lead. Admin bật quyền \"Nhận lead chia tự động\" cho vai trò hoặc người dùng.",
+    "saveAssignment": "Lưu phân công",
+    "assigned": "Đã phân công lead",
+    "journey": "Hành trình",
+    "history": "Lịch sử",
+    "since": "từ",
+    "board": "Bảng Kanban",
+    "statusColumn": "Cột {status}",
+    "emptyColumn": "Không có lead",
+    "seeAllInStatus": "Xem cả {count} lead",
+    "contactAgain": "Liên hệ lại",
+    "views": "Cách xem",
+    "listView": "Danh sách",
+    "boardView": "Kanban",
+    "timeline": {
+      "created": "Tạo lead",
+      "to": "sang",
+      "assigned": "Phân công cho {to}",
+      "reassigned": "Chuyển từ {from} sang {to}",
+      "appointment": "Hẹn:",
+      "reason": "Lý do: {reason}",
+      "roundRobin": "Tự động chia lượt",
+      "system": "Hệ thống"
     }
   },
   "people": {
@@ -405,7 +447,9 @@
     "shiftsOverlap": "Các ca trong cùng một ngày không được chồng lên nhau.",
     "dayOffExists": "Ngày này đã là ngày nghỉ.",
     "oneAssigneeOnly": "Chỉ chọn một người hoặc một phòng ban.",
-    "phoneAlreadyUsed": "Số điện thoại đã thuộc một hồ sơ khác."
+    "phoneAlreadyUsed": "Số điện thoại đã thuộc một hồ sơ khác.",
+    "notInFuture": "Giờ hẹn phải sau thời điểm hiện tại.",
+    "daysOutOfRange": "Nhập số ngày từ 1 đến 365."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -749,7 +793,9 @@
       "lead": {
         "view": "Xem lead",
         "create": "Thêm lead",
-        "manage": "Sửa thông tin lead"
+        "manage": "Sửa thông tin và đổi trạng thái lead",
+        "assign": "Phân công lại lead, nhận thông báo lead mới",
+        "receive": "Nhận lead chia tự động"
       }
     },
     "resources": {
@@ -835,7 +881,8 @@
       "leadSources": "Nguồn lead",
       "needGroups": "Nhóm nhu cầu",
       "painStatuses": "Pain Status",
-      "assessmentTypes": "Loại Assessment"
+      "assessmentTypes": "Loại Assessment",
+      "leadRefuseReasons": "Lý do từ chối (lead)"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -882,11 +929,14 @@
       "customerCodePrefix": "Mã khách hàng",
       "contractCodePrefix": "Mã hợp đồng",
       "employeeCodePrefix": "Mã nhân viên",
-      "taskDueSoonHours": "Nhắc trước hạn (giờ)"
+      "taskDueSoonHours": "Nhắc trước hạn (giờ)",
+      "recareDays": "Tái chăm sóc sau (ngày)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
-    "tasksHint": "Người nhận được nhắc trước hạn bấy nhiêu giờ; khi quá hạn, cả người nhận và người giao đều được báo."
+    "tasksHint": "Người nhận được nhắc trước hạn bấy nhiêu giờ; khi quá hạn, cả người nhận và người giao đều được báo.",
+    "leads": "Lead",
+    "leadsHint": "Lead Chưa phản hồi, Từ chối hoặc No show được hẹn liên hệ lại sau bấy nhiêu ngày."
   },
   "trash": {
     "title": "Thùng rác",
@@ -974,7 +1024,9 @@
       "day_off_removed": "Bỏ ngày nghỉ",
       "accepted": "Nhận việc",
       "started": "Bắt đầu làm",
-      "commented": "Bình luận"
+      "commented": "Bình luận",
+      "status_changed": "Đổi trạng thái",
+      "assigned": "Phân công"
     },
     "fields": {
       "at": "Thời điểm",
@@ -1165,7 +1217,9 @@
       "taskOverdue": "Việc \"{title}\" đã quá hạn ({due})",
       "approvalSubmitted": "Có yêu cầu chờ bạn duyệt: {title}",
       "approvalDecided": "Yêu cầu \"{title}\": {status}",
-      "approvalOverdue": "Yêu cầu chờ duyệt đã quá hạn: {title}"
+      "approvalOverdue": "Yêu cầu chờ duyệt đã quá hạn: {title}",
+      "leadNew": "Lead mới {code} · {name}",
+      "leadAssigned": "Bạn được giao lead {code} · {name}"
     }
   }
 }

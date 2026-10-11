@@ -7,7 +7,7 @@ import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS } from "./fact
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "notifications", "task_comments", "tasks", "audit_events", "trash_entries", "approval_requests", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "notifications", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "trash_entries", "approval_requests", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Roles and branches the tests created; the migration's defaults stay.
