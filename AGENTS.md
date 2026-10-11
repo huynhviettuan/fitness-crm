@@ -128,8 +128,6 @@ For each task:
 8. Run lint, type-check, tests, and migrations.
 9. Update docs when behavior changes.
 
-Claude Code builds each slice of `docs/28_SLICE_PLAN.md` with the `slice` skill: a developer agent (`.claude/agents/slice-dev.md`) and a separate test agent (`.claude/agents/slice-tester.md`) that writes tests from the specification. See `docs/17_AI_AGENT_WORKFLOW.md`.
-
 ## 7. Definition of done
 
 A task is done only when:

@@ -2,7 +2,7 @@
 
 What is left to build in phase 1, cut into vertical slices, in the order they will be built. Milestones and progress: `16_IMPLEMENTATION_PLAN.md`; effort: `27_ESTIMATES.md`; what is reused and reworked: `25_BRIEF_V2_GAP_ANALYSIS.md`.
 
-This plan is written before the work and refined at the start of each slice (`.claude/skills/slice`). A slice is done only when it meets `AGENTS.md` §7. When a slice turns out bigger than one sitting, it is split here first, not left half done.
+This plan is written before the work and refined at the start of each slice. A slice is done only when it meets `AGENTS.md` §7. When a slice turns out bigger than one sitting, it is split here first, not left half done.
 
 ## How to read a slice
 

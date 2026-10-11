@@ -2,7 +2,7 @@
 
 Phase 1 follows the brief's delivery order (brief §12). Each milestone ends as a working version on **staging** for the owner to try; the owner can cut or postpone milestones. Effort and cost per milestone: `27_ESTIMATES.md`. What is reused from the code built so far and what is reworked: `25_BRIEF_V2_GAP_ANALYSIS.md`.
 
-Work inside a milestone in **vertical slices**: schema and migration → API service with rules, permissions, audit → endpoint with OpenAPI → screen → unit, integration, E2E, and security tests → docs. Stopping between slices leaves nothing half done. Every remaining slice, with its tests and the decisions to settle before coding, is in `28_SLICE_PLAN.md`; how a slice is built (a developer agent and a separate test agent) is in `17_AI_AGENT_WORKFLOW.md`.
+Work inside a milestone in **vertical slices**: schema and migration → API service with rules, permissions, audit → endpoint with OpenAPI → screen → unit, integration, E2E, and security tests → docs. Stopping between slices leaves nothing half done. Every remaining slice, with its tests and the decisions to settle before coding, is in `28_SLICE_PLAN.md`.
 
 ## Milestones
 
