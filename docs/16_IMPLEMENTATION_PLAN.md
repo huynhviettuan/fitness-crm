@@ -45,6 +45,7 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M3 | 3. Manager audit: a manager grades a lead Pass or Fail with a comment and the criteria not met (an admin list); every grade is kept, the latest counts, and whoever sees the lead sees it; the queue "Chưa audit" and each consultant's count (A-086 to A-088) | **Done** 2026-10-12 |
 | M3 | 4. Consulting dashboard and lead analysis: the funnel, rates, compliance, first response, and re-care per consultant and for the team; the leads by channel, source, Organic or Paid, need, nationality, and refusal reason with the notes of "Khác"; filters by period, branch, and staff; one shared chart; Excel exports; four report permissions (A-089 to A-094) | **Done** 2026-10-12 |
 | M4 | 0. Email infrastructure (M6.1, first by P-6): the outbox, the `mail` worker with Resend, retries, a task for reception when an email finally fails, and the customer's "Emails sent" tab (A-106, OQ-036) | **Done** 2026-10-12 |
+| M4 | 1a. Services and price tiers: services with branches, hours, commission, group limits, and validity; the price list in versions with a start day; quick-pick packages; the lookup of unit price, total, name, and end date for any session count; the admin screens (A-107 to A-109, OQ-037). 1b, file storage and the service image, remains | **Done** 2026-10-12 (1a) |
 | M3 | Next: M3.5 the consulting-Excel import, which needs the owner's anonymized file (`28_SLICE_PLAN.md`) | Not started |
 
 ## Open questions per milestone

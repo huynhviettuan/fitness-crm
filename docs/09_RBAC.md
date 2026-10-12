@@ -44,6 +44,7 @@ There is no default Accountant role. Cash-book work (receipts, expense vouchers,
 | Capability | Admin | Fitness Manager | Master | Consulting | PT | Receptionist | Marketing |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | Configuration (option lists, parameters, status rules, services, tiers, templates) | ✓ | — | — | — | — | — | — |
+| Read services and price tiers (`service.view`, the user's branches) | ✓ | ✓ | — | ✓ | — | ✓ | — |
 | Users, roles, permissions, approval matrix | ✓ | — | — | — | — | — | — |
 | Employees and PT working schedules | ✓ | ✓ | — | — | own schedule | — | — |
 | Leads: create | ✓ | ✓ | — | ✓ | — | ✓ (walk-in) | — |

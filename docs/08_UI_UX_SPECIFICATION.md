@@ -14,7 +14,7 @@ Tài chính (M4: Phiếu thu, Phiếu chi, Chi trả HLV, Sổ quỹ, Công nợ
 ▸ Báo cáo: Dashboard tư vấn, Phân tích lead
 Quản trị
   ▸ Người và quyền: Nhân viên, Người dùng, Vai trò và phân quyền, Chi nhánh, Ma trận phê duyệt
-  ▸ Cấu hình: Danh mục lựa chọn, Tham số hệ thống, Checklist tư vấn, Tiêu chí audit, Kịch bản tư vấn (M4: Dịch vụ và bậc giá, Mẫu email)
+  ▸ Cấu hình: Danh mục lựa chọn, Tham số hệ thống, Checklist tư vấn, Tiêu chí audit, Kịch bản tư vấn, Dịch vụ và bậc giá (M4: Mẫu email)
   ▸ Giám sát: Lịch sử thao tác, Thùng rác
 ```
 

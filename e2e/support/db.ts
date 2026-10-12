@@ -40,7 +40,7 @@ export const E2E_TRAINER_NAME = "E2E PT Huấn luyện";
 
 export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "notifications", "email_messages", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "services", "notifications", "email_messages", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Checklist versions the specs saved; version 1 is the migration's (D-020).

@@ -201,6 +201,7 @@ model User {
   taskComments       TaskComment[]
   notifications      Notification[]
   emailsCaused       EmailMessage[]           @relation("EmailCreatedBy")
+  priceTierVersions  PriceTierVersion[]       @relation("PriceTierVersionCreatedBy")
   leadStatusChanges  LeadStatusChange[]
   leadAssignedFrom   LeadAssignment[]         @relation("LeadAssignmentFrom")
   leadAssignedTo     LeadAssignment[]         @relation("LeadAssignmentTo")
@@ -240,6 +241,7 @@ model Branch {
   approvalRequests ApprovalRequest[]
   tasks            Task[]
   emails           EmailMessage[]
+  serviceBranches  ServiceBranch[]
   leadRoundRobin   LeadRoundRobin?
   leadTurns        LeadTurn[]
   leadInquiries    LeadInquiry[]
@@ -1193,10 +1195,10 @@ model Task {
   createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  comments  TaskComment[]
-  reminders TaskReminder[]
+  comments    TaskComment[]
+  reminders   TaskReminder[]
   // The email whose final failure this task is about.
-  failedEmail EmailMessage? @relation("EmailFailureTask")
+  failedEmail EmailMessage?  @relation("EmailFailureTask")
 
   @@index([assigneeUserId, status])
   @@index([assigneeDepartmentId, status])
@@ -1330,4 +1332,99 @@ model PersonMerge {
 
   @@index([survivorId])
   @@map("person_merges")
+}
+
+// ---------------------------------------------------------------------------
+// Services and price tiers (M4.1, D-021, brief §5.1)
+// ---------------------------------------------------------------------------
+
+enum ServiceKind {
+  PT
+  CLASS
+  MEMBER
+}
+
+// What is sold. Services are never deleted, only made inactive: contracts keep pointing at them.
+model Service {
+  id             String      @id @default(uuid()) @db.Uuid
+  name           String      @unique
+  kind           ServiceKind
+  // The window of the day it may be used, "HH:mm"; both or neither.
+  allowedFrom    String?     @map("allowed_from")
+  allowedTo      String?     @map("allowed_to")
+  // A percent of the session's value credited to the PT (brief §5.1).
+  commissionRate Decimal     @default(0) @map("commission_rate") @db.Decimal(5, 2)
+  isGroup        Boolean     @default(false) @map("is_group")
+  maxMembers     Int?        @map("max_members")
+  maxPerWeek     Int?        @map("max_per_week")
+  maxPerDay      Int?        @map("max_per_day")
+  // Validity as a calendar day; outside it the service is not on sale.
+  activeFrom     DateTime?   @map("active_from") @db.Date
+  activeTo       DateTime?   @map("active_to") @db.Date
+  active         Boolean     @default(true)
+  notes          String?
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  branches      ServiceBranch[]
+  versions      PriceTierVersion[]
+  quickPackages QuickPackage[]
+
+  @@map("services")
+}
+
+model ServiceBranch {
+  serviceId String  @map("service_id") @db.Uuid
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  branchId  String  @map("branch_id") @db.Uuid
+  branch    Branch  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@id([serviceId, branchId])
+  @@index([branchId])
+  @@map("service_branches")
+}
+
+// One saved set of tiers of a service, in force from a calendar day until the next version starts (BR-301).
+// A version is never edited: a change is a new version, and contracts keep the one they were signed at.
+model PriceTierVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  serviceId     String   @map("service_id") @db.Uuid
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  version       Int
+  effectiveFrom DateTime @map("effective_from") @db.Date
+  createdById   String?  @map("created_by_id") @db.Uuid
+  createdBy     User?    @relation("PriceTierVersionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tiers PriceTier[]
+
+  @@unique([serviceId, version])
+  @@unique([serviceId, effectiveFrom])
+  @@map("price_tier_versions")
+}
+
+model PriceTier {
+  id             String           @id @default(uuid()) @db.Uuid
+  versionId      String           @map("version_id") @db.Uuid
+  version        PriceTierVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  minSessions    Int              @map("min_sessions")
+  // null: no upper limit.
+  maxSessions    Int?             @map("max_sessions")
+  unitPrice      Decimal          @map("unit_price") @db.Decimal(14, 0)
+  validityMonths Int              @map("validity_months")
+  validityDays   Int              @map("validity_days")
+
+  @@index([versionId, minSessions])
+  @@map("price_tiers")
+}
+
+// A quick-pick count: a button that only fills in the number of sessions (FR-SVC-003).
+model QuickPackage {
+  id        String  @id @default(uuid()) @db.Uuid
+  serviceId String  @map("service_id") @db.Uuid
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  sessions  Int
+
+  @@unique([serviceId, sessions])
+  @@map("quick_packages")
 }

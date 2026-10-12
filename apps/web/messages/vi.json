@@ -40,7 +40,8 @@
     "auditCriteria": "Tiêu chí audit",
     "consultingReport": "Dashboard tư vấn",
     "leadAnalysis": "Phân tích lead",
-    "leadReceivers": "Nhận lead"
+    "leadReceivers": "Nhận lead",
+    "services": "Dịch vụ và bậc giá"
   },
   "status": {
     "customer": {
@@ -595,7 +596,17 @@
     "managerCycle": "Người này đang báo cáo cho nhân viên đó, không thể đảo lại.",
     "stepMovedTheLead": "Kết quả của bước này đã chuyển trạng thái lead nên không gỡ được. Hãy đổi trạng thái của lead.",
     "invalidReminders": "Mốc nhắc phải là số giờ trước hạn, ngăn cách bằng dấu phẩy, không trùng nhau (ví dụ 24, 3, 1).",
-    "tooManyReminders": "Tối đa 10 mốc nhắc."
+    "tooManyReminders": "Tối đa 10 mốc nhắc.",
+    "tierRangeInverted": "Số buổi đến phải bằng hoặc lớn hơn số buổi từ.",
+    "tiersOverlap": "Các bậc giá không được chồng khoảng số buổi lên nhau.",
+    "openTierNotLast": "Chỉ bậc cuối cùng mới được để trống số buổi đến (không giới hạn).",
+    "validityRequired": "Thời hạn phải có ít nhất một tháng hoặc một ngày.",
+    "duplicateSessions": "Mỗi số buổi chỉ được chọn một lần.",
+    "effectiveAfterLatest": "Ngày hiệu lực phải sau ngày hiệu lực của phiên bản gần nhất.",
+    "effectiveInPast": "Ngày hiệu lực không được ở quá khứ.",
+    "nameTaken": "Tên dịch vụ này đã có.",
+    "noPriceTier": "Không có bậc giá nào cho số buổi này.",
+    "noPriceVersion": "Dịch vụ chưa có bảng giá hiệu lực vào ngày này."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -882,7 +893,8 @@
       "history": "Lịch sử và thùng rác",
       "tasks": "Giao việc",
       "exports": "Xuất Excel",
-      "reports": "Báo cáo"
+      "reports": "Báo cáo",
+      "services": "Dịch vụ và bậc giá"
     },
     "labels": {
       "user": {
@@ -968,6 +980,10 @@
         "consultingExport": "Xuất dashboard tư vấn",
         "leadAnalysis": "Xem phân tích lead",
         "leadAnalysisExport": "Xuất phân tích lead"
+      },
+      "service": {
+        "view": "Xem dịch vụ và bậc giá",
+        "manage": "Quản lý dịch vụ và bậc giá"
       }
     },
     "resources": {
@@ -1196,7 +1212,9 @@
       "consulting_script": "Kịch bản tư vấn",
       "person": "Hồ sơ",
       "export": "Xuất Excel",
-      "audit_criterion": "Tiêu chí audit"
+      "audit_criterion": "Tiêu chí audit",
+      "service": "Dịch vụ",
+      "price_tier_version": "Phiên bản bậc giá"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1843,6 +1861,106 @@
       "noEmail": "Khách chưa có email",
       "providerRejected": "Nhà cung cấp từ chối",
       "providerUnavailable": "Nhà cung cấp không phản hồi"
+    }
+  },
+  "services": {
+    "title": "Dịch vụ và bậc giá",
+    "description": "Dịch vụ đang bán và bảng giá theo khoảng số buổi. Mỗi lần sửa giá tạo một phiên bản mới có ngày hiệu lực; hợp đồng đã ký giữ giá lúc ký.",
+    "create": "Thêm dịch vụ",
+    "edit": "Sửa dịch vụ",
+    "empty": "Chưa có dịch vụ nào.",
+    "created": "Đã thêm dịch vụ {name}",
+    "saved": "Đã lưu dịch vụ",
+    "rowActions": "Mở {name}",
+    "fields": {
+      "name": "Tên dịch vụ",
+      "kind": "Loại",
+      "branches": "Chi nhánh áp dụng",
+      "allowedFrom": "Được tập từ giờ",
+      "allowedTo": "Đến giờ",
+      "commissionRate": "Tỉ lệ hoa hồng (%)",
+      "isGroup": "Gói nhóm",
+      "maxMembers": "Số hội viên tối đa",
+      "maxPerWeek": "Tối đa buổi mỗi tuần",
+      "maxPerDay": "Tối đa buổi mỗi ngày",
+      "activeFrom": "Hiệu lực từ ngày",
+      "activeTo": "Hiệu lực đến ngày",
+      "active": "Đang bán",
+      "notes": "Ghi chú",
+      "status": "Trạng thái",
+      "hours": "Giờ được tập",
+      "limits": "Giới hạn",
+      "validity": "Hiệu lực",
+      "currentVersion": "Bảng giá"
+    },
+    "kinds": {
+      "PT": "PT",
+      "CLASS": "Theo lớp",
+      "MEMBER": "Member"
+    },
+    "allDay": "Cả ngày",
+    "noLimit": "Không giới hạn",
+    "perWeek": "{count} buổi/tuần",
+    "perDay": "{count} buổi/ngày",
+    "version": "Phiên bản {version}",
+    "noVersion": "Chưa có",
+    "tabs": {
+      "tiers": "Bậc giá",
+      "packages": "Gói chọn nhanh",
+      "info": "Thông tin"
+    },
+    "tiers": {
+      "title": "Bậc giá",
+      "hint": "Mỗi bậc là một khoảng số buổi với đơn giá mỗi buổi và thời hạn. Số buổi nằm giữa hai bậc bị từ chối, không tự lấy bậc gần nhất.",
+      "empty": "Chưa có bảng giá. Thêm phiên bản đầu tiên để bán dịch vụ này.",
+      "newVersion": "Phiên bản mới",
+      "newVersionTitle": "Phiên bản bảng giá mới",
+      "newVersionHint": "Nhập lại toàn bộ các bậc. Bảng giá mới chỉ áp dụng cho hợp đồng tạo từ ngày hiệu lực; hợp đồng đã ký giữ giá cũ.",
+      "effectiveFrom": "Hiệu lực từ ngày",
+      "addRow": "Thêm bậc",
+      "removeRow": "Xóa bậc {index}",
+      "saveVersion": "Lưu phiên bản",
+      "saved": "Đã lưu phiên bản bảng giá",
+      "history": "Các phiên bản",
+      "inForce": "Đang áp dụng",
+      "upcoming": "Chưa hiệu lực",
+      "replaced": "Đã thay thế",
+      "startsOn": "Từ ngày",
+      "by": "Bởi {name}",
+      "columns": {
+        "range": "Số buổi",
+        "unitPrice": "Đơn giá mỗi buổi",
+        "validity": "Thời hạn",
+        "minSessions": "Từ",
+        "maxSessions": "Đến",
+        "validityMonths": "Tháng",
+        "validityDays": "Ngày"
+      },
+      "rangeOpen": "{min} trở lên",
+      "rangeClosed": "{min} - {max}",
+      "validityText": "{months} tháng {days} ngày"
+    },
+    "packages": {
+      "title": "Gói chọn nhanh",
+      "hint": "Các mốc hay bán hiện thành nút bấm khi tạo hợp đồng. Nút chỉ điền sẵn số buổi; giá vẫn tra từ bậc giá.",
+      "empty": "Chưa có gói chọn nhanh.",
+      "edit": "Sửa gói chọn nhanh",
+      "sessions": "Số buổi, cách nhau bằng dấu phẩy",
+      "sessionsHint": "Ví dụ: 12, 24, 36",
+      "unit": "{count} buổi",
+      "saved": "Đã lưu gói chọn nhanh"
+    },
+    "lookup": {
+      "title": "Tra giá thử",
+      "hint": "Nhập số buổi bất kỳ để xem đơn giá, tổng tiền, tên hiển thị và ngày hết hạn như khi tạo hợp đồng.",
+      "sessions": "Số buổi",
+      "startDate": "Ngày bắt đầu (dd/mm/yyyy)",
+      "run": "Tra giá",
+      "unitPrice": "Đơn giá mỗi buổi",
+      "total": "Tổng tiền",
+      "displayName": "Tên hiển thị",
+      "endDate": "Ngày kết thúc",
+      "version": "Bảng giá"
     }
   }
 }

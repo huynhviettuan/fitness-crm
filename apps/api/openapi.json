@@ -2360,6 +2360,929 @@
         "x-permission": "script.manage"
       }
     },
+    "/api/v1/services": {
+      "get": {
+        "operationId": "ServicesController_list",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "onSale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.view"
+      },
+      "post": {
+        "operationId": "ServicesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "pattern": "^[^\\r\\n\\t]*$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "PT",
+                      "CLASS",
+                      "MEMBER"
+                    ]
+                  },
+                  "branchIds": {
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "allowedFrom": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    ]
+                  },
+                  "allowedTo": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    ]
+                  },
+                  "commissionRate": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "isGroup": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "maxMembers": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "maxPerWeek": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "maxPerDay": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "activeFrom": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "activeTo": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "branchIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.manage"
+      }
+    },
+    "/api/v1/services/{id}": {
+      "get": {
+        "operationId": "ServicesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.view"
+      },
+      "patch": {
+        "operationId": "ServicesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "pattern": "^[^\\r\\n\\t]*$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "PT",
+                      "CLASS",
+                      "MEMBER"
+                    ]
+                  },
+                  "branchIds": {
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "allowedFrom": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    ]
+                  },
+                  "allowedTo": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                      }
+                    ]
+                  },
+                  "commissionRate": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "isGroup": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "maxMembers": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "maxPerWeek": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "maxPerDay": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "activeFrom": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "activeTo": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    ]
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "branchIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.manage"
+      }
+    },
+    "/api/v1/services/{id}/tiers": {
+      "put": {
+        "operationId": "ServicesController_saveTiers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "effectiveFrom": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "tiers": {
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "minSessions": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "maxSessions": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                ""
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            },
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "unitPrice": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "validityMonths": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "validityDays": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "minSessions",
+                        "maxSessions",
+                        "unitPrice",
+                        "validityMonths",
+                        "validityDays"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "effectiveFrom",
+                  "tiers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.manage"
+      }
+    },
+    "/api/v1/services/{id}/quick-packages": {
+      "put": {
+        "operationId": "ServicesController_saveQuickPackages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessions": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "sessions"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.manage"
+      }
+    },
+    "/api/v1/services/{id}/lookup": {
+      "get": {
+        "operationId": "ServicesController_lookup",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessions",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceLookup"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.view"
+      }
+    },
     "/api/v1/lead-audit/consultants": {
       "get": {
         "operationId": "LeadAuditController_consultants",
@@ -6717,6 +7640,8 @@
                             "lead.untick",
                             "customer.view",
                             "customer.manage",
+                            "service.view",
+                            "service.manage",
                             "contract.view",
                             "contract.create",
                             "contract.approve",
@@ -7110,6 +8035,8 @@
                         "lead.untick",
                         "customer.view",
                         "customer.manage",
+                        "service.view",
+                        "service.manage",
                         "contract.view",
                         "contract.create",
                         "contract.approve",
@@ -7351,6 +8278,8 @@
                         "lead.untick",
                         "customer.view",
                         "customer.manage",
+                        "service.view",
+                        "service.manage",
                         "contract.view",
                         "contract.create",
                         "contract.approve",
@@ -9826,6 +10755,8 @@
                 "lead.untick",
                 "customer.view",
                 "customer.manage",
+                "service.view",
+                "service.manage",
                 "contract.view",
                 "contract.create",
                 "contract.approve",
@@ -11439,6 +12370,379 @@
           "answerEn",
           "active",
           "sortOrder"
+        ]
+      },
+      "ServiceList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Service"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PT",
+              "CLASS",
+              "MEMBER"
+            ]
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "allowedFrom": {
+            "nullable": true,
+            "type": "string"
+          },
+          "allowedTo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "commissionRate": {
+            "type": "number"
+          },
+          "isGroup": {
+            "type": "boolean"
+          },
+          "maxMembers": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "maxPerWeek": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "maxPerDay": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "activeFrom": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "activeTo": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentVersion": {
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "branches",
+          "allowedFrom",
+          "allowedTo",
+          "commissionRate",
+          "isGroup",
+          "maxMembers",
+          "maxPerWeek",
+          "maxPerDay",
+          "activeFrom",
+          "activeTo",
+          "active",
+          "notes",
+          "createdAt",
+          "currentVersion"
+        ]
+      },
+      "ServiceDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PT",
+              "CLASS",
+              "MEMBER"
+            ]
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "allowedFrom": {
+            "nullable": true,
+            "type": "string"
+          },
+          "allowedTo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "commissionRate": {
+            "type": "number"
+          },
+          "isGroup": {
+            "type": "boolean"
+          },
+          "maxMembers": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "maxPerWeek": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "maxPerDay": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "activeFrom": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "activeTo": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentVersion": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceTierVersion"
+            }
+          },
+          "quickPackages": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "branches",
+          "allowedFrom",
+          "allowedTo",
+          "commissionRate",
+          "isGroup",
+          "maxMembers",
+          "maxPerWeek",
+          "maxPerDay",
+          "activeFrom",
+          "activeTo",
+          "active",
+          "notes",
+          "createdAt",
+          "currentVersion",
+          "versions",
+          "quickPackages"
+        ]
+      },
+      "PriceTierVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "nullable": true,
+            "type": "string"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceTier"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "effectiveFrom",
+          "createdAt",
+          "createdBy",
+          "tiers"
+        ]
+      },
+      "PriceTier": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "minSessions": {
+            "type": "integer"
+          },
+          "maxSessions": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "validityMonths": {
+            "type": "integer"
+          },
+          "validityDays": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "minSessions",
+          "maxSessions",
+          "unitPrice",
+          "validityMonths",
+          "validityDays"
+        ]
+      },
+      "PriceLookup": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "tierId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sessions": {
+            "type": "integer"
+          },
+          "unitPrice": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "validityMonths": {
+            "type": "integer"
+          },
+          "validityDays": {
+            "type": "integer"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "endDate": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "serviceId",
+          "versionId",
+          "version",
+          "tierId",
+          "sessions",
+          "unitPrice",
+          "total",
+          "validityMonths",
+          "validityDays",
+          "displayName",
+          "endDate"
         ]
       },
       "ConsultantAudit": {
@@ -13806,6 +15110,8 @@
                     "lead.untick",
                     "customer.view",
                     "customer.manage",
+                    "service.view",
+                    "service.manage",
                     "contract.view",
                     "contract.create",
                     "contract.approve",
@@ -14048,6 +15354,8 @@
                 "lead.untick",
                 "customer.view",
                 "customer.manage",
+                "service.view",
+                "service.manage",
                 "contract.view",
                 "contract.create",
                 "contract.approve",

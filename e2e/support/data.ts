@@ -137,6 +137,14 @@ export function gymToday(): { date: string; url: string } {
   return { date: `${d}/${m}/${y}`, url: `${y}-${m}-${d}` };
 }
 
+/** The gym day `offset` days from today, dd/MM/yyyy. */
+export function gymDay(offset: number): string {
+  const [y, m, d] = gymToday().url.split("-").map(Number);
+  const date = new Date(Date.UTC(y!, m! - 1, d! + offset));
+  const two = (n: number) => String(n).padStart(2, "0");
+  return `${two(date.getUTCDate())}/${two(date.getUTCMonth() + 1)}/${date.getUTCFullYear()}`;
+}
+
 /**
  * A payment with "Khác" as its method and the note "E2E" (any list option would do).
  * It waits for approval (D-018) unless `approver` approves it at once.

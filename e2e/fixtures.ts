@@ -14,6 +14,7 @@ import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
 import { ChecklistAdminPage, TodayPage } from "./pages/checklist";
 import { ScriptsAdminPage } from "./pages/scripts";
+import { ServiceDetailPage, ServicesPage } from "./pages/services";
 import { LeadAuditPage } from "./pages/lead-audit";
 import { LeadReceiversPage } from "./pages/lead-receivers";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
@@ -41,6 +42,8 @@ type Fixtures = {
   todayPage: TodayPage;
   checklistAdminPage: ChecklistAdminPage;
   scriptsAdminPage: ScriptsAdminPage;
+  servicesPage: ServicesPage;
+  serviceDetailPage: ServiceDetailPage;
   leadAuditPage: LeadAuditPage;
   leadReceiversPage: LeadReceiversPage;
   taskPage: TaskPage;
@@ -104,6 +107,8 @@ export const test = base.extend<Fixtures>({
   todayPage: async ({ page }, use) => use(new TodayPage(page)),
   checklistAdminPage: async ({ page }, use) => use(new ChecklistAdminPage(page)),
   scriptsAdminPage: async ({ page }, use) => use(new ScriptsAdminPage(page)),
+  servicesPage: async ({ page }, use) => use(new ServicesPage(page)),
+  serviceDetailPage: async ({ page }, use) => use(new ServiceDetailPage(page)),
   leadAuditPage: async ({ page }, use) => use(new LeadAuditPage(page)),
   leadReceiversPage: async ({ page }, use) => use(new LeadReceiversPage(page)),
   taskPage: async ({ page }, use) => use(new TaskPage(page)),
@@ -294,6 +299,17 @@ export const test = base.extend<Fixtures>({
       );
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: scriptIds } } });
       await prisma.consultingScript.deleteMany({ where: { id: { in: scriptIds } } });
+      // Services named with the tag, with their price versions, tiers, and quick-pick counts (M4.1).
+      const serviceIds = ids(
+        await prisma.service.findMany({ where: { name: { contains: tag } }, select: { id: true } }),
+      );
+      const versionIds = ids(
+        await prisma.priceTierVersion.findMany({ where: { serviceId: { in: serviceIds } }, select: { id: true } }),
+      );
+      await prisma.priceTier.deleteMany({ where: { versionId: { in: versionIds } } });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...serviceIds, ...versionIds] } } });
+      await prisma.priceTierVersion.deleteMany({ where: { id: { in: versionIds } } });
+      await prisma.service.deleteMany({ where: { id: { in: serviceIds } } });
       // Inquiries and merges (M2 slice 5): the merged records point at their survivors.
       await prisma.leadInquiry.deleteMany({ where: { personId: { in: customerIds } } });
       await prisma.personMerge.deleteMany({

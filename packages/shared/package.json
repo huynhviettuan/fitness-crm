@@ -73,6 +73,10 @@
       "types": "./dist/roles/index.d.ts",
       "default": "./dist/roles/index.js"
     },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "default": "./dist/services/index.js"
+    },
     "./tasks": {
       "types": "./dist/tasks/index.d.ts",
       "default": "./dist/tasks/index.js"

@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-12 — M4.1a: services and price tiers
+
+- **Services** (A-109, FR-SVC-001): name, kind, branches, allowed hours, commission rate, group limit, limits per week and per day, validity; never deleted, only made inactive. Admin edits; every role that creates contracts or sees payments reads (`service.view`, `service.manage`).
+- **Price tiers in versions** (BR-301, D-021): a version is the whole set of tiers from a start day and is never edited, so contracts keep the price they were signed at; tiers never overlap (also an exclusion constraint) and may leave gaps.
+- **Lookup** (`GET /services/:id/lookup`, AC-10): any session count gives the unit price, total, display name ("Hybrid Training 30 buổi"), and the end date; a count no tier covers is refused (A-107); the end date counts the start day (A-108).
+- **Quick-pick packages** (FR-SVC-003) and the admin screens under Configuration, with a "Try a price" card.
+- **Open**: OQ-037, to check the end-date rule with one real contract; M4.1b (file storage on R2 and the service image) is next. Docs 04, 07, 08, 09, 13, 16, 18, 28; E2E-152 to E2E-154.
+
 ## 2026-10-12 — M4.0: email infrastructure
 
 - **Outbox and sender** (A-106, P-6, T-051): the table `email_messages`, `queueEmail` for the features to call in their own transaction (one email per cause), and a `mail` worker every minute that sends through Resend (or only logs with `EMAIL_PROVIDER=log`). A busy or broken provider is tried again after 1, 5, and 30 minutes; a refusal, or a fourth failure, leaves the email Failed.

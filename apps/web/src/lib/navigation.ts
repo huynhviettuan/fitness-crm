@@ -23,7 +23,7 @@ export const NAV_SECTIONS = [
     label: "administration",
     entries: [
       { group: "people", items: ["employees", "users", "roles", "branches", "approvalRules"] },
-      { group: "config", items: ["options", "parameters", "checklist", "auditCriteria", "scripts"] },
+      { group: "config", items: ["services", "options", "parameters", "checklist", "auditCriteria", "scripts"] },
       { group: "monitoring", items: ["audit", "trash"] },
     ],
   },

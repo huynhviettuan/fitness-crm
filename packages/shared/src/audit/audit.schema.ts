@@ -21,6 +21,8 @@ export const AUDIT_ENTITY_TYPES = [
   "consulting_checklist",
   "consulting_script",
   "audit_criterion",
+  "service",
+  "price_tier_version",
   "export",
   "person",
 ] as const;

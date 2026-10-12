@@ -40,7 +40,8 @@
     "auditCriteria": "Audit criteria",
     "consultingReport": "Consulting dashboard",
     "leadAnalysis": "Lead analysis",
-    "leadReceivers": "Lead receiving"
+    "leadReceivers": "Lead receiving",
+    "services": "Services and price tiers"
   },
   "status": {
     "customer": {
@@ -595,7 +596,17 @@
     "managerCycle": "That person reports to this employee, so the line would loop.",
     "stepMovedTheLead": "This step's result moved the lead, so it cannot be removed. Change the lead's status instead.",
     "invalidReminders": "Reminder points are hours before the deadline, separated by commas, without repeats (for example 24, 3, 1).",
-    "tooManyReminders": "At most 10 reminder points."
+    "tooManyReminders": "At most 10 reminder points.",
+    "tierRangeInverted": "The upper session count must be equal to or above the lower one.",
+    "tiersOverlap": "Price tiers cannot overlap in session counts.",
+    "openTierNotLast": "Only the last tier may leave its upper count empty (no limit).",
+    "validityRequired": "Validity needs at least one month or one day.",
+    "duplicateSessions": "Each session count can be chosen once.",
+    "effectiveAfterLatest": "The start day must be after the start day of the latest version.",
+    "effectiveInPast": "The start day cannot be in the past.",
+    "nameTaken": "A service with this name already exists.",
+    "noPriceTier": "No price tier covers this number of sessions.",
+    "noPriceVersion": "The service has no price list in force on this day."
   },
   "contracts": {
     "title": "Contracts",
@@ -882,7 +893,8 @@
       "history": "History and trash",
       "tasks": "Tasks",
       "exports": "Export to Excel",
-      "reports": "Reports"
+      "reports": "Reports",
+      "services": "Services and price tiers"
     },
     "labels": {
       "user": {
@@ -968,6 +980,10 @@
         "consultingExport": "Export the consulting dashboard",
         "leadAnalysis": "See the lead analysis",
         "leadAnalysisExport": "Export the lead analysis"
+      },
+      "service": {
+        "view": "View services and price tiers",
+        "manage": "Manage services and price tiers"
       }
     },
     "resources": {
@@ -1196,7 +1212,9 @@
       "consulting_script": "Consulting script",
       "person": "Person record",
       "export": "Excel export",
-      "audit_criterion": "Audit criterion"
+      "audit_criterion": "Audit criterion",
+      "service": "Service",
+      "price_tier_version": "Price tier version"
     },
     "verbs": {
       "created": "Created",
@@ -1843,6 +1861,106 @@
       "noEmail": "The customer has no email",
       "providerRejected": "The provider refused it",
       "providerUnavailable": "The provider did not respond"
+    }
+  },
+  "services": {
+    "title": "Services and price tiers",
+    "description": "The services on sale and their prices by session range. Each change of prices is a new version with a start day; contracts already signed keep the price they were signed at.",
+    "create": "Add service",
+    "edit": "Edit service",
+    "empty": "No service yet.",
+    "created": "Service {name} added",
+    "saved": "Service saved",
+    "rowActions": "Open {name}",
+    "fields": {
+      "name": "Service name",
+      "kind": "Kind",
+      "branches": "Branches",
+      "allowedFrom": "Allowed from",
+      "allowedTo": "Until",
+      "commissionRate": "Commission rate (%)",
+      "isGroup": "Group package",
+      "maxMembers": "Maximum members",
+      "maxPerWeek": "Maximum sessions per week",
+      "maxPerDay": "Maximum sessions per day",
+      "activeFrom": "Valid from",
+      "activeTo": "Valid until",
+      "active": "On sale",
+      "notes": "Notes",
+      "status": "Status",
+      "hours": "Allowed hours",
+      "limits": "Limits",
+      "validity": "Validity",
+      "currentVersion": "Price list"
+    },
+    "kinds": {
+      "PT": "PT",
+      "CLASS": "Class",
+      "MEMBER": "Member"
+    },
+    "allDay": "All day",
+    "noLimit": "No limit",
+    "perWeek": "{count} per week",
+    "perDay": "{count} per day",
+    "version": "Version {version}",
+    "noVersion": "None yet",
+    "tabs": {
+      "tiers": "Price tiers",
+      "packages": "Quick-pick packages",
+      "info": "Details"
+    },
+    "tiers": {
+      "title": "Price tiers",
+      "hint": "Each tier is a session range with a unit price per session and a validity. A count between two tiers is refused, never given the nearest tier.",
+      "empty": "No price list yet. Add the first version to sell this service.",
+      "newVersion": "New version",
+      "newVersionTitle": "New price list version",
+      "newVersionHint": "Enter all the tiers again. The new prices apply only to contracts made from the start day on; contracts already signed keep the old price.",
+      "effectiveFrom": "Valid from",
+      "addRow": "Add tier",
+      "removeRow": "Remove tier {index}",
+      "saveVersion": "Save version",
+      "saved": "Price list version saved",
+      "history": "Versions",
+      "inForce": "In force",
+      "upcoming": "Not started",
+      "replaced": "Replaced",
+      "startsOn": "From",
+      "by": "By {name}",
+      "columns": {
+        "range": "Sessions",
+        "unitPrice": "Unit price per session",
+        "validity": "Validity",
+        "minSessions": "From",
+        "maxSessions": "To",
+        "validityMonths": "Months",
+        "validityDays": "Days"
+      },
+      "rangeOpen": "{min} and more",
+      "rangeClosed": "{min} - {max}",
+      "validityText": "{months} months {days} days"
+    },
+    "packages": {
+      "title": "Quick-pick packages",
+      "hint": "The counts often sold become buttons on the contract form. A button only fills in the number of sessions; the price is still looked up from the tiers.",
+      "empty": "No quick-pick packages.",
+      "edit": "Edit quick-pick packages",
+      "sessions": "Session counts, separated by commas",
+      "sessionsHint": "For example: 12, 24, 36",
+      "unit": "{count} sessions",
+      "saved": "Quick-pick packages saved"
+    },
+    "lookup": {
+      "title": "Try a price",
+      "hint": "Enter any number of sessions to see the unit price, total, display name, and end date as the contract form would.",
+      "sessions": "Sessions",
+      "startDate": "Start day (dd/mm/yyyy)",
+      "run": "Look up",
+      "unitPrice": "Unit price per session",
+      "total": "Total",
+      "displayName": "Display name",
+      "endDate": "End date",
+      "version": "Price list"
     }
   }
 }
