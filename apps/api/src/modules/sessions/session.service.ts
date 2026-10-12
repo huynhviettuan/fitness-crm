@@ -6,6 +6,7 @@ import { findContract } from "../contracts/contract.repository.js";
 import { contractView, type ContractView } from "../contracts/contract.service.js";
 import { moveStatus } from "../bookings/booking.repository.js";
 import { canCheckIn, canComplete, isWithinContractPeriod } from "@flow/shared/bookings";
+import { entitledSessions } from "@flow/shared/contracts";
 import {
   bookingView,
   changeLockedBooking,
@@ -58,7 +59,10 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
       throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
     }
     // D-011: sessions used before go-live count too.
-    const remaining = contract.totalSessions - contract.openingSessionsUsed - contract._count.bookings;
+    const remaining =
+      entitledSessions(contract.totalSessions, contract.bonusSessions) -
+      contract.openingSessionsUsed -
+      contract._count.bookings;
     if (remaining <= 0) throw new AppError("CONTRACT_NO_REMAINING_SESSIONS");
 
     if ((await moveStatus(tx, bookingId, "CHECKED_IN", "COMPLETED")) !== 1) {

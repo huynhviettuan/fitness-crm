@@ -1,26 +1,17 @@
 import { z } from "zod";
-import { calendarDate, hasNoControlCharacters, timeOfDay, vndAmount } from "../validation/index.js";
+import {
+  calendarDate,
+  optionalCalendarDate,
+  hasNoControlCharacters,
+  optionalWhole,
+  timeOfDay,
+  vndAmount,
+  wholeNumber,
+} from "../validation/index.js";
 import { SERVICE_KINDS, tiersProblems } from "./service.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Forms send text; an empty optional field is stored as null.
-
-const wholeNumber = (min: number, max: number) =>
-  z
-    .union([z.number(), z.string()], { error: "invalidNumber" })
-    .pipe(
-      z.coerce
-        .number<string | number>({ error: "invalidNumber" })
-        .int({ error: "invalidNumber" })
-        .min(min, { error: "invalidNumber" })
-        .max(max, { error: "invalidNumber" }),
-    );
-
-/** A whole number, or empty for none. */
-const optionalWhole = (min: number, max: number) =>
-  z
-    .union([z.literal(""), z.null(), wholeNumber(min, max)], { error: "invalidNumber" })
-    .transform((value) => (value === "" ? null : value));
 
 const emptyToNull = (value: string) => (value === "" ? null : value);
 
@@ -44,9 +35,6 @@ const commissionRate = z
   .transform((value) => Math.round(value * 100) / 100);
 
 const optionalTime = z.union([z.literal(""), z.null(), timeOfDay]).transform((value) => (value === "" ? null : value));
-const optionalDay = z
-  .union([z.literal(""), z.null(), calendarDate])
-  .transform((value) => (value === "" ? null : value));
 
 export const serviceInputSchema = z
   .object({
@@ -63,8 +51,8 @@ export const serviceInputSchema = z
     maxMembers: optionalWhole(2, 50).prefault(""),
     maxPerWeek: optionalWhole(1, 50).prefault(""),
     maxPerDay: optionalWhole(1, 10).prefault(""),
-    activeFrom: optionalDay.prefault(""),
-    activeTo: optionalDay.prefault(""),
+    activeFrom: optionalCalendarDate.prefault(""),
+    activeTo: optionalCalendarDate.prefault(""),
     active: z.boolean({ error: "invalidChoice" }).prefault(true),
     notes: z
       .string()

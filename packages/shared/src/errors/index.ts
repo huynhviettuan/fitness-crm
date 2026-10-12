@@ -24,6 +24,8 @@ export const ERROR_HTTP_STATUS = {
   // D-054: the step passed its deadline and the grace period and is "Không thực hiện"; nobody ticks it late.
   STEP_LOCKED: 409,
   CONTRACT_NOT_EDITABLE: 409,
+  // A-112: the total discount is above what the approver's role may approve itself.
+  DISCOUNT_ABOVE_LIMIT: 409,
   CONTRACT_NOT_ACTIVE: 409,
   CONTRACT_NO_REMAINING_SESSIONS: 409,
   CONTRACT_HAS_CHECKED_IN_BOOKING: 409,

@@ -75,6 +75,70 @@ export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
 }
 
 /**
+ * What every contract the specs make is sold under (M4.3): a service "PT" priced 500,000 a session for 1 to 1,000
+ * sessions with 60 months, so 24 sessions are "PT 24 buổi" worth 12,000,000, and a salesperson to name on it (A-115).
+ * Made once, by the specs' setup, outside the API: they are configuration, not what a test is about.
+ */
+let fixtures: Promise<{ serviceId: string; saleEmployeeId: string }> | undefined;
+export const E2E_SERVICE_NAME = "PT";
+export const E2E_SALESPERSON_NAME = "Nhân viên bán hàng E2E";
+
+export function contractFixtures() {
+  fixtures ??= makeContractFixtures();
+  return fixtures;
+}
+
+async function makeContractFixtures() {
+  const prisma = connect();
+  try {
+    let service = await prisma.service.findUnique({ where: { name: E2E_SERVICE_NAME }, select: { id: true } });
+    if (!service) {
+      try {
+        service = await prisma.service.create({
+          data: {
+            name: E2E_SERVICE_NAME,
+            kind: "MEMBER",
+            branches: { create: [{ branchId: E2E_BRANCH_ID }] },
+            versions: {
+              create: {
+                version: 1,
+                effectiveFrom: new Date("2020-01-01T00:00:00Z"),
+                tiers: {
+                  create: [
+                    { minSessions: 1, maxSessions: 1000, unitPrice: 500_000, validityMonths: 60, validityDays: 0 },
+                  ],
+                },
+              },
+            },
+            quickPackages: { create: [{ sessions: 12 }, { sessions: 24 }] },
+          },
+          select: { id: true },
+        });
+      } catch {
+        // Another worker made it first.
+        service = await prisma.service.findUniqueOrThrow({ where: { name: E2E_SERVICE_NAME }, select: { id: true } });
+      }
+    }
+    let sale = await prisma.employee.findFirst({ where: { fullName: E2E_SALESPERSON_NAME }, select: { id: true } });
+    if (!sale) {
+      const [{ value }] = await prisma.$queryRaw<{ value: bigint }[]>`SELECT nextval('employee_code_seq') AS value`;
+      sale = await prisma.employee.create({
+        data: {
+          employeeCode: `NV${value.toString().padStart(3, "0")}`,
+          fullName: E2E_SALESPERSON_NAME,
+          searchName: "nhan vien ban hang e2e",
+          branchId: E2E_BRANCH_ID,
+        },
+        select: { id: true },
+      });
+    }
+    return { serviceId: service.id, saleEmployeeId: sale.id };
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
  * Setup for "Việc hôm nay": makes one of a lead's open consulting steps due now, so the
  * test does not depend on the time of day (a step due in an hour may fall after midnight).
  */

@@ -24,7 +24,14 @@ import {
 import { checkIn, completeSession } from "../../src/modules/sessions/session.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestUser, DEFAULT_BRANCH_ID } from "../support/factories.js";
-import { activeContract, book, bookingScenario, CONTRACT, createTrainer, linkedTrainer } from "../support/bookings.js";
+import {
+  activeContract,
+  book,
+  bookingScenario,
+  contractInput,
+  createTrainer,
+  linkedTrainer,
+} from "../support/bookings.js";
 
 afterEach(async () => {
   vi.useRealTimers();
@@ -89,7 +96,7 @@ describe("createBooking", () => {
     const { contract: draft } = await createContract(
       scenario.manager,
       scenario.customer.id,
-      CONTRACT,
+      await contractInput(),
       crypto.randomUUID(),
     );
     const cancelled = await activeContract(scenario.manager, scenario.customer.id);
@@ -104,7 +111,7 @@ describe("createBooking", () => {
 
   it("refuses an expired contract, judged by the gym's clock (T-018)", async () => {
     const scenario = await bookingScenario();
-    const contract = await activeContract(scenario.manager, scenario.customer.id, { endDate: "31/10/2026" });
+    const contract = await activeContract(scenario.manager, scenario.customer.id, {}, { months: 1 });
 
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-31T17:00:00Z")); // 00:00 on 01/11 in the gym
@@ -116,13 +123,13 @@ describe("createBooking", () => {
   it("refuses a day outside the contract's dates (BR-012, OQ-001 interim)", async () => {
     const scenario = await bookingScenario();
 
-    for (const date of ["30/09/2026", "01/01/2031"]) {
+    for (const date of ["30/09/2026", "01/10/2031"]) {
       await expect(book(scenario.manager, scenario, { date })).rejects.toMatchObject({
         code: "BOOKING_OUTSIDE_CONTRACT_PERIOD",
       });
     }
     await expect(book(scenario.manager, scenario, { date: "01/10/2026" })).resolves.toBeDefined();
-    await expect(book(scenario.manager, scenario, { date: "31/12/2030" })).resolves.toBeDefined();
+    await expect(book(scenario.manager, scenario, { date: "30/09/2031" })).resolves.toBeDefined();
   });
 
   it("refuses an inactive trainer", async () => {
@@ -213,7 +220,7 @@ describe("createBooking", () => {
   });
 
   it("refuses more open bookings than remaining sessions (OQ-008 interim)", async () => {
-    const scenario = await bookingScenario({ totalSessions: 2 });
+    const scenario = await bookingScenario({ sessions: 2 });
     const first = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
     await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
 
@@ -226,7 +233,7 @@ describe("createBooking", () => {
   });
 
   it("lets only one of several simultaneous bookings take a contract's last session", async () => {
-    const scenario = await bookingScenario({ totalSessions: 1 });
+    const scenario = await bookingScenario({ sessions: 1 });
     const hours = ["08", "09", "10", "11", "12"];
 
     const results = await Promise.allSettled(

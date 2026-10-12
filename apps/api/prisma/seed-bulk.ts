@@ -78,6 +78,8 @@ async function seed(prisma: typeof client) {
   const { calendarDateInTimeZone } = await import("@flow/shared/validation");
   const { createCustomer } = await import("../src/modules/customers/customer.service.js");
   const { activateContract, createContract } = await import("../src/modules/contracts/contract.service.js");
+  const { createService, saveTiers } = await import("../src/modules/services/service.service.js");
+  const { createEmployee: addEmployee } = await import("../src/modules/employees/employee.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");
   const { checkIn, completeSession } = await import("../src/modules/sessions/session.service.js");
   const { recordPayment, deletePayment } = await import("../src/modules/finance/payment.service.js");
@@ -165,13 +167,29 @@ async function seed(prisma: typeof client) {
   const methods = await optionIds("paymentMethods");
   const wrongAmount = await addOption("deleteReasons", "Ghi nhầm số tiền", "Wrong amount");
   const enteredTwice = await addOption("deleteReasons", "Nhập trùng", "Entered twice");
+  // Contracts are priced from services (M4.3): each runs 181 days from its start.
   const PACKAGES = [
-    { pkg: "PT 12 buổi", value: 6_500_000, sessions: 12 },
-    { pkg: "PT 24 buổi", value: 12_000_000, sessions: 24 },
-    { pkg: "PT 36 buổi", value: 17_000_000, sessions: 36 },
-    { pkg: "Yoga 12 buổi", value: 3_600_000, sessions: 12 },
-    { pkg: "Gym 3 tháng", value: 4_500_000, sessions: 12 },
-  ];
+    { service: "PT", price: 500_000, sessions: 12 },
+    { service: "PT", price: 500_000, sessions: 24 },
+    { service: "PT", price: 500_000, sessions: 36 },
+    { service: "Yoga", price: 300_000, sessions: 12 },
+    { service: "Gym", price: 375_000, sessions: 12 },
+  ].map((spec) => ({ ...spec, value: spec.price * spec.sessions }));
+  const serviceIds = new Map<string, string>();
+  for (const spec of PACKAGES) {
+    if (serviceIds.has(spec.service)) continue;
+    const service = await createService(admin, {
+      name: spec.service,
+      kind: "MEMBER",
+      branchIds: [(await prisma.branch.findFirstOrThrow({ select: { id: true } })).id],
+    });
+    await saveTiers(admin, service.id, {
+      effectiveFrom: "01/01/2020",
+      tiers: [{ minSessions: 1, maxSessions: 1000, unitPrice: spec.price, validityMonths: 0, validityDays: 181 }],
+    });
+    serviceIds.set(spec.service, service.id);
+  }
+  const seller = await addEmployee(manager, { fullName: "Nguyễn Thị Bán Hàng" });
   const vnd = (amount: number) => amount.toLocaleString("de-DE");
   const end = (hour: number) => `${String(hour + 1).padStart(2, "0")}:00`;
   const hh = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
@@ -193,11 +211,11 @@ async function seed(prisma: typeof client) {
         manager,
         customer.id,
         {
-          packageName: spec.pkg,
-          contractValue: vnd(spec.value),
-          totalSessions: String(spec.sessions),
+          serviceId: serviceIds.get(spec.service),
+          sessions: spec.sessions,
+          contractDate: day(start),
           startDate: day(start),
-          endDate: day(start + 180),
+          saleShares: [{ employeeId: seller.id, percent: 100 }],
         },
         randomUUID(),
       );

@@ -120,72 +120,10 @@ export async function recordPayment(
   if (replay) return { payment: replay, replayed: true };
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      if (!(await lockContract(tx, contractId))) throw new AppError("NOT_FOUND");
-      // The same request sent twice at once waits here for the first; it is a replay,
-      // not a second payment that would exceed the contract value.
-      const replayUnderLock = await replayOf(tx, key.data, contractId, data, actor);
-      if (replayUnderLock) return { payment: replayUnderLock, replayed: true };
-
-      // An active option of the list; "Khác" needs a note (D-016).
-      const method = await resolveChoice(tx, "paymentMethods", "methodId", {
-        optionId: data.methodId,
-        note: data.methodNote,
-      });
-
-      // Only on a contract the actor can see (D-017).
-      const contract = await findContract(tx, contractId, contractsVisibleTo(actor));
-      if (!contract) throw new AppError("NOT_FOUND");
-      // OQ-013 interim: nothing new is collected on a cancelled contract.
-      if (contract.status === "CANCELLED") throw new AppError("PAYMENT_CONTRACT_CANCELLED");
-      const confirmedPaidAmount = await repo.sumCommittedPayments(tx, { contractId });
-      const figures = {
-        contractValue: Number(contract.contractValue),
-        openingPaidAmount: Number(contract.openingPaidAmount),
-        confirmedPaidAmount,
-      };
-      if (exceedsContractValue(figures, data.amount)) throw new AppError("PAYMENT_EXCEEDS_CONTRACT_VALUE");
-
-      const rule = await ruleFor(tx, "payment.create");
-      // A payment belongs to its contract's branch (D-014).
-      const payment = await repo.createPayment(tx, {
-        approvalStatus: rule.required ? "PENDING" : "APPROVED",
-        amount: data.amount,
-        paidOn: data.paidOn,
-        methodId: method.optionId,
-        methodNote: method.note,
-        contractId,
-        branchId: contract.branchId,
-        idempotencyKey: key.data,
-        createdById: actor.id,
-      });
-      await recordAudit(tx, {
-        actorUserId: actor.id,
-        entityType: "payment",
-        entityId: payment.id,
-        action: "payment.created",
-        after: {
-          contractId,
-          amount: data.amount,
-          method: { optionId: method.optionId, note: method.note },
-          paidOn: data.paidOn.toISOString().slice(0, 10),
-          approvalStatus: payment.approvalStatus,
-        },
-      });
-      const view = toView(payment);
-      if (rule.required) {
-        await submitForApproval(tx, actor, {
-          action: "payment.create",
-          entityType: "payment",
-          entityId: payment.id,
-          branchId: payment.branchId,
-          title: titleOf(view),
-          amount: view.amount,
-          payload: { contractId },
-        });
-      }
-      return { payment: view, replayed: false };
-    }, LOCKING_TRANSACTION);
+    return await prisma.$transaction(
+      (tx) => recordPaymentIn(tx, actor, contractId, data, key.data),
+      LOCKING_TRANSACTION,
+    );
   } catch (error) {
     // The same key used for another contract at the same moment: the unique key decides.
     if (!isUniqueViolation(error)) throw error;
@@ -193,6 +131,83 @@ export async function recordPayment(
     if (replayAfterRace) return { payment: replayAfterRace, replayed: true };
     throw error;
   }
+}
+
+/**
+ * The recording itself, inside the caller's transaction: a contract being made takes its first payment here, so the
+ * contract and its receipt are saved together or not at all (A-119).
+ */
+export async function recordPaymentIn(
+  tx: TxDb,
+  actor: Actor,
+  contractId: string,
+  data: PaymentData,
+  key: string,
+): Promise<{ payment: PaymentView; replayed: boolean }> {
+  if (!(await lockContract(tx, contractId))) throw new AppError("NOT_FOUND");
+  // The same request sent twice at once waits here for the first; it is a replay,
+  // not a second payment that would exceed the contract value.
+  const replayUnderLock = await replayOf(tx, key, contractId, data, actor);
+  if (replayUnderLock) return { payment: replayUnderLock, replayed: true };
+
+  // An active option of the list; "Khác" needs a note (D-016).
+  const method = await resolveChoice(tx, "paymentMethods", "methodId", {
+    optionId: data.methodId,
+    note: data.methodNote,
+  });
+
+  // Only on a contract the actor can see (D-017).
+  const contract = await findContract(tx, contractId, contractsVisibleTo(actor));
+  if (!contract) throw new AppError("NOT_FOUND");
+  // OQ-013 interim: nothing new is collected on a cancelled contract.
+  if (contract.status === "CANCELLED") throw new AppError("PAYMENT_CONTRACT_CANCELLED");
+  const confirmedPaidAmount = await repo.sumCommittedPayments(tx, { contractId });
+  const figures = {
+    contractValue: Number(contract.contractValue),
+    openingPaidAmount: Number(contract.openingPaidAmount),
+    confirmedPaidAmount,
+  };
+  if (exceedsContractValue(figures, data.amount)) throw new AppError("PAYMENT_EXCEEDS_CONTRACT_VALUE");
+
+  const rule = await ruleFor(tx, "payment.create");
+  // A payment belongs to its contract's branch (D-014).
+  const payment = await repo.createPayment(tx, {
+    approvalStatus: rule.required ? "PENDING" : "APPROVED",
+    amount: data.amount,
+    paidOn: data.paidOn,
+    methodId: method.optionId,
+    methodNote: method.note,
+    contractId,
+    branchId: contract.branchId,
+    idempotencyKey: key,
+    createdById: actor.id,
+  });
+  await recordAudit(tx, {
+    actorUserId: actor.id,
+    entityType: "payment",
+    entityId: payment.id,
+    action: "payment.created",
+    after: {
+      contractId,
+      amount: data.amount,
+      method: { optionId: method.optionId, note: method.note },
+      paidOn: data.paidOn.toISOString().slice(0, 10),
+      approvalStatus: payment.approvalStatus,
+    },
+  });
+  const view = toView(payment);
+  if (rule.required) {
+    await submitForApproval(tx, actor, {
+      action: "payment.create",
+      entityType: "payment",
+      entityId: payment.id,
+      branchId: payment.branchId,
+      title: titleOf(view),
+      amount: view.amount,
+      payload: { contractId },
+    });
+  }
+  return { payment: view, replayed: false };
 }
 
 /**

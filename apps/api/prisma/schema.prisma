@@ -397,6 +397,7 @@ model Option {
   inquirySources       LeadInquiry[]              @relation("InquirySource")
   inquiryNeedGroups    LeadInquiry[]              @relation("InquiryNeedGroup")
   personMerges         PersonMerge[]
+  contractExceptions   Contract[]                 @relation("ContractExceptionReason")
 
   @@unique([listKey, labelVi])
   @@unique([listKey, code])
@@ -677,8 +678,9 @@ model Customer {
   leadStatusChanges LeadStatusChange[]
   leadAssignments   LeadAssignment[]
   leadSteps         LeadStep[]
-  inquiries         LeadInquiry[]      @relation("InquiryPerson")
-  emails            EmailMessage[]     @relation("PersonEmails")
+  inquiries         LeadInquiry[]       @relation("InquiryPerson")
+  companionOf       ContractCompanion[] @relation("CompanionOf")
+  emails            EmailMessage[]      @relation("PersonEmails")
   leadNotes         LeadNote[]
   consultingAudits  ConsultingAudit[]
 
@@ -927,28 +929,112 @@ model Contract {
   contractCode        String         @unique @map("contract_code")
   customerId          String         @map("customer_id") @db.Uuid
   customer            Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  // The display name, generated from the service and the real session count (D-021); a brought-over contract keeps its own.
   packageName         String         @map("package_name")
+  // The service sold and the tier its price came from (BR-301); empty only on contracts brought over from before the
+  // tiers (is_imported).
+  serviceId           String?        @map("service_id") @db.Uuid
+  service             Service?       @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  priceTierId         String?        @map("price_tier_id") @db.Uuid
+  priceTier           PriceTier?     @relation(fields: [priceTierId], references: [id], onDelete: Restrict)
+  contractType        ContractType   @default(NEW) @map("contract_type")
+  previousContractId  String?        @map("previous_contract_id") @db.Uuid
+  previousContract    Contract?      @relation("ContractRenewals", fields: [previousContractId], references: [id], onDelete: Restrict)
+  renewals            Contract[]     @relation("ContractRenewals")
+  contractDate        DateTime       @map("contract_date") @db.Date
+  // What was paid for the contract: the value after discounts and VAT (derived figures are never stored).
   contractValue       Decimal        @map("contract_value") @db.Decimal(14, 0)
+  // Sessions bought; the bonus ones are kept apart (brief §5.1). Entitled = bought + bonus.
   totalSessions       Int            @map("total_sessions")
+  bonusSessions       Int            @default(0) @map("bonus_sessions")
+  bonusMonths         Int            @default(0) @map("bonus_months")
+  bonusDays           Int            @default(0) @map("bonus_days")
+  // The tier's validity when the contract was made.
+  tierMonths          Int            @default(0) @map("tier_months")
+  tierDays            Int            @default(0) @map("tier_days")
   // Opening balances (D-011): non-zero only for contracts imported at go-live.
   openingSessionsUsed Int            @default(0) @map("opening_sessions_used")
   openingPaidAmount   Decimal        @default(0) @map("opening_paid_amount") @db.Decimal(14, 0)
   startDate           DateTime       @map("start_date") @db.Date
   endDate             DateTime       @map("end_date") @db.Date
+  activationDeadline  DateTime?      @map("activation_deadline") @db.Date
+  // The price (BR-301, BR-302, A-113): the tier's, and the one approved; they differ on an exception price.
+  tierUnitPrice       Decimal?       @map("tier_unit_price") @db.Decimal(14, 0)
+  approvedUnitPrice   Decimal        @map("approved_unit_price") @db.Decimal(14, 0)
+  isExceptionPrice    Boolean        @default(false) @map("is_exception_price")
+  exceptionReasonId   String?        @map("exception_reason_option_id") @db.Uuid
+  exceptionReason     Option?        @relation("ContractExceptionReason", fields: [exceptionReasonId], references: [id], onDelete: Restrict)
+  exceptionNote       String?        @map("exception_note")
+  promotionId         String?        @map("promotion_id") @db.Uuid
+  promotion           Promotion?     @relation("ContractPromotion", fields: [promotionId], references: [id], onDelete: Restrict)
+  voucherId           String?        @map("voucher_id") @db.Uuid
+  voucher             Promotion?     @relation("ContractVoucher", fields: [voucherId], references: [id], onDelete: Restrict)
+  promotionDiscount   Decimal        @default(0) @map("promotion_discount") @db.Decimal(14, 0)
+  voucherDiscount     Decimal        @default(0) @map("voucher_discount") @db.Decimal(14, 0)
+  vatPercent          Decimal        @default(0) @map("vat_percent") @db.Decimal(5, 2)
+  vatAmount           Decimal        @default(0) @map("vat_amount") @db.Decimal(14, 0)
+  signed              Boolean        @default(false)
+  signedOn            DateTime?      @map("signed_on") @db.Date
+  signedBy            String?        @map("signed_by")
+  signatureNote       String?        @map("signature_note")
+  paymentDueOn        DateTime?      @map("payment_due_on") @db.Date
+  notes               String?
+  // Brought over from before the tiers: no service, and its price is flagged as an exception.
+  isImported          Boolean        @default(false) @map("is_imported")
   status              ContractStatus @default(DRAFT)
-  // T-015: replaying a create with the same key returns this contract.
+  // T-015: replaying a create with the same key returns this contract; the fingerprint is the request's content.
   idempotencyKey      String         @unique @map("idempotency_key")
+  requestFingerprint  String?        @map("request_fingerprint")
   createdById         String         @map("created_by") @db.Uuid
   createdBy           User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  bookings Booking[]
-  payments Payment[]
+  bookings   Booking[]
+  payments   Payment[]
+  shares     ContractStaffShare[]
+  companions ContractCompanion[]
 
   @@index([customerId])
   @@index([branchId])
+  @@index([serviceId])
   @@map("contracts")
+}
+
+enum ContractType {
+  NEW
+  RENEW
+}
+
+enum StaffRole {
+  PT
+  SALE
+}
+
+// A PT's or a salesperson's share of a contract, in percent; each role's shares total 100 (A-115).
+model ContractStaffShare {
+  contractId String    @map("contract_id") @db.Uuid
+  contract   Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  role       StaffRole
+  employeeId String    @map("employee_id") @db.Uuid
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  percent    Decimal   @db.Decimal(5, 2)
+
+  @@id([contractId, role, employeeId])
+  @@index([employeeId])
+  @@map("contract_staff_shares")
+}
+
+// Other members of a group package (A-116).
+model ContractCompanion {
+  contractId String   @map("contract_id") @db.Uuid
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  customerId String   @map("customer_id") @db.Uuid
+  customer   Customer @relation("CompanionOf", fields: [customerId], references: [id], onDelete: Restrict)
+
+  @@id([contractId, customerId])
+  @@index([customerId])
+  @@map("contract_companions")
 }
 
 // ---------------------------------------------------------------------------
@@ -989,9 +1075,10 @@ model Employee {
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  bookings Booking[]
-  shifts   EmployeeShift[]
-  daysOff  EmployeeDayOff[]
+  bookings       Booking[]
+  contractShares ContractStaffShare[]
+  shifts         EmployeeShift[]
+  daysOff        EmployeeDayOff[]
 
   @@index([branchId])
   @@index([searchName])
@@ -1372,6 +1459,7 @@ model Service {
   versions      PriceTierVersion[]
   quickPackages QuickPackage[]
   promotions    PromotionService[]
+  contracts     Contract[]
 
   @@map("services")
 }
@@ -1416,6 +1504,8 @@ model PriceTier {
   unitPrice      Decimal          @map("unit_price") @db.Decimal(14, 0)
   validityMonths Int              @map("validity_months")
   validityDays   Int              @map("validity_days")
+
+  contracts Contract[]
 
   @@index([versionId, minSessions])
   @@map("price_tiers")
@@ -1465,6 +1555,9 @@ model Promotion {
 
   // None: every service.
   services PromotionService[]
+
+  asPromotion Contract[] @relation("ContractPromotion")
+  asVoucher   Contract[] @relation("ContractVoucher")
 
   @@index([kind, active])
   @@map("promotions")

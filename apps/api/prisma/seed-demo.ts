@@ -39,6 +39,7 @@ async function seed(prisma: typeof client) {
   const { createCustomer, updateCustomer } = await import("../src/modules/customers/customer.service.js");
   const { activateContract, cancelContract, createContract } =
     await import("../src/modules/contracts/contract.service.js");
+  const { createService, saveTiers } = await import("../src/modules/services/service.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");
   const { checkIn, completeSession } = await import("../src/modules/sessions/session.service.js");
   const { recordPayment, deletePayment } = await import("../src/modules/finance/payment.service.js");
@@ -125,19 +126,38 @@ async function seed(prisma: typeof client) {
   const [an, mai, huy, lan, huong, tuan, tam, bao, ngan, son, hoa] = customers;
   await updateCustomer(reception, hoa.id, { status: "INACTIVE", notes: "Chuyển nhà, tạm ngưng tập." });
 
-  type ContractSpec = { pkg: string; value: string; sessions: number; start: number; end: number };
-  const PT24 = { pkg: "PT 24 buổi", value: "12.000.000", sessions: 24 };
-  const PT12 = { pkg: "PT 12 buổi", value: "6.500.000", sessions: 12 };
+  // Contracts are priced from services (M4.3): PT at 500,000 and Yoga at 300,000 a session, each for 181 days. The
+  // end day of a spec is only a note of when it runs out; the tier decides it.
+  type ContractSpec = { service: "PT" | "Yoga"; sessions: number; start: number; end: number };
+  const PT24 = { service: "PT" as const, sessions: 24 };
+  const PT12 = { service: "PT" as const, sessions: 12 };
+  const demoServices = new Map<string, string>();
+  for (const [name, price] of [
+    ["PT", 500_000],
+    ["Yoga", 300_000],
+  ] as const) {
+    const service = await createService(asAdmin, {
+      name,
+      kind: "MEMBER",
+      branchIds: [(await prisma.branch.findFirstOrThrow({ select: { id: true } })).id],
+    });
+    await saveTiers(asAdmin, service.id, {
+      effectiveFrom: "01/01/2020",
+      tiers: [{ minSessions: 1, maxSessions: 1000, unitPrice: price, validityMonths: 0, validityDays: 181 }],
+    });
+    demoServices.set(name, service.id);
+  }
+  const seller = await createEmployee(manager, { fullName: "Nguyễn Thị Bán Hàng" });
   async function contract(customerId: string, spec: ContractSpec, activate = true) {
     const { contract: created } = await createContract(
       manager,
       customerId,
       {
-        packageName: spec.pkg,
-        contractValue: spec.value,
-        totalSessions: String(spec.sessions),
+        serviceId: demoServices.get(spec.service),
+        sessions: spec.sessions,
+        contractDate: day(spec.start),
         startDate: day(spec.start),
-        endDate: day(spec.end),
+        saleShares: [{ employeeId: seller.id, percent: 100 }],
       },
       randomUUID(),
     );
@@ -193,7 +213,7 @@ async function seed(prisma: typeof client) {
   await history(p1, 12, 3, { 5: "noShow" });
   await completed(p1, 0);
   for (const offset of [2, 4]) await book(p1, offset);
-  const yoga = await contract(an.id, { pkg: "Yoga 12 buổi", value: "3.600.000", sessions: 12, start: -5, end: 85 });
+  const yoga = await contract(an.id, { service: "Yoga", sessions: 12, start: -5, end: 85 });
 
   // Mai: checked in right now.
   const c2 = await contract(mai.id, { ...PT24, start: -30, end: 150 });
@@ -235,6 +255,10 @@ async function seed(prisma: typeof client) {
   // Bảo: expired 10 days ago with sessions unused. Its sessions were booked while it
   // ran; the end date is then moved into the past to stand for the time that went by.
   const c8 = await contract(bao.id, { ...PT24, start: -200, end: 10 });
+  await prisma.contract.update({
+    where: { id: c8.id },
+    data: { endDate: new Date(today.getTime() + 10 * 86_400_000) },
+  });
   await history(plan(c8, bao, khoa, "09:00"), 18, 10);
   await prisma.contract.update({
     where: { id: c8.id },
@@ -249,12 +273,22 @@ async function seed(prisma: typeof client) {
   const { contract: c10Draft } = await createContract(
     manager,
     son.id,
-    { packageName: PT24.pkg, contractValue: PT24.value, totalSessions: "24", startDate: day(-150), endDate: day(30) },
+    {
+      serviceId: demoServices.get("PT"),
+      sessions: 24,
+      contractDate: day(-150),
+      startDate: day(-150),
+      saleShares: [{ employeeId: seller.id, percent: 100 }],
+    },
     randomUUID(),
   );
   await prisma.contract.update({
     where: { id: c10Draft.id },
-    data: { openingSessionsUsed: 16, openingPaidAmount: 9_000_000 },
+    data: {
+      openingSessionsUsed: 16,
+      openingPaidAmount: 9_000_000,
+      endDate: new Date(today.getTime() + 30 * 86_400_000),
+    },
   });
   const c10 = await activateContract(asAdmin, c10Draft.id);
   await history(plan(c10, son, anh, "07:00"), 3, 7);

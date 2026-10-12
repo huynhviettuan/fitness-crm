@@ -302,19 +302,6 @@ export const test = base.extend<Fixtures>({
       );
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: scriptIds } } });
       await prisma.consultingScript.deleteMany({ where: { id: { in: scriptIds } } });
-      // Promotions and vouchers named with the tag (their service links go with them).
-      await prisma.promotion.deleteMany({ where: { name: { contains: tag } } });
-      // Services named with the tag, with their price versions, tiers, and quick-pick counts (M4.1).
-      const serviceIds = ids(
-        await prisma.service.findMany({ where: { name: { contains: tag } }, select: { id: true } }),
-      );
-      const versionIds = ids(
-        await prisma.priceTierVersion.findMany({ where: { serviceId: { in: serviceIds } }, select: { id: true } }),
-      );
-      await prisma.priceTier.deleteMany({ where: { versionId: { in: versionIds } } });
-      await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...serviceIds, ...versionIds] } } });
-      await prisma.priceTierVersion.deleteMany({ where: { id: { in: versionIds } } });
-      await prisma.service.deleteMany({ where: { id: { in: serviceIds } } });
       // Inquiries and merges (M2 slice 5): the merged records point at their survivors.
       await prisma.leadInquiry.deleteMany({ where: { personId: { in: customerIds } } });
       await prisma.personMerge.deleteMany({
@@ -337,6 +324,19 @@ export const test = base.extend<Fixtures>({
       const audited = [...customerIds, ...contractIds, ...bookingIds, ...trainerIds, ...paymentIds, ...cashIds];
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: audited } } });
       await prisma.contract.deleteMany({ where: { id: { in: contractIds } } });
+      // Promotions and vouchers named with the tag (their service links go with them).
+      await prisma.promotion.deleteMany({ where: { name: { contains: tag } } });
+      // Services named with the tag, with their price versions, tiers, and quick-pick counts (M4.1).
+      const serviceIds = ids(
+        await prisma.service.findMany({ where: { name: { contains: tag } }, select: { id: true } }),
+      );
+      const versionIds = ids(
+        await prisma.priceTierVersion.findMany({ where: { serviceId: { in: serviceIds } }, select: { id: true } }),
+      );
+      await prisma.priceTier.deleteMany({ where: { versionId: { in: versionIds } } });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...serviceIds, ...versionIds] } } });
+      await prisma.priceTierVersion.deleteMany({ where: { id: { in: versionIds } } });
+      await prisma.service.deleteMany({ where: { id: { in: serviceIds } } });
       await prisma.customer.deleteMany({ where: { id: { in: customerIds } } });
       await prisma.employee.deleteMany({ where: { id: { in: trainerIds } } });
 

@@ -11,7 +11,9 @@ import {
   listCustomers,
   updateCustomer,
 } from "../../src/modules/customers/customer.service.js";
-import { createContract, listContracts } from "../../src/modules/contracts/contract.service.js";
+import { activateContract, createContract, listContracts } from "../../src/modules/contracts/contract.service.js";
+import { createEmployee } from "../../src/modules/employees/employee.service.js";
+import { createService, saveTiers } from "../../src/modules/services/service.service.js";
 import { listBookings } from "../../src/modules/bookings/booking.service.js";
 import { collectedBetween, listPayments, recordPayment } from "../../src/modules/finance/payment.service.js";
 import { financeSummary } from "../../src/modules/finance/cash.service.js";
@@ -25,7 +27,7 @@ import {
   withoutApprovals,
   uniquePhone,
 } from "../support/factories.js";
-import { CONTRACT, activeContract, book, bookingScenario, linkedTrainer } from "../support/bookings.js";
+import { activeContract, book, bookingScenario, contractInput, linkedTrainer } from "../support/bookings.js";
 
 afterEach(resetDatabase);
 
@@ -165,11 +167,13 @@ describe("data scope (D-017, A-029)", () => {
     const scenario = await bookingScenario();
     const { actor: consultant } = await createTestUser("CONSULTING");
     const mine = await createCustomer(consultant, { fullName: "Khách của tôi", phone: "0909000003" });
-    const { contract } = await createContract(consultant, mine.id, CONTRACT, randomUUID());
+    const { contract } = await createContract(consultant, mine.id, await contractInput(), randomUUID());
 
     expect((await listContracts(consultant, {})).items.map((c) => c.id)).toEqual([contract.id]);
     // Not even for a customer they cannot see.
-    await expect(createContract(consultant, scenario.customer.id, CONTRACT, randomUUID())).rejects.toMatchObject({
+    await expect(
+      createContract(consultant, scenario.customer.id, await contractInput(), randomUUID()),
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
   });
@@ -275,7 +279,21 @@ describe("branches (D-014, FR-PLT-004)", () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER", { branchIds: [second.id] });
     const customer = await createCustomer(manager, { fullName: "Khách", phone: "0909000006" });
 
-    const contract = await activeContract(manager, customer.id);
+    // The service and the salesperson are the second branch's own (A-115).
+    const { actor: admin } = await createTestUser("ADMIN", { allBranches: true });
+    const service = await createService(admin, { name: "PT Q2", kind: "MEMBER", branchIds: [second.id] });
+    await saveTiers(admin, service.id, {
+      effectiveFrom: "01/01/2020",
+      tiers: [{ minSessions: 1, maxSessions: 100, unitPrice: 500_000, validityMonths: 3, validityDays: 0 }],
+    });
+    const sale = await createEmployee(admin, { fullName: "Bán hàng Q2", branchId: second.id });
+    const { contract: created } = await createContract(
+      manager,
+      customer.id,
+      { serviceId: service.id, sessions: 10, saleShares: [{ employeeId: sale.id, percent: 100 }] },
+      randomUUID(),
+    );
+    const contract = await activateContract((await createTestUser("ADMIN", { allBranches: true })).actor, created.id);
 
     expect((await prisma.contract.findUniqueOrThrow({ where: { id: contract.id } })).branchId).toBe(second.id);
   });

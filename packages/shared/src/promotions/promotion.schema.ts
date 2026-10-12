@@ -1,13 +1,9 @@
 import { z } from "zod";
-import { calendarDate, hasNoControlCharacters, vndAmount } from "../validation/index.js";
+import { calendarDate, hasNoControlCharacters, optionalCalendarDate, vndAmount } from "../validation/index.js";
 import { DISCOUNT_TYPES, PROMOTION_KINDS, VOUCHER_CODE_PATTERN } from "./promotion.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Forms send text; an empty optional field is stored as null.
-
-const optionalDay = z
-  .union([z.literal(""), z.null(), calendarDate])
-  .transform((value) => (value === "" ? null : value));
 
 /** A number typed in a form: "10", "12.5", or "1.500.000" for an amount. */
 const amountOrPercent = z.union([z.number(), z.string()], { error: "invalidNumber" });
@@ -31,8 +27,8 @@ export const promotionInputSchema = z
       .transform((value) => (value === "" ? null : value)),
     discountType: z.enum(DISCOUNT_TYPES, { error: "invalidChoice" }),
     value: amountOrPercent,
-    validFrom: optionalDay.prefault(""),
-    validTo: optionalDay.prefault(""),
+    validFrom: optionalCalendarDate.prefault(""),
+    validTo: optionalCalendarDate.prefault(""),
     /** The services it applies to; none means every service. */
     serviceIds: z
       .array(z.uuid({ error: "invalidChoice" }))

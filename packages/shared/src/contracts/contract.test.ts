@@ -4,10 +4,14 @@ import { calendarDateInTimeZone } from "../validation/index.js";
 import {
   canActivate,
   canCancel,
+  contractEndDate,
   contractFigures,
   effectiveStatus,
+  entitledSessions,
   formatContractCode,
   isEditable,
+  ptSharesRequired,
+  sharesProblems,
 } from "./contract.domain.js";
 import { contractInputSchema } from "./contract.schema.js";
 
@@ -80,66 +84,173 @@ describe("contractFigures (T-012, BR-013, D-011)", () => {
   });
 });
 
+describe("entitledSessions and contractEndDate (A-108, A-114)", () => {
+  it("adds the bonus sessions to the ones bought", () => {
+    expect(entitledSessions(24, 0)).toBe(24);
+    expect(entitledSessions(24, 3)).toBe(27);
+  });
+
+  it("adds the tier's validity and the bonus months and days, the start day counting", () => {
+    expect(contractEndDate(day("2026-10-01"), { months: 2, days: 0 }, { months: 0, days: 0 })).toEqual(
+      day("2026-11-30"),
+    );
+    expect(contractEndDate(day("2026-10-01"), { months: 2, days: 0 }, { months: 1, days: 5 })).toEqual(
+      day("2027-01-05"),
+    );
+  });
+});
+
+describe("sharesProblems (A-115)", () => {
+  const a = "a0000000-0000-4000-8000-000000000001";
+  const b = "a0000000-0000-4000-8000-000000000002";
+
+  it("needs shares only when required, and then a total of 100", () => {
+    expect(sharesProblems([], false)).toEqual([]);
+    expect(sharesProblems([], true)).toEqual(["sharesRequired"]);
+    expect(sharesProblems([{ employeeId: a, percent: 100 }], true)).toEqual([]);
+    expect(sharesProblems([{ employeeId: a, percent: 99.99 }], true)).toEqual(["sharesTotal"]);
+  });
+
+  it("adds fractions without drift and finds the same person twice", () => {
+    expect(
+      sharesProblems(
+        [
+          { employeeId: a, percent: 33.33 },
+          { employeeId: b, percent: 66.67 },
+        ],
+        true,
+      ),
+    ).toEqual([]);
+    expect(
+      sharesProblems(
+        [
+          { employeeId: a, percent: 50 },
+          { employeeId: a, percent: 50 },
+        ],
+        true,
+      ),
+    ).toEqual(["duplicateEmployee"]);
+  });
+
+  it("requires PT shares for a PT service only", () => {
+    expect(ptSharesRequired("PT")).toBe(true);
+    expect(ptSharesRequired("CLASS")).toBe(false);
+    expect(ptSharesRequired("MEMBER")).toBe(false);
+  });
+});
+
 describe("contractInputSchema", () => {
-  const valid = {
-    packageName: "PT 24 buổi",
-    contractValue: "12.000.000",
-    totalSessions: "24",
-    startDate: "01/10/2026",
-    endDate: "31/03/2027",
-  };
+  const service = "b0000000-0000-4000-8000-000000000010";
+  const employee = "a0000000-0000-4000-8000-000000000001";
+  const reason = "c0000000-0000-4000-8000-000000000021";
+  const valid = { serviceId: service, sessions: "24", saleShares: [{ employeeId: employee, percent: "100" }] };
   const errors = (input: unknown) => {
     const result = contractInputSchema.safeParse(input);
     return result.success ? {} : z.flattenError(result.error).fieldErrors;
   };
 
-  it("parses form text into typed values", () => {
-    expect(contractInputSchema.parse(valid)).toEqual({
-      packageName: "PT 24 buổi",
-      contractValue: 12_000_000,
-      totalSessions: 24,
-      startDate: day("2026-10-01"),
-      endDate: day("2027-03-31"),
+  it("parses form text into typed values and fills the rest with empty ones", () => {
+    expect(contractInputSchema.parse(valid)).toMatchObject({
+      serviceId: service,
+      sessions: 24,
+      contractType: "NEW",
+      previousContractId: null,
+      contractDate: null,
+      startDate: null,
+      bonusSessions: 0,
+      vatPercent: 0,
+      proposedUnitPrice: null,
+      exceptionReasonId: null,
+      saleShares: [{ employeeId: employee, percent: 100 }],
+      ptShares: [],
+      companionIds: [],
+      signed: false,
+      firstPayment: null,
+      notes: null,
     });
   });
 
-  it.each(["12.000.000", "12,000,000", "12 000 000", "12000000", 12_000_000])(
-    "accepts the amount %j",
-    (contractValue) => {
-      expect(contractInputSchema.parse({ ...valid, contractValue }).contractValue).toBe(12_000_000);
-    },
-  );
-
-  it.each(["12.5", "12,50", "-5", "1.2.3", "abc", 12.5, "999999999999999"])(
-    "rejects the amount %j",
-    (contractValue) => {
-      expect(errors({ ...valid, contractValue })).toEqual({ contractValue: ["invalidAmount"] });
-    },
-  );
-
-  it.each(["0", "1001", "2.5", "x"])("rejects %j sessions", (totalSessions) => {
-    expect(errors({ ...valid, totalSessions })).toEqual({ totalSessions: ["invalidNumber"] });
+  it.each(["0", "1001", "2.5", "x"])("rejects %j sessions", (sessions) => {
+    expect(errors({ ...valid, sessions })).toEqual({ sessions: ["invalidNumber"] });
   });
 
-  it("rejects an end date before the start date, but allows the same day", () => {
-    expect(errors({ ...valid, endDate: "30/09/2026" })).toEqual({ endDate: ["endBeforeStart"] });
-    expect(contractInputSchema.safeParse({ ...valid, endDate: "01/10/2026" }).success).toBe(true);
+  it("reads dates, an agreed price, and VAT with a decimal comma", () => {
+    expect(
+      contractInputSchema.parse({
+        ...valid,
+        contractDate: "01/10/2026",
+        proposedUnitPrice: "450.000",
+        exceptionReasonId: reason,
+        vatPercent: "8,5",
+      }),
+    ).toMatchObject({ contractDate: day("2026-10-01"), proposedUnitPrice: 450_000, vatPercent: 8.5 });
   });
 
-  it("never accepts client-set code, status, or opening balances (BR-001, D-011)", () => {
+  it("ties an agreed price to a reason, and keeps it apart from promotions", () => {
+    expect(errors({ ...valid, proposedUnitPrice: "450000" })).toEqual({ exceptionReasonId: ["required"] });
+    expect(errors({ ...valid, exceptionReasonId: reason })).toEqual({ proposedUnitPrice: ["required"] });
+    expect(errors({ ...valid, proposedUnitPrice: "450000", exceptionReasonId: reason, voucherCode: "ABC" })).toEqual({
+      proposedUnitPrice: ["exceptionExcludesPromotion"],
+    });
+  });
+
+  it("links a previous contract to a renewal only, and checks the deadline and signature", () => {
+    const previous = "d0000000-0000-4000-8000-000000000001";
+    expect(errors({ ...valid, previousContractId: previous })).toEqual({ previousContractId: ["newHasNoPrevious"] });
+    expect(
+      contractInputSchema.safeParse({ ...valid, contractType: "RENEW", previousContractId: previous }).success,
+    ).toBe(true);
+    expect(errors({ ...valid, startDate: "10/10/2026", activationDeadline: "09/10/2026" })).toEqual({
+      activationDeadline: ["deadlineBeforeStart"],
+    });
+    expect(errors({ ...valid, signed: true })).toEqual({ signedOn: ["required"] });
+  });
+
+  it("names a staff member once per role and a companion once", () => {
+    const twice = [
+      { employeeId: employee, percent: "50" },
+      { employeeId: employee, percent: "50" },
+    ];
+    expect(errors({ ...valid, saleShares: twice })).toEqual({ saleShares: ["duplicateEmployee"] });
+    expect(errors({ ...valid, companionIds: [service, service] })).toEqual({ companionIds: ["duplicateCompanion"] });
+  });
+
+  it("takes a first payment without a day, as a receipt of the contract", () => {
+    const method = "c0000000-0000-4000-8000-000000000011";
+    expect(
+      contractInputSchema.parse({ ...valid, firstPayment: { amount: "3.000.000", methodId: method } }).firstPayment,
+    ).toMatchObject({
+      amount: 3_000_000,
+      methodId: method,
+    });
+    expect(errors({ ...valid, firstPayment: { amount: "0", methodId: method } })).toHaveProperty("firstPayment");
+  });
+
+  it("never accepts a price, total, end date, name, code, status, or opening balance from the client (BR-001, BR-301, D-011)", () => {
     const parsed = contractInputSchema.parse({
       ...valid,
+      unitPrice: 1,
+      contractValue: 1,
+      totalSessions: 1,
+      endDate: "01/01/2026",
+      packageName: "Hack",
       contractCode: "HD999999",
       status: "ACTIVE",
       openingSessionsUsed: 20,
       openingPaidAmount: 12_000_000,
     });
-    expect(Object.keys(parsed).sort()).toEqual([
+    for (const key of [
+      "unitPrice",
       "contractValue",
+      "totalSessions",
       "endDate",
       "packageName",
-      "startDate",
-      "totalSessions",
-    ]);
+      "contractCode",
+      "status",
+      "openingSessionsUsed",
+      "openingPaidAmount",
+    ]) {
+      expect(parsed).not.toHaveProperty(key);
+    }
   });
 });

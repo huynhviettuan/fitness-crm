@@ -176,7 +176,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decided (working assumptions):** one promotion and one voucher stack, promotion first (A-110); VAT after discounts (A-111); the discount limit is a percent of the tier price per role and escalates above it (A-112). M4.4 calls `canApproveDiscount` when a contract is approved.
 - **Depends on:** M4.1.
 
-### M4.3 Contract model and creation
+### M4.3 Contract model and creation (done 2026-10-12, A-113 to A-119, OQ-039, OQ-040)
 
 - **Builds:**
   - **New contract model:**
@@ -194,9 +194,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Source:** brief §5.1–§5.2; FR-CON-001, FR-CON-002; D-021, D-022; T-015; AC-10.
 - **Data:** a rework of `contracts`; `contract_staff_shares`. The migration is checked on the dev-DB copy with real Phase 0–4 data.
 - **Tests:** E2E-104 (any session count gives the tier price, end date, and name; an exception price stays pending). INT-004 and INT-005 (idempotency).
-- **Decide first:**
-  - Who may create a contract for a customer of another consultant (proposed: the creator needs the customer in their scope).
-  - Rounding of VAT and discounts (proposed: whole VND, half up, on the total).
+- **Decided (working assumptions):** the creator needs the customer in their scope (A-117); rounding is whole VND, half up, at each step (A-118). Statuses Frozen and On hold arrive with M4.6 and M8; "Pending" keeps its stored name `DRAFT`.
 - **Depends on:** M4.2.
 
 ### M4.4 Approval, lock, contract list and detail

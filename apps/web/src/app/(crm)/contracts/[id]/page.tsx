@@ -8,7 +8,9 @@ import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { Money } from "@/components/money";
+import { ChosenOptionText } from "@/components/option-select";
 import { PageHeader } from "@/components/page-header";
+import { formatDateOnly } from "@/lib/format";
 import { getTaskAssignees } from "@/lib/api/tasks";
 import { CreateTaskButton } from "../../tasks/task-form";
 import { StatusBadge } from "@/components/status-badge";
@@ -132,6 +134,105 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
           </CardContent>
         </Card>
       </div>
+      <Card className="mt-4 max-w-5xl">
+        <CardHeader>
+          <CardTitle>
+            <h2>{t("priceAndStaff")}</h2>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Detail label={f("fields.service")} value={contract.service?.name ?? f("fields.imported")} />
+            <Detail label={f("fields.contractType")} value={t(`types.${contract.contractType}`)} />
+            {contract.previousContract && (
+              <Detail
+                label={f("fields.previousContract")}
+                value={
+                  <Link href={`/contracts/${contract.previousContract.id}`} className="hover:underline">
+                    {contract.previousContract.contractCode}
+                  </Link>
+                }
+              />
+            )}
+            <Detail
+              label={f("fields.contractDate")}
+              value={<DateTime value={contract.contractDate} format="dateOnly" />}
+            />
+            {contract.activationDeadline && (
+              <Detail
+                label={f("fields.activationDeadline")}
+                value={<DateTime value={contract.activationDeadline} format="dateOnly" />}
+              />
+            )}
+            <Detail label={f("fields.sessionsBought")} value={contract.sessionsBought} />
+            {contract.bonusSessions + contract.bonusMonths + contract.bonusDays > 0 && (
+              <Detail
+                label={f("fields.bonus")}
+                value={t("bonusLine", {
+                  sessions: contract.bonusSessions,
+                  months: contract.bonusMonths,
+                  days: contract.bonusDays,
+                })}
+              />
+            )}
+            {contract.tierUnitPrice !== null && (
+              <Detail label={f("fields.tierUnitPrice")} value={<Money amount={contract.tierUnitPrice} />} />
+            )}
+            <Detail label={f("fields.approvedUnitPrice")} value={<Money amount={contract.approvedUnitPrice} />} />
+            {contract.isExceptionPrice && !contract.isImported && contract.exceptionReason && (
+              <Detail
+                label={f("fields.exceptionReason")}
+                value={<ChosenOptionText option={contract.exceptionReason} />}
+              />
+            )}
+            {contract.promotion && <Detail label={f("fields.promotion")} value={contract.promotion.name} />}
+            {contract.voucher && <Detail label={f("fields.voucher")} value={contract.voucher.name} />}
+            {contract.promotionDiscount + contract.voucherDiscount > 0 && (
+              <Detail
+                label={f("fields.discount")}
+                value={<Money amount={contract.promotionDiscount + contract.voucherDiscount} />}
+              />
+            )}
+            {contract.vatAmount > 0 && (
+              <Detail
+                label={`${f("fields.vat")} ${contract.vatPercent}%`}
+                value={<Money amount={contract.vatAmount} />}
+              />
+            )}
+            {(["PT", "SALE"] as const).map((role) => {
+              const rows = contract.shares.filter((share) => share.role === role);
+              return rows.length > 0 ? (
+                <Detail
+                  key={role}
+                  label={`${f("fields.shares")}: ${t(`roles.${role}`)}`}
+                  value={rows.map((row) => `${row.employee.fullName} ${row.percent}%`).join(", ")}
+                />
+              ) : null;
+            })}
+            {contract.companions.length > 0 && (
+              <Detail
+                label={f("fields.companions")}
+                value={contract.companions.map((companion) => companion.fullName).join(", ")}
+              />
+            )}
+            <Detail
+              label={f("fields.signature")}
+              value={
+                contract.signed && contract.signedOn
+                  ? t("signedLine", { on: formatDateOnly(contract.signedOn), by: contract.signedBy ?? "" })
+                  : t("notSigned")
+              }
+            />
+            {contract.paymentDueOn && (
+              <Detail
+                label={f("fields.paymentDueOn")}
+                value={<DateTime value={contract.paymentDueOn} format="dateOnly" />}
+              />
+            )}
+            {contract.notes && <Detail label={f("fields.notes")} value={contract.notes} />}
+          </dl>
+        </CardContent>
+      </Card>
       {payments && (
         <section aria-labelledby="payment-history" className="mt-8 max-w-5xl space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">

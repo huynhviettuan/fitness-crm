@@ -12,7 +12,7 @@ import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import * as contractRepo from "../contracts/contract.repository.js";
-import { effectiveStatus } from "@flow/shared/contracts";
+import { effectiveStatus, entitledSessions } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { assertWithinWorkingHours, findBookableTrainer } from "../employees/employee.service.js";
 import * as repo from "./booking.repository.js";
@@ -115,7 +115,10 @@ export async function createBooking(actor: Actor, input: unknown): Promise<Booki
       if (contract.customerId !== data.customerId) throw new AppError("BOOKING_CUSTOMER_CONTRACT_MISMATCH");
       await assertBookable(tx, contract, slot);
 
-      const remaining = contract.totalSessions - contract.openingSessionsUsed - contract._count.bookings;
+      const remaining =
+        entitledSessions(contract.totalSessions, contract.bonusSessions) -
+        contract.openingSessionsUsed -
+        contract._count.bookings;
       const open = await repo.countBookingsOfContract(tx, contract.id, OPEN_BOOKING_STATUSES);
       if (!hasSessionForNewBooking(remaining, open)) throw new AppError("CONTRACT_NO_REMAINING_SESSIONS");
 
@@ -328,7 +331,10 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
       id: contract.id,
       contractCode: contract.contractCode,
       packageName: contract.packageName,
-      remainingSessions: contract.totalSessions - contract.openingSessionsUsed - contract._count.bookings,
+      remainingSessions:
+        entitledSessions(contract.totalSessions, contract.bonusSessions) -
+        contract.openingSessionsUsed -
+        contract._count.bookings,
     },
     trainer: booking.trainer,
     session: session && {

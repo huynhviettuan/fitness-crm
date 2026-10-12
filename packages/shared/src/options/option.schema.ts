@@ -38,6 +38,8 @@ export const OPTION_LISTS = [
   "auditFailReasons",
   // Why admin removed a ticked consulting step (D-054), M2.7.
   "stepReopenReasons",
+  // Why a contract has an exception price (BR-302, A-113), M4.3.
+  "exceptionPriceReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

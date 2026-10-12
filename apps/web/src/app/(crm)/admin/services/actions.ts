@@ -33,7 +33,14 @@ export async function saveQuickPackagesAction(id: string, input: QuickPackagesIn
 
 export async function quotePriceAction(
   id: string,
-  params: { sessions: string; startDate?: string; promotionId?: string; voucherCode?: string; vatPercent?: string },
+  params: {
+    sessions: string;
+    startDate?: string;
+    asOf?: string;
+    promotionId?: string;
+    voucherCode?: string;
+    vatPercent?: string;
+  },
 ): Promise<ActionResult<PriceQuote>> {
   return runAction(() => quotePrice(id, params));
 }

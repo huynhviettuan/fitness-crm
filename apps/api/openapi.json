@@ -2598,10 +2598,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -2609,10 +2606,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -2620,10 +2613,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -2631,10 +2621,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -2916,10 +2902,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -2927,10 +2910,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -2938,10 +2917,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -2949,10 +2925,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -3379,10 +3351,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -3390,10 +3359,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -3401,10 +3366,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -3412,10 +3374,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -3529,10 +3487,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -3540,10 +3495,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -3551,10 +3502,7 @@
                     "default": "",
                     "anyOf": [
                       {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "type": "string"
                       },
                       {
                         "type": "string",
@@ -3562,10 +3510,6 @@
                         "enum": [
                           null
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
                       }
                     ]
                   },
@@ -5106,12 +5050,11 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "packageName": {
+                  "serviceId": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 150
+                    "format": "uuid"
                   },
-                  "contractValue": {
+                  "sessions": {
                     "anyOf": [
                       {
                         "type": "number"
@@ -5121,31 +5064,359 @@
                       }
                     ]
                   },
-                  "totalSessions": {
+                  "contractType": {
+                    "default": "NEW",
+                    "type": "string",
+                    "enum": [
+                      "NEW",
+                      "RENEW"
+                    ]
+                  },
+                  "previousContractId": {
+                    "default": "",
                     "anyOf": [
                       {
-                        "type": "number"
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
                       },
                       {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "contractDate": {
+                    "default": "",
+                    "anyOf": [
+                      {
                         "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
                       }
                     ]
                   },
                   "startDate": {
-                    "type": "string",
-                    "minLength": 1
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
                   },
-                  "endDate": {
+                  "activationDeadline": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "bonusSessions": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "bonusMonths": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "bonusDays": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "promotionId": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "voucherCode": {
+                    "default": "",
                     "type": "string",
-                    "minLength": 1
+                    "maxLength": 40
+                  },
+                  "vatPercent": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "proposedUnitPrice": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "exceptionReasonId": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "exceptionNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "ptShares": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "employeeId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "percent": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "employeeId",
+                        "percent"
+                      ]
+                    }
+                  },
+                  "saleShares": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "employeeId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "percent": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "employeeId",
+                        "percent"
+                      ]
+                    }
+                  },
+                  "companionIds": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "signed": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "signedOn": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "signedBy": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "signatureNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "firstPayment": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "methodId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "methodNote": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "methodId"
+                    ]
+                  },
+                  "paymentDueOn": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
                   }
                 },
                 "required": [
-                  "packageName",
-                  "contractValue",
-                  "totalSessions",
-                  "startDate",
-                  "endDate"
+                  "serviceId",
+                  "sessions"
                 ]
               }
             }
@@ -5361,6 +5632,47 @@
         "x-permission": "contract.export"
       }
     },
+    "/api/v1/contracts/staff": {
+      "get": {
+        "operationId": "ContractsController_staff",
+        "parameters": [
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractStaffList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.create"
+      }
+    },
     "/api/v1/contracts/{id}": {
       "get": {
         "operationId": "ContractsController_get",
@@ -5420,12 +5732,11 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "packageName": {
+                  "serviceId": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 150
+                    "format": "uuid"
                   },
-                  "contractValue": {
+                  "sessions": {
                     "anyOf": [
                       {
                         "type": "number"
@@ -5435,31 +5746,359 @@
                       }
                     ]
                   },
-                  "totalSessions": {
+                  "contractType": {
+                    "default": "NEW",
+                    "type": "string",
+                    "enum": [
+                      "NEW",
+                      "RENEW"
+                    ]
+                  },
+                  "previousContractId": {
+                    "default": "",
                     "anyOf": [
                       {
-                        "type": "number"
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
                       },
                       {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "contractDate": {
+                    "default": "",
+                    "anyOf": [
+                      {
                         "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
                       }
                     ]
                   },
                   "startDate": {
-                    "type": "string",
-                    "minLength": 1
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
                   },
-                  "endDate": {
+                  "activationDeadline": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "bonusSessions": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "bonusMonths": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "bonusDays": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "promotionId": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "voucherCode": {
+                    "default": "",
                     "type": "string",
-                    "minLength": 1
+                    "maxLength": 40
+                  },
+                  "vatPercent": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "proposedUnitPrice": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "exceptionReasonId": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "exceptionNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "ptShares": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "employeeId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "percent": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "employeeId",
+                        "percent"
+                      ]
+                    }
+                  },
+                  "saleShares": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "employeeId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "percent": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "employeeId",
+                        "percent"
+                      ]
+                    }
+                  },
+                  "companionIds": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "signed": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "signedOn": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "signedBy": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "signatureNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "firstPayment": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "methodId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "methodNote": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "methodId"
+                    ]
+                  },
+                  "paymentDueOn": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
                   }
                 },
                 "required": [
-                  "packageName",
-                  "contractValue",
-                  "totalSessions",
-                  "startDate",
-                  "endDate"
+                  "serviceId",
+                  "sessions"
                 ]
               }
             }
@@ -11064,6 +11703,7 @@
               "INVALID_STATUS_TRANSITION",
               "STEP_LOCKED",
               "CONTRACT_NOT_EDITABLE",
+              "DISCOUNT_ABOVE_LIMIT",
               "CONTRACT_NOT_ACTIVE",
               "CONTRACT_NO_REMAINING_SESSIONS",
               "CONTRACT_HAS_CHECKED_IN_BOOKING",
@@ -14735,11 +15375,70 @@
           "packageName": {
             "type": "string"
           },
+          "service": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "PT",
+                  "CLASS",
+                  "MEMBER"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "kind"
+            ]
+          },
+          "contractType": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "RENEW"
+            ]
+          },
+          "previousContract": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode"
+            ]
+          },
+          "contractDate": {
+            "type": "string",
+            "format": "date-time"
+          },
           "startDate": {
             "type": "string",
             "format": "date-time"
           },
           "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activationDeadline": {
+            "nullable": true,
             "type": "string",
             "format": "date-time"
           },
@@ -14755,6 +15454,166 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "sessionsBought": {
+            "type": "integer"
+          },
+          "bonusSessions": {
+            "type": "integer"
+          },
+          "bonusMonths": {
+            "type": "integer"
+          },
+          "bonusDays": {
+            "type": "integer"
+          },
+          "tierUnitPrice": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "approvedUnitPrice": {
+            "type": "integer"
+          },
+          "isExceptionPrice": {
+            "type": "boolean"
+          },
+          "exceptionReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "exceptionNote": {
+            "nullable": true,
+            "type": "string"
+          },
+          "promotion": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "voucher": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "promotionDiscount": {
+            "type": "integer"
+          },
+          "voucherDiscount": {
+            "type": "integer"
+          },
+          "vatPercent": {
+            "type": "number"
+          },
+          "vatAmount": {
+            "type": "integer"
+          },
+          "discountPercent": {
+            "type": "number"
+          },
+          "shares": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "PT",
+                    "SALE"
+                  ]
+                },
+                "employee": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "employeeCode": {
+                      "type": "string"
+                    },
+                    "fullName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "employeeCode",
+                    "fullName"
+                  ]
+                },
+                "percent": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "role",
+                "employee",
+                "percent"
+              ]
+            }
+          },
+          "companions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerRef"
+            }
+          },
+          "signed": {
+            "type": "boolean"
+          },
+          "signedOn": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "signedBy": {
+            "nullable": true,
+            "type": "string"
+          },
+          "signatureNote": {
+            "nullable": true,
+            "type": "string"
+          },
+          "paymentDueOn": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "isImported": {
+            "type": "boolean"
           },
           "totalSessions": {
             "type": "integer"
@@ -14789,10 +15648,40 @@
           "contractCode",
           "customer",
           "packageName",
+          "service",
+          "contractType",
+          "previousContract",
+          "contractDate",
           "startDate",
           "endDate",
+          "activationDeadline",
           "status",
           "createdAt",
+          "sessionsBought",
+          "bonusSessions",
+          "bonusMonths",
+          "bonusDays",
+          "tierUnitPrice",
+          "approvedUnitPrice",
+          "isExceptionPrice",
+          "exceptionReason",
+          "exceptionNote",
+          "promotion",
+          "voucher",
+          "promotionDiscount",
+          "voucherDiscount",
+          "vatPercent",
+          "vatAmount",
+          "discountPercent",
+          "shares",
+          "companions",
+          "signed",
+          "signedOn",
+          "signedBy",
+          "signatureNote",
+          "paymentDueOn",
+          "notes",
+          "isImported",
           "totalSessions",
           "openingSessionsUsed",
           "completedSessions",
@@ -14915,6 +15804,44 @@
           "failure",
           "createdAt",
           "sentAt"
+        ]
+      },
+      "ContractStaffList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractStaff"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ContractStaff": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "employeeCode": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "isTrainer": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "employeeCode",
+          "fullName",
+          "isTrainer"
         ]
       },
       "PaymentPage": {
@@ -16207,7 +17134,8 @@
               "leadRefuseReasons",
               "customerGroups",
               "auditFailReasons",
-              "stepReopenReasons"
+              "stepReopenReasons",
+              "exceptionPriceReasons"
             ]
           },
           "labelVi": {

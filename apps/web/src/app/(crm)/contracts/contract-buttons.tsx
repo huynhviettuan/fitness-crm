@@ -1,105 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BanIcon, CheckCircleIcon, FilePlusIcon, PencilIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DateTime } from "@/components/date-time";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
-import { formatDateOnly } from "@/lib/format";
-import { ContractForm, type ContractFormValues } from "./contract-form";
-import { activateContractAction, cancelContractAction, createContractAction, updateContractAction } from "./actions";
+import { activateContractAction, cancelContractAction } from "./actions";
 
-const EMPTY: ContractFormValues = { packageName: "", contractValue: "", totalSessions: "", startDate: "", endDate: "" };
-
-/** "Add contract" for one customer: a short form, so it opens in a Sheet (docs/23 §7). */
+/** "Add contract" for one customer: the form is long, so it is a page of its own (docs/23 §7). */
 export function CreateContractButton({ customerId }: { customerId: string }) {
   const t = useTranslations("contracts");
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  // New key each time the sheet opens; retries and double-clicks inside it reuse it (T-015).
-  const [idempotencyKey, setIdempotencyKey] = useState("");
-
-  const openSheet = () => {
-    setIdempotencyKey(crypto.randomUUID());
-    setOpen(true);
-  };
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <Button onClick={openSheet}>
+    <Button asChild>
+      <Link href={`/customers/${customerId}/contracts/new`}>
         <FilePlusIcon />
         {t("create")}
-      </Button>
-      <SheetContent className="flex flex-col gap-0 sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{t("create")}</SheetTitle>
-          <SheetDescription>{t("createDescription")}</SheetDescription>
-        </SheetHeader>
-        <ContractForm
-          defaultValues={EMPTY}
-          submit={(values) => createContractAction(customerId, values, idempotencyKey)}
-          onCancel={() => setOpen(false)}
-          onSaved={(result) => {
-            const { id, contractCode } = result as { id: string; contractCode: string };
-            setOpen(false);
-            notify.success(t("created", { code: contractCode }));
-            router.push(`/contracts/${id}`);
-          }}
-        />
-      </SheetContent>
-    </Sheet>
+      </Link>
+    </Button>
   );
 }
 
-type EditableContract = {
-  id: string;
-  packageName: string;
-  contractValue: number;
-  totalSessions: number;
-  startDate: Date;
-  endDate: Date;
-};
-
-export function EditContractButton({ contract }: { contract: EditableContract }) {
+export function EditContractButton({ contract }: { contract: { id: string } }) {
   const t = useTranslations("contracts");
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const defaultValues: ContractFormValues = {
-    packageName: contract.packageName,
-    contractValue: String(contract.contractValue),
-    totalSessions: String(contract.totalSessions),
-    startDate: formatDateOnly(contract.startDate),
-    endDate: formatDateOnly(contract.endDate),
-  };
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <Button variant="outline" onClick={() => setOpen(true)}>
+    <Button asChild variant="outline">
+      <Link href={`/contracts/${contract.id}/edit`}>
         <PencilIcon />
         {t("edit")}
-      </Button>
-      <SheetContent className="flex flex-col gap-0 sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{t("edit")}</SheetTitle>
-          <SheetDescription>{t("editDescription")}</SheetDescription>
-        </SheetHeader>
-        <ContractForm
-          defaultValues={defaultValues}
-          submit={(values) => updateContractAction(contract.id, values)}
-          onCancel={() => setOpen(false)}
-          onSaved={() => {
-            setOpen(false);
-            notify.success(t("updated"));
-            router.refresh();
-          }}
-        />
-      </SheetContent>
-    </Sheet>
+      </Link>
+    </Button>
   );
 }
 

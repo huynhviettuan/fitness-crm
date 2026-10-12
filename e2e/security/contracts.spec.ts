@@ -3,7 +3,7 @@
 // by the route inventory in access-control.spec.ts.
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
-import { PT24, createContractViaApi, createCustomerViaApi } from "../support/data";
+import { contractPayload, createContractViaApi, createCustomerViaApi } from "../support/data";
 import type { Role } from "../support/db";
 
 test.describe("A01 contract roles (docs/09, A-015)", () => {
@@ -25,7 +25,7 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
       const api = await apiAs(role);
       const response = await api.post(`/api/v1/customers/${customer.id}/contracts`, {
         headers: { "idempotency-key": randomUUID() },
-        data: PT24,
+        data: await contractPayload(),
       });
       expect(response.status()).toBe(status);
     });
@@ -70,13 +70,16 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
 
     const response = await seller.post(`/api/v1/customers/${customer.id}/contracts`, {
       headers: { "idempotency-key": randomUUID() },
-      data: {
-        ...PT24,
+      data: await contractPayload({
         status: "ACTIVE",
         contractCode: "HD999999",
         openingSessionsUsed: 20,
         openingPaidAmount: 12_000_000,
-      },
+        // The price is the tier's, whatever the client says (BR-301).
+        unitPrice: 1,
+        contractValue: 1,
+        packageName: "Hack",
+      }),
     });
 
     expect(await response.json()).toMatchObject({
@@ -86,6 +89,7 @@ test.describe("A01 contract roles (docs/09, A-015)", () => {
       openingPaidAmount: 0,
       remainingSessions: 24,
       debt: 12_000_000,
+      packageName: "PT 24 buổi",
     });
   });
 });
@@ -95,7 +99,7 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
     const seller = await apiAs("FITNESS_MANAGER");
     const customer = await createCustomerViaApi(seller, testTag);
 
-    const response = await seller.post(`/api/v1/customers/${customer.id}/contracts`, { data: PT24 });
+    const response = await seller.post(`/api/v1/customers/${customer.id}/contracts`, { data: await contractPayload() });
 
     expect(response.status()).toBe(400);
     expect(await response.json()).toMatchObject({ code: "IDEMPOTENCY_KEY_REQUIRED" });
@@ -110,9 +114,10 @@ test.describe("A06/A08 duplicate submission (T-015)", () => {
     const headers = { "idempotency-key": randomUUID() };
     const url = `/api/v1/customers/${customer.id}/contracts`;
 
-    const first = await seller.post(url, { headers, data: PT24 });
-    const replay = await seller.post(url, { headers, data: PT24 });
-    const misuse = await seller.post(url, { headers, data: { ...PT24, totalSessions: "12" } });
+    const payload = await contractPayload();
+    const first = await seller.post(url, { headers, data: payload });
+    const replay = await seller.post(url, { headers, data: payload });
+    const misuse = await seller.post(url, { headers, data: { ...payload, sessions: 12 } });
 
     expect(first.status()).toBe(201);
     expect(replay.status()).toBe(200);
@@ -130,7 +135,7 @@ test.describe("A10 contract input errors", () => {
 
     const response = await seller.post(`/api/v1/customers/${customer.id}/contracts`, {
       headers: { "idempotency-key": randomUUID() },
-      data: { packageName: "", contractValue: "12,5", totalSessions: "0", startDate: "31/02/2026", endDate: "x" },
+      data: { serviceId: "x", sessions: "0", contractDate: "31/02/2026", vatPercent: "101" },
     });
 
     expect(response.status()).toBe(400);
@@ -138,11 +143,10 @@ test.describe("A10 contract input errors", () => {
       code: "VALIDATION_FAILED",
       details: {
         fieldErrors: {
-          packageName: ["required"],
-          contractValue: ["invalidAmount"],
-          totalSessions: ["invalidNumber"],
-          startDate: ["invalidDate"],
-          endDate: ["invalidDate"],
+          serviceId: ["invalidChoice"],
+          sessions: ["invalidNumber"],
+          contractDate: ["invalidDate"],
+          vatPercent: ["invalidPercent"],
         },
       },
     });
@@ -156,13 +160,13 @@ test.describe("A10 contract input errors", () => {
       { activateWith: await apiAs("ADMIN") },
     );
 
-    const edit = await seller.patch(`/api/v1/contracts/${contract.id}`, { data: PT24 });
+    const edit = await seller.patch(`/api/v1/contracts/${contract.id}`, { data: await contractPayload() });
     expect(edit.status()).toBe(409);
     expect(await edit.json()).toMatchObject({ code: "CONTRACT_NOT_EDITABLE" });
 
     const unknown = await seller.post(`/api/v1/customers/${randomUUID()}/contracts`, {
       headers: { "idempotency-key": randomUUID() },
-      data: PT24,
+      data: await contractPayload(),
     });
     expect(unknown.status()).toBe(404);
   });

@@ -7,7 +7,7 @@ import { createContract } from "../../src/modules/contracts/contract.service.js"
 import { createRole } from "../../src/platform/roles/role.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestBranch, createTestUser, inRoundRobinOrder, optionId, uniquePhone } from "../support/factories.js";
-import { CONTRACT } from "../support/bookings.js";
+import { contractInput } from "../support/bookings.js";
 
 afterEach(async () => {
   await resetDatabase();
@@ -169,7 +169,9 @@ describe("one person, one record (D-019)", () => {
     expect((await listCustomers(manager, {})).items.map((c) => c.id)).toEqual([customer.id]);
     await expect(getCustomer(manager, lead.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(getLead(manager, customer.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(createContract(manager, lead.id, CONTRACT, randomUUID())).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(createContract(manager, lead.id, await contractInput(), randomUUID())).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 });
 

@@ -12,8 +12,8 @@ afterEach(async () => {
   await resetDatabase();
 });
 
-async function checkedInBooking(totalSessions = 24) {
-  const scenario = await bookingScenario({ totalSessions });
+async function checkedInBooking(sessions = 24) {
+  const scenario = await bookingScenario({ sessions });
   const booking = await book(scenario.manager, scenario);
   await checkIn(scenario.manager, booking.id);
   return { ...scenario, booking };

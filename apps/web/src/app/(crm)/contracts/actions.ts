@@ -2,12 +2,11 @@
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { activateContract, cancelContract, createContract, updateContract } from "@/lib/api/contracts";
-import type { ContractInput } from "@flow/shared/contracts";
 
 /** `idempotencyKey` is generated when the form opens, so a double submit reuses it (T-015). */
 export async function createContractAction(
   customerId: string,
-  input: ContractInput,
+  input: unknown,
   idempotencyKey: string,
 ): Promise<ActionResult<{ id: string; contractCode: string }>> {
   return runAction(async () => {
@@ -16,7 +15,7 @@ export async function createContractAction(
   });
 }
 
-export async function updateContractAction(id: string, input: ContractInput): Promise<ActionResult> {
+export async function updateContractAction(id: string, input: unknown): Promise<ActionResult> {
   return runAction(async () => {
     await updateContract(id, input);
   });

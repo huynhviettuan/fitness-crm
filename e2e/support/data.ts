@@ -2,18 +2,30 @@ import { randomUUID } from "node:crypto";
 import { otherOptionId } from "./options";
 import { approvePendingViaApi } from "./approvals";
 import type { APIRequestContext } from "@playwright/test";
+import { contractFixtures } from "./db";
 import { createUserViaApi, roleIdOf } from "./admin";
 
 // Test data created through the public API. Names carry the test's tag so the
 // `testTag` fixture removes them afterwards.
 
-export const PT24 = {
-  packageName: "PT 24 buổi",
-  contractValue: "12.000.000",
-  totalSessions: "24",
-  startDate: "01/10/2026",
-  endDate: "31/12/2030",
-};
+/** What a 24-session contract on the specs' service shows (see `contractFixtures`). */
+export const PT24 = { packageName: "PT 24 buổi", contractValue: "12.000.000", sessions: 24 };
+
+/**
+ * The input of a 24-session contract on the specs' service, starting 1 October 2026 so it runs well past the dates the
+ * specs book. Nothing here is a price: the API takes it from the tier (BR-301).
+ */
+export async function contractPayload(overrides: Record<string, unknown> = {}) {
+  const { serviceId, saleEmployeeId } = await contractFixtures();
+  return {
+    serviceId,
+    sessions: PT24.sessions,
+    contractDate: "01/10/2026",
+    startDate: "01/10/2026",
+    saleShares: [{ employeeId: saleEmployeeId, percent: 100 }],
+    ...overrides,
+  };
+}
 
 /**
  * A phone number nobody else has: one phone belongs to one person (D-019), and tests
@@ -33,11 +45,11 @@ export async function createContractViaApi(
   api: APIRequestContext,
   customerId: string,
   /** `activateWith`: who approves (activates) it; never its creator (D-018). */
-  options: { activateWith?: APIRequestContext; data?: Partial<typeof PT24> } = {},
+  options: { activateWith?: APIRequestContext; data?: Record<string, unknown> } = {},
 ) {
   const response = await api.post(`/api/v1/customers/${customerId}/contracts`, {
     headers: { "idempotency-key": randomUUID() },
-    data: { ...PT24, ...options.data },
+    data: await contractPayload(options.data),
   });
   if (response.status() !== 201) throw new Error(`Contract setup failed: ${response.status()}`);
   const contract = (await response.json()) as { id: string; contractCode: string; status: string };

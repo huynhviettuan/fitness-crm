@@ -170,7 +170,7 @@ test.describe("A10 booking input errors", () => {
     expect(mismatch.status()).toBe(422);
     expect(await mismatch.json()).toMatchObject({ code: "BOOKING_CUSTOMER_CONTRACT_MISMATCH" });
 
-    const outside = await reception.post("/api/v1/bookings", { data: { ...refs, ...SLOT, date: "01/01/2031" } });
+    const outside = await reception.post("/api/v1/bookings", { data: { ...refs, ...SLOT, date: "01/10/2031" } });
     expect(outside.status()).toBe(422);
     expect(await outside.json()).toMatchObject({ code: "BOOKING_OUTSIDE_CONTRACT_PERIOD" });
 

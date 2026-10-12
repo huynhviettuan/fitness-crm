@@ -32,6 +32,7 @@ export async function quotePrice(
   params: {
     sessions: string;
     startDate?: string;
+    asOf?: string;
     promotionId?: string;
     voucherCode?: string;
     vatPercent?: string;

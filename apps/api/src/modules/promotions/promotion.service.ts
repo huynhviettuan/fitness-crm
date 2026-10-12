@@ -136,20 +136,13 @@ export async function quotePrice(actor: Actor, serviceId: string, rawQuery: unkn
   });
   const day = query.asOf ?? gymToday();
 
-  const promotion = query.promotionId ? await offer(query.promotionId, "PROMOTION", serviceId, day) : null;
-  if (query.promotionId && !promotion) {
-    throw new AppError("VALIDATION_FAILED", { fieldErrors: { promotionId: ["promotionNotValid"] } });
-  }
-  const voucher = query.voucherCode ? await voucherByCode(query.voucherCode, serviceId, day) : null;
-  if (query.voucherCode && !voucher) {
-    throw new AppError("VALIDATION_FAILED", { fieldErrors: { voucherCode: ["voucherNotValid"] } });
-  }
+  const { promotion, voucher } = await resolveOffers(serviceId, day, query);
 
   const breakdown = priceBreakdown({
     unitPrice: lookup.unitPrice,
     sessions: lookup.sessions,
-    promotion: promotion && discountOfRecord(promotion),
-    voucher: voucher && discountOfRecord(voucher),
+    promotion: promotion && discountOfOffer(promotion),
+    voucher: voucher && discountOfOffer(voucher),
     vatPercent: query.vatPercent,
   });
   return {
@@ -160,6 +153,31 @@ export async function quotePrice(actor: Actor, serviceId: string, rawQuery: unkn
     discountPercent: discountPercentOf(breakdown.gross, breakdown.totalDiscount),
   };
 }
+
+/**
+ * The promotion and the voucher a price takes, found and checked for the service and the day: one that is off, outside
+ * its dates, or not for the service is refused, never ignored (A-110).
+ */
+export async function resolveOffers(
+  serviceId: string,
+  day: Date,
+  choice: { promotionId?: string | null; voucherCode?: string | null },
+): Promise<{ promotion: Record_ | null; voucher: Record_ | null }> {
+  const promotion = choice.promotionId ? await offer(choice.promotionId, "PROMOTION", serviceId, day) : null;
+  if (choice.promotionId && !promotion) {
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { promotionId: ["promotionNotValid"] } });
+  }
+  const voucher = choice.voucherCode ? await voucherByCode(choice.voucherCode, serviceId, day) : null;
+  if (choice.voucherCode && !voucher) {
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { voucherCode: ["voucherNotValid"] } });
+  }
+  return { promotion, voucher };
+}
+
+export const discountOfOffer = (record: { discountType: "PERCENT" | "AMOUNT"; value: unknown }): Discount => ({
+  type: record.discountType,
+  value: Number(record.value),
+});
 
 /**
  * Whether holders of the actor's role may approve a contract with this total discount, as a percent of the tier price
@@ -183,11 +201,6 @@ async function voucherByCode(code: string, serviceId: string, day: Date): Promis
   const record = await repo.findVoucherByCode(prisma, code);
   return record && usable(record, serviceId, day) ? record : null;
 }
-
-const discountOfRecord = (record: Record_): Discount => ({
-  type: record.discountType,
-  value: Number(record.value),
-});
 
 const formatDay = (date: Date) =>
   `${String(date.getUTCDate()).padStart(2, "0")}/${String(date.getUTCMonth() + 1).padStart(2, "0")}/${date.getUTCFullYear()}`;

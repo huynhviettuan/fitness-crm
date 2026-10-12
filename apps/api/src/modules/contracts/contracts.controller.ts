@@ -1,7 +1,12 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
-import { contractInputSchema, contractPageSchema, contractSchema } from "@flow/shared/contracts";
+import {
+  contractInputSchema,
+  contractPageSchema,
+  contractSchema,
+  contractStaffListSchema,
+} from "@flow/shared/contracts";
 import { paymentInputSchema, paymentPageSchema, paymentSchema } from "@flow/shared/finance";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
@@ -17,7 +22,14 @@ import { queryOf } from "../../platform/http/query.js";
 import { exportList } from "../../platform/export/export.service.js";
 import { contractsExport, CONTRACT_EXPORT_QUERY } from "./contract.export.js";
 import { listPayments, recordPayment } from "../finance/payment.service.js";
-import { activateContract, cancelContract, getContract, listContracts, updateContract } from "./contract.service.js";
+import {
+  activateContract,
+  cancelContract,
+  getContract,
+  listContracts,
+  staffChoices,
+  updateContract,
+} from "./contract.service.js";
 
 @ApiTags("contracts")
 @ApiErrors()
@@ -45,6 +57,15 @@ export class ContractsController {
   @ApiExcelFile()
   async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
     await exportList(actor, response, contractsExport, queryOf(request, CONTRACT_EXPORT_QUERY));
+  }
+
+  /** Active employees of a branch (default: the user's), to name on a contract's PT and Sale shares (A-115). */
+  @Get("staff")
+  @RequirePermission("contract.create")
+  @ApiOptionalQuery("branchId")
+  @ApiResult(contractStaffListSchema)
+  async staff(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(contractStaffListSchema, { items: await staffChoices(actor, queryOf(request, ["branchId"])) });
   }
 
   @Get(":id")

@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-12 — M4.3: the contract model and creation
+
+- **The price comes from the tier** (BR-301, AC-10): a contract takes a service and a session count; the unit price, total, end date, and name ("Hybrid Training 30 buổi") are worked out from the version of the prices in force on the contract date. A count no tier covers is refused (A-107).
+- **Promotion, voucher, VAT, exception price** (A-110, A-111, A-113): the promotion first, then the voucher on what is left, then VAT; an agreed price is an exception with a reason and approval, and activation checks the approver's discount limit (A-112, `DISCOUNT_ABOVE_LIMIT`).
+- **Bonus, shares, companions, signature, first payment** (A-114 to A-119): bonus sessions, months, and days kept apart; PT and Sale shares totalling 100; companions of a group package; the first payment saved with the contract as a pending receipt, or nothing saved.
+- **Form and screens**: the contract form is a page with a live price panel; the contract page shows the prices and staff. Existing contracts stay, flagged as imported. Seed scripts price contracts from services.
+- **Open**: OQ-039 (exception price with a promotion) and OQ-040 (PT and Sale shares). Docs 04, 07, 08, 13, 16, 18, 28; E2E-104 rewritten, E2E-159.
+
 ## 2026-10-12 — M4.2: promotions, vouchers, and discount limits
 
 - **Promotions and vouchers** (A-110, FR-SVC-004, BR-303): a percent or an amount off the tier price, with dates and services; not exception prices. A contract takes one of each, the promotion first, then the voucher on what is left. Admin manages them; staff see only the promotions on offer and never a voucher code.

@@ -4,33 +4,60 @@ import { AppShell } from "./app-shell";
 import { BookingsTable, bookingForm, type BookingFormDialog } from "./bookings";
 import { PaymentDialog, PaymentsTable } from "./finance";
 
-export type ContractInput = {
-  packageName: string;
-  contractValue: string;
-  totalSessions: string;
-  startDate: string;
-  endDate: string;
-};
+const form = labels.contracts.form;
 
-/** The "Add contract" sheet. Every locator is scoped to the dialog. */
-export class ContractFormSheet {
-  constructor(readonly root: Locator) {}
+/** The contract form page (FR-CON-001, FR-CON-002): the fields, and the price panel beside them. */
+export class ContractFormPage {
+  private readonly shell: AppShell;
 
-  async fill(input: ContractInput): Promise<void> {
-    const fields = labels.contracts.fields;
-    for (const [key, label] of [
-      ["packageName", fields.packageName],
-      ["contractValue", fields.contractValue],
-      ["totalSessions", fields.totalSessions],
-      ["startDate", fields.startDate],
-      ["endDate", fields.endDate],
-    ] as const) {
-      await this.root.getByLabel(label, { exact: true }).fill(input[key]);
-    }
+  constructor(private readonly page: Page) {
+    this.shell = new AppShell(page);
   }
 
-  async save(): Promise<void> {
-    await this.root.getByRole("button", { name: labels.common.save }).click();
+  get main(): Locator {
+    return this.shell.main;
+  }
+
+  field(label: string): Locator {
+    return this.main.getByLabel(label, { exact: true });
+  }
+
+  async choose(label: string, option: string | RegExp): Promise<void> {
+    await this.main.getByRole("combobox", { name: label, exact: true }).click();
+    await this.page
+      .getByRole("option", typeof option === "string" ? { name: option, exact: true } : { name: option })
+      .click();
+  }
+
+  async chooseService(name: string): Promise<void> {
+    await this.choose(form.service, name);
+  }
+
+  async setSessions(count: number | string): Promise<void> {
+    await this.field(form.sessions).fill(String(count));
+  }
+
+  /** Names the salesperson on the first Sale row. */
+  async chooseSalesperson(name: string, row = 1): Promise<void> {
+    // The option shows the employee's code first.
+    await this.choose(`${form.saleShares}: ${form.employee} ${row}`, new RegExp(name));
+  }
+
+  /** The panel that shows the price the API works out. */
+  get panel(): Locator {
+    return this.main.getByRole("region", { name: labels.contracts.panel.title });
+  }
+
+  get submit(): Locator {
+    return this.main.getByRole("button", { name: form.submit, exact: true });
+  }
+
+  get save(): Locator {
+    return this.main.getByRole("button", { name: form.save, exact: true });
+  }
+
+  get fieldErrors(): Locator {
+    return this.main.locator('[data-slot="field-error"]');
   }
 }
 
@@ -51,8 +78,9 @@ export class ContractDetailPage {
 
   /** The value (<dd>) next to a label (<dt>) in one of the contract's cards. */
   figure(label: string): Locator {
+    // A page left behind by navigation stays in the document, hidden: only what is shown counts.
     return this.shell.main
-      .locator("dt")
+      .locator("dt:visible")
       .filter({ hasText: new RegExp(`^${label}$`) })
       .locator("xpath=following-sibling::dd[1]");
   }
@@ -65,10 +93,6 @@ export class ContractDetailPage {
   async confirmAction(name: string): Promise<void> {
     await this.action(name).click();
     await this.page.getByRole("alertdialog").getByRole("button", { name, exact: true }).click();
-  }
-
-  get fieldErrors(): Locator {
-    return this.page.getByRole("dialog").locator('[data-slot="field-error"]');
   }
 
   get sessionHistory(): Locator {
@@ -122,12 +146,13 @@ export class CustomerContractsTab {
   }
 
   get createButton(): Locator {
-    return this.panel.getByRole("button", { name: labels.contracts.create });
+    return this.panel.getByRole("link", { name: labels.contracts.create });
   }
 
-  async openCreate(): Promise<ContractFormSheet> {
+  async openCreate(): Promise<ContractFormPage> {
     await this.createButton.click();
-    return new ContractFormSheet(this.page.getByRole("dialog", { name: labels.contracts.create }));
+    await this.shell.pageHeading(labels.contracts.create).waitFor();
+    return new ContractFormPage(this.page);
   }
 
   get table(): Locator {

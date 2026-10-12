@@ -17,6 +17,21 @@ export const calendarDate = z
     return date;
   });
 
+/** A dd/MM/yyyy calendar date, or empty for none: stored as null. */
+export const optionalCalendarDate = z
+  .string()
+  .trim()
+  .or(z.null())
+  .transform((value, ctx) => {
+    if (value === null || value === "") return null;
+    const date = parseDateOnly(value);
+    if (!date) {
+      ctx.addIssue({ code: "custom", message: "invalidDate" });
+      return z.NEVER;
+    }
+    return date;
+  });
+
 /** A 24-hour wall-clock time, "H:mm" or "HH:mm", normalized to "HH:mm". */
 export const timeOfDay = z
   .string()

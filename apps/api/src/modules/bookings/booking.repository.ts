@@ -11,6 +11,7 @@ const bookingInclude = {
       contractCode: true,
       packageName: true,
       totalSessions: true,
+      bonusSessions: true,
       openingSessionsUsed: true,
       // T-012: completed sessions are the contract's bookings in COMPLETED.
       _count: { select: { bookings: { where: { status: "COMPLETED" } } } },

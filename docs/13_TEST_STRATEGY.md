@@ -29,7 +29,8 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-101 | Lead from the quick form → assigned round-robin → checklist steps → appointment → Show → converted with the same ID | AC-06, AC-09 |
 | E2E-102 | A receptionist types a phone already on a lead: the warning names that lead; "Quay lại sửa" keeps the form; "Gộp vào hồ sơ này" adds the contact (channel, source, need, note) to the existing record, which shows it on its timeline, and leaves one record; for a phone already on a customer the inquiry joins the customer (`e2e/leads.spec.ts`; the API side in `apps/api/test/integration/lead-merge.int.test.ts`) | BR-202, FR-LEAD-009, AC-03 |
 | E2E-103 | "Khác" without note refused; option deactivated stays on old record (`e2e/configuration.spec.ts`, `e2e/finance.spec.ts`) | AC-03, AC-04 |
-| E2E-104 | Contract with any session count → tier price, end date, name; exception price stays pending; booking refused until approved | AC-10, AC-11 |
+| E2E-104 | Contract form: any session count → tier price, end date, name in the price panel; the draft is created with a generated code and approved by someone else, never its creator (`e2e/contracts.spec.ts`; the pricing rules in `apps/api/test/integration/contracts.int.test.ts`) | AC-10, D-018 |
+| E2E-159 | An agreed price is an exception with a reason; it shows against the tier price, and a role whose discount limit it exceeds cannot activate it, Admin can | AC-10, A-112, A-113 |
 | E2E-105 | Approved contract cannot be edited by admin | AC-11 |
 | E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash (receipts part: `e2e/history.spec.ts`, M1 slice 4; contracts in M4) | AC-12, AC-13 |
 | E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |

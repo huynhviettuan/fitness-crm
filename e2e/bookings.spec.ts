@@ -142,7 +142,7 @@ test.describe("sessions as a manager", () => {
     testTag,
     contractDetailPage,
   }) => {
-    const { contract, trainer, refs } = await bookingSetup(apiAs, testTag, { totalSessions: "1" });
+    const { contract, trainer, refs } = await bookingSetup(apiAs, testTag, { sessions: 1 });
     const manager = await apiAs("FITNESS_MANAGER");
     const booking = await createBookingViaApi(manager, refs, {
       date: BOOKING_DAY.date,

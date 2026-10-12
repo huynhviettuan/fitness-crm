@@ -204,15 +204,7 @@ export async function saveQuickPackages(actor: Actor, id: string, rawInput: unkn
 export async function lookupPrice(actor: Actor, id: string, rawQuery: unknown): Promise<PriceLookup> {
   assertCan(actor, "service.view");
   const query = parseInput(lookupSchema, rawQuery);
-  const service = await getOrThrow(prisma, actor, id);
-  const day = query.asOf ?? gymToday();
-  const version = versionInForce(service.versions, day);
-  if (!version) throw new AppError("VALIDATION_FAILED", { fieldErrors: { sessions: ["noPriceVersion"] } });
-  const tier = findTier(
-    version.tiers.map((row) => ({ ...row, unitPrice: Number(row.unitPrice) })),
-    query.sessions,
-  );
-  if (!tier) throw new AppError("VALIDATION_FAILED", { fieldErrors: { sessions: ["noPriceTier"] } });
+  const { service, version, tier } = await priceAt(prisma, actor, id, query.sessions, query.asOf ?? gymToday());
   return {
     serviceId: service.id,
     versionId: version.id,
@@ -226,6 +218,37 @@ export async function lookupPrice(actor: Actor, id: string, rawQuery: unknown): 
     displayName: displayNameOf(service.name, query.sessions),
     endDate: query.startDate ? endDateOf(query.startDate, tier.validityMonths, tier.validityDays) : null,
   };
+}
+
+/**
+ * The tier that prices `sessions` on `day` (BR-301): the version in force that day, and the tier covering the count.
+ * Nothing is rounded to a nearby tier (A-107). Contracts call this with the contract date, so an old contract keeps
+ * the price it was signed at. The service is read as `actor` sees it.
+ */
+export async function priceAt(db: Db, actor: Actor, serviceId: string, sessions: number, day: Date) {
+  const service = await getOrThrow(db, actor, serviceId);
+  const version = versionInForce(service.versions, day);
+  if (!version) throw new AppError("VALIDATION_FAILED", { fieldErrors: { sessions: ["noPriceVersion"] } });
+  const tier = findTier(
+    version.tiers.map((row) => ({ ...row, unitPrice: Number(row.unitPrice) })),
+    sessions,
+  );
+  if (!tier) throw new AppError("VALIDATION_FAILED", { fieldErrors: { sessions: ["noPriceTier"] } });
+  return { service, version, tier };
+}
+
+/** Whether the service can be sold in the branch on `day`: active, inside its validity, and a service of the branch. */
+export function onSaleIn(
+  service: { active: boolean; activeFrom: Date | null; activeTo: Date | null; branches: { branch: { id: string } }[] },
+  branchId: string,
+  day: Date,
+): boolean {
+  return (
+    service.active &&
+    (!service.activeFrom || service.activeFrom.getTime() <= day.getTime()) &&
+    (!service.activeTo || service.activeTo.getTime() >= day.getTime()) &&
+    service.branches.some((row) => row.branch.id === branchId)
+  );
 }
 
 async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.ServiceRecord> {

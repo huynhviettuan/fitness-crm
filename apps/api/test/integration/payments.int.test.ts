@@ -18,7 +18,7 @@ import {
 } from "../../src/modules/finance/payment.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestOption, createTestUser, optionId, withoutApprovals } from "../support/factories.js";
-import { activeContract, CONTRACT } from "../support/bookings.js";
+import { activeContract, contractInput } from "../support/bookings.js";
 
 afterEach(async () => {
   vi.useRealTimers();
@@ -139,7 +139,7 @@ describe("recordPayment", () => {
 
   it("accepts draft and expired contracts, but not cancelled ones (OQ-013 interim)", async () => {
     const { reception, manager, customer, contract } = await setup();
-    const { contract: draft } = await createContract(manager, customer.id, CONTRACT, randomUUID());
+    const { contract: draft } = await createContract(manager, customer.id, await contractInput(), randomUUID());
     await cancelContract(manager, contract.id);
 
     await expect(pay(reception, draft.id, 1_000_000)).resolves.toBeDefined();
@@ -342,9 +342,9 @@ describe("reading", () => {
 
   it("the debt list shows owing contracts, largest first, without drafts (A-022)", async () => {
     const { reception, manager, customer, contract } = await setup();
-    const small = await activeContract(manager, customer.id, { contractValue: "2.000.000" });
-    const paidUp = await activeContract(manager, customer.id, { contractValue: "1.000.000" });
-    await createContract(manager, customer.id, CONTRACT, randomUUID()); // draft
+    const small = await activeContract(manager, customer.id, { sessions: 4 });
+    const paidUp = await activeContract(manager, customer.id, { sessions: 2 });
+    await createContract(manager, customer.id, await contractInput(), randomUUID()); // draft
     await pay(reception, paidUp.id, 1_000_000);
 
     const debts = await listDebts(reception, {});
