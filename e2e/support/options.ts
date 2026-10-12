@@ -2,7 +2,15 @@ import type { APIRequestContext } from "@playwright/test";
 
 /** Option list keys (D-016); the same as `OPTION_LISTS` in packages/shared. */
 export type OptionListKey =
-  "paymentMethods" | "incomeCategories" | "expenseTypes" | "deleteReasons" | "leadRefuseReasons";
+  | "paymentMethods"
+  | "incomeCategories"
+  | "expenseTypes"
+  | "deleteReasons"
+  | "leadRefuseReasons"
+  | "auditFailReasons"
+  | "needDetails"
+  | "stepReopenReasons"
+  | "leadChannels";
 
 type Option = { id: string; labelVi: string; active: boolean; isOther: boolean };
 
@@ -30,8 +38,11 @@ export async function createOptionViaApi(
   admin: APIRequestContext,
   listKey: OptionListKey,
   labelVi: string,
+  code?: string,
 ): Promise<string> {
-  const response = await admin.post(`/api/v1/option-lists/${listKey}/options`, { data: { labelVi, labelEn: labelVi } });
+  const response = await admin.post(`/api/v1/option-lists/${listKey}/options`, {
+    data: { labelVi, labelEn: labelVi, ...(code ? { code } : {}) },
+  });
   if (response.status() !== 201) throw new Error(`Option setup failed: ${response.status()} ${await response.text()}`);
   return ((await response.json()) as { id: string }).id;
 }

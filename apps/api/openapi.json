@@ -252,14 +252,10 @@
                     "type": "string",
                     "maxLength": 200
                   },
-                  "nationalityGroup": {
+                  "countryCode": {
                     "default": "",
                     "nullable": true,
-                    "type": "string",
-                    "enum": [
-                      "VIETNAM",
-                      "FOREIGN"
-                    ]
+                    "type": "string"
                   },
                   "needGroupId": {
                     "default": "",
@@ -271,6 +267,12 @@
                     "default": "",
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "needDetailId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   },
                   "needDetail": {
                     "default": "",
@@ -339,6 +341,80 @@
           "leads"
         ],
         "x-permission": "lead.create"
+      }
+    },
+    "/api/v1/leads/export": {
+      "get": {
+        "operationId": "LeadsController_export",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sourceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "needGroupId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.export"
       }
     },
     "/api/v1/leads/board": {
@@ -613,14 +689,10 @@
                     "type": "string",
                     "maxLength": 200
                   },
-                  "nationalityGroup": {
+                  "countryCode": {
                     "default": "",
                     "nullable": true,
-                    "type": "string",
-                    "enum": [
-                      "VIETNAM",
-                      "FOREIGN"
-                    ]
+                    "type": "string"
                   },
                   "needGroupId": {
                     "default": "",
@@ -632,6 +704,12 @@
                     "default": "",
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "needDetailId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   },
                   "needDetail": {
                     "default": "",
@@ -821,14 +899,10 @@
                     "type": "string",
                     "maxLength": 200
                   },
-                  "nationalityGroup": {
+                  "countryCode": {
                     "default": "",
                     "nullable": true,
-                    "type": "string",
-                    "enum": [
-                      "VIETNAM",
-                      "FOREIGN"
-                    ]
+                    "type": "string"
                   },
                   "needGroupId": {
                     "default": "",
@@ -840,6 +914,12 @@
                     "default": "",
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "needDetailId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   },
                   "needDetail": {
                     "default": "",
@@ -889,6 +969,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Lead"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.manage"
+      }
+    },
+    "/api/v1/leads/{id}/notes": {
+      "post": {
+        "operationId": "LeadsController_addNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadNote"
                 }
               }
             }
@@ -1233,9 +1374,9 @@
                       "birthDate": {
                         "type": "string"
                       },
-                      "nationality": {
+                      "countryCode": {
                         "type": "string",
-                        "maxLength": 100
+                        "minLength": 1
                       },
                       "email": {
                         "type": "string"
@@ -1260,7 +1401,7 @@
                       "idDocumentType",
                       "idDocumentNumber",
                       "birthDate",
-                      "nationality",
+                      "countryCode",
                       "email",
                       "phone",
                       "consent"
@@ -1339,6 +1480,79 @@
         "x-permission": "lead.manage"
       }
     },
+    "/api/v1/leads/{id}/steps/{stepId}/reopen": {
+      "post": {
+        "operationId": "LeadsController_reopenStep",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stepId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadChecklist"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.untick"
+      }
+    },
     "/api/v1/leads/{id}/show": {
       "post": {
         "operationId": "LeadsController_show",
@@ -1372,9 +1586,9 @@
                   "birthDate": {
                     "type": "string"
                   },
-                  "nationality": {
+                  "countryCode": {
                     "type": "string",
-                    "maxLength": 100
+                    "minLength": 1
                   },
                   "email": {
                     "type": "string"
@@ -1399,7 +1613,7 @@
                   "idDocumentType",
                   "idDocumentNumber",
                   "birthDate",
-                  "nationality",
+                  "countryCode",
                   "email",
                   "phone",
                   "consent"
@@ -1898,6 +2112,1073 @@
         "x-permission": "config.manage"
       }
     },
+    "/api/v1/consulting-scripts": {
+      "get": {
+        "operationId": "ScriptsController_list",
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingScriptList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "consulting-scripts"
+        ],
+        "x-permission": "lead.view"
+      },
+      "post": {
+        "operationId": "ScriptsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "situationVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "situationEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "answerVi": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "answerEn": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "situationVi",
+                  "situationEn"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingScript"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "consulting-scripts"
+        ],
+        "x-permission": "script.manage"
+      }
+    },
+    "/api/v1/consulting-scripts/order": {
+      "put": {
+        "operationId": "ScriptsController_reorder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scriptIds": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "scriptIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingScriptList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "consulting-scripts"
+        ],
+        "x-permission": "script.manage"
+      }
+    },
+    "/api/v1/consulting-scripts/{id}": {
+      "patch": {
+        "operationId": "ScriptsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "situationVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "situationEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "answerVi": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "answerEn": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "situationVi",
+                  "situationEn"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingScript"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "consulting-scripts"
+        ],
+        "x-permission": "script.manage"
+      }
+    },
+    "/api/v1/lead-audit/consultants": {
+      "get": {
+        "operationId": "LeadAuditController_consultants",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultantAudit"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.audit"
+      }
+    },
+    "/api/v1/lead-audit/leads": {
+      "get": {
+        "operationId": "LeadAuditController_leads",
+        "parameters": [
+          {
+            "name": "consultantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadsToCheckPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.audit"
+      }
+    },
+    "/api/v1/lead-audit/queue": {
+      "get": {
+        "operationId": "LeadAuditController_queue",
+        "parameters": [
+          {
+            "name": "consultantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauditedLeadsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.audit"
+      }
+    },
+    "/api/v1/lead-audit/leads/{id}": {
+      "get": {
+        "operationId": "LeadAuditController_lead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadAudit"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.audit"
+      }
+    },
+    "/api/v1/lead-audit/criteria": {
+      "get": {
+        "operationId": "LeadAuditController_criteria",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditCriteria"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.audit"
+      },
+      "put": {
+        "operationId": "LeadAuditController_setCriteria",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "criteria": {
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "enum": [
+                            "needGroup",
+                            "phone",
+                            "refuseReason"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "weight": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 10
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "active",
+                        "weight"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "criteria"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditCriteria"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
+    "/api/v1/lead-receivers": {
+      "get": {
+        "operationId": "LeadReceiversController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadReceiverList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.assign"
+      }
+    },
+    "/api/v1/lead-receivers/{userId}": {
+      "put": {
+        "operationId": "LeadReceiversController_set",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receivesLeads": {
+                    "type": "boolean"
+                  },
+                  "leadWeight": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  }
+                },
+                "required": [
+                  "receivesLeads",
+                  "leadWeight"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadReceiver"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "leads"
+        ],
+        "x-permission": "lead.assign"
+      }
+    },
+    "/api/v1/leads/{id}/audits": {
+      "get": {
+        "operationId": "ManagerAuditController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerAuditList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.view"
+      },
+      "post": {
+        "operationId": "ManagerAuditController_create",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "PASS",
+                      "FAIL"
+                    ]
+                  },
+                  "criterionIds": {
+                    "default": [],
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "comment": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerAudit"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "lead-audit"
+        ],
+        "x-permission": "lead.audit"
+      }
+    },
+    "/api/v1/reports/consulting": {
+      "get": {
+        "operationId": "ReportsController_consulting",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultingReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.consulting"
+      }
+    },
+    "/api/v1/reports/consulting/export": {
+      "get": {
+        "operationId": "ReportsController_exportConsulting",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.consultingExport"
+      }
+    },
+    "/api/v1/reports/lead-analysis": {
+      "get": {
+        "operationId": "ReportsController_analysis",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadAnalysis"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.leadAnalysis"
+      }
+    },
+    "/api/v1/reports/lead-analysis/export": {
+      "get": {
+        "operationId": "ReportsController_exportAnalysis",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.leadAnalysisExport"
+      }
+    },
     "/api/v1/customers": {
       "get": {
         "operationId": "CustomersController_list",
@@ -1920,6 +3201,54 @@
           },
           {
             "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registeredFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registeredTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "birthdayMonth",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noEmail",
             "required": false,
             "in": "query",
             "schema": {
@@ -1999,6 +3328,37 @@
                     "default": "",
                     "type": "string",
                     "maxLength": 1000
+                  },
+                  "address": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "emergencyContactName": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "emergencyContactPhone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "customerGroupId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "customerGroupNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "staffInChargeId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -2035,6 +3395,128 @@
           "customers"
         ],
         "x-permission": "customer.manage"
+      }
+    },
+    "/api/v1/customers/export": {
+      "get": {
+        "operationId": "CustomersController_export",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registeredFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registeredTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "birthdayMonth",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noEmail",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ],
+        "x-permission": "customer.export"
+      }
+    },
+    "/api/v1/customers/staff": {
+      "get": {
+        "operationId": "CustomersController_staff",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerStaffList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ],
+        "x-permission": "customer.view"
       }
     },
     "/api/v1/customers/{id}": {
@@ -2121,6 +3603,31 @@
                       "ACTIVE",
                       "INACTIVE"
                     ]
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "emergencyContactName": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "emergencyContactPhone": {
+                    "type": "string"
+                  },
+                  "customerGroupId": {
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "customerGroupNote": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "staffInChargeId": {
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   }
                 }
               }
@@ -2332,6 +3839,63 @@
         "x-permission": "contract.create"
       }
     },
+    "/api/v1/customers/{id}/emails": {
+      "get": {
+        "operationId": "CustomersController_emails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailMessagePage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ],
+        "x-permission": "customer.view"
+      }
+    },
     "/api/v1/contracts": {
       "get": {
         "operationId": "ContractsController_list",
@@ -2395,6 +3959,56 @@
           "contracts"
         ],
         "x-permission": "contract.view"
+      }
+    },
+    "/api/v1/contracts/export": {
+      "get": {
+        "operationId": "ContractsController_export",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.export"
       }
     },
     "/api/v1/contracts/{id}": {
@@ -2933,6 +4547,12 @@
                     "type": "string",
                     "maxLength": 500
                   },
+                  "managerId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
                   "status": {
                     "default": "ACTIVE",
                     "type": "string",
@@ -3144,6 +4764,12 @@
                     "default": "",
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "managerId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
                   },
                   "status": {
                     "default": "ACTIVE",
@@ -4062,6 +5688,72 @@
         "x-permission": "payment.view"
       }
     },
+    "/api/v1/payments/export": {
+      "get": {
+        "operationId": "PaymentsController_export",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contractId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "finance"
+        ],
+        "x-permission": "payment.export"
+      }
+    },
     "/api/v1/payments/collected": {
       "get": {
         "operationId": "PaymentsController_collected",
@@ -4433,6 +6125,64 @@
         "x-permission": "cash.manage"
       }
     },
+    "/api/v1/cash-transactions/export": {
+      "get": {
+        "operationId": "CashTransactionsController_export",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "finance"
+        ],
+        "x-permission": "cash.export"
+      }
+    },
     "/api/v1/cash-transactions/summary": {
       "get": {
         "operationId": "CashTransactionsController_summary",
@@ -4657,6 +6407,39 @@
           "users"
         ],
         "x-permission": "user.manage"
+      }
+    },
+    "/api/v1/users/export": {
+      "get": {
+        "operationId": "UsersController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "x-permission": "user.export"
       }
     },
     "/api/v1/users/{id}": {
@@ -4929,6 +6712,9 @@
                             "lead.assign",
                             "lead.receive",
                             "lead.merge",
+                            "script.manage",
+                            "lead.audit",
+                            "lead.untick",
                             "customer.view",
                             "customer.manage",
                             "contract.view",
@@ -4943,6 +6729,19 @@
                             "employee.manage",
                             "task.view",
                             "task.create",
+                            "user.export",
+                            "customer.export",
+                            "lead.export",
+                            "contract.export",
+                            "payment.export",
+                            "cash.export",
+                            "task.export",
+                            "audit.export",
+                            "trash.export",
+                            "report.consulting",
+                            "report.consultingExport",
+                            "report.leadAnalysis",
+                            "report.leadAnalysisExport",
                             "payment.view",
                             "payment.record",
                             "payment.delete",
@@ -5306,6 +7105,9 @@
                         "lead.assign",
                         "lead.receive",
                         "lead.merge",
+                        "script.manage",
+                        "lead.audit",
+                        "lead.untick",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -5320,6 +7122,19 @@
                         "employee.manage",
                         "task.view",
                         "task.create",
+                        "user.export",
+                        "customer.export",
+                        "lead.export",
+                        "contract.export",
+                        "payment.export",
+                        "cash.export",
+                        "task.export",
+                        "audit.export",
+                        "trash.export",
+                        "report.consulting",
+                        "report.consultingExport",
+                        "report.leadAnalysis",
+                        "report.leadAnalysisExport",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -5398,6 +7213,7 @@
                       "enum": [
                         "customer.phone",
                         "customer.email",
+                        "customer.address",
                         "customer.idDocument",
                         "customer.health",
                         "receipts.totals"
@@ -5530,6 +7346,9 @@
                         "lead.assign",
                         "lead.receive",
                         "lead.merge",
+                        "script.manage",
+                        "lead.audit",
+                        "lead.untick",
                         "customer.view",
                         "customer.manage",
                         "contract.view",
@@ -5544,6 +7363,19 @@
                         "employee.manage",
                         "task.view",
                         "task.create",
+                        "user.export",
+                        "customer.export",
+                        "lead.export",
+                        "contract.export",
+                        "payment.export",
+                        "cash.export",
+                        "task.export",
+                        "audit.export",
+                        "trash.export",
+                        "report.consulting",
+                        "report.consultingExport",
+                        "report.leadAnalysis",
+                        "report.leadAnalysisExport",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -5622,6 +7454,7 @@
                       "enum": [
                         "customer.phone",
                         "customer.email",
+                        "customer.address",
                         "customer.idDocument",
                         "customer.health",
                         "receipts.totals"
@@ -5962,6 +7795,11 @@
                     "type": "string",
                     "maxLength": 100
                   },
+                  "code": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 30
+                  },
                   "active": {
                     "default": true,
                     "type": "boolean"
@@ -6038,6 +7876,11 @@
                   "labelEn": {
                     "type": "string",
                     "maxLength": 100
+                  },
+                  "code": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 30
                   },
                   "active": {
                     "default": true,
@@ -6253,9 +8096,8 @@
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
                   },
-                  "taskDueSoonHours": {
-                    "type": "string",
-                    "pattern": "^\\d{1,3}$"
+                  "taskReminderHours": {
+                    "type": "string"
                   },
                   "recareDays": {
                     "type": "string",
@@ -6274,6 +8116,42 @@
                         "format": "uuid"
                       }
                     ]
+                  },
+                  "receptionDepartmentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "exportRowLimit": {
+                    "type": "string",
+                    "pattern": "^\\d{1,6}$"
+                  },
+                  "reclaimMinutes": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}$"
+                  },
+                  "consultingWindowStart": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "consultingWindowEnd": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "stepGraceMinutes": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}$"
                   }
                 },
                 "required": [
@@ -6283,9 +8161,15 @@
                   "customerCodePrefix",
                   "contractCodePrefix",
                   "employeeCodePrefix",
-                  "taskDueSoonHours",
+                  "taskReminderHours",
                   "recareDays",
-                  "studioDepartmentId"
+                  "studioDepartmentId",
+                  "receptionDepartmentId",
+                  "exportRowLimit",
+                  "reclaimMinutes",
+                  "consultingWindowStart",
+                  "consultingWindowEnd",
+                  "stepGraceMinutes"
                 ]
               }
             }
@@ -6408,6 +8292,80 @@
         "x-permission": "audit.view"
       }
     },
+    "/api/v1/audit-events/export": {
+      "get": {
+        "operationId": "AuditEventsController_export",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "audit"
+        ],
+        "x-permission": "audit.export"
+      }
+    },
     "/api/v1/trash": {
       "get": {
         "operationId": "TrashController_list",
@@ -6479,6 +8437,64 @@
           "trash"
         ],
         "x-permission": "trash.view"
+      }
+    },
+    "/api/v1/trash/export": {
+      "get": {
+        "operationId": "TrashController_export",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "trash"
+        ],
+        "x-permission": "trash.export"
       }
     },
     "/api/v1/approvals": {
@@ -6919,6 +8935,10 @@
                       "HIGH"
                     ]
                   },
+                  "reminders": {
+                    "default": "",
+                    "type": "string"
+                  },
                   "entityType": {
                     "default": "",
                     "nullable": true,
@@ -6971,6 +8991,72 @@
           "tasks"
         ],
         "x-permission": "task.create"
+      }
+    },
+    "/api/v1/tasks/export": {
+      "get": {
+        "operationId": "TasksController_export",
+        "parameters": [
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "overdueOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "tasks"
+        ],
+        "x-permission": "task.export"
       }
     },
     "/api/v1/tasks/summary": {
@@ -7134,6 +9220,10 @@
                       "NORMAL",
                       "HIGH"
                     ]
+                  },
+                  "reminders": {
+                    "default": "",
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -7591,6 +9681,7 @@
               "PERSON_ALREADY_MERGED",
               "CANNOT_CHANGE_OWN_ACCESS",
               "INVALID_STATUS_TRANSITION",
+              "STEP_LOCKED",
               "CONTRACT_NOT_EDITABLE",
               "CONTRACT_NOT_ACTIVE",
               "CONTRACT_NO_REMAINING_SESSIONS",
@@ -7605,6 +9696,7 @@
               "BOOKING_OUTSIDE_CONTRACT_PERIOD",
               "BOOKING_OUTSIDE_WORKING_HOURS",
               "PAYMENT_EXCEEDS_CONTRACT_VALUE",
+              "EXPORT_TOO_LARGE",
               "INTERNAL_ERROR"
             ]
           },
@@ -7642,6 +9734,14 @@
                   },
                   "fullName": {
                     "type": "string"
+                  },
+                  "openable": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "inCharge": {
+                    "nullable": true,
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -7649,6 +9749,21 @@
                   "stage",
                   "code",
                   "fullName"
+                ]
+              },
+              "exportLimit": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "total": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "limit",
+                  "total"
                 ]
               }
             }
@@ -7706,6 +9821,9 @@
                 "lead.assign",
                 "lead.receive",
                 "lead.merge",
+                "script.manage",
+                "lead.audit",
+                "lead.untick",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -7720,6 +9838,19 @@
                 "employee.manage",
                 "task.view",
                 "task.create",
+                "user.export",
+                "customer.export",
+                "lead.export",
+                "contract.export",
+                "payment.export",
+                "cash.export",
+                "task.export",
+                "audit.export",
+                "trash.export",
+                "report.consulting",
+                "report.consultingExport",
+                "report.leadAnalysis",
+                "report.leadAnalysisExport",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -7763,6 +9894,7 @@
               "enum": [
                 "customer.phone",
                 "customer.email",
+                "customer.address",
                 "customer.idDocument",
                 "customer.health",
                 "receipts.totals"
@@ -7950,6 +10082,10 @@
             "nullable": true,
             "type": "string"
           },
+          "countryCode": {
+            "nullable": true,
+            "type": "string"
+          },
           "nationalityGroup": {
             "nullable": true,
             "type": "string",
@@ -7959,6 +10095,14 @@
             ]
           },
           "needGroup": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "needDetailOption": {
             "nullable": true,
             "allOf": [
               {
@@ -8059,8 +10203,10 @@
           "source",
           "sourceType",
           "sourceDetail",
+          "countryCode",
           "nationalityGroup",
           "needGroup",
+          "needDetailOption",
           "needDetail",
           "painStatus",
           "assessmentType",
@@ -8084,6 +10230,10 @@
           "labelEn": {
             "type": "string"
           },
+          "code": {
+            "nullable": true,
+            "type": "string"
+          },
           "isOther": {
             "type": "boolean"
           },
@@ -8096,6 +10246,7 @@
           "id",
           "labelVi",
           "labelEn",
+          "code",
           "isOther",
           "note"
         ]
@@ -8317,7 +10468,8 @@
             "enum": [
               "WAITING",
               "OPEN",
-              "DONE"
+              "DONE",
+              "NOT_DONE"
             ]
           },
           "openedAt": {
@@ -8382,6 +10534,14 @@
               "ON_TIME",
               "LATE"
             ]
+          },
+          "lockedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "reopenable": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -8405,7 +10565,9 @@
           "doneBy",
           "result",
           "note",
-          "timing"
+          "timing",
+          "lockedAt",
+          "reopenable"
         ]
       },
       "RecarePage": {
@@ -8526,6 +10688,51 @@
           "pic",
           "branch",
           "maskedFields"
+        ]
+      },
+      "LeadNote": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "note"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "by": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "at",
+          "by",
+          "body"
         ]
       },
       "LeadTimeline": {
@@ -8694,6 +10901,18 @@
                         "id",
                         "name"
                       ]
+                    },
+                    "how": {
+                      "type": "string",
+                      "enum": [
+                        "ROUND_ROBIN",
+                        "MANUAL",
+                        "RECLAIM"
+                      ]
+                    },
+                    "waitedMinutes": {
+                      "nullable": true,
+                      "type": "integer"
                     }
                   },
                   "required": [
@@ -8702,8 +10921,13 @@
                     "at",
                     "by",
                     "from",
-                    "to"
+                    "to",
+                    "how",
+                    "waitedMinutes"
                   ]
+                },
+                {
+                  "$ref": "#/components/schemas/LeadNote"
                 },
                 {
                   "$ref": "#/components/schemas/LeadInquiry"
@@ -9165,6 +11389,1089 @@
           "steps"
         ]
       },
+      "ConsultingScriptList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsultingScript"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ConsultingScript": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "situationVi": {
+            "type": "string"
+          },
+          "situationEn": {
+            "type": "string"
+          },
+          "answerVi": {
+            "nullable": true,
+            "type": "string"
+          },
+          "answerEn": {
+            "nullable": true,
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "situationVi",
+          "situationEn",
+          "answerVi",
+          "answerEn",
+          "active",
+          "sortOrder"
+        ]
+      },
+      "ConsultantAudit": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsultantAuditRow"
+            }
+          },
+          "team": {
+            "type": "object",
+            "properties": {
+              "leads": {
+                "type": "integer"
+              },
+              "onTime": {
+                "type": "integer"
+              },
+              "late": {
+                "type": "integer"
+              },
+              "skipped": {
+                "type": "integer"
+              },
+              "due": {
+                "type": "integer"
+              },
+              "compliance": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "score": {
+                "nullable": true,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "leads",
+              "onTime",
+              "late",
+              "skipped",
+              "due",
+              "compliance",
+              "score"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "team"
+        ]
+      },
+      "ConsultantAuditRow": {
+        "type": "object",
+        "properties": {
+          "consultant": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "leads": {
+            "type": "integer"
+          },
+          "onTime": {
+            "type": "integer"
+          },
+          "late": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "due": {
+            "type": "integer"
+          },
+          "compliance": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "score": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "toCheck": {
+            "type": "integer"
+          },
+          "unaudited": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "consultant",
+          "leads",
+          "onTime",
+          "late",
+          "skipped",
+          "due",
+          "compliance",
+          "score",
+          "toCheck",
+          "unaudited"
+        ]
+      },
+      "LeadsToCheckPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeadToCheck"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "LeadToCheck": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "leadCode": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "CONSULTING",
+              "CONSIDERING",
+              "NO_RESPONSE",
+              "BOOKED",
+              "SHOWED",
+              "NO_SHOW",
+              "REFUSED",
+              "CONTRACTED"
+            ]
+          },
+          "pic": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "late": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "needGroup",
+                "phone",
+                "refuseReason"
+              ]
+            }
+          },
+          "score": {
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "leadCode",
+          "fullName",
+          "status",
+          "pic",
+          "branch",
+          "createdAt",
+          "late",
+          "skipped",
+          "failed",
+          "score"
+        ]
+      },
+      "UnauditedLeadsPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnauditedLead"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "UnauditedLead": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "leadCode": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "CONSULTING",
+              "CONSIDERING",
+              "NO_RESPONSE",
+              "BOOKED",
+              "SHOWED",
+              "NO_SHOW",
+              "REFUSED",
+              "CONTRACTED"
+            ]
+          },
+          "pic": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "leadCode",
+          "fullName",
+          "status",
+          "pic",
+          "branch",
+          "createdAt"
+        ]
+      },
+      "LeadAudit": {
+        "type": "object",
+        "properties": {
+          "onTime": {
+            "type": "integer"
+          },
+          "late": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "due": {
+            "type": "integer"
+          },
+          "compliance": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "score": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "labelVi": {
+                  "type": "string"
+                },
+                "labelEn": {
+                  "type": "string"
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "dueAt": {
+                  "nullable": true,
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "doneAt": {
+                  "nullable": true,
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "outcome": {
+                  "nullable": true,
+                  "type": "string",
+                  "enum": [
+                    "ON_TIME",
+                    "LATE",
+                    "SKIPPED"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "labelVi",
+                "labelEn",
+                "required",
+                "dueAt",
+                "doneAt",
+                "outcome"
+              ]
+            }
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "needGroup",
+                    "phone",
+                    "refuseReason"
+                  ]
+                },
+                "weight": {
+                  "type": "integer"
+                },
+                "active": {
+                  "type": "boolean"
+                },
+                "applies": {
+                  "type": "boolean"
+                },
+                "passed": {
+                  "nullable": true,
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "key",
+                "weight",
+                "active",
+                "applies",
+                "passed"
+              ]
+            }
+          }
+        },
+        "required": [
+          "onTime",
+          "late",
+          "skipped",
+          "due",
+          "compliance",
+          "score",
+          "steps",
+          "criteria"
+        ]
+      },
+      "AuditCriteria": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditCriterion"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AuditCriterion": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "needGroup",
+              "phone",
+              "refuseReason"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "weight": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "active",
+          "weight"
+        ]
+      },
+      "LeadReceiverList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeadReceiver"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "LeadReceiver": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "allBranches": {
+            "type": "boolean"
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "receivesLeads": {
+            "type": "boolean"
+          },
+          "leadWeight": {
+            "type": "integer"
+          },
+          "onDuty": {
+            "type": "boolean"
+          },
+          "leadsInCharge": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "allBranches",
+          "branches",
+          "receivesLeads",
+          "leadWeight",
+          "onDuty",
+          "leadsInCharge"
+        ]
+      },
+      "ManagerAuditList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagerAudit"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ManagerAudit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL"
+            ]
+          },
+          "comment": {
+            "nullable": true,
+            "type": "string"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChosenOption"
+            }
+          },
+          "auditor": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "result",
+          "comment",
+          "criteria",
+          "auditor",
+          "at"
+        ]
+      },
+      "ConsultingReport": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "consultant": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "leads": {
+                  "type": "integer"
+                },
+                "consulted": {
+                  "type": "integer"
+                },
+                "booked": {
+                  "type": "integer"
+                },
+                "showed": {
+                  "type": "integer"
+                },
+                "contracted": {
+                  "type": "integer"
+                },
+                "bookingRate": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "showRate": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "compliance": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "score": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "firstResponseMinutes": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "recareEntered": {
+                  "type": "integer"
+                },
+                "recareRebooked": {
+                  "type": "integer"
+                },
+                "recareRate": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "reclaimed": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "consultant",
+                "leads",
+                "consulted",
+                "booked",
+                "showed",
+                "contracted",
+                "bookingRate",
+                "showRate",
+                "compliance",
+                "score",
+                "firstResponseMinutes",
+                "recareEntered",
+                "recareRebooked",
+                "recareRate",
+                "reclaimed"
+              ]
+            }
+          },
+          "team": {
+            "type": "object",
+            "properties": {
+              "leads": {
+                "type": "integer"
+              },
+              "consulted": {
+                "type": "integer"
+              },
+              "booked": {
+                "type": "integer"
+              },
+              "showed": {
+                "type": "integer"
+              },
+              "contracted": {
+                "type": "integer"
+              },
+              "bookingRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "showRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "compliance": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "score": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "firstResponseMinutes": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "recareEntered": {
+                "type": "integer"
+              },
+              "recareRebooked": {
+                "type": "integer"
+              },
+              "recareRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "reclaimed": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "leads",
+              "consulted",
+              "booked",
+              "showed",
+              "contracted",
+              "bookingRate",
+              "showRate",
+              "compliance",
+              "score",
+              "firstResponseMinutes",
+              "recareEntered",
+              "recareRebooked",
+              "recareRate",
+              "reclaimed"
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StepReport"
+            }
+          }
+        },
+        "required": [
+          "items",
+          "team",
+          "steps"
+        ]
+      },
+      "StepReport": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "labelVi": {
+            "type": "string"
+          },
+          "labelEn": {
+            "type": "string"
+          },
+          "due": {
+            "type": "integer"
+          },
+          "done": {
+            "type": "integer"
+          },
+          "onTime": {
+            "type": "integer"
+          },
+          "late": {
+            "type": "integer"
+          },
+          "notDone": {
+            "type": "integer"
+          },
+          "completionRate": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "did": {
+            "type": "object",
+            "properties": {
+              "leads": {
+                "type": "integer"
+              },
+              "bookingRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "showRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "contractRate": {
+                "nullable": true,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "leads",
+              "bookingRate",
+              "showRate",
+              "contractRate"
+            ]
+          },
+          "didNot": {
+            "type": "object",
+            "properties": {
+              "leads": {
+                "type": "integer"
+              },
+              "bookingRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "showRate": {
+                "nullable": true,
+                "type": "integer"
+              },
+              "contractRate": {
+                "nullable": true,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "leads",
+              "bookingRate",
+              "showRate",
+              "contractRate"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "labelVi",
+          "labelEn",
+          "due",
+          "done",
+          "onTime",
+          "late",
+          "notDone",
+          "completionRate",
+          "did",
+          "didNot"
+        ]
+      },
+      "LeadAnalysis": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dimension": {
+                  "type": "string",
+                  "enum": [
+                    "channel",
+                    "source",
+                    "sourceType",
+                    "needGroup",
+                    "nationalityGroup",
+                    "country",
+                    "refuseReason"
+                  ]
+                },
+                "buckets": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisBucket"
+                  }
+                }
+              },
+              "required": [
+                "dimension",
+                "buckets"
+              ]
+            }
+          }
+        },
+        "required": [
+          "total",
+          "dimensions"
+        ]
+      },
+      "AnalysisBucket": {
+        "type": "object",
+        "properties": {
+          "option": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "labelVi": {
+                "type": "string"
+              },
+              "labelEn": {
+                "type": "string"
+              },
+              "code": {
+                "nullable": true,
+                "type": "string"
+              },
+              "isOther": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "labelVi",
+              "labelEn",
+              "code",
+              "isOther"
+            ]
+          },
+          "value": {
+            "nullable": true,
+            "type": "string"
+          },
+          "leads": {
+            "type": "integer"
+          },
+          "booked": {
+            "type": "integer"
+          },
+          "showed": {
+            "type": "integer"
+          },
+          "contracted": {
+            "type": "integer"
+          },
+          "bookingRate": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "showRate": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "note": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "note",
+                "count"
+              ]
+            }
+          }
+        },
+        "required": [
+          "option",
+          "value",
+          "leads",
+          "booked",
+          "showed",
+          "contracted",
+          "bookingRate",
+          "showRate",
+          "notes"
+        ]
+      },
       "CustomerPage": {
         "type": "object",
         "properties": {
@@ -9239,6 +12546,10 @@
             "nullable": true,
             "type": "string"
           },
+          "countryCode": {
+            "nullable": true,
+            "type": "string"
+          },
           "nationality": {
             "nullable": true,
             "type": "string"
@@ -9251,6 +12562,43 @@
             "nullable": true,
             "type": "string",
             "format": "date-time"
+          },
+          "address": {
+            "nullable": true,
+            "type": "string"
+          },
+          "emergencyContactName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "emergencyContactPhone": {
+            "nullable": true,
+            "type": "string"
+          },
+          "customerGroup": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "staffInCharge": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
           },
           "notes": {
             "nullable": true,
@@ -9271,6 +12619,7 @@
               "enum": [
                 "phone",
                 "email",
+                "address",
                 "idDocument",
                 "health"
               ]
@@ -9312,14 +12661,47 @@
           "status",
           "idDocumentType",
           "idDocumentNumber",
+          "countryCode",
           "nationality",
           "healthNote",
           "dataConsentAt",
+          "address",
+          "emergencyContactName",
+          "emergencyContactPhone",
+          "customerGroup",
+          "staffInCharge",
           "notes",
           "createdAt",
           "updatedAt",
           "maskedFields",
           "pendingIdentity"
+        ]
+      },
+      "CustomerStaffList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "ContractPage": {
@@ -9451,6 +12833,99 @@
           "id",
           "customerCode",
           "fullName"
+        ]
+      },
+      "EmailMessagePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailMessage"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "EmailMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "toAddress": {
+            "nullable": true,
+            "type": "string"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "vi",
+              "en"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "SENT",
+              "FAILED"
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "failure": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "noEmail",
+              "providerRejected",
+              "providerUnavailable"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sentAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "subject",
+          "toAddress",
+          "locale",
+          "status",
+          "attempts",
+          "failure",
+          "createdAt",
+          "sentAt"
         ]
       },
       "PaymentPage": {
@@ -9631,6 +13106,14 @@
               }
             ]
           },
+          "manager": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeRef"
+              }
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -9675,9 +13158,30 @@
           "department",
           "team",
           "title",
+          "manager",
           "status",
           "isTrainer",
           "user"
+        ]
+      },
+      "EmployeeRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "employeeCode": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "employeeCode",
+          "fullName"
         ]
       },
       "EmployeeLoginList": {
@@ -9906,26 +13410,6 @@
           "contract",
           "trainer",
           "session"
-        ]
-      },
-      "EmployeeRef": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "employeeCode": {
-            "type": "string"
-          },
-          "fullName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "employeeCode",
-          "fullName"
         ]
       },
       "SessionCompletion": {
@@ -10317,6 +13801,9 @@
                     "lead.assign",
                     "lead.receive",
                     "lead.merge",
+                    "script.manage",
+                    "lead.audit",
+                    "lead.untick",
                     "customer.view",
                     "customer.manage",
                     "contract.view",
@@ -10331,6 +13818,19 @@
                     "employee.manage",
                     "task.view",
                     "task.create",
+                    "user.export",
+                    "customer.export",
+                    "lead.export",
+                    "contract.export",
+                    "payment.export",
+                    "cash.export",
+                    "task.export",
+                    "audit.export",
+                    "trash.export",
+                    "report.consulting",
+                    "report.consultingExport",
+                    "report.leadAnalysis",
+                    "report.leadAnalysisExport",
                     "payment.view",
                     "payment.record",
                     "payment.delete",
@@ -10543,6 +14043,9 @@
                 "lead.assign",
                 "lead.receive",
                 "lead.merge",
+                "script.manage",
+                "lead.audit",
+                "lead.untick",
                 "customer.view",
                 "customer.manage",
                 "contract.view",
@@ -10557,6 +14060,19 @@
                 "employee.manage",
                 "task.view",
                 "task.create",
+                "user.export",
+                "customer.export",
+                "lead.export",
+                "contract.export",
+                "payment.export",
+                "cash.export",
+                "task.export",
+                "audit.export",
+                "trash.export",
+                "report.consulting",
+                "report.consultingExport",
+                "report.leadAnalysis",
+                "report.leadAnalysisExport",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -10591,6 +14107,7 @@
               "enum": [
                 "customer.phone",
                 "customer.email",
+                "customer.address",
                 "customer.idDocument",
                 "customer.health",
                 "receipts.totals"
@@ -10687,13 +14204,21 @@
               "needGroups",
               "painStatuses",
               "assessmentTypes",
-              "leadRefuseReasons"
+              "needDetails",
+              "leadRefuseReasons",
+              "customerGroups",
+              "auditFailReasons",
+              "stepReopenReasons"
             ]
           },
           "labelVi": {
             "type": "string"
           },
           "labelEn": {
+            "type": "string"
+          },
+          "code": {
+            "nullable": true,
             "type": "string"
           },
           "sortOrder": {
@@ -10711,6 +14236,7 @@
           "listKey",
           "labelVi",
           "labelEn",
+          "code",
           "sortOrder",
           "active",
           "isOther"
@@ -10768,13 +14294,31 @@
           "employeeCodePrefix": {
             "type": "string"
           },
-          "taskDueSoonHours": {
+          "taskReminderHours": {
             "type": "string"
           },
           "recareDays": {
             "type": "string"
           },
           "studioDepartmentId": {
+            "type": "string"
+          },
+          "receptionDepartmentId": {
+            "type": "string"
+          },
+          "exportRowLimit": {
+            "type": "string"
+          },
+          "reclaimMinutes": {
+            "type": "string"
+          },
+          "consultingWindowStart": {
+            "type": "string"
+          },
+          "consultingWindowEnd": {
+            "type": "string"
+          },
+          "stepGraceMinutes": {
             "type": "string"
           }
         },
@@ -10785,9 +14329,15 @@
           "customerCodePrefix",
           "contractCodePrefix",
           "employeeCodePrefix",
-          "taskDueSoonHours",
+          "taskReminderHours",
           "recareDays",
-          "studioDepartmentId"
+          "studioDepartmentId",
+          "receptionDepartmentId",
+          "exportRowLimit",
+          "reclaimMinutes",
+          "consultingWindowStart",
+          "consultingWindowEnd",
+          "stepGraceMinutes"
         ]
       },
       "AuditPage": {
@@ -11251,6 +14801,19 @@
             "type": "string",
             "format": "date-time"
           },
+          "reminderMinutes": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
           "overdue": {
             "type": "boolean"
           },
@@ -11363,6 +14926,8 @@
           "status",
           "priority",
           "dueAt",
+          "reminderMinutes",
+          "reminders",
           "overdue",
           "assigner",
           "assignee",
@@ -11493,6 +15058,19 @@
             "type": "string",
             "format": "date-time"
           },
+          "reminderMinutes": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
           "overdue": {
             "type": "boolean"
           },
@@ -11611,6 +15189,8 @@
           "status",
           "priority",
           "dueAt",
+          "reminderMinutes",
+          "reminders",
           "overdue",
           "assigner",
           "assignee",
@@ -11731,6 +15311,7 @@
               "approvalOverdue",
               "leadNew",
               "leadAssigned",
+              "leadReclaimed",
               "leadStepDue",
               "leadRecare",
               "leadInquiry",

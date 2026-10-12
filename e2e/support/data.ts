@@ -182,13 +182,40 @@ export type CreatedLead = {
 
 export async function createLeadViaApi(
   api: APIRequestContext,
-  data: { fullName: string; branchId?: string; phone?: string },
+  data: { fullName: string; branchId?: string; phone?: string; countryCode?: string },
 ): Promise<CreatedLead> {
   const response = await api.post("/api/v1/leads", {
     data: { ...data, channelId: await leadChannelId(api, "WhatsApp") },
   });
   if (response.status() !== 201) throw new Error(`Lead setup failed: ${response.status()} ${await response.text()}`);
   return response.json() as Promise<CreatedLead>;
+}
+
+/** A script for the library (A-072), named with the tag so teardown removes it. */
+export async function createScriptViaApi(
+  api: APIRequestContext,
+  data: { situationVi: string; situationEn: string; answerVi?: string; answerEn?: string },
+) {
+  const response = await api.post("/api/v1/consulting-scripts", { data });
+  if (response.status() !== 201) throw new Error(`Script setup failed: ${response.status()} ${await response.text()}`);
+  return response.json() as Promise<{ id: string; situationVi: string }>;
+}
+
+/** Shows a lead (D-019): it becomes a customer in the same record. */
+export async function showLeadViaApi(api: APIRequestContext, lead: CreatedLead, phone: string, email: string) {
+  const response = await api.post(`/api/v1/leads/${lead.id}/show`, {
+    data: {
+      idDocumentType: "CCCD",
+      idDocumentNumber: `079${String(Math.floor(Math.random() * 1e9)).padStart(9, "0")}`,
+      birthDate: "15/03/1990",
+      countryCode: "VN",
+      email,
+      phone,
+      consent: true,
+    },
+  });
+  if (response.status() !== 200) throw new Error(`Show failed: ${response.status()} ${await response.text()}`);
+  return lead.id;
 }
 
 /**

@@ -40,7 +40,7 @@ In `docs/18_DECISIONS_ASSUMPTIONS.md`:
 - **Drop-downs, not free text** (D-016): results, statuses, categories, and reasons come from admin option lists, each with "Khác" that requires a note.
 - Architecture (T-041): a monorepo with `apps/web` (Next.js, UI only) and `apps/api` (NestJS, all business logic and data access). Do not add other backends, microservices, Redis, or message brokers; background work uses pg-boss in PostgreSQL (T-045).
 - Hosting (T-042): web on Vercel; API, worker, and PostgreSQL on Railway or Render; staging separate from production.
-- No fingerprint devices, member app, Zalo OA, Pro Shop, lockers, loyalty, day passes, or tax accounting in phase 1 (D-013). Lead channel APIs only in milestone 10 (D-044); manual entry first.
+- No fingerprint devices attached in phase 1 (the scan API, pairing rules, and data are built ready in M5, D-069 to D-072), and no member app, Zalo OA, Pro Shop, lockers, loyalty, day passes, or tax accounting in phase 1 (D-013). Lead channel APIs only in milestone 10 (D-044); manual entry first.
 - Email is the only notification channel to customers (D-036).
 
 ## 3. Critical invariants

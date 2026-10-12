@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { branchChoice } from "../branches/branch.schema.js";
+import { optionalCountry } from "../countries/country.schema.js";
 import { GENDERS } from "../employees/employee.schema.js";
 import { optionChoice, optionNote } from "../options/option.schema.js";
 import { formatCode } from "../parameters/parameter.schema.js";
@@ -35,7 +36,7 @@ export type LeadStatus = (typeof LEAD_STATUSES)[number];
 export const SOURCE_TYPES = ["ORGANIC", "PAID"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
-/** Vietnamese or foreign; fixed, since the email language follows it (A-027, A-049). */
+/** Vietnamese or foreign: derived from the country (D-057); the email language follows it (A-027). */
 export const NATIONALITY_GROUPS = ["VIETNAM", "FOREIGN"] as const;
 export type NationalityGroup = (typeof NATIONALITY_GROUPS)[number];
 
@@ -99,9 +100,12 @@ const leadFields = {
   sourceNote: optionNote,
   sourceType: optionalEnum(SOURCE_TYPES).prefault(""),
   sourceDetail: text(200).transform(emptyToNull).prefault(""),
-  nationalityGroup: optionalEnum(NATIONALITY_GROUPS).prefault(""),
+  /** The nationality, a country of ISO 3166-1; the Vietnamese / foreign group follows from it (D-057). */
+  countryCode: optionalCountry.prefault(""),
   needGroupId: optionalChoice.prefault(""),
   needGroupNote: optionNote,
+  /** An entry of the coded catalog "needDetails" (D-066); `needDetail` is the note written with it. */
+  needDetailId: optionalChoice.prefault(""),
   needDetail: text(1000).transform(emptyToNull).prefault(""),
   painStatusId: optionalChoice.prefault(""),
   painStatusNote: optionNote,

@@ -26,7 +26,7 @@ const show = (overrides: Record<string, unknown> = {}) => ({
   idDocumentType: "CCCD",
   idDocumentNumber: ID_NUMBER,
   birthDate: "15/03/1990",
-  nationality: "Việt Nam",
+  countryCode: "VN",
   email: "an@example.com",
   phone: uniquePhone(),
   healthNote: "Đau lưng dưới",
@@ -65,7 +65,7 @@ describe("Show (D-019, BR-206)", () => {
       customerCode: expect.stringMatching(/^KH\d+$/),
       email: "an@example.com",
       dateOfBirth: new Date(Date.UTC(1990, 2, 15)),
-      nationality: "Việt Nam",
+      countryCode: "VN",
       idDocumentType: "CCCD",
       idDocumentNumber: ID_NUMBER,
       healthNote: "Đau lưng dưới",
@@ -86,8 +86,9 @@ describe("Show (D-019, BR-206)", () => {
       fromStatus: "BOOKED",
       changedById: reception.id,
     });
-    const checklist = await leadChecklist(reception, lead.id).catch(() => null);
-    expect(checklist).toBeNull();
+    // The customer's Consulting history tab reads the checklist, read-only (A-076).
+    const checklist = await leadChecklist(reception, lead.id);
+    expect(checklist.items.find((item) => item.key === "show")).toMatchObject({ state: "DONE" });
     const showStep = await prisma.leadStep.findFirstOrThrow({
       where: { customerId: lead.id, template: { key: "show" } },
     });

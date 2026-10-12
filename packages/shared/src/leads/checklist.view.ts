@@ -47,6 +47,10 @@ export const leadStepSchema = stepTemplate
     result: label.nullable(),
     note: z.string().nullable(),
     timing: z.enum(STEP_TIMINGS).nullable(),
+    /** When it locked as "Không thực hiện" (D-054). */
+    lockedAt: instant.nullable(),
+    /** Done with a result that changed nothing else, so admin may remove the tick (D-054). */
+    reopenable: z.boolean(),
   })
   .meta({ id: "LeadStep" });
 

@@ -102,11 +102,33 @@ export async function decidersOf(db: Db, request: RequestRef): Promise<string[]>
 }
 
 /**
- * The approvers' superiors, told when a request is overdue (D-018). Until the business
- * names them (OQ-031), they are the users whose role manages the approval matrix (A-047).
+ * The approvers' superiors, told when a request is overdue (D-018, D-048): the direct manager
+ * of each approver (the "Quản lý trực tiếp" of their employee record); an approver with no
+ * manager, or whose manager has no login to tell, is reported to Admin (the users whose role
+ * manages the approval matrix). Never the submitter.
  */
 export async function superiorsOf(db: Db, request: RequestRef): Promise<string[]> {
-  return usersWhere(db, request, { role: { permissions: { some: { permission: "approval.manage" } } } });
+  const deciders = await decidersOf(db, request);
+  const employees = await db.employee.findMany({
+    where: { userId: { in: deciders } },
+    select: { userId: true, manager: { select: { user: { select: { id: true, status: true } } } } },
+  });
+  const managerOf = new Map(employees.map((employee) => [employee.userId, employee.manager?.user ?? null]));
+  const told = new Set<string>();
+  let reportToAdmin = deciders.length === 0;
+  for (const decider of deciders) {
+    const manager = managerOf.get(decider);
+    if (manager && manager.status === "ACTIVE") told.add(manager.id);
+    else reportToAdmin = true;
+  }
+  if (reportToAdmin) {
+    for (const admin of await usersWhere(db, request, {
+      role: { permissions: { some: { permission: "approval.manage" } } },
+    }))
+      told.add(admin);
+  }
+  told.delete(request.submittedById);
+  return [...told];
 }
 
 async function usersWhere(db: Db, request: RequestRef, where: Prisma.UserWhereInput): Promise<string[]> {
@@ -135,7 +157,7 @@ export async function remindOverdueApprovals(now: Date = new Date()): Promise<nu
       RETURNING ar.id, ar.action_type, ar.branch_id, ar.submitted_by, ar.title`;
     for (const row of overdue) {
       const request = { actionType: row.action_type, branchId: row.branch_id, submittedById: row.submitted_by };
-      const users = [...(await decidersOf(tx, request)), ...(await superiorsOf(tx, request))];
+      const users = [...new Set([...(await decidersOf(tx, request)), ...(await superiorsOf(tx, request))])];
       await notify(tx, users, { kind: "approvalOverdue", params: { title: row.title }, link: "/approvals" });
     }
     return overdue.length;

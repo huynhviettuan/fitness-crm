@@ -1,5 +1,8 @@
 import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
+import { isWithinAccessWindows } from "../../platform/auth/access-hours.js";
 import {
+  takeTurn,
+  type AssignmentKind,
   canChangeLeadStatus,
   isRecareStatus,
   nextContactAgainOn,
@@ -20,9 +23,10 @@ import { chosen, resolveChoice } from "../../platform/options/option.service.js"
 import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { notify } from "../../platform/notifications/notification.service.js";
 import * as repo from "./lead.repository.js";
-import { lockedLead, present, visibleLead } from "./lead.present.js";
+import { lockedLead, present, visibleLead, visiblePerson } from "./lead.present.js";
 import { applyJourneyEvent } from "./checklist.engine.js";
 import { intakeEntries } from "./intake-history.js";
+import { noteView } from "./lead-note.service.js";
 
 // The lead journey (brief §3, §4.1; D-020): round-robin assignment, reassignment by
 // managers, and status changes, each kept with who and when. Daily work, so no approval
@@ -41,7 +45,7 @@ export async function startJourney(db: Db, actor: Actor, lead: repo.LeadRecord, 
     changedById: actor.id,
     changedAt: now,
   });
-  const receiver = await nextReceiver(db, lead.branchId);
+  const receiver = await nextReceiver(db, lead.branchId, now);
   const assigned = receiver ? await assign(db, actor, lead, receiver, null, now) : lead;
   const managers = (await repo.leadManagers(db, lead.branchId)).filter((id) => id !== actor.id);
   await notify(db, managers, { kind: "leadNew", params: params(assigned), link: link(lead) });
@@ -176,12 +180,14 @@ export async function contactAgainDay(db: Db, now: Date): Promise<Date> {
   return nextContactAgainOn(calendarDateInTimeZone(env.GYM_TIMEZONE, now), days);
 }
 
-/** Every status change and assignment of the lead, newest first (D-020). */
+/** Every status change, assignment, note, inquiry, and merge of the lead, newest first (D-020). */
 export async function leadTimeline(actor: Actor, id: string): Promise<LeadTimeline> {
   assertCan(actor, "lead.view");
-  const lead = await visibleLead(prisma, actor, id);
+  // Also the customer a lead became (the Consulting history tab, A-076).
+  const lead = await visiblePerson(prisma, actor, id);
   const [changes, assignments] = await repo.timeline(prisma, lead.id);
   const intake = await intakeEntries(prisma, lead.id);
+  const notes = (await repo.notesOf(prisma, lead.id)).map(noteView);
   const items: LeadTimeline["items"] = [
     ...changes.map((change) => ({
       kind: "status" as const,
@@ -201,7 +207,10 @@ export async function leadTimeline(actor: Actor, id: string): Promise<LeadTimeli
       by: assignment.assignedBy,
       from: assignment.fromUser,
       to: assignment.toUser,
+      how: assignment.kind,
+      waitedMinutes: assignment.waitedMinutes,
     })),
+    ...notes,
     ...intake,
   ];
   return { items: items.sort((a, b) => b.at.getTime() - a.at.getTime() || rank(b) - rank(a)) };
@@ -214,29 +223,48 @@ function rank(entry: LeadTimeline["items"][number]): number {
   return entry.fromStatus === null ? 0 : 2;
 }
 
-/** The next receiver after the branch's last one, in their fixed order; the first again after the last. */
-export async function nextReceiver(db: Db, branchId: string): Promise<string | null> {
+/**
+ * The consultant who takes the branch's next lead (D-050): a weighted round-robin among those
+ * whose receiving switch is on and who are within their working hours (their access windows),
+ * in their fixed order. When nobody is within hours the lead still goes to the next one in turn,
+ * so it is not left unassigned overnight. `except` leaves out the consultant a lead is taken from
+ * (D-052). Without anyone, null: the lead stays New and the managers assign it by hand.
+ */
+export async function nextReceiver(
+  db: Db,
+  branchId: string,
+  now: Date = new Date(),
+  except: string | null = null,
+): Promise<string | null> {
   await repo.lockRoundRobin(db, branchId);
-  const receivers = await repo.receivers(db, branchId);
-  if (receivers.length === 0) return null;
-  const last = await repo.lastReceiver(db, branchId);
-  const after = (user: { id: string; createdAt: Date }) =>
-    last !== null &&
-    (user.createdAt.getTime() > last.createdAt.getTime() ||
-      (user.createdAt.getTime() === last.createdAt.getTime() && user.id > last.id));
-  const next = (last && receivers.find(after)) || receivers[0];
-  await repo.setLastReceiver(db, branchId, next.id);
-  return next.id;
+  const takers = (await repo.turnTakers(db, branchId)).filter((user) => user.id !== except);
+  const onDuty = takers.filter((user) => isWithinAccessWindows(user.accessWindows, now, env.GYM_TIMEZONE));
+  const pool = onDuty.length > 0 ? onDuty : takers;
+  if (pool.length === 0) return null;
+  const { vtimes, latest } = await repo.turnState(
+    db,
+    branchId,
+    pool.map((user) => user.id),
+  );
+  const turn = takeTurn(
+    pool.map((user) => ({ id: user.id, weight: user.leadWeight, vtime: vtimes.get(user.id) ?? latest })),
+    latest,
+  );
+  if (!turn) return null;
+  await repo.saveTurnTimes(db, branchId, turn.vtimes);
+  return turn.chosen;
 }
 
 /** Gives the lead to `userId`; a New lead starts Consulting (brief §3). `by` is null for the round-robin. */
 export async function assign(
   db: Db,
-  actor: Actor,
+  actor: Pick<Actor, "id"> | null,
   lead: repo.LeadRecord,
   userId: string,
   by: string | null,
   now: Date,
+  how: AssignmentKind = by === null ? "ROUND_ROBIN" : "MANUAL",
+  waitedMinutes: number | null = null,
 ): Promise<repo.LeadRecord> {
   const starts = lead.leadStatus === "NEW";
   const after = await repo.updateJourney(db, lead.id, {
@@ -249,6 +277,8 @@ export async function assign(
     toUserId: userId,
     assignedById: by,
     assignedAt: now,
+    kind: how,
+    waitedMinutes,
   });
   if (starts) {
     await repo.addStatusChange(db, {
@@ -262,15 +292,20 @@ export async function assign(
   await applyJourneyEvent(db, after, { kind: "ASSIGNED", at: now, by });
   if (starts) await applyJourneyEvent(db, after, { kind: "STATUS", at: now, by });
   await recordAudit(db, {
-    actorUserId: actor.id,
+    actorUserId: actor?.id ?? null,
     entityType: "lead",
     entityId: lead.id,
     action: "lead.assigned",
     before: { picUserId: lead.picUserId, leadStatus: lead.leadStatus },
     after: { picUserId: userId, leadStatus: after.leadStatus },
-    context: by === null ? { assignment: "roundRobin" } : undefined,
+    context:
+      how === "RECLAIM"
+        ? { assignment: "reclaim", waitedMinutes }
+        : by === null
+          ? { assignment: "roundRobin" }
+          : undefined,
   });
-  if (userId !== actor.id)
+  if (userId !== actor?.id)
     await notify(db, [userId], { kind: "leadAssigned", params: params(after), link: link(after) });
   return after;
 }

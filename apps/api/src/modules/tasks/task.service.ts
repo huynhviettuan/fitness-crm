@@ -16,8 +16,12 @@ import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { leadsVisibleTo } from "../customers/person.service.js";
 import { instantAt } from "@flow/shared/validation";
 import {
+  MAX_REMINDER_MINUTES,
   OPEN_TASK_STATUSES,
+  dueReminders,
+  formatReminderHours,
   listTasksSchema,
+  parseReminderHours,
   taskCommentSchema,
   taskInputSchema,
   taskUpdateSchema,
@@ -42,6 +46,7 @@ const AUDITED_FIELDS = [
   "assigneeDepartmentId",
   "dueAt",
   "priority",
+  "reminderMinutes",
   "status",
 ] as const;
 
@@ -149,6 +154,7 @@ export async function createTask(actor: Actor, input: unknown): Promise<TaskDeta
       assigneeDepartmentId: data.assigneeDepartmentId,
       dueAt: instantAt(data.dueDate, data.dueTime, env.GYM_TIMEZONE),
       priority: data.priority,
+      reminderMinutes: data.reminders ?? [],
       entityType: data.entityType,
       entityId: data.entityId,
     });
@@ -169,7 +175,12 @@ export async function createTask(actor: Actor, input: unknown): Promise<TaskDeta
 }
 
 /** The assigner (or "all" scope) edits an open task. A new assignee starts again from NEW. */
-export async function updateTask(actor: Actor, id: string, input: unknown): Promise<TaskDetail> {
+export async function updateTask(
+  actor: Actor,
+  id: string,
+  input: unknown,
+  now: Date = new Date(),
+): Promise<TaskDetail> {
   assertCan(actor, "task.view");
   const data = parseInput(taskUpdateSchema, input);
   return changeLocked(actor, id, async (tx, self, before) => {
@@ -185,10 +196,12 @@ export async function updateTask(actor: Actor, id: string, input: unknown): Prom
       assigneeDepartmentId: data.assigneeDepartmentId,
       dueAt,
       priority: data.priority,
+      reminderMinutes: data.reminders ?? [],
       ...(reassigned ? { status: "NEW", acceptedAt: null, startedAt: null } : {}),
       // A new deadline gets its own reminders.
-      ...(dueAt.getTime() !== before.dueAt.getTime() ? { dueSoonNotifiedAt: null, overdueNotifiedAt: null } : {}),
+      ...(dueAt.getTime() !== before.dueAt.getTime() ? { overdueNotifiedAt: null } : {}),
     });
+    await resetReminders(tx, before, after, now);
     const changes = diffFields(before, after, AUDITED_FIELDS);
     if (changes)
       await recordAudit(tx, {
@@ -307,13 +320,34 @@ export async function taskAssignees(actor: Actor): Promise<TaskAssignees> {
 
 // ---------------------------------------------------------------- reminders
 
+/** The shared reminder points, minutes before the deadline, longest first (parameter taskReminderHours, D-056). */
+export async function sharedReminderMinutes(db: Db): Promise<number[]> {
+  const parsed = parseReminderHours(await readParameter(db, "taskReminderHours"));
+  return "minutes" in parsed ? parsed.minutes : [];
+}
+
 /**
- * Brief §8.2: the assignee is reminded before the deadline (parameter taskDueSoonHours),
- * and when it passes, the assignee and the assigner are told. Each once. Run by the
- * worker every minute (T-059); returns how many reminders went out.
+ * A new deadline gets its own reminders; a new list of points does not fire for a point that has already
+ * passed (D-056), so adding "12 hours" with six hours left tells nobody at once.
+ */
+async function resetReminders(db: Db, before: repo.TaskRecord, after: repo.TaskRecord, now: Date): Promise<void> {
+  if (after.dueAt.getTime() !== before.dueAt.getTime()) return repo.clearReminders(db, after.id);
+  const shared = await sharedReminderMinutes(db);
+  const had = new Set(before.reminderMinutes.length > 0 ? before.reminderMinutes : shared);
+  const added = (after.reminderMinutes.length > 0 ? after.reminderMinutes : shared).filter(
+    (point) => !had.has(point) && after.dueAt.getTime() - point * 60_000 <= now.getTime(),
+  );
+  if (added.length > 0) await repo.claimPoints(db, after.id, added, now);
+}
+
+/**
+ * Brief §8.2, D-056: the assignee is reminded at each point before the deadline (24, 3, and 1 hours,
+ * or the task's own), and when it passes, the assignee and the assigner are told. Each once. When
+ * several points have come at once, only the tightest is told. Run by the worker every minute
+ * (T-059); returns how many reminders went out.
  */
 export async function remindTasks(now: Date = new Date()): Promise<{ dueSoon: number; overdue: number }> {
-  const hours = Number(await readParameter(prisma, "taskDueSoonHours"));
+  const shared = await sharedReminderMinutes(prisma);
   return prisma.$transaction(async (tx) => {
     const overdue = await repo.claimOverdue(tx, now);
     for (const row of overdue) {
@@ -324,19 +358,42 @@ export async function remindTasks(now: Date = new Date()): Promise<{ dueSoon: nu
       };
       await notify(tx, [...(await rowAssignees(tx, row)), row.assigner_id], notification);
     }
-    const dueSoon = await repo.claimDueSoon(tx, now, new Date(now.getTime() + hours * 3_600_000));
-    for (const row of dueSoon) {
-      await notify(tx, await rowAssignees(tx, row), {
-        kind: "taskDueSoon",
-        params: { title: row.title, due: due(row.due_at) },
-        link: `/tasks/${row.id}`,
-      });
+    let told = 0;
+    const horizon = new Date(now.getTime() + MAX_REMINDER_MINUTES * 60_000);
+    for (const task of await repo.remindable(tx, now, horizon)) {
+      const points = task.reminderMinutes.length > 0 ? task.reminderMinutes : shared;
+      const { tell, mark } = dueReminders(
+        points,
+        new Set(task.reminders.map((sent) => sent.minutesBefore)),
+        task.dueAt,
+        now,
+      );
+      if (mark.length === 0) continue;
+      const claimed = await repo.claimPoints(tx, task.id, mark, now);
+      if (tell === null || !claimed.has(tell)) continue;
+      await notify(
+        tx,
+        await rowAssignees(tx, {
+          assignee_user_id: task.assigneeUserId,
+          assignee_department_option_id: task.assigneeDepartmentId,
+          branch_id: task.branchId,
+        }),
+        {
+          kind: "taskDueSoon",
+          params: { title: task.title, due: due(task.dueAt), hours: formatReminderHours([tell]) },
+          link: `/tasks/${task.id}`,
+        },
+      );
+      told += 1;
     }
-    return { dueSoon: dueSoon.length, overdue: overdue.length };
+    return { dueSoon: told, overdue: overdue.length };
   });
 }
 
-async function rowAssignees(db: Db, row: repo.ReminderRow): Promise<string[]> {
+async function rowAssignees(
+  db: Db,
+  row: Pick<repo.ReminderRow, "assignee_user_id" | "assignee_department_option_id" | "branch_id">,
+): Promise<string[]> {
   if (row.assignee_user_id) return [row.assignee_user_id];
   return row.assignee_department_option_id
     ? repo.departmentMembers(db, row.assignee_department_option_id, row.branch_id)
@@ -473,6 +530,7 @@ async function toViews(db: Db, self: Me, tasks: repo.TaskRecord[]): Promise<Task
       .map((task) => ({ type: task.entityType!, id: task.entityId! })),
   );
   const now = Date.now();
+  const shared = await sharedReminderMinutes(db);
   return tasks.map((task) => ({
     id: task.id,
     branch: task.branch,
@@ -481,6 +539,8 @@ async function toViews(db: Db, self: Me, tasks: repo.TaskRecord[]): Promise<Task
     status: task.status,
     priority: task.priority,
     dueAt: task.dueAt,
+    reminderMinutes: task.reminderMinutes.length > 0 ? task.reminderMinutes : null,
+    reminders: task.reminderMinutes.length > 0 ? task.reminderMinutes : shared,
     overdue: (OPEN_TASK_STATUSES as readonly string[]).includes(task.status) && task.dueAt.getTime() < now,
     assigner: task.assigner,
     assignee: task.assigneeUser,
@@ -574,6 +634,7 @@ export async function upsertStudioTask(
     assigneeDepartmentId: department.id,
     dueAt: input.dueAt,
     priority: "NORMAL",
+    reminderMinutes: [],
     entityType: "lead",
     entityId: input.lead.id,
     source: "studio",
@@ -592,4 +653,52 @@ export async function upsertStudioTask(
     link: link(task),
   });
   return task;
+}
+
+/**
+ * An email that could not be sent (FR-MAIL-003): a task for reception, who tell the customer another way. Without a
+ * reception department set (parameter receptionDepartmentId) no task is made; the email still shows as failed.
+ * Returns the task's id.
+ */
+export async function createMailFailureTask(
+  db: Db,
+  input: {
+    person: { id: string; branchId: string };
+    by: string;
+    title: string;
+    description: string;
+    dueAt: Date;
+  },
+): Promise<string | null> {
+  const departmentId = await readParameter(db, "receptionDepartmentId");
+  const department = departmentId ? await repo.findDepartment(db, departmentId) : null;
+  if (!department?.active || department.isOther) return null;
+  const task = await repo.createTask(db, {
+    branchId: input.person.branchId,
+    assignerId: input.by,
+    title: input.title,
+    description: input.description,
+    assigneeUserId: null,
+    assigneeDepartmentId: department.id,
+    dueAt: input.dueAt,
+    priority: "NORMAL",
+    reminderMinutes: [],
+    entityType: "customer",
+    entityId: input.person.id,
+    source: "mail",
+  });
+  await recordAudit(db, {
+    actorUserId: input.by,
+    entityType: "task",
+    entityId: task.id,
+    action: "task.created",
+    after: { ...pick(task, AUDITED_FIELDS), entityType: "customer", entityId: input.person.id },
+    context: { source: "mail" },
+  });
+  await notifyAssignees(db, task, input.by, {
+    kind: "taskAssigned",
+    params: { title: task.title, by: task.assigner.name },
+    link: link(task),
+  });
+  return task.id;
 }

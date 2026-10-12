@@ -3,6 +3,7 @@ import { expect, signedInAs, test } from "./fixtures";
 import { ADMIN_MADE_PASSWORD, anotherWeekday, createUserViaApi, roleIdOf } from "./support/admin";
 import { createCustomerViaApi, uniquePhone } from "./support/data";
 import { labels } from "./support/labels";
+import { readDownload } from "./support/xlsx";
 
 const p = labels.permissions;
 
@@ -46,6 +47,7 @@ test.describe("administration", () => {
     await rolesPage.gotoNew();
     await rolesPage.fillName(roleName);
     await rolesPage.setPermission(p.labels.customer.view, true);
+    await rolesPage.setPermission(p.labels.customer.export, true);
     await rolesPage.setDataScope(p.resources.customers, p.scopes.ALL);
     await rolesPage.setHidden(p.masks.customer.phone, true);
     await rolesPage.save();
@@ -70,6 +72,13 @@ test.describe("administration", () => {
     const phone = ((await (await admin.get(`/api/v1/customers/${customer.id}`)).json()) as { phone: string }).phone;
     await expect(row).not.toContainText(phone);
     await expect(customersPage.addButton).toHaveCount(0);
+    // The export is as hidden as the screen (AC-01): no phone column, and no phone anywhere in the file.
+    const downloading = page.waitForEvent("download");
+    await customersPage.exportButton.click();
+    const file = await readDownload(await downloading);
+    expect(file.header).not.toContain(labels.customers.fields.phone);
+    expect(file.rows.filter((r) => r.includes(customer.fullName))).toHaveLength(1);
+    expect(JSON.stringify(file.rows)).not.toContain(phone);
     await expect(shell.navLink(labels.nav.users)).toHaveCount(0);
     await expect(shell.navLink(labels.nav.roles)).toHaveCount(0);
 

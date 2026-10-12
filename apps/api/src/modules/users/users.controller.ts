@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Put, Req } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Put, Req, Res } from "@nestjs/common";
 import { ApiNoContentResponse, ApiTags } from "@nestjs/swagger";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import {
   changeRoleSchema,
   createUserSchema,
@@ -17,8 +17,10 @@ import {
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
-import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
+import { ApiErrors, ApiOptionalQuery, ApiResult, ApiExcelFile } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
+import { exportList } from "../../platform/export/export.service.js";
+import { usersExport, USER_EXPORT_QUERY } from "./user.export.js";
 import {
   changeUserRole,
   createUser,
@@ -46,6 +48,18 @@ export class UsersController {
   @ApiResult(userListSchema)
   async list(@CurrentActor() actor: CurrentUser) {
     return encode(userListSchema, { items: await listUsers(actor) });
+  }
+
+  /**
+   * The list as an Excel file (A-077 to A-080): the same search, filters, scope, and masks as
+   * the list, every row up to `exportRowLimit`; the permission is in addition to seeing it.
+   */
+  @Get("export")
+  @RequirePermission("user.export")
+  @ApiOptionalQuery(...USER_EXPORT_QUERY)
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, usersExport, queryOf(request, USER_EXPORT_QUERY));
   }
 
   @Post()

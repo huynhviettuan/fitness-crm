@@ -7,10 +7,12 @@ import {
   todayStepsSchema,
   type ChecklistInput,
   type StepCompleteInput,
+  type StepReopenInput,
   leadAssigneesSchema,
   leadBoardSchema,
   leadPageSchema,
   leadSchema,
+  leadNoteSchema,
   leadTimelineSchema,
   inquiryResultSchema,
   mergeResultSchema,
@@ -20,6 +22,7 @@ import {
   type LeadInquiryInput,
   type MergeInput,
   type LeadInput,
+  type LeadNoteInput,
   type LeadStatus,
   type LeadStatusChangeInput,
   type LeadUpdateInput,
@@ -102,6 +105,14 @@ export async function getLeadBoard(params: LeadBoardQuery) {
   return read(leadBoardSchema, (await api()).GET("/api/v1/leads/board", { params: { query: query(params) } }));
 }
 
+/** A note on the lead (A-074). */
+export async function addLeadNote(id: string, input: LeadNoteInput) {
+  return read(
+    leadNoteSchema,
+    (await api()).POST("/api/v1/leads/{id}/notes", { params: { path: { id } }, body: input }),
+  );
+}
+
 export async function getLeadTimeline(id: string) {
   return read(leadTimelineSchema, (await api()).GET("/api/v1/leads/{id}/timeline", { params: { path: { id } } }));
 }
@@ -134,6 +145,17 @@ export async function completeLeadStep(id: string, stepId: string, input: StepCo
   return read(
     leadChecklistSchema,
     (await api()).POST("/api/v1/leads/{id}/steps/{stepId}/complete", {
+      params: { path: { id, stepId } },
+      body: input as never,
+    }),
+  );
+}
+
+/** Admin removes a wrong tick (D-054); the reason is in the history. */
+export async function reopenLeadStep(id: string, stepId: string, input: StepReopenInput) {
+  return read(
+    leadChecklistSchema,
+    (await api()).POST("/api/v1/leads/{id}/steps/{stepId}/reopen", {
       params: { path: { id, stepId } },
       body: input as never,
     }),

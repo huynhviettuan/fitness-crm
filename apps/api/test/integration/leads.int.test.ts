@@ -30,7 +30,7 @@ describe("adding a lead (brief §4.1, FR-LEAD-001)", () => {
       sourceType: "PAID",
       needGroupId: PAIN_RELIEF,
       needDetail: "Đau lưng khi ngồi lâu",
-      nationalityGroup: "VIETNAM",
+      countryCode: "VN",
     });
 
     expect(lead).toMatchObject({
@@ -117,6 +117,37 @@ describe("one person, one record (D-019)", () => {
     expect(refused).toMatchObject({ code: "DUPLICATE_PHONE", duplicate: undefined });
   });
 
+  it("tells a consultant who has the lead of their own branch that their scope does not open (D-060)", async () => {
+    const { actor: first } = await createTestUser("CONSULTING");
+    const { actor: second } = await createTestUser("CONSULTING");
+    const { actor: reception } = await createTestUser("RECEPTIONIST");
+    const phone = uniquePhone();
+    const lead = await createLead(reception, { fullName: "Của người khác", phone, channelId: WHATSAPP });
+    const owner = lead.pic!.id === first.id ? first : second;
+    const other = owner === first ? second : first;
+
+    const refused = await createLead(other, { fullName: "A", phone, channelId: WHATSAPP }).catch((e: unknown) => e);
+
+    expect(refused).toMatchObject({
+      code: "DUPLICATE_PHONE",
+      duplicate: { id: lead.id, stage: "LEAD", code: lead.leadCode, openable: false, inCharge: lead.pic!.name },
+    });
+    // The owner and a manager may open it, as before.
+    await expect(createLead(owner, { fullName: "A", phone, channelId: WHATSAPP })).rejects.toMatchObject({
+      duplicate: { id: lead.id, openable: true },
+    });
+  });
+
+  it("needs only a name and a channel, and checks for a duplicate only when a phone is given (D-060)", async () => {
+    const { actor: reception } = await createTestUser("RECEPTIONIST");
+
+    const one = await createLead(reception, { fullName: "Không số 1", channelId: WHATSAPP });
+    const two = await createLead(reception, { fullName: "Không số 2", channelId: WHATSAPP });
+
+    expect(one).toMatchObject({ phone: null, stage: "LEAD" });
+    expect(two.id).not.toBe(one.id);
+  });
+
   it("lets only one of two leads with the same phone in, when they arrive together", async () => {
     const { actor: reception } = await createTestUser("RECEPTIONIST");
     const phone = uniquePhone();
@@ -139,6 +170,38 @@ describe("one person, one record (D-019)", () => {
     await expect(getCustomer(manager, lead.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(getLead(manager, customer.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(createContract(manager, lead.id, CONTRACT, randomUUID())).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("the nationality is a country (D-057)", () => {
+  it("keeps the country, derives the group from it, and says no to an unknown country", async () => {
+    const { actor: reception } = await createTestUser("RECEPTIONIST");
+
+    const home = await createLead(reception, { fullName: "A", channelId: WHATSAPP, countryCode: "vn" });
+    const abroad = await createLead(reception, { fullName: "B", channelId: WHATSAPP, countryCode: "KR" });
+    const none = await createLead(reception, { fullName: "C", channelId: WHATSAPP });
+
+    expect(home).toMatchObject({ countryCode: "VN", nationalityGroup: "VIETNAM" });
+    expect(abroad).toMatchObject({ countryCode: "KR", nationalityGroup: "FOREIGN" });
+    expect(none).toMatchObject({ countryCode: null, nationalityGroup: null });
+    await expect(
+      createLead(reception, { fullName: "D", channelId: WHATSAPP, countryCode: "ZZ" }),
+    ).rejects.toMatchObject({ fieldErrors: { countryCode: ["invalidChoice"] } });
+  });
+
+  it("keeps the group of a person who has only that, until a country is chosen", async () => {
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const lead = await createLead(manager, { fullName: "Cũ", channelId: WHATSAPP });
+    // An imported person: only "Nước ngoài", no country, which needs completing.
+    await prisma.customer.update({ where: { id: lead.id }, data: { nationalityGroup: "FOREIGN" } });
+
+    const edited = await updateLead(manager, lead.id, { fullName: "Cũ", channelId: WHATSAPP, countryCode: "" });
+    expect(edited).toMatchObject({ countryCode: null, nationalityGroup: "FOREIGN" });
+
+    const completed = await updateLead(manager, lead.id, { fullName: "Cũ", channelId: WHATSAPP, countryCode: "JP" });
+    expect(completed).toMatchObject({ countryCode: "JP", nationalityGroup: "FOREIGN" });
+    const home = await updateLead(manager, lead.id, { fullName: "Cũ", channelId: WHATSAPP, countryCode: "VN" });
+    expect(home).toMatchObject({ countryCode: "VN", nationalityGroup: "VIETNAM" });
   });
 });
 

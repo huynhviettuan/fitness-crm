@@ -71,7 +71,7 @@ describe("intake with a phone already in use (D-019, BR-202)", () => {
     expect(await prisma.leadInquiry.count()).toBe(0);
   });
 
-  it("names the record only to someone who may see it", async () => {
+  it("names the record to someone whose scope opens it, and only says who has it to another consultant (D-060)", async () => {
     const { actor: reception } = await createTestUser("RECEPTIONIST");
     const { actor: consultant } = await createTestUser("CONSULTING");
     const mine = await newLead(reception, "Của người khác", { phone: "0944555666" });
@@ -81,8 +81,12 @@ describe("intake with a phone already in use (D-019, BR-202)", () => {
     const hidden = await createLead(stranger, { fullName: "A", phone: "0944555666", channelId: ZALO }).catch((e) => e);
 
     expect(seen).toMatchObject({ code: "DUPLICATE_PHONE", duplicate: { id: mine.id } });
-    expect(hidden).toMatchObject({ code: "DUPLICATE_PHONE", duplicate: undefined });
-    expect(JSON.stringify(hidden)).not.toContain(mine.leadCode);
+    // Not openable for the stranger: who has it, never a way in, and never the phone.
+    expect(hidden).toMatchObject({
+      code: "DUPLICATE_PHONE",
+      duplicate: { id: mine.id, openable: false, inCharge: mine.pic!.name },
+    });
+    expect(JSON.stringify(hidden)).not.toContain("0944555666");
   });
 
   it("lets one of two leads with the same phone in when they arrive together", async () => {

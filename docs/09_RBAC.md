@@ -67,8 +67,8 @@ There is no default Accountant role. Cash-book work (receipts, expense vouchers,
 | Edit receipt date, delete vouchers | ✓ | — | — | — | — | — | — |
 | Tasks: create and work | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Trash: view | ✓ | — | — | — | — | — | — |
-| Export Excel | ✓ | ✓ | — | — | — | — | ✓ (masked) |
-| Reports | all | all | workout dashboard | consulting (own) | own sessions | booking | lead analysis |
+| Export Excel (one permission per list, A-077: `customer.export`, `lead.export`, `contract.export`, `payment.export`, `cash.export`, `task.export`; `user.export`, `audit.export`, `trash.export` for Admin only) | ✓ | ✓ (the first six) | — | — | — | — | ✓ (masked; Marketing has no list permissions yet) |
+| Reports (built so far: `report.consulting`, `report.consultingExport`, `report.leadAnalysis`, `report.leadAnalysisExport`, A-093) | all | all | workout dashboard | consulting (own) | own sessions | booking | lead analysis |
 
 ## Initial approval matrix (D-018)
 
@@ -89,12 +89,12 @@ Each role also has a **discount threshold**: the largest discount it may approve
 
 ## Built so far (M1 slice 2, 2026-10-10)
 
-The model above runs in the API (T-054) for the resources that exist today. Screens: **Administration → Users** (role, branches, per-user overrides, allowed hours, login history), **Roles** (permission tree, data scope, hidden fields, clone), and **Branches**.
+Hideable customer fields so far: phone, email, ID document, health note, and (M2 slice 6, A-069) the address together with the emergency contact; nobody has the address hidden by default. The model above runs in the API (T-054) for the resources that exist today. Screens: **Administration → Users** (role, branches, per-user overrides, allowed hours, login history), **Roles** (permission tree, data scope, hidden fields, clone), and **Branches**.
 
 | Group | Permission keys |
 |---|---|
 | System | `user.manage`, `role.manage`, `branch.manage` |
-| Leads | `lead.view`, `lead.create`, `lead.manage` (edit and change status; Admin, Fitness Manager, Consulting, Receptionist; M2 slice 1), `lead.assign` (reassign, told of new leads; Admin, Fitness Manager), `lead.receive` (in the round-robin; Consulting; M2 slice 2), `lead.merge` (merge two records of one person; Admin, Fitness Manager; M2 slice 5, A-065) |
+| Leads | `lead.view`, `lead.create`, `lead.manage` (edit and change status; Admin, Fitness Manager, Consulting, Receptionist; M2 slice 1), `lead.assign` (reassign, told of new leads; Admin, Fitness Manager), `lead.receive` (in the round-robin; Consulting; M2 slice 2), `lead.merge` (merge two records of one person; Admin, Fitness Manager; M2 slice 5, A-065), `script.manage` (the script library; Admin, Fitness Manager; M2 slice 6, A-072), `lead.audit` (the automatic consulting audit; Admin, Fitness Manager; M3 slice 2, A-084), `lead.untick` (remove the tick of a consulting step; Admin only; M2.7, A-102); `lead.assign` also switches a consultant's receiving and sets the turn weight (M2.7, A-100) |
 | Customers | `customer.view`, `customer.manage` |
 | Contract operations | `contract.view`, `contract.create`, `contract.approve`, `contract.cancel` |
 | PT schedule | `booking.view`, `booking.manage`, `session.checkIn`, `session.complete` |
@@ -112,3 +112,23 @@ Seeded roles (initial configuration, editable): Admin (everything), Fitness Mana
 ## Status of the first brief's model
 
 The five fixed roles (Admin, Manager, Receptionist, Trainer, Accountant), the code matrix, and the "limited" cells (T-020, T-024, A-007, A-015, A-016, A-021) are superseded by this page and were removed from the code in M1 slice 2 (A-032).
+
+
+## Job titles, roles, and reporting lines (D-046)
+
+A job title is a position in the org chart; a role is a set of permissions. Admin gives each employee both. The departments and titles come with the system (M2.7); the table is the initial pairing, applied when the staff list is entered, not derived by code (A-098). "Reports to" is the initial value of the employee's direct manager.
+
+| Job title | Role (initial) | Reports to (initial) |
+|---|---|---|
+| CEO | Admin | none |
+| Trợ lý CEO | (admin's choice) | CEO |
+| Studio Manager / Master | Fitness Manager (Master added later) | CEO |
+| Operation Coordinator, Client Care | Receptionist | Studio Manager / Master |
+| Coach Leader | PT | Studio Manager / Master |
+| Coach Advance, Junior, Rookie | PT | Coach Leader |
+| Marketing Manager | Marketing | CEO |
+| Content / Branding, Content Creator / Ads Performance, Media, Growth / Performance | Marketing | Marketing Manager |
+| Direct Sale / Online Flow Fitness | Consulting | Growth / Performance |
+| Kế toán trưởng | Kế toán | CEO |
+| Kế toán Flow Fitness | Kế toán | Kế toán trưởng |
+| Flow Store titles | (no accounts in phase 1) | the matching head |

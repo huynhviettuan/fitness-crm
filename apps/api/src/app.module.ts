@@ -18,6 +18,11 @@ import { CustomersController } from "./modules/customers/customers.controller.js
 import { LeadsController } from "./modules/leads/leads.controller.js";
 import { PersonsController } from "./modules/leads/persons.controller.js";
 import { ChecklistController } from "./modules/leads/checklist.controller.js";
+import { ScriptsController } from "./modules/scripts/scripts.controller.js";
+import { LeadAuditController } from "./modules/leads/lead-audit.controller.js";
+import { LeadReceiversController } from "./modules/leads/lead-receivers.controller.js";
+import { ManagerAuditController } from "./modules/leads/manager-audit.controller.js";
+import { ReportsController } from "./modules/reports/reports.controller.js";
 import {
   CashTransactionsController,
   DebtsController,
@@ -36,6 +41,11 @@ import { NotificationsController } from "./platform/notifications/notifications.
     LeadsController,
     PersonsController,
     ChecklistController,
+    ScriptsController,
+    LeadAuditController,
+    LeadReceiversController,
+    ManagerAuditController,
+    ReportsController,
     CustomersController,
     ContractsController,
     EmployeesController,

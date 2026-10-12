@@ -70,6 +70,10 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
     { label: t("fields.team"), value: employee.team },
     { label: t("fields.title"), value: chosen(employee.title) },
     {
+      label: t("fields.manager"),
+      value: employee.manager ? `${employee.manager.employeeCode} · ${employee.manager.fullName}` : t("noManager"),
+    },
+    {
       label: t("fields.login"),
       value: employee.user ? `${employee.user.name} · ${employee.user.email}` : t("noLogin"),
     },

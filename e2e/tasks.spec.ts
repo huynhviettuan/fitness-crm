@@ -70,6 +70,41 @@ test.describe("tasks as a manager", () => {
     await expect(tasksPage.row(k.views.assigned, title)).toContainText(status.ACCEPTED);
   });
 
+  test("a task has the shared reminder points, or its own that its assigner types in hours (D-056)", async ({
+    testTag,
+    tasksPage,
+    taskPage,
+  }) => {
+    const title = `Mốc nhắc ${testTag}`;
+
+    await tasksPage.goto("?view=assigned");
+    const form = await tasksPage.openCreate();
+    await form.fill({ title, assignee: E2E_USERS.RECEPTIONIST.name, dueDate: "20/06/2030", reminders: "soon" });
+    await form.save();
+    // A list of points it cannot read is refused on the field.
+    await expect(form.field(k.fields.reminders)).toHaveAttribute("aria-invalid", "true");
+    await form.field(k.fields.reminders).fill("6, 0.5");
+    await form.save();
+
+    await expect(taskPage.heading(title)).toBeVisible();
+    await expect(taskPage.detail(k.fields.reminders)).toHaveText(`6, 0.5 ${k.remindersUnit}`);
+  });
+
+  test("a task with no points of its own shows the shared ones", async ({ apiAs, taskPage, testTag }) => {
+    const manager = await apiAs("FITNESS_MANAGER");
+    const task = await giveTaskViaApi(manager, {
+      title: `Mốc chung ${testTag}`,
+      assigneeUserId: await idOf(await apiAs("RECEPTIONIST")),
+    });
+
+    const shared = ((await (await manager.get("/api/v1/parameters")).json()) as { taskReminderHours: string })
+      .taskReminderHours;
+
+    await taskPage.goto(task.id);
+
+    await expect(taskPage.detail(k.fields.reminders)).toHaveText(`${shared} ${k.remindersUnit} · ${k.remindersShared}`);
+  });
+
   test("a task given from a customer's page is about that customer; cancelling asks first", async ({
     page,
     apiAs,

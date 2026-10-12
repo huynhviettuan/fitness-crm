@@ -13,23 +13,28 @@ export const instant = false;
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePageUser();
 
-  const mainItems: NavItemKey[] = ["dashboard"];
-  if (can(user, "lead.view")) mainItems.push("leads", "leadsToday", "leadsRecare");
-  if (can(user, "customer.view")) mainItems.push("customers");
-  if (can(user, "contract.view")) mainItems.push("contracts");
-  if (can(user, "booking.view")) mainItems.push("calendar", "sessions");
-  if (can(user, "task.view")) mainItems.push("tasks");
-  if (can(user, "payment.view")) mainItems.push("finance");
-  const adminItems: NavItemKey[] = [];
+  // Which items a role sees; the sidebar groups them (lib/navigation.ts).
+  const items: NavItemKey[] = ["dashboard"];
+  if (can(user, "lead.view")) items.push("leads", "leadsToday", "leadsRecare");
+  if (can(user, "lead.audit")) items.push("leadsAudit");
+  if (can(user, "lead.assign")) items.push("leadReceivers");
+  if (can(user, "customer.view")) items.push("customers");
+  if (can(user, "contract.view")) items.push("contracts");
+  if (can(user, "booking.view")) items.push("calendar", "sessions");
+  if (can(user, "task.view")) items.push("tasks");
+  if (can(user, "payment.view")) items.push("finance");
+  if (can(user, "report.consulting")) items.push("consultingReport");
+  if (can(user, "report.leadAnalysis")) items.push("leadAnalysis");
   // A PT sees their own profile and working schedule here (staff scope "only mine").
-  if (can(user, "employee.view")) adminItems.push("employees");
-  if (can(user, "user.manage")) adminItems.push("users");
-  if (can(user, "role.manage")) adminItems.push("roles");
-  if (can(user, "branch.manage")) adminItems.push("branches");
-  if (can(user, "config.manage")) adminItems.push("options", "parameters", "checklist");
-  if (can(user, "audit.view")) adminItems.push("audit");
-  if (can(user, "trash.view")) adminItems.push("trash");
-  if (can(user, "approval.manage")) adminItems.push("approvalRules");
+  if (can(user, "employee.view")) items.push("employees");
+  if (can(user, "user.manage")) items.push("users");
+  if (can(user, "role.manage")) items.push("roles");
+  if (can(user, "branch.manage")) items.push("branches");
+  if (can(user, "config.manage")) items.push("options", "parameters", "checklist", "auditCriteria");
+  if (can(user, "script.manage")) items.push("scripts");
+  if (can(user, "audit.view")) items.push("audit");
+  if (can(user, "trash.view")) items.push("trash");
+  if (can(user, "approval.manage")) items.push("approvalRules");
   const [approvals, { unread }, recent] = await Promise.all([
     getApprovalSummary(),
     getNotificationSummary(),
@@ -38,7 +43,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <AppSidebar mainItems={mainItems} adminItems={adminItems} />
+      <AppSidebar items={items} />
       {/* min-w-0: wide content (e.g. the PT calendar) scrolls inside the page, not the page itself. */}
       <SidebarInset className="min-w-0">
         <AppHeader

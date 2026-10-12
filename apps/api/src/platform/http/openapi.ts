@@ -69,3 +69,16 @@ export function ApiIdempotencyKey() {
     description: "A UUID generated when the form opens (T-015).",
   });
 }
+
+/** An Excel file (A-079): the list's rows as one sheet; errors use the documented format. */
+export function ApiExcelFile(description = "The list as an .xlsx file") {
+  return ApiResponse({
+    status: 200,
+    description,
+    content: {
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+        schema: { type: "string", format: "binary" },
+      },
+    },
+  });
+}

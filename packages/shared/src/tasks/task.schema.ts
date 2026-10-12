@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { branchChoice } from "../branches/branch.schema.js";
 import { calendarDate, hasNoControlCharacters, timeOfDay } from "../validation/index.js";
+import { parseReminderHours } from "./reminder.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Form inputs send "" for an empty optional field; it is stored as null.
@@ -32,6 +33,22 @@ const optionalId = z.preprocess(
   z.uuid({ error: "invalidChoice" }).nullable(),
 );
 
+/**
+ * The reminder points of one task, as the assigner types them: hours before the deadline, "24, 3, 1".
+ * Empty means the shared points of the parameters (D-056).
+ */
+const reminderPoints = z
+  .string()
+  .trim()
+  .transform((value, ctx) => {
+    const parsed = parseReminderHours(value);
+    if ("error" in parsed) {
+      ctx.addIssue({ code: "custom", message: parsed.error });
+      return z.NEVER;
+    }
+    return parsed.minutes.length === 0 ? null : parsed.minutes;
+  });
+
 const taskFields = {
   title: text(200).pipe(z.string().min(1, { error: "required" })),
   description: text(4000).transform(emptyToNull).prefault(""),
@@ -42,6 +59,8 @@ const taskFields = {
   dueDate: calendarDate,
   dueTime: timeOfDay,
   priority: z.enum(TASK_PRIORITIES, { error: "invalidChoice" }).prefault("NORMAL"),
+  /** Its own reminder points, in minutes before the deadline; null for the shared ones (D-056). */
+  reminders: reminderPoints.prefault(""),
 };
 
 function oneAssignee(

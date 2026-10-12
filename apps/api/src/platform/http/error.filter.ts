@@ -12,6 +12,7 @@ export function sendError(response: Response, error: AppError): void {
     details: {
       ...(error.fieldErrors ? { fieldErrors: error.fieldErrors } : {}),
       ...(error.duplicate ? { duplicate: error.duplicate } : {}),
+      ...(error.exportLimit ? { exportLimit: error.exportLimit } : {}),
     },
   };
   response.status(error.httpStatus).json(body);

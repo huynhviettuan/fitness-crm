@@ -28,8 +28,16 @@ export const OPTION_LISTS = [
   "needGroups",
   "painStatuses",
   "assessmentTypes",
+  // The coded catalog of what a lead needs in detail (D-066), M2.7.
+  "needDetails",
   // Why a lead refused (BR-204), M2 slice 2.
   "leadRefuseReasons",
+  // Customer groups (brief §4.2), M2 slice 6.
+  "customerGroups",
+  // The criteria a manager's Fail names (M3 slice 3, A-087).
+  "auditFailReasons",
+  // Why admin removed a ticked consulting step (D-054), M2.7.
+  "stepReopenReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 
@@ -43,6 +51,10 @@ const label = text(100).pipe(z.string().min(1, { error: "required" }));
 export const optionInputSchema = z.object({
   labelVi: label,
   labelEn: label,
+  /** The number the owner gives the entry (D-066); unique in its list, optional. */
+  code: text(30)
+    .transform((value) => (value === "" ? null : value))
+    .prefault(""),
   active: z.boolean({ error: "invalidChoice" }).prefault(true),
 });
 
@@ -73,6 +85,7 @@ export const optionSchema = z
     listKey: z.enum(OPTION_LISTS),
     labelVi: z.string(),
     labelEn: z.string(),
+    code: z.string().nullable(),
     sortOrder: z.int(),
     active: z.boolean(),
     isOther: z.boolean(),
@@ -83,7 +96,14 @@ export const optionListSchema = listOf(optionSchema).meta({ id: "OptionList" });
 
 /** An option as a record shows it: the option chosen and the note written with it. */
 export const chosenOptionSchema = z
-  .object({ id: z.uuid(), labelVi: z.string(), labelEn: z.string(), isOther: z.boolean(), note: z.string().nullable() })
+  .object({
+    id: z.uuid(),
+    labelVi: z.string(),
+    labelEn: z.string(),
+    code: z.string().nullable(),
+    isOther: z.boolean(),
+    note: z.string().nullable(),
+  })
   .meta({ id: "ChosenOption" });
 
 /** "Khác" notes written on a list, most used first, for admin to promote (FR-PLT-005). */

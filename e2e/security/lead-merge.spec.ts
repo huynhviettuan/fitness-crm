@@ -412,7 +412,13 @@ test.describe("A01 the re-care list (FR-LEAD-007)", () => {
     const body = await duplicate.text();
     expect(JSON.parse(body)).toMatchObject({ code: "DUPLICATE_PHONE", details: { duplicate: { id: lead.id } } });
     // The answer names the record, never its contact data.
-    expect(Object.keys(JSON.parse(body).details.duplicate).sort()).toEqual(["code", "fullName", "id", "stage"]);
+    expect(Object.keys(JSON.parse(body).details.duplicate).sort()).toEqual([
+      "code",
+      "fullName",
+      "id",
+      "openable",
+      "stage",
+    ]);
 
     // Without lead.merge, merging is refused.
     const { first, second } = await twoLeads(apiAs, testTag);

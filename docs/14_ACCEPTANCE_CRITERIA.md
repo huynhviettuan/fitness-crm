@@ -27,6 +27,13 @@ The customer's acceptance criteria (brief §12), translated. Each one is tested 
 | AC-21 | Choosing Action "Stop + Escalation" notifies the manager and Master, and the item stays in the waiting list until handled; the weekly workout dashboard gives the right Flag and Action percentages. | M7 |
 | AC-22 | Data imported from GymMaster matches the number of customers, contract value, paid amounts, and sessions left. | M9 |
 | AC-23 | The lead, PT calendar, and session log screens work on a phone. | M2, M5, M7 |
+| AC-24 | A PT can book outside the on-duty shift, and the grid colors in-shift and off-shift time differently (D-058). | M5 |
+| AC-25 | A lead needs only a name and a channel; the country is chosen from the list of countries and the email goes in the language derived from it (D-057, D-060). | M2 |
+| AC-26 | Leads are shared by turn weight; a lead not taken care of after 1 working hour moves on, never outside 08:30–20:30, and each move is in the history and the dashboard (D-050, D-052). | M2 |
+| AC-27 | A ticked checklist step cannot be unticked; an overdue step past its grace period locks as "Không thực hiện" and cannot be ticked late (D-054). | M2 |
+| AC-28 | A task is reminded at all three points before its deadline through the bell, email, and phone, and a slow approval past 24 hours is told to the approver's direct manager (D-053, D-056, D-048). | M2, M6 |
+| AC-29 | Simulated scans through the API: a pair of the customer and the right PT within 15 minutes and the pairing window turns the session to *Đã tập* and triggers the session taken, the PT credit, and the email; a missing side hangs the session with the right reason; a scan with no booking is an error; a customer training twice with two PTs needs a pair for each (D-069, D-070). | M5 |
+| AC-30 | A session without a full check-in is notified to its PT at the end of the day, and to the Studio Manager with a task after 24 hours (D-071). | M5, M6 |
 
 ## Engineering acceptance (every milestone)
 

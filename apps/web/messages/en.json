@@ -3,6 +3,15 @@
     "name": "Fitness CRM"
   },
   "nav": {
+    "groups": {
+      "leads": "Leads and consulting",
+      "customers": "Customers and contracts",
+      "schedule": "Schedule and sessions",
+      "reports": "Reports",
+      "people": "People and access",
+      "config": "Configuration",
+      "monitoring": "Monitoring"
+    },
     "main": "Navigation",
     "dashboard": "Dashboard",
     "leads": "Leads",
@@ -25,7 +34,13 @@
     "notifications": "Notifications",
     "leadsToday": "Today's tasks",
     "checklist": "Consulting checklist",
-    "leadsRecare": "Re-care"
+    "leadsRecare": "Re-care",
+    "scripts": "Consulting scripts",
+    "leadsAudit": "Consulting audit",
+    "auditCriteria": "Audit criteria",
+    "consultingReport": "Consulting dashboard",
+    "leadAnalysis": "Lead analysis",
+    "leadReceivers": "Lead receiving"
   },
   "status": {
     "customer": {
@@ -97,11 +112,17 @@
     "leadStep": {
       "WAITING": "Waiting",
       "OPEN": "Open",
-      "DONE": "Done"
+      "DONE": "Done",
+      "NOT_DONE": "Not done"
     },
     "stepTiming": {
       "ON_TIME": "On time",
       "LATE": "Late"
+    },
+    "email": {
+      "QUEUED": "Waiting to send",
+      "SENT": "Sent",
+      "FAILED": "Failed"
     }
   },
   "common": {
@@ -125,7 +146,10 @@
     "notifications": "Notifications",
     "hidden": "Hidden",
     "chooseBranch": "Choose a branch",
-    "back": "Back"
+    "back": "Back",
+    "exportExcel": "Export Excel",
+    "exporting": "Exporting…",
+    "exportTooLarge": "This list has {total} rows; one export holds at most {limit}. Narrow the filters first."
   },
   "auth": {
     "title": "Sign in",
@@ -212,7 +236,7 @@
       "sourceDetail": "Source detail",
       "nationalityGroup": "Nationality",
       "needGroup": "Need group",
-      "needDetail": "Need detail",
+      "needDetail": "Need detail note",
       "painStatus": "Pain Status",
       "assessmentType": "Assessment type",
       "pic": "Person in charge",
@@ -225,7 +249,9 @@
       "appointmentTime": "Appointment time",
       "refuseReason": "Reason for refusing",
       "contactAgainOn": "Contact again on",
-      "statusNote": "Note (optional)"
+      "statusNote": "Note (optional)",
+      "country": "Country",
+      "needDetailChoice": "Need detail (catalog)"
     },
     "changeStatus": "Change status",
     "changeStatusTitle": "Change status: {name}",
@@ -263,7 +289,9 @@
       "roundRobin": "Round-robin",
       "inquiry": "Got in touch again via {channel}",
       "mergedFrom": "Merged from record {code} · {name}",
-      "system": "System"
+      "system": "System",
+      "note": "Note",
+      "reclaimed": "Moved automatically from {from} to {to} after {minutes} working minutes without care"
     },
     "checklist": "Consulting checklist",
     "merge": {
@@ -282,7 +310,28 @@
         "LEAD": "Lead",
         "CUSTOMER": "Customer"
       }
-    }
+    },
+    "notes": {
+      "title": "Notes",
+      "add": "Add note",
+      "placeholder": "Write a note about this lead…",
+      "saved": "Note added"
+    },
+    "scripts": {
+      "open": "Scripts",
+      "title": "Consulting scripts",
+      "description": "Pick a situation and copy the answer to paste into the chat.",
+      "language": "Answer language",
+      "vi": "Tiếng Việt",
+      "en": "English",
+      "copy": "Copy",
+      "copied": "Copied to the clipboard",
+      "copyFailed": "Could not copy. Select the text and copy it by hand.",
+      "noAnswer": "No answer in this language yet.",
+      "empty": "No script has an answer yet. A manager adds them under Consulting scripts."
+    },
+    "countryMissing": "Country missing, please complete",
+    "needDetailHint": "Written with the choice above; required for \"Khác\"."
   },
   "people": {
     "duplicateLead": "This phone already belongs to lead {code} · {name}. Each person has one record.",
@@ -292,7 +341,9 @@
     "duplicateTitle": "This phone number already has a record",
     "duplicateIntake": "Record {code} · {name} uses this number. \"Merge into this record\" adds the new inquiry (channel, source, need, note) to it and does not create a second record.",
     "backToEdit": "Back to the form",
-    "inquiryAdded": "Inquiry added to record {code}"
+    "inquiryAdded": "Inquiry added to record {code}",
+    "duplicateElsewhere": "This phone already belongs to lead {code} · {name}, handled by {person}. Ask them or a manager to continue the care.",
+    "duplicateElsewhereNobody": "This phone already belongs to lead {code} · {name}, which has nobody in charge. Tell a manager."
   },
   "customers": {
     "title": "Customers",
@@ -321,19 +372,51 @@
       "nationality": "Nationality",
       "idDocument": "ID document",
       "healthNote": "Basic health",
-      "dataConsentAt": "Data consent"
+      "dataConsentAt": "Data consent",
+      "address": "Address",
+      "emergencyContact": "Emergency contact",
+      "emergencyContactName": "Emergency contact name",
+      "emergencyContactPhone": "Emergency contact phone",
+      "customerGroup": "Customer group",
+      "staffInCharge": "Staff in charge"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
     "tabs": {
-      "overview": "Overview",
+      "overview": "Information",
       "contracts": "Contracts",
       "bookings": "Bookings",
-      "payments": "Payments"
+      "payments": "Payments",
+      "consulting": "Consulting history",
+      "emails": "Emails sent"
     },
     "identitySubmitted": "Saved. The change of name, phone, or email waits for approval.",
     "pendingIdentity": "Waiting for approval: {changes}. The current details apply until it is approved.",
-    "intakeHistory": "Inquiries and merges"
+    "intakeHistory": "Inquiries and merges",
+    "filters": "Filters",
+    "apply": "Apply",
+    "allBranches": "All branches",
+    "allStaff": "All staff",
+    "allMonths": "Any month",
+    "allEmails": "With or without email",
+    "onlyNoEmail": "Without email only",
+    "registeredFrom": "Registered from",
+    "registeredTo": "Registered to",
+    "birthdayMonth": "Birthday month",
+    "emailFilter": "Email",
+    "dayHint": "dd/mm/yyyy",
+    "noEmail": "No email",
+    "noEmailHint": "Ask for an email: session emails go there.",
+    "noStaff": "Not assigned",
+    "noGroup": "None",
+    "hiddenGroup": "Contact details",
+    "consulting": {
+      "timeline": "Timeline",
+      "checklist": "Checklist",
+      "empty": "No consulting history: this customer did not come in as a lead."
+    },
+    "noResultsFilters": "No customer matches these filters.",
+    "month": "Month {month}"
   },
   "users": {
     "title": "Users",
@@ -464,7 +547,9 @@
     "PHONE_ALREADY_USED": "This phone number is already in the system.",
     "DUPLICATE_PHONE": "This phone number already has a record. You can merge into it.",
     "MERGE_CUSTOMERS_UNSUPPORTED": "Two customer records cannot be merged yet.",
-    "PERSON_ALREADY_MERGED": "This record was already merged into another."
+    "PERSON_ALREADY_MERGED": "This record was already merged into another.",
+    "EXPORT_TOO_LARGE": "The list is too long to export. Narrow the filters first.",
+    "STEP_LOCKED": "This step is past its deadline and grace period, so it is locked as Not done."
   },
   "validation": {
     "required": "Required.",
@@ -492,7 +577,7 @@
     "notOnHalfHour": "Use a full or half hour, for example 05:00 or 05:30.",
     "invalidCodePrefix": "Use 1 to 5 letters without accents, for example KH.",
     "approverRequired": "Choose at least one approver role.",
-    "outOfRange": "Enter a number from 1 to 720.",
+    "outOfRange": "Value out of range.",
     "shiftsOverlap": "Shifts on the same day can't overlap.",
     "dayOffExists": "That day is already a day off.",
     "oneAssigneeOnly": "Choose one person or one department, not both.",
@@ -501,7 +586,16 @@
     "daysOutOfRange": "Enter a number of days from 1 to 365.",
     "invalidKey": "Invalid step key.",
     "consentRequired": "The customer's consent is needed before the ID document and health information are kept.",
-    "invalidIdDocument": "Invalid document number: a citizen ID has 12 digits, a passport 6 to 20 letters and digits."
+    "invalidIdDocument": "Invalid document number: a citizen ID has 12 digits, a passport 6 to 20 letters and digits.",
+    "rowsOutOfRange": "Enter a number of rows from 100 to 200,000.",
+    "weightOutOfRange": "Enter a weight from 1 to 10.",
+    "noCriteriaOnPass": "A Pass names no criteria.",
+    "codeAlreadyUsed": "This code is already used.",
+    "managerIsSelf": "Nobody can be their own manager.",
+    "managerCycle": "That person reports to this employee, so the line would loop.",
+    "stepMovedTheLead": "This step's result moved the lead, so it cannot be removed. Change the lead's status instead.",
+    "invalidReminders": "Reminder points are hours before the deadline, separated by commas, without repeats (for example 24, 3, 1).",
+    "tooManyReminders": "At most 10 reminder points."
   },
   "contracts": {
     "title": "Contracts",
@@ -604,7 +698,8 @@
       "status": "Working status",
       "isTrainer": "Teaches PT",
       "login": "Sign-in login",
-      "branch": "Branch"
+      "branch": "Branch",
+      "manager": "Direct manager"
     },
     "schedule": {
       "title": "Working schedule",
@@ -638,7 +733,9 @@
       "removeDayOffTitle": "Remove the day off on {date}?",
       "removeDayOffBody": "The employee works their weekly shifts on that day.",
       "dayOffRemoved": "Day off {date} removed"
-    }
+    },
+    "noManager": "None (reported to Admin)",
+    "managerDescription": "Told when this person's approval request waits too long."
   },
   "bookings": {
     "calendarTitle": "PT Calendar",
@@ -783,11 +880,14 @@
       "cashbook": "Cash book",
       "configuration": "Configuration",
       "history": "History and trash",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "exports": "Export to Excel",
+      "reports": "Reports"
     },
     "labels": {
       "user": {
-        "manage": "Manage users"
+        "manage": "Manage users",
+        "export": "Export the users"
       },
       "role": {
         "manage": "Manage roles and permissions"
@@ -797,13 +897,15 @@
       },
       "customer": {
         "view": "View customers",
-        "manage": "Add and edit customers"
+        "manage": "Add and edit customers",
+        "export": "Export the customers"
       },
       "contract": {
         "view": "View contracts",
         "create": "Create and edit draft contracts",
         "approve": "Approve (activate) contracts",
-        "cancel": "Cancel contracts"
+        "cancel": "Cancel contracts",
+        "export": "Export the contracts"
       },
       "booking": {
         "view": "View the PT calendar and sessions",
@@ -820,27 +922,35 @@
       "payment": {
         "view": "View payments and debt",
         "record": "Record payments",
-        "delete": "Delete receipts (to the trash)"
+        "delete": "Delete receipts (to the trash)",
+        "export": "Export the receipts"
       },
       "cash": {
         "manage": "Other income and expenses (view, record)",
-        "delete": "Delete income and expenses (to the trash)"
+        "delete": "Delete income and expenses (to the trash)",
+        "export": "Export income and expenses"
       },
       "config": {
         "manage": "Manage option lists and system parameters"
       },
       "audit": {
-        "view": "View the action history"
+        "view": "View the action history",
+        "export": "Export the action history"
       },
       "trash": {
-        "view": "View the trash"
+        "view": "View the trash",
+        "export": "Export the trash"
       },
       "approval": {
         "manage": "Manage the approval matrix"
       },
       "task": {
         "view": "See and work on tasks",
-        "create": "Give tasks"
+        "create": "Give tasks",
+        "export": "Export the tasks"
+      },
+      "script": {
+        "manage": "Manage the consulting script library"
       },
       "lead": {
         "view": "View leads",
@@ -848,7 +958,16 @@
         "manage": "Edit leads and change their status",
         "assign": "Reassign leads, hear of new leads",
         "receive": "Receive leads automatically",
-        "merge": "Merge two records of one person"
+        "merge": "Merge two records of one person",
+        "export": "Export the leads",
+        "audit": "See the automatic consulting audit",
+        "untick": "Remove the tick of a consulting step"
+      },
+      "report": {
+        "consulting": "See the consulting dashboard",
+        "consultingExport": "Export the consulting dashboard",
+        "leadAnalysis": "See the lead analysis",
+        "leadAnalysisExport": "Export the lead analysis"
       }
     },
     "resources": {
@@ -868,6 +987,7 @@
       "customer": {
         "phone": "Customer phone",
         "email": "Customer email",
+        "address": "Customer address and emergency contact",
         "idDocument": "Customer ID documents",
         "health": "Customer health"
       },
@@ -937,7 +1057,11 @@
       "needGroups": "Need groups",
       "painStatuses": "Pain Status",
       "assessmentTypes": "Assessment types",
-      "leadRefuseReasons": "Reasons for refusing (leads)"
+      "leadRefuseReasons": "Reasons for refusing (leads)",
+      "customerGroups": "Customer groups",
+      "auditFailReasons": "Audit criteria not met",
+      "needDetails": "Need details (coded)",
+      "stepReopenReasons": "Reasons to remove a tick"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -954,7 +1078,8 @@
       "labelVi": "Vietnamese name",
       "labelEn": "English name",
       "status": "Status",
-      "active": "In use"
+      "active": "In use",
+      "code": "Code"
     },
     "empty": "This list has no options yet besides \"Other\".",
     "choose": "Choose",
@@ -968,7 +1093,8 @@
       "note": "Note",
       "count": "Times",
       "lastUsedAt": "Last used"
-    }
+    },
+    "codeHint": "Optional. When given, it is unique in the list and shown before the name."
   },
   "parameters": {
     "title": "System parameters",
@@ -986,15 +1112,26 @@
       "employeeCodePrefix": "Employee code",
       "taskDueSoonHours": "Reminder before the deadline (hours)",
       "recareDays": "Re-care after (days)",
-      "studioDepartmentId": "Department told by Báo Studio"
+      "studioDepartmentId": "Department told by Báo Studio",
+      "exportRowLimit": "Most rows in one export",
+      "reclaimMinutes": "Move on after (working minutes, 0 is off)",
+      "consultingWindowStart": "Consulting window: from",
+      "consultingWindowEnd": "Consulting window: to",
+      "stepGraceMinutes": "Grace for a consulting step (minutes)",
+      "taskReminderHours": "Shared task reminder points (hours before the deadline)",
+      "receptionDepartmentId": "Department told when an email fails"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
-    "tasksHint": "The assignee is reminded this many hours before the deadline; once it passes, the assignee and the assigner are told.",
+    "tasksHint": "The assignee is reminded at each point before the deadline: \"24, 3, 1\" is 24, 3, and 1 hours before (a dot for fractions, at most 10 points). Whoever gave the task may set its own points. When it passes, both the assignee and the assigner are told.",
     "leads": "Leads",
-    "leadsHint": "Leads with No response, Refused, or No show are due to be contacted again after this many days.",
+    "leadsHint": "Leads in No response, Refused, or No show are contacted again after that many days. A lead not taken care of for the working minutes set (counted only inside the consulting window) moves to the next consultant. An overdue consulting step can still be ticked within the grace period (marked late); after it the step locks as Not done.",
     "studioHint": "Báo Studio creates a task for this department in Tasks. With none chosen, nothing is sent.",
-    "noDepartment": "Not chosen"
+    "noDepartment": "Not chosen",
+    "exports": "Excel exports",
+    "exportsHint": "A list with more rows than this cannot be exported until its filters are narrowed.",
+    "mail": "Email",
+    "mailHint": "An email to a customer that cannot go out (the customer has no email, or the provider refused it several times) creates a task for this department in Tasks, so the customer is told another way. With none chosen, no task is made and the email still shows as failed."
   },
   "trash": {
     "title": "Trash",
@@ -1056,7 +1193,10 @@
       "approval_rule": "Approval matrix",
       "task": "Task",
       "consulting_checklist": "Consulting checklist",
-      "person": "Person record"
+      "consulting_script": "Consulting script",
+      "person": "Person record",
+      "export": "Excel export",
+      "audit_criterion": "Audit criterion"
     },
     "verbs": {
       "created": "Created",
@@ -1089,7 +1229,9 @@
       "status_changed": "Status changed",
       "assigned": "Assigned",
       "step_completed": "Consulting step completed",
-      "converted": "Converted to customer"
+      "converted": "Converted to customer",
+      "note_added": "Note added",
+      "downloaded": "Exported"
     },
     "fields": {
       "at": "When",
@@ -1228,7 +1370,8 @@
       "status": "Status",
       "entity": "About",
       "branch": "Branch",
-      "createdAt": "Given on"
+      "createdAt": "Given on",
+      "reminders": "Reminders"
     },
     "actions": {
       "accept": "Accept",
@@ -1259,7 +1402,11 @@
       "contract": "Contract",
       "lead": "Lead"
     },
-    "details": "Task details"
+    "details": "Task details",
+    "remindersHint": "Hours before the deadline, for example 24, 3, 1. Leave empty for the shared points of the system. Use a dot for fractions: 0.5 is half an hour.",
+    "remindersPlaceholder": "24, 3, 1",
+    "remindersUnit": "hours before",
+    "remindersShared": "shared points"
   },
   "notifications": {
     "title": "Notifications",
@@ -1277,7 +1424,7 @@
       "taskCancelled": "The task \"{title}\" was cancelled",
       "taskCommented": "{by} commented on the task \"{title}\"",
       "taskMentioned": "{by} mentioned you in the task \"{title}\"",
-      "taskDueSoon": "The task \"{title}\" is due at {due}",
+      "taskDueSoon": "Task \"{title}\" is due in {hours} hours ({due})",
       "taskOverdue": "The task \"{title}\" is overdue ({due})",
       "approvalSubmitted": "A request waits for your approval: {title}",
       "approvalDecided": "Request \"{title}\": {status}",
@@ -1287,7 +1434,8 @@
       "leadStepDue": "Due: {step} · lead {code} · {name}",
       "leadRecare": "Lead {code} · {name} is due for re-care",
       "leadInquiry": "{name} ({code}) got in touch again",
-      "personMerged": "Record {mergedCode} was merged into {code} · {name}"
+      "personMerged": "Record {mergedCode} was merged into {code} · {name}",
+      "leadReclaimed": "Lead {code} · {name} was moved to someone else after {minutes} minutes without care"
     }
   },
   "checklist": {
@@ -1316,7 +1464,15 @@
       "afterStep": "Opens {delay} after \"{step}\"",
       "afterStepNow": "Opens right after \"{step}\"",
       "recare": "Opens with re-care; due on the contact-again day"
-    }
+    },
+    "lockedAt": "Locked at",
+    "reopen": "Remove tick",
+    "reopenFor": "Remove the tick of {step}",
+    "reopenTitle": "Remove tick: {step}",
+    "reopenDescription": "Only for a tick made by mistake. The step opens again; the tick, who made it, and the reason stay in the history.",
+    "reopenReason": "Reason",
+    "reopenConfirm": "Remove tick",
+    "reopened": "Removed the tick of {step}"
   },
   "today": {
     "title": "Today's tasks",
@@ -1445,6 +1601,248 @@
       "contactAgainOn": "Contact again",
       "pic": "Person in charge",
       "refuseReason": "Refusal reason"
+    }
+  },
+  "scripts": {
+    "title": "Consulting scripts",
+    "description": "Situations with answers in Vietnamese and English. Consultants copy them from a lead. Scripts are never deleted; switch one off to hide it.",
+    "create": "Add script",
+    "edit": "Edit script",
+    "created": "{name} added",
+    "saved": "Script saved",
+    "reordered": "Order changed",
+    "moveUp": "Move {name} up",
+    "moveDown": "Move {name} down",
+    "rowActions": "Edit {name}",
+    "empty": "No scripts yet.",
+    "noAnswer": "No answer yet",
+    "fields": {
+      "order": "Order",
+      "situationVi": "Situation (Vietnamese)",
+      "situationEn": "Situation (English)",
+      "answerVi": "Answer (Vietnamese)",
+      "answerEn": "Answer (English)",
+      "active": "In use",
+      "status": "Status",
+      "answers": "Answers"
+    }
+  },
+  "leadAudit": {
+    "title": "Consulting audit",
+    "description": "How on time each consultant's steps are, and which leads need a look. Steps count once they are due; the score also counts the fields the criteria ask for.",
+    "consultants": "Consultants",
+    "toCheck": "Leads to check",
+    "toCheckHint": "Leads still in the journey with a late or skipped step or a missing field, most urgent first.",
+    "filters": "Filters",
+    "apply": "Apply",
+    "from": "Created from",
+    "to": "Created to",
+    "dayHint": "dd/mm/yyyy",
+    "allConsultants": "All consultants",
+    "consultant": "Consultant",
+    "noConsultant": "Nobody in charge",
+    "team": "Whole team",
+    "fields": {
+      "leads": "Leads",
+      "due": "Due steps",
+      "onTime": "On time",
+      "late": "Late",
+      "skipped": "Skipped",
+      "compliance": "On-time rate",
+      "score": "Score",
+      "toCheck": "To check",
+      "lead": "Lead",
+      "status": "Status",
+      "failed": "Missing",
+      "createdAt": "Created",
+      "unaudited": "Not audited"
+    },
+    "noData": "—",
+    "emptyConsultants": "There are no leads in this period.",
+    "emptyToCheck": "Nothing to check: every due step is on time and every field is there.",
+    "criteria": {
+      "needGroup": "Need group",
+      "phone": "Phone",
+      "refuseReason": "Refusal reason"
+    },
+    "tab": {
+      "title": "Audit",
+      "hint": "Computed from the steps' deadlines and the lead's fields; it is not a manager's grade.",
+      "steps": "Steps",
+      "criteria": "Criteria",
+      "outcome": {
+        "ON_TIME": "On time",
+        "LATE": "Late",
+        "SKIPPED": "Skipped",
+        "none": "Not due"
+      },
+      "passed": "Done",
+      "failed": "Missing",
+      "notApplicable": "Does not apply",
+      "off": "Switched off",
+      "weight": "Weight {weight}",
+      "empty": "No step is due yet."
+    },
+    "queue": {
+      "title": "Not audited yet",
+      "hint": "{total, plural, =0 {Everyone has been audited} other {# not audited yet, the oldest first}}. Open a lead to grade it; it leaves this list once graded.",
+      "empty": "Every lead has been audited."
+    },
+    "manager": {
+      "title": "Manager audit",
+      "none": "No manager has audited this lead yet.",
+      "earlier": "Earlier grades",
+      "notMet": "Criteria not met",
+      "grade": "Grade this lead",
+      "gradeAgain": "Grade again",
+      "gradeTitle": "Audit {name}",
+      "gradeDescription": "A Fail names what was not met. Every grade is kept; the latest one counts.",
+      "resultLabel": "Result",
+      "comment": "Comment",
+      "saved": "Audit saved",
+      "result": {
+        "PASS": "Pass",
+        "FAIL": "Fail"
+      }
+    }
+  },
+  "auditCriteria": {
+    "title": "Audit criteria",
+    "description": "What the automatic consulting audit asks of every lead besides the timing of its steps. A criterion that is switched off counts for nobody; a weight of 1 to 10 says how much it counts. Changes apply to every score at once.",
+    "criterion": "Criterion",
+    "appliesTo": "Applies to",
+    "active": "Counts",
+    "weight": "Weight",
+    "saved": "Criteria saved",
+    "applies": {
+      "needGroup": "Every lead",
+      "phone": "Every lead",
+      "refuseReason": "Refused leads"
+    }
+  },
+  "reports": {
+    "filters": "Filters",
+    "apply": "Apply",
+    "from": "Created from",
+    "to": "Created to",
+    "dayHint": "dd/mm/yyyy",
+    "branch": "Branch",
+    "allBranches": "All branches",
+    "staff": "Person in charge",
+    "allStaff": "Everyone"
+  },
+  "consultingReport": {
+    "title": "Consulting dashboard",
+    "description": "The leads created in the period, how far each got, and how on time the consulting was. Rates are of the leads created in the period.",
+    "kpis": "Team figures",
+    "team": "Whole team",
+    "noConsultant": "Nobody in charge",
+    "noData": "—",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "byConsultant": "By consultant",
+    "empty": "There are no leads in this period.",
+    "recareValue": "{rebooked} of {entered} booked again",
+    "fields": {
+      "consultant": "Consultant",
+      "leads": "Leads",
+      "bookingRate": "Booking rate",
+      "showRate": "Show rate",
+      "compliance": "On time",
+      "firstResponse": "First response",
+      "recare": "Re-care",
+      "score": "Audit score",
+      "reclaimed": "Moved on"
+    },
+    "funnel": {
+      "title": "Funnel",
+      "chartLabel": "Leads, consulted, booked, shown, and contracted",
+      "leads": "Leads",
+      "consulted": "Consulted",
+      "booked": "Booked",
+      "showed": "Show",
+      "contracted": "Contracted"
+    },
+    "steps": {
+      "title": "Completion of each consulting step",
+      "description": "The checklist measures the process, not the people: how often each step is done and how the leads that got it fare in booking, show, and contract against those that did not, to change steps that are redundant or missing. Each rate cell reads: did | did not.",
+      "step": "Step",
+      "due": "Due",
+      "done": "Done",
+      "late": "Done late",
+      "notDone": "Not done",
+      "completion": "Completion",
+      "booking": "Booking (did | did not)",
+      "show": "Show (did | did not)",
+      "contract": "Contract (did | did not)",
+      "chart": "Completion of each step",
+      "chartHint": "The share of leads the step was due for in which it was done.",
+      "chartLabel": "Completion of each consulting step",
+      "empty": "No step has come due in this period."
+    }
+  },
+  "leadAnalysis": {
+    "title": "Lead analysis",
+    "description": "The leads created in the period by contact channel, source, Organic or Paid, need, nationality, and refusal reason, and how far each group got.",
+    "total": "{count, plural, one {# lead} other {# leads}} in this period.",
+    "empty": "There are no leads in this period.",
+    "notGiven": "Not given",
+    "chartLabel": "Leads, booked, and shown by {dimension}",
+    "dimensions": {
+      "channel": "Contact channel",
+      "source": "Lead source",
+      "sourceType": "Organic / Paid",
+      "needGroup": "Need group",
+      "nationalityGroup": "Nationality group",
+      "refuseReason": "Refusal reason",
+      "country": "Country"
+    },
+    "values": {
+      "ORGANIC": "Organic",
+      "PAID": "Paid",
+      "VIETNAM": "Vietnam",
+      "FOREIGN": "Foreign"
+    },
+    "fields": {
+      "leads": "Leads",
+      "booked": "Booked",
+      "showed": "Show",
+      "contracted": "Contracted",
+      "bookingRate": "Booking rate",
+      "showRate": "Show rate"
+    }
+  },
+  "leadReceivers": {
+    "title": "Lead receiving",
+    "description": "Leads are shared by weighted turn: weight 2 takes two leads in each round where weight 1 takes one. Switch receiving off for someone on leave or busy; only people within their working hours are dealt leads.",
+    "name": "Consultant",
+    "branches": "Branches",
+    "allBranches": "All branches",
+    "inCharge": "Leads in consulting",
+    "onDuty": "Working hours",
+    "onDutyYes": "On duty",
+    "onDutyNo": "Off duty",
+    "turn": "Receiving and turn weight",
+    "receivesFor": "Receives leads: {name}",
+    "weightFor": "Turn weight: {name}",
+    "saveFor": "Save {name}",
+    "saved": "Saved the lead receiving of {name}",
+    "empty": "Nobody receives leads in your branches yet."
+  },
+  "mail": {
+    "title": "Emails sent",
+    "empty": "No email has been sent to this customer yet.",
+    "columns": {
+      "createdAt": "Created",
+      "event": "Event",
+      "subject": "Subject",
+      "to": "Sent to",
+      "status": "Status",
+      "attempts": "Attempts"
+    },
+    "failure": {
+      "noEmail": "The customer has no email",
+      "providerRejected": "The provider refused it",
+      "providerUnavailable": "The provider did not respond"
     }
   }
 }

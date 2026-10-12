@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { notify } from "@/components/notify";
 import { formatDateOnly } from "@/lib/format";
+import { NO_OPTION } from "@/components/option-select";
 import { CustomerForm, type CustomerFormValues } from "./customer-form";
 import { createCustomerAction, updateCustomerAction } from "./actions";
 
@@ -19,10 +20,22 @@ const EMPTY: CustomerFormValues = {
   dateOfBirth: "",
   notes: "",
   status: "ACTIVE",
+  address: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  customerGroupId: NO_OPTION,
+  customerGroupNote: "",
+  staffInChargeId: NO_OPTION,
 };
 
 /** "Add customer": a short form, so it opens in a Sheet (docs/23 §7). */
-export function CreateCustomerButton({ branches }: { branches: { id: string; name: string }[] }) {
+export function CreateCustomerButton({
+  branches,
+  staff,
+}: {
+  branches: { id: string; name: string }[];
+  staff: { id: string; name: string }[];
+}) {
   const t = useTranslations("customers");
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -42,6 +55,7 @@ export function CreateCustomerButton({ branches }: { branches: { id: string; nam
           mode="create"
           defaultValues={EMPTY}
           branches={branches}
+          staff={staff}
           submit={createCustomerAction}
           onCancel={() => setOpen(false)}
           onSaved={(result) => {
@@ -60,14 +74,25 @@ type EditableCustomer = {
   id: string;
   fullName: string;
   phone: string | null;
-  maskedFields: ("phone" | "email" | "idDocument" | "health")[];
+  maskedFields: ("phone" | "email" | "address" | "idDocument" | "health")[];
   email: string | null;
   dateOfBirth: Date | null;
   notes: string | null;
   status: "ACTIVE" | "INACTIVE";
+  address: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  customerGroup: { id: string; note: string | null } | null;
+  staffInCharge: { id: string } | null;
 };
 
-export function EditCustomerButton({ customer }: { customer: EditableCustomer }) {
+export function EditCustomerButton({
+  customer,
+  staff,
+}: {
+  customer: EditableCustomer;
+  staff: { id: string; name: string }[];
+}) {
   const t = useTranslations("customers");
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -80,6 +105,12 @@ export function EditCustomerButton({ customer }: { customer: EditableCustomer })
     dateOfBirth: customer.dateOfBirth ? formatDateOnly(customer.dateOfBirth) : "",
     notes: customer.notes ?? "",
     status: customer.status,
+    address: customer.address ?? "",
+    emergencyContactName: customer.emergencyContactName ?? "",
+    emergencyContactPhone: customer.emergencyContactPhone ?? "",
+    customerGroupId: customer.customerGroup?.id ?? NO_OPTION,
+    customerGroupNote: customer.customerGroup?.note ?? "",
+    staffInChargeId: customer.staffInCharge?.id ?? NO_OPTION,
   };
 
   return (
@@ -96,7 +127,11 @@ export function EditCustomerButton({ customer }: { customer: EditableCustomer })
         <CustomerForm
           mode="edit"
           defaultValues={defaultValues}
-          masked={customer.maskedFields.filter((field) => field === "phone" || field === "email")}
+          masked={customer.maskedFields.filter(
+            (field): field is "phone" | "email" | "address" =>
+              field === "phone" || field === "email" || field === "address",
+          )}
+          staff={staff}
           submit={(values) => updateCustomerAction(customer.id, values)}
           onCancel={() => setOpen(false)}
           onSaved={(result) => {

@@ -41,6 +41,7 @@ const SNAPSHOT_FIELDS = [
   "sourceNote",
   "needGroupId",
   "needGroupNote",
+  "needDetailId",
   "needDetail",
   "notes",
   "appointmentAt",

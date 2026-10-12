@@ -107,7 +107,8 @@ export class ShowDialog {
   async fill(input: {
     idDocumentNumber: string;
     birthDate: string;
-    nationality: string;
+    /** The country as the user reads it in the list, e.g. "Việt Nam". */
+    country: string;
     email: string;
     phone?: string;
     healthNote?: string;
@@ -115,7 +116,8 @@ export class ShowDialog {
     const f = labels.visit.fields;
     await this.field(f.idDocumentNumber).fill(input.idDocumentNumber);
     await this.field(f.birthDate).fill(input.birthDate);
-    await this.field(f.nationality).fill(input.nationality);
+    await this.field(f.nationality).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: input.country, exact: true }).click();
     await this.field(f.email).fill(input.email);
     if (input.phone !== undefined) await this.field(f.phone).fill(input.phone);
     if (input.healthNote !== undefined) await this.field(f.healthNote).fill(input.healthNote);
@@ -295,7 +297,19 @@ export class LeadPage {
     return openCompleteStep(this.page, this.checklistStep(name), name);
   }
 
-  /** The status change and assignment history, newest first (D-020). */
+  /** Writes a note on the lead (A-074); it shows at the top of the history. */
+  async addNote(text: string): Promise<void> {
+    await this.shell.main.getByRole("textbox", { name: l.notes.title, exact: true }).fill(text);
+    await this.shell.main.getByRole("button", { name: l.notes.add, exact: true }).click();
+  }
+
+  /** Opens the script panel (FR-LEAD-010). */
+  async openScripts(): Promise<Locator> {
+    await this.shell.main.getByRole("button", { name: l.scripts.open, exact: true }).click();
+    return this.page.getByRole("dialog", { name: l.scripts.title });
+  }
+
+  /** The status change, assignment, and note history, newest first (D-020). */
   get history(): Locator {
     return this.shell.main.getByRole("region", { name: l.history }).getByRole("listitem");
   }

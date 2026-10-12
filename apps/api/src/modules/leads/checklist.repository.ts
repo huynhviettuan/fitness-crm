@@ -70,7 +70,7 @@ export function leadSteps(db: Db, customerId: string): Promise<LeadStepRecord[]>
 }
 
 export function openSteps(db: Db, customerId: string): Promise<LeadStepRecord[]> {
-  return db.leadStep.findMany({ where: { customerId, doneAt: null }, include: stepInclude });
+  return db.leadStep.findMany({ where: { customerId, doneAt: null, lockedAt: null }, include: stepInclude });
 }
 
 /** Opens a step with its deadline, or moves the deadline; a new deadline is told about again. */
@@ -104,6 +104,42 @@ export function completeStep(
   return db.leadStep.update({ where: { id }, data, include: stepInclude });
 }
 
+/** Holds the step's row until the transaction ends, so a tick and the lock never cross (D-054). */
+export async function lockStepRow(db: Db, id: string): Promise<void> {
+  await db.$queryRaw`SELECT "id" FROM "lead_steps" WHERE "id" = ${id}::uuid FOR UPDATE`;
+}
+
+/**
+ * Locks as "Không thực hiện" the steps still open `graceMinutes` after their deadline (D-054) and
+ * returns them, for the history. A lead's own steps only when `customerId` is given.
+ */
+export function lockOverdue(db: Db, now: Date, graceMinutes: number, customerId: string | null = null) {
+  return db.$queryRaw<{ id: string; customer_id: string; template_id: string; due_at: Date }[]>`
+    UPDATE "lead_steps" SET "locked_at" = ${now}
+    WHERE "done_at" IS NULL AND "locked_at" IS NULL AND "due_at" IS NOT NULL
+      AND "due_at" + make_interval(mins => ${graceMinutes}::int) < ${now}
+      AND (${customerId}::uuid IS NULL OR "customer_id" = ${customerId}::uuid)
+    RETURNING "id", "customer_id", "template_id", "due_at"`;
+}
+
+/** The step is open again after admin removed its tick (D-054); its deadline is never earlier than now. */
+export function reopenStep(db: Db, id: string, dueAt: Date): Promise<LeadStepRecord> {
+  return db.leadStep.update({
+    where: { id },
+    data: {
+      doneAt: null,
+      doneById: null,
+      resultIndex: null,
+      note: null,
+      timing: null,
+      lockedAt: null,
+      dueAt,
+      dueNotifiedAt: null,
+    },
+    include: stepInclude,
+  });
+}
+
 export function findLeadStep(db: Db, customerId: string, id: string): Promise<LeadStepRecord | null> {
   return db.leadStep.findFirst({ where: { id, customerId }, include: stepInclude });
 }
@@ -111,7 +147,7 @@ export function findLeadStep(db: Db, customerId: string, id: string): Promise<Le
 /** Open steps due before `until`, of leads matching `leads`, oldest deadline first. */
 export function dueSteps(db: Db, leads: Prisma.CustomerWhereInput, until: Date, take: number) {
   return db.leadStep.findMany({
-    where: { doneAt: null, dueAt: { lt: until }, customer: leads },
+    where: { doneAt: null, lockedAt: null, dueAt: { lt: until }, customer: leads },
     include: {
       ...stepInclude,
       customer: { select: { id: true, leadCode: true, fullName: true, leadStatus: true, pic: person } },

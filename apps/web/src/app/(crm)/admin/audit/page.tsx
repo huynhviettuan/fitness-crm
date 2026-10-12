@@ -4,6 +4,7 @@ import { HistoryIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { FilterInput, FilterPanel, FilterSelect } from "@/components/filter-panel";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -51,7 +52,15 @@ export default async function AuditPage({ searchParams }: PageProps<"/admin/audi
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          can(user, "audit.export") && (
+            <ExportButton path="/api/v1/audit-events/export" query={{ entityType, entityId, actorUserId, from, to }} />
+          )
+        }
+      />
       <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
         <FilterPanel action="/admin/audit" label={t("filters")} submitLabel={t("apply")}>
           <FilterSelect

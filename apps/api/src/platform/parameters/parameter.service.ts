@@ -38,14 +38,14 @@ export async function updateParameters(actor: Actor, input: unknown): Promise<Pa
   const data = parseInput(parametersInputSchema, input);
   return prisma.$transaction(async (tx) => {
     const before = await readParameters(tx);
-    // Báo Studio's department must be an active department (not "Khác"), or none.
-    if (data.studioDepartmentId && data.studioDepartmentId !== before.studioDepartmentId) {
+    // The departments that get Báo Studio's and the failed emails' tasks must be active (not "Khác"), or none.
+    for (const key of ["studioDepartmentId", "receptionDepartmentId"] as const) {
+      if (!data[key] || data[key] === before[key]) continue;
       const department = await tx.option.findFirst({
-        where: { id: data.studioDepartmentId, listKey: "departments", active: true, isOther: false },
+        where: { id: data[key], listKey: "departments", active: true, isOther: false },
         select: { id: true },
       });
-      if (!department)
-        throw new AppError("VALIDATION_FAILED", { fieldErrors: { studioDepartmentId: ["invalidChoice"] } });
+      if (!department) throw new AppError("VALIDATION_FAILED", { fieldErrors: { [key]: ["invalidChoice"] } });
     }
     for (const key of PARAMETER_KEYS) {
       if (before[key] === data[key]) continue;

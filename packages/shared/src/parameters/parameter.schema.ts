@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatReminderHours, parseReminderHours } from "../tasks/reminder.domain.js";
 import { timeOfDay } from "../validation/index.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
@@ -18,12 +19,23 @@ export const PARAMETER_DEFAULTS = {
   customerCodePrefix: "KH",
   contractCodePrefix: "HD",
   employeeCodePrefix: "NV",
-  /** How many hours before its deadline a task reminds its assignee (brief §8.2, A-046). */
-  taskDueSoonHours: "24",
+  /** The shared reminder points of a task, hours before its deadline: 24, 3, and 1 (brief §8.2, D-056). */
+  taskReminderHours: "24, 3, 1",
   /** Days after No response, Refused, or No show before the lead is contacted again (BR-204, OQ-018). */
   recareDays: "15",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
   studioDepartmentId: "",
+  /** The department whose task an email that could not be sent creates (FR-MAIL-003); "" for none yet. */
+  receptionDepartmentId: "",
+  /** The most rows one Excel export holds; a longer list must be narrowed first (A-078). */
+  exportRowLimit: "50000",
+  /** Working minutes an untouched lead waits before it moves to the next consultant; 0 switches it off (D-052). */
+  reclaimMinutes: "60",
+  /** The consultants' working window of the gym's day: the reclaim clock runs only inside it (D-052). */
+  consultingWindowStart: "08:30",
+  consultingWindowEnd: "20:30",
+  /** Minutes after its deadline a consulting step can still be ticked, as "Trễ"; then it locks as "Không thực hiện" (D-054). */
+  stepGraceMinutes: "120",
 } as const;
 
 export type ParameterKey = keyof typeof PARAMETER_DEFAULTS;
@@ -40,13 +52,18 @@ const codePrefix = z
   .toUpperCase()
   .regex(/^[A-Z]{1,5}$/, { error: "invalidCodePrefix" });
 
-/** Whole hours, 1 to 168 (a week), kept as text like every parameter. */
-const hours = z
+/** The reminder points of a task: hours before the deadline, "24, 3, 1"; at least one, kept in this form (D-056). */
+const reminderHours = z
   .string()
   .trim()
-  .regex(/^\d{1,3}$/, { error: "invalidNumber" })
-  .refine((value) => Number(value) >= 1 && Number(value) <= 168, { error: "outOfRange" })
-  .transform((value) => String(Number(value)));
+  .transform((value, ctx) => {
+    const parsed = parseReminderHours(value);
+    if ("error" in parsed || parsed.minutes.length === 0) {
+      ctx.addIssue({ code: "custom", message: "error" in parsed ? parsed.error : "invalidReminders" });
+      return z.NEVER;
+    }
+    return formatReminderHours(parsed.minutes);
+  });
 
 /** Whole days, 1 to 365. */
 const days = z
@@ -54,6 +71,22 @@ const days = z
   .trim()
   .regex(/^\d{1,3}$/, { error: "invalidNumber" })
   .refine((value) => Number(value) >= 1 && Number(value) <= 365, { error: "daysOutOfRange" })
+  .transform((value) => String(Number(value)));
+
+/** Whole rows, 100 to 200,000. */
+const rows = z
+  .string()
+  .trim()
+  .regex(/^\d{1,6}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) >= 100 && Number(value) <= 200_000, { error: "rowsOutOfRange" })
+  .transform((value) => String(Number(value)));
+
+/** Whole minutes, 0 to 1440 (a day); 0 is off. */
+const minutes = z
+  .string()
+  .trim()
+  .regex(/^\d{1,4}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) <= 1440, { error: "minutesOutOfRange" })
   .transform((value) => String(Number(value)));
 
 export const parametersInputSchema = z
@@ -64,12 +97,22 @@ export const parametersInputSchema = z
     customerCodePrefix: codePrefix,
     contractCodePrefix: codePrefix,
     employeeCodePrefix: codePrefix,
-    taskDueSoonHours: hours,
+    taskReminderHours: reminderHours,
     recareDays: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
+    receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
+    exportRowLimit: rows,
+    reclaimMinutes: minutes,
+    consultingWindowStart: timeOfDay,
+    consultingWindowEnd: timeOfDay,
+    stepGraceMinutes: minutes,
   })
   .refine((value) => value.calendarDayEnd > value.calendarDayStart, {
     path: ["calendarDayEnd"],
+    error: "endTimeNotAfterStart",
+  })
+  .refine((value) => value.consultingWindowEnd > value.consultingWindowStart, {
+    path: ["consultingWindowEnd"],
     error: "endTimeNotAfterStart",
   });
 
@@ -81,9 +124,15 @@ export const parametersSchema = z
     customerCodePrefix: z.string(),
     contractCodePrefix: z.string(),
     employeeCodePrefix: z.string(),
-    taskDueSoonHours: z.string(),
+    taskReminderHours: z.string(),
     recareDays: z.string(),
     studioDepartmentId: z.string(),
+    receptionDepartmentId: z.string(),
+    exportRowLimit: z.string(),
+    reclaimMinutes: z.string(),
+    consultingWindowStart: z.string(),
+    consultingWindowEnd: z.string(),
+    stepGraceMinutes: z.string(),
   })
   .meta({ id: "Parameters" });
 

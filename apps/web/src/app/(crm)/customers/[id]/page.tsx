@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
-import { BanknoteIcon, CalendarIcon, FileTextIcon } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
+import { countryName } from "@flow/shared/countries";
+import { BanknoteIcon, CalendarIcon, FileTextIcon, MessagesSquareIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
@@ -16,11 +17,13 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/auth/current-user";
-import { getCustomer } from "@/lib/api/customers";
-import { getIntakeHistory } from "@/lib/api/leads";
+import { getCustomer, listCustomerStaff } from "@/lib/api/customers";
+import { getLeadChecklist, getLeadTimeline } from "@/lib/api/leads";
 import { listContracts } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
+import { listCustomerEmails } from "@/lib/api/mail";
+import { CustomerEmails } from "./customer-emails";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
 import { CreateContractButton } from "../../contracts/contract-buttons";
@@ -28,6 +31,7 @@ import { PaymentsTable } from "../../finance/payments";
 import { ContractsTable } from "../../contracts/contracts-table";
 import { EditCustomerButton } from "../customer-sheets";
 import { LeadTimeline } from "../../leads/lead-timeline";
+import { ChecklistSteps } from "../../leads/lead-checklist";
 import { MergePersonButton } from "../../leads/merge-person";
 
 async function loadCustomer(user: CurrentUser, id: string) {
@@ -54,6 +58,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
   if (!can(user, "customer.view")) return <ForbiddenState />;
   const customer = await loadCustomer(user, (await params).id);
   const t = await getTranslations("customers");
+  const locale = await getLocale();
   const tVisit = await getTranslations("visit");
   const tc = await getTranslations("contracts");
   const canSeeContracts = can(user, "contract.view");
@@ -67,6 +72,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
       ])
     : [null, null, null];
   const payments = can(user, "payment.view") ? await listPayments({ customerId: customer.id, pageSize: 100 }) : null;
+  const emails = await listCustomerEmails(customer.id, { pageSize: 100 });
 
   const details: { label: string; value: React.ReactNode }[] = [
     { label: t("fields.customerCode"), value: <span className="font-mono">{customer.customerCode}</span> },
@@ -77,7 +83,36 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
       label: t("fields.dateOfBirth"),
       value: customer.dateOfBirth && <DateTime value={customer.dateOfBirth} format="dateOnly" />,
     },
-    { label: t("fields.nationality"), value: customer.nationality },
+    {
+      label: t("fields.nationality"),
+      value: customer.countryCode ? countryName(customer.countryCode, locale) : customer.nationality,
+    },
+    {
+      label: t("fields.address"),
+      value: customer.maskedFields.includes("address") ? (
+        <HiddenValue />
+      ) : (
+        customer.address && <span className="whitespace-pre-line">{customer.address}</span>
+      ),
+    },
+    {
+      label: t("fields.emergencyContact"),
+      value: customer.maskedFields.includes("address") ? (
+        <HiddenValue />
+      ) : (
+        [customer.emergencyContactName, customer.emergencyContactPhone].filter(Boolean).join(" · ")
+      ),
+    },
+    {
+      label: t("fields.customerGroup"),
+      value: customer.customerGroup && (
+        <>
+          {user.locale === "vi" ? customer.customerGroup.labelVi : customer.customerGroup.labelEn}
+          {customer.customerGroup.note && `: ${customer.customerGroup.note}`}
+        </>
+      ),
+    },
+    { label: t("fields.staffInCharge"), value: customer.staffInCharge?.name },
     // D-042: hidden from roles that may not see them; only the type shows then.
     {
       label: t("fields.idDocument"),
@@ -113,8 +148,9 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     },
   ];
 
-  // BR-202: when the person wrote again or a duplicate record was merged into this one.
-  const intake = can(user, "lead.view") ? (await getIntakeHistory(customer.id)).items : [];
+  // The Consulting history tab (A-076): the lead's timeline with notes, inquiries, and merges (BR-202), and its checklist.
+  const consulting = can(user, "lead.view") ? await loadConsulting(customer.id) : null;
+  const staff = can(user, "customer.manage") ? await listCustomerStaff() : [];
 
   // Brief §8.2: a task about this customer.
   const assignees = can(user, "task.create") ? await getTaskAssignees() : null;
@@ -138,7 +174,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
                 person={{ id: customer.id, fullName: customer.fullName, code: customer.customerCode }}
               />
             )}
-            {can(user, "customer.manage") && <EditCustomerButton customer={customer} />}
+            {can(user, "customer.manage") && <EditCustomerButton customer={customer} staff={staff} />}
           </>
         }
       />
@@ -165,6 +201,8 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           {canSeeContracts && <TabsTrigger value="contracts">{t("tabs.contracts")}</TabsTrigger>}
           {canSeeBookings && <TabsTrigger value="bookings">{t("tabs.bookings")}</TabsTrigger>}
           {payments && <TabsTrigger value="payments">{t("tabs.payments")}</TabsTrigger>}
+          {consulting && <TabsTrigger value="consulting">{t("tabs.consulting")}</TabsTrigger>}
+          <TabsTrigger value="emails">{t("tabs.emails")}</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
           <Card className="max-w-3xl">
@@ -184,18 +222,6 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
               </dl>
             </CardContent>
           </Card>
-          {intake.length > 0 && (
-            <Card className="mt-4 max-w-3xl" role="region" aria-label={t("intakeHistory")}>
-              <CardHeader>
-                <CardTitle>
-                  <h2>{t("intakeHistory")}</h2>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LeadTimeline entries={intake} />
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
         {contracts && (
           <TabsContent value="contracts" className="space-y-4">
@@ -242,9 +268,48 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
             />
           </TabsContent>
         )}
+        {consulting && (
+          <TabsContent value="consulting" className="space-y-4">
+            {consulting.timeline.length === 0 ? (
+              <EmptyState icon={MessagesSquareIcon} title={t("consulting.empty")} />
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card role="region" aria-label={t("consulting.timeline")}>
+                  <CardHeader>
+                    <CardTitle>
+                      <h2>{t("consulting.timeline")}</h2>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <LeadTimeline entries={consulting.timeline} />
+                  </CardContent>
+                </Card>
+                <Card role="region" aria-label={t("consulting.checklist")}>
+                  <CardHeader>
+                    <CardTitle>
+                      <h2>{t("consulting.checklist")}</h2>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChecklistSteps lead={null} steps={consulting.checklist} canComplete={false} />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        )}
+        <TabsContent value="emails">
+          <CustomerEmails emails={emails.items} />
+        </TabsContent>
       </Tabs>
     </>
   );
+}
+
+/** A customer who never was a lead has no history; the timeline then comes back empty. */
+async function loadConsulting(id: string) {
+  const [timeline, checklist] = await Promise.all([getLeadTimeline(id), getLeadChecklist(id)]);
+  return { timeline: timeline.items, checklist: checklist.items };
 }
 
 async function NotProvided() {

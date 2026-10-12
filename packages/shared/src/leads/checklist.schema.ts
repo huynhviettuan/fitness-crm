@@ -40,8 +40,11 @@ export type ResultEffect = (typeof RESULT_EFFECTS)[number];
 export const STEP_ACTIONS = ["STUDIO_TASK"] as const;
 export type StepAction = (typeof STEP_ACTIONS)[number];
 
-/** A step is waiting for its trigger, open with a deadline, or done. */
-export const STEP_STATES = ["WAITING", "OPEN", "DONE"] as const;
+/**
+ * A step is waiting for its trigger, open with a deadline, done, or locked as "Không thực hiện" (D-054):
+ * its deadline and the grace period passed, so nobody can tick it to make the process look right.
+ */
+export const STEP_STATES = ["WAITING", "OPEN", "DONE", "NOT_DONE"] as const;
 export type StepState = (typeof STEP_STATES)[number];
 
 /** A done step was done by its deadline or after it (brief §4.1 audit; "skipped" is M3). */
@@ -166,6 +169,16 @@ export const stepCompleteSchema = z.object({
     .transform(emptyToNull)
     .prefault(""),
 });
+
+/**
+ * Removing the tick of a step (D-054): only admin, with a reason from "stepReopenReasons" ("Khác" with a note).
+ * The step is open again; the tick, who made it, and the removal stay in the history.
+ */
+export const stepReopenSchema = z.object({
+  reasonId: z.uuid({ error: "required" }),
+  reasonNote: optionNote,
+});
+export type StepReopenInput = z.input<typeof stepReopenSchema>;
 
 export const todayStepsQuerySchema = z.object({
   /** Mine: leads in my charge; all: every lead I may see. */

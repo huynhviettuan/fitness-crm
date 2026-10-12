@@ -43,7 +43,9 @@ export function present(actor: Actor, lead: repo.LeadRecord): Lead {
   const maskedFields: Lead["maskedFields"] = [];
   if (isMasked(actor, "customer.phone")) maskedFields.push("phone");
   if (isMasked(actor, "customer.email")) maskedFields.push("email");
-  const option = <T extends { id: string; labelVi: string; labelEn: string; isOther: boolean } | null>(
+  const option = <
+    T extends { id: string; labelVi: string; labelEn: string; code: string | null; isOther: boolean } | null,
+  >(
     value: T,
     note: string | null,
   ) => (value ? chosen(value, note) : null);
@@ -65,14 +67,16 @@ export function present(actor: Actor, lead: repo.LeadRecord): Lead {
     phone: maskedFields.includes("phone") ? null : lead.phone,
     email: maskedFields.includes("email") ? null : lead.email,
     channel: chosen(
-      lead.channel ?? { id: lead.channelId ?? "", labelVi: "", labelEn: "", isOther: false },
+      lead.channel ?? { id: lead.channelId ?? "", labelVi: "", labelEn: "", code: null, isOther: false },
       lead.channelNote,
     ),
     source: option(lead.source, lead.sourceNote),
     sourceType: lead.sourceType,
     sourceDetail: lead.sourceDetail,
+    countryCode: lead.countryCode,
     nationalityGroup: lead.nationalityGroup,
     needGroup: option(lead.needGroup, lead.needGroupNote),
+    needDetailOption: option(lead.needDetailOption, null),
     needDetail: lead.needDetail,
     painStatus: option(lead.painStatus, lead.painStatusNote),
     assessmentType: option(lead.assessmentType, lead.assessmentTypeNote),

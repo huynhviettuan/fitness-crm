@@ -113,6 +113,11 @@ export function OptionsTable({
     },
     { id: "labelEn", header: t("fields.labelEn"), cell: ({ row }) => row.original.labelEn },
     {
+      id: "code",
+      header: t("fields.code"),
+      cell: ({ row }) => <span className="font-mono text-sm">{row.original.code}</span>,
+    },
+    {
       id: "status",
       header: t("fields.status"),
       cell: ({ row }) => <StatusBadge entity="option" status={row.original.active ? "ACTIVE" : "INACTIVE"} />,
@@ -176,7 +181,7 @@ export function OtherNotesTable({ notes }: { notes: OtherNote[] }) {
   );
 }
 
-type OptionFormValues = { labelVi: string; labelEn: string; active: boolean };
+type OptionFormValues = { labelVi: string; labelEn: string; code: string; active: boolean };
 
 function OptionDialog({
   listKey,
@@ -192,7 +197,12 @@ function OptionDialog({
   const { pending, run } = useSubmit();
   const form = useForm<OptionFormValues>({
     resolver: zodResolver(optionInputSchema, undefined, { raw: true }) as never,
-    defaultValues: { labelVi: option?.labelVi ?? "", labelEn: option?.labelEn ?? "", active: option?.active ?? true },
+    defaultValues: {
+      labelVi: option?.labelVi ?? "",
+      labelEn: option?.labelEn ?? "",
+      code: option?.code ?? "",
+      active: option?.active ?? true,
+    },
   });
 
   const done = (message: string) => {
@@ -226,6 +236,15 @@ function OptionDialog({
           <FieldGroup>
             <TextField control={form.control} name="labelVi" label={t("options.fields.labelVi")} autoComplete="off" />
             <TextField control={form.control} name="labelEn" label={t("options.fields.labelEn")} autoComplete="off" />
+            {!option?.isOther && (
+              <TextField
+                control={form.control}
+                name="code"
+                label={t("options.fields.code")}
+                description={t("options.codeHint")}
+                autoComplete="off"
+              />
+            )}
             {option && !option.isOther && (
               <SwitchField control={form.control} name="active" label={t("options.fields.active")} />
             )}

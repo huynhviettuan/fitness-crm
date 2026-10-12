@@ -8,6 +8,7 @@ test.describe("signing in", () => {
     await loginPage.signIn(E2E_USERS.ADMIN.email, E2E_PASSWORD);
 
     await expect(shell.pageHeading(labels.dashboard.title)).toBeVisible();
+    await shell.expandNav();
     await expect(shell.navLink(labels.nav.users)).toBeVisible();
   });
 

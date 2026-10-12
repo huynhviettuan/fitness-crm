@@ -1,5 +1,5 @@
 import { prisma } from "../../src/platform/db/prisma.js";
-import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS } from "./factories.js";
+import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS, SEEDED_SCRIPTS } from "./factories.js";
 
 /**
  * Removes every row the tests created. Called from the integration tests' teardown
@@ -19,9 +19,19 @@ export async function resetDatabase(): Promise<void> {
   // Options and parameters back to the migration's initial configuration.
   await prisma.option.deleteMany({ where: { id: { notIn: SEEDED_OPTIONS.map((option) => option.id) } } });
   for (const { id, ...initial } of SEEDED_OPTIONS) {
-    await prisma.option.update({ where: { id }, data: initial });
+    await prisma.option.update({ where: { id }, data: { ...initial, code: null } });
   }
   await prisma.systemParameter.deleteMany();
+  // The audit criteria back to all on with weight 1 (A-083).
+  await prisma.auditCriterion.updateMany({ data: { active: true, weight: 1 } });
+  // The script library back to the migration's 12 empty situations (A-072).
+  await prisma.consultingScript.deleteMany({ where: { id: { notIn: SEEDED_SCRIPTS.map((script) => script.id) } } });
+  for (const { id, situationVi, sortOrder } of SEEDED_SCRIPTS) {
+    await prisma.consultingScript.update({
+      where: { id },
+      data: { situationVi, sortOrder, active: true, answerVi: null, answerEn: null },
+    });
+  }
   // The approval matrix back to the migration's (09_RBAC.md).
   for (const { action, required, approvers } of SEEDED_APPROVAL_RULES) {
     await prisma.approvalRule.update({ where: { actionType: action }, data: { required, overdueHours: 24 } });

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,11 +14,18 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
 import { getLead, getLeadChecklist, getLeadTimeline, listLeadAssignees } from "@/lib/api/leads";
+import { listScripts } from "@/lib/api/scripts";
+import { getLeadAudit, listManagerAudits } from "@/lib/api/lead-audit";
+import { countryName } from "@flow/shared/countries";
 import { isRecareStatus } from "@flow/shared/leads";
 import type { ChosenOption } from "@flow/shared/options";
 import { EditLeadButton } from "../lead-form";
 import { AssignLeadButton, ChangeStatusButton } from "../lead-journey";
 import { LeadTimeline } from "../lead-timeline";
+import { AddLeadNote } from "../lead-notes";
+import { ScriptsPanel } from "../lead-scripts";
+import { LeadAuditCard } from "../lead-audit-card";
+import { ManagerAuditPanel } from "../manager-audit";
 import { ChecklistSteps } from "../lead-checklist";
 import { MergePersonButton } from "../merge-person";
 import { NoShowButton, ShowButton } from "../lead-visit";
@@ -48,15 +55,23 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
   if (!can(user, "lead.view")) return <ForbiddenState />;
 
   const t = await getTranslations("leads");
+  const locale = await getLocale();
+  const tAudit = await getTranslations("leadAudit");
   const lead = await loadLead((await params).id);
-  const [timeline, assignees, checklist] = await Promise.all([
+  const [timeline, assignees, checklist, scripts, audit, managerAudits] = await Promise.all([
     getLeadTimeline(lead.id),
     can(user, "lead.assign") ? listLeadAssignees(lead.id) : null,
     getLeadChecklist(lead.id),
+    listScripts(),
+    // The automatic audit is for managers (A-084).
+    can(user, "lead.audit") ? getLeadAudit(lead.id) : null,
+    // Whoever sees the lead sees the manager's grades (A-086).
+    listManagerAudits(lead.id),
   ]);
   const chosen = (option: ChosenOption | null) => {
     if (!option) return null;
-    const label = user.locale === "vi" ? option.labelVi : option.labelEn;
+    const name = user.locale === "vi" ? option.labelVi : option.labelEn;
+    const label = option.code ? `${option.code} · ${name}` : name;
     return option.note ? `${label}: ${option.note}` : label;
   };
   const masked = (field: "phone" | "email", value: string | null) =>
@@ -99,15 +114,23 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
     { label: t("fields.needGroup"), value: chosen(lead.needGroup) },
     {
       label: t("fields.needDetail"),
-      value: lead.needDetail && <span className="whitespace-pre-line">{lead.needDetail}</span>,
+      value: (lead.needDetailOption || lead.needDetail) && (
+        <span className="whitespace-pre-line">
+          {[chosen(lead.needDetailOption), lead.needDetail].filter(Boolean).join(": ")}
+        </span>
+      ),
     },
     { label: t("fields.painStatus"), value: chosen(lead.painStatus) },
     { label: t("fields.assessmentType"), value: chosen(lead.assessmentType) },
     { label: t("fields.gender"), value: lead.gender && t(`genders.${lead.gender}`) },
     { label: t("fields.birthDate"), value: lead.birthDate && <DateTime value={lead.birthDate} format="dateOnly" /> },
     {
-      label: t("fields.nationalityGroup"),
-      value: lead.nationalityGroup && t(`nationalityGroups.${lead.nationalityGroup}`),
+      label: t("fields.country"),
+      value: lead.countryCode ? (
+        countryName(lead.countryCode, locale)
+      ) : lead.nationalityGroup === "FOREIGN" ? (
+        <span className="text-warning">{t("countryMissing")}</span>
+      ) : null,
     },
     { label: t("fields.notes"), value: lead.notes && <span className="whitespace-pre-line">{lead.notes}</span> },
   ];
@@ -135,6 +158,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
         description={lead.leadCode}
         actions={
           <>
+            <ScriptsPanel scripts={scripts} nationalityGroup={lead.nationalityGroup} />
             {can(user, "lead.merge") && (
               <MergePersonButton person={{ id: lead.id, fullName: lead.fullName, code: lead.leadCode }} />
             )}
@@ -164,6 +188,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
             <CardTitle>{t("history")}</CardTitle>
           </CardHeader>
           <CardContent>
+            {can(user, "lead.manage") && <AddLeadNote leadId={lead.id} />}
             <LeadTimeline entries={timeline.items} />
           </CardContent>
         </Card>
@@ -172,9 +197,37 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
             <CardTitle>{t("checklist")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChecklistSteps lead={lead} steps={checklist.items} canComplete={can(user, "lead.manage")} />
+            <ChecklistSteps
+              lead={lead}
+              steps={checklist.items}
+              canComplete={can(user, "lead.manage")}
+              canUntick={can(user, "lead.untick")}
+            />
           </CardContent>
         </Card>
+        <Card role="region" aria-label={tAudit("manager.title")}>
+          <CardHeader>
+            <CardTitle>{tAudit("manager.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ManagerAuditPanel
+              leadId={lead.id}
+              leadName={lead.fullName}
+              audits={managerAudits}
+              canGrade={can(user, "lead.audit")}
+            />
+          </CardContent>
+        </Card>
+        {audit && (
+          <Card role="region" aria-label={tAudit("tab.title")} className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>{tAudit("tab.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LeadAuditCard audit={audit} />
+            </CardContent>
+          </Card>
+        )}
         <Card role="region" aria-label={t("profile")}>
           <CardHeader>
             <CardTitle>{t("profile")}</CardTitle>

@@ -9,8 +9,20 @@ export const PERMISSION_GROUPS = {
   configuration: ["config.manage"],
   history: ["audit.view", "trash.view"],
   // Leads and consulting (brief §4.1): seeing, adding, and working leads; reassigning them
-  // (managers); and receiving new leads round-robin (consultants, BR-203); merging two records of one person (managers, A-065).
-  leads: ["lead.view", "lead.create", "lead.manage", "lead.assign", "lead.receive", "lead.merge"],
+  // (managers); and receiving new leads round-robin (consultants, BR-203); merging two records of one person (managers, A-065);
+  // managing the script library (managers, A-072); the automatic consulting audit (managers, A-084); and
+  // removing a wrong tick of a consulting step (Admin only, D-054).
+  leads: [
+    "lead.view",
+    "lead.create",
+    "lead.manage",
+    "lead.assign",
+    "lead.receive",
+    "lead.merge",
+    "script.manage",
+    "lead.audit",
+    "lead.untick",
+  ],
   customers: ["customer.view", "customer.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
@@ -18,6 +30,20 @@ export const PERMISSION_GROUPS = {
   employees: ["employee.view", "employee.manage"],
   // Giao việc (brief §8.2): every default role works and assigns tasks (09_RBAC.md).
   tasks: ["task.view", "task.create"],
+  // Export to Excel, one per list (brief §2, A-077): needed in addition to seeing the list.
+  exports: [
+    "user.export",
+    "customer.export",
+    "lead.export",
+    "contract.export",
+    "payment.export",
+    "cash.export",
+    "task.export",
+    "audit.export",
+    "trash.export",
+  ],
+  // Reports (brief §9, D-041, A-093): each report and its export is its own permission.
+  reports: ["report.consulting", "report.consultingExport", "report.leadAnalysis", "report.leadAnalysisExport"],
   // Deleting vouchers is its own permission (09_RBAC.md, D-035).
   cashbook: ["payment.view", "payment.record", "payment.delete", "cash.manage", "cash.delete"],
 } as const;
@@ -53,6 +79,8 @@ export type DataScope = (typeof DATA_SCOPES)[number];
 export const MASKABLE_FIELDS = [
   "customer.phone",
   "customer.email",
+  // The address and the emergency contact together (A-069).
+  "customer.address",
   "customer.idDocument",
   "customer.health",
   "receipts.totals",

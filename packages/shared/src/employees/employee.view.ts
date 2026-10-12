@@ -6,6 +6,11 @@ import { EMPLOYEE_STATUSES, GENDERS } from "./employee.schema.js";
 
 // Response shapes: wire format in, Date objects out (see validation/codecs.ts).
 
+/** How other records refer to an employee, e.g. a booking to its trainer. */
+export const employeeRefSchema = z
+  .object({ id: z.uuid(), employeeCode: z.string(), fullName: z.string() })
+  .meta({ id: "EmployeeRef" });
+
 export const employeeSchema = z
   .object({
     id: z.uuid(),
@@ -20,6 +25,8 @@ export const employeeSchema = z
     department: chosenOptionSchema.nullable(),
     team: z.string().nullable(),
     title: chosenOptionSchema.nullable(),
+    /** The direct manager (D-046). */
+    manager: employeeRefSchema.nullable(),
     status: z.enum(EMPLOYEE_STATUSES),
     isTrainer: z.boolean(),
     /** The linked login (brief §8.4), if any. */
@@ -28,11 +35,6 @@ export const employeeSchema = z
   .meta({ id: "Employee" });
 
 export const employeePageSchema = pageOf(employeeSchema).meta({ id: "EmployeePage" });
-
-/** How other records refer to an employee, e.g. a booking to its trainer. */
-export const employeeRefSchema = z
-  .object({ id: z.uuid(), employeeCode: z.string(), fullName: z.string() })
-  .meta({ id: "EmployeeRef" });
 
 /** A login that can be linked to an employee, and the employee it is linked to. */
 export const employeeLoginSchema = z

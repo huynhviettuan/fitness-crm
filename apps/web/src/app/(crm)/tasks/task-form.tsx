@@ -21,7 +21,13 @@ import { SelectField, TextField, applyFieldErrors } from "@/components/form-fiel
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDateOnly, formatTime } from "@/lib/format";
-import { TASK_PRIORITIES, type TaskAssignees, type TaskDetail, type TaskEntityType } from "@flow/shared/tasks";
+import {
+  TASK_PRIORITIES,
+  formatReminderHours,
+  type TaskAssignees,
+  type TaskDetail,
+  type TaskEntityType,
+} from "@flow/shared/tasks";
 import { calendarDate, calendarDateInTimeZone, timeOfDay } from "@flow/shared/validation";
 import { createTaskAction, updateTaskAction } from "./actions";
 
@@ -43,6 +49,7 @@ const formSchema = z
     dueDate: calendarDate,
     dueTime: timeOfDay,
     priority: z.enum(TASK_PRIORITIES),
+    reminders: z.string(),
   })
   .superRefine((value, ctx) => {
     const field = value.assignTo === PERSON ? "assigneeUserId" : "assigneeDepartmentId";
@@ -59,6 +66,7 @@ type FormValues = {
   dueDate: string;
   dueTime: string;
   priority: (typeof TASK_PRIORITIES)[number];
+  reminders: string;
 };
 
 type DialogProps = {
@@ -164,6 +172,7 @@ function TaskForm({
       dueDate: task ? formatDateOnly(calendarDateInTimeZone(timeZone, task.dueAt)) : "",
       dueTime: task ? formatTime(task.dueAt, timeZone) : "17:00",
       priority: task?.priority ?? "NORMAL",
+      reminders: task?.reminderMinutes ? formatReminderHours(task.reminderMinutes) : "",
     },
   });
   const assignTo = useWatch({ control: form.control, name: "assignTo" });
@@ -261,6 +270,14 @@ function TaskForm({
             value: priority,
             label: t(`status.taskPriority.${priority}`),
           }))}
+        />
+        <TextField
+          control={form.control}
+          name="reminders"
+          label={f("reminders")}
+          description={t("tasks.remindersHint")}
+          placeholder={t("tasks.remindersPlaceholder")}
+          autoComplete="off"
         />
       </FieldGroup>
       <DialogFooter>

@@ -1,10 +1,10 @@
-<!-- Customer brief v2 (detailed), converted verbatim from 'Brief CRM Flow Fitness – Bản hoàn chỉnh.docx' (10/10/2026, @Ka). Source of truth for docs 00–27; cite as brief §n. Do not edit except to replace with a newer brief. -->
+<!-- Customer brief v2 (detailed), converted from 'Brief CRM Flow Fitness – Bản hoàn chỉnh (1).docx' (first issued 10/10/2026, updated 12/10/2026, @Ka). Source of truth for docs 00–28; cite as brief §n. Do not edit except to replace with a newer brief. -->
 
 # Brief CRM Flow Fitness – Bản hoàn chỉnh
 
 Oct 10, 2026 · @Ka
 
-Tài liệu này giao cho developer xây hệ thống CRM riêng của Flow Fitness, thay GymMaster, gồm 12 phân hệ trong giai đoạn 1. Nó thay thế bản brief trước và gom mọi quyết định đã chốt.
+Tài liệu này giao cho developer xây hệ thống CRM riêng của Flow Fitness, thay GymMaster, gồm 12 phân hệ trong giai đoạn 1. Nó thay thế bản brief trước và gom mọi quyết định đã chốt. Cập nhật ngày 12/10/2026 theo phản hồi báo cáo tiến độ ngày 11/10: hạ tầng email, lịch PT mở toàn thời gian, chia và chuyển lượt lead, khóa checklist, cơ cấu tổ chức, thông báo nhân viên và sẵn sàng tích hợp máy vân tay.
 
 ## 1. Tổng quan, phạm vi và nguyên tắc
 
@@ -37,11 +37,11 @@ Lý do tự xây: chủ động dữ liệu khách hàng, kiểm soát chi phí 
 | Giáo án | Danh mục, template, giáo án của khách, nhật ký buổi tập, Flag, Action, escalation | 7 |
 | Sổ quỹ | Phiếu thu, phiếu chi, công nợ, chi trả HLV | 8 |
 | Giao việc | Giao và theo dõi công việc trong và liên phòng ban | 8 |
-| Email cho khách | Thông báo tự động khi số buổi thay đổi và các sự kiện khác | 8 |
+| Email cho khách | Hạ tầng gửi email tự động cho mọi thao tác ảnh hưởng quyền lợi khách; email và thông báo điện thoại cho nhân viên | 8 |
 | Dashboard và báo cáo | Tư vấn, giáo án, hợp đồng, session, thu chi | 9 |
 
 
-Ngoài phạm vi giai đoạn 1: Pro Shop, tủ đồ, khăn tập, hợp đồng Loyalty và tích điểm, thẻ ngày, tích hợp máy vân tay, app cho hội viên, Zalo OA, kế toán thuế và hóa đơn điện tử, các module ERP khác (bán lẻ, kho, nhân sự - lương). Thiết kế dữ liệu theo module để gắn thêm sau mà không phải viết lại.
+Ngoài phạm vi giai đoạn 1: Pro Shop, tủ đồ, khăn tập, hợp đồng Loyalty và tích điểm, thẻ ngày, gắn máy vân tay (giai đoạn 1 xây sẵn dữ liệu, luồng và API theo mục 6.6), app cho hội viên, Zalo OA, kế toán thuế và hóa đơn điện tử, các module ERP khác (bán lẻ, kho, nhân sự - lương). Thiết kế dữ liệu theo module để gắn thêm sau mà không phải viết lại.
 
 ### Nguyên tắc thiết kế: luồng cố định, giá trị mở
 
@@ -74,8 +74,8 @@ Mỗi nhân sự chỉ thấy và dùng đúng những phân hệ được cho p
 |---|---|---|
 | Quản trị hệ thống (admin) | Toàn quyền cấu hình, check-in buổi tập, xóa, xem Thùng rác, mọi báo cáo | Tất cả chi nhánh |
 | Fitness Manager (quản lý) | Nhận lead mới và escalation, phân bổ lại lead, audit tư vấn, duyệt hợp đồng và giá ngoại lệ, nhận việc "báo Studio" | Chi nhánh được gán |
-| Master (coach chính) | Xem và đánh giá giáo án của mọi PT, xử lý escalation, xem dashboard giáo án | Chi nhánh được gán |
-| Consulting (tư vấn / sale) | Xử lý lead được phân bổ theo hành trình tư vấn, tạo hợp đồng chờ duyệt | Chỉ lead và khách của mình |
+| Master (coach chính) | Xem và đánh giá giáo án của mọi PT, xử lý escalation, xem dashboard giáo án. Admin giữ vai trò này trước, sau đó cấp cho Studio Manager | Chi nhánh được gán |
+| Consulting (tư vấn / sale) | Xử lý lead được phân bổ theo hành trình tư vấn, tạo hợp đồng chờ duyệt | Chỉ lead và khách do mình tạo hoặc phụ trách (cấu hình phạm vi dữ liệu của vai trò, admin đổi được) |
 | Huấn luyện viên (PT) | Đặt lịch, soạn giáo án, ghi nhật ký buổi tập, xem báo cáo session của mình | Chỉ khách và lịch của mình |
 | Lễ tân | Tạo lead walk-in, đánh dấu show / no show, hỗ trợ đặt lịch, bổ sung thông tin khách | Chi nhánh được gán |
 | Marketing | Xem báo cáo lead theo kênh và nguồn | Không xem SĐT, giấy tờ |
@@ -111,7 +111,7 @@ Thao tác tạo mới, sửa đổi, điều chỉnh của tài khoản nhân vi
 - Ma trận duyệt do admin cấu hình: với mỗi loại thao tác, admin bật hoặc tắt yêu cầu duyệt, chọn vai trò duyệt, và đặt ngưỡng chuyển lên cấp cao hơn.
 - Người tạo không tự duyệt thao tác của chính mình, kể cả khi có quyền duyệt.
 - Sửa hợp đồng chỉ làm được khi hợp đồng còn Chờ duyệt; sau khi duyệt thì khóa theo mục 5.4.
-- Thao tác chờ duyệt quá thời gian admin đặt thì nhắc người duyệt và báo cấp trên.
+- Thao tác chờ duyệt quá 24 giờ (chỉnh được) thì nhắc người duyệt và báo quản lý trực tiếp của người duyệt theo tuyến báo cáo; người không có quản lý trực tiếp thì báo Admin.
 
 | Nhóm thao tác | Cần duyệt (khởi tạo) | Người duyệt (khởi tạo) |
 |---|---|---|
@@ -119,12 +119,37 @@ Thao tác tạo mới, sửa đổi, điều chỉnh của tài khoản nhân vi
 | Phiếu biến động: gia hạn, nâng cấp, bảo lưu, chuyển nhượng, chuyển chi nhánh, chuyển đổi, hủy | Có | Fitness Manager |
 | Phiếu thu, phiếu chi | Có | Fitness Manager hoặc admin |
 | Xóa bất kỳ dữ liệu nghiệp vụ nào; hủy kích hoạt hợp đồng | Có | Admin |
-| Sửa thông tin định danh của khách (tên, SĐT, email, giấy tờ) | Có | Fitness Manager |
+| Sửa thông tin định danh của khách hàng (tên, SĐT, email, giấy tờ). Sửa của lead thì không cần duyệt | Có | Fitness Manager |
 | Tạo và sửa giáo án, template | Có | Master |
 | Thao tác hằng ngày: nhập lead, tick bước tư vấn, đặt và hủy lịch, ghi nhật ký buổi tập, giao việc | Không | Kiểm soát bằng audit, check-in của admin và nhật ký |
 
 
-Hàng cuối là đề xuất cần chủ đầu tư xác nhận (xem câu hỏi mở); admin bật duyệt cho từng loại thao tác này bất cứ lúc nào.
+Đã chốt: thao tác hằng ngày không duyệt, kiểm soát bằng lịch sử thao tác và cơ chế khóa checklist (mục 4.1); admin vẫn bật duyệt cho từng loại bất cứ lúc nào.
+
+### Cơ cấu tổ chức và tuyến báo cáo
+
+Phòng ban, chức danh và tuyến báo cáo nhập theo sơ đồ "Cơ cấu tổ chức Flow Group 10/2026 (Ver 2)" gửi kèm. Mỗi nhân viên có trường "Quản lý trực tiếp", dùng để báo khi duyệt chậm và để cấp quản lý giao việc cho cấp dưới.
+
+| Phòng ban | Chức danh | Báo cáo cho |
+|---|---|---|
+| Ban điều hành | CEO | – |
+| Ban điều hành | Trợ lý CEO | CEO |
+| Studio | Studio Manager / Master | CEO |
+| Studio | Operation Coordinator, Client Care | Studio Manager / Master |
+| Studio | Coach Leader | Studio Manager / Master |
+| Studio | Coach Advance, Coach Junior, Coach Rookie | Coach Leader |
+| Marketing | Marketing Manager | CEO |
+| Marketing | Content / Branding; Content Creator / Ads Performance; Media; Growth / Performance | Marketing Manager |
+| Marketing | Content Creator / Branding (Flow Fitness, Flow Store); Media (Flow Fitness, Flow Store) | Trưởng nhóm tương ứng |
+| Marketing | Direct Sale / Online Flow Fitness; Sale Flow Store | Growth / Performance |
+| Finance | Kế toán trưởng | CEO |
+| Finance | Kế toán Flow Fitness, Kế toán Flow Store | Kế toán trưởng |
+| Finance | Dòng tiền Store, Kho | Kế toán Flow Store |
+
+- Chức danh và vai trò là hai thứ riêng: chức danh là vị trí trong sơ đồ, vai trò là bộ quyền. Ghép khởi tạo: CEO → Quản trị hệ thống; Studio Manager / Master → Fitness Manager; Coach các cấp → Huấn luyện viên; Operation Coordinator, Client Care → Lễ tân; Direct Sale / Online Flow Fitness → Consulting; nhóm Marketing → Marketing; Kế toán → Kế toán.
+- Giao việc: mọi nhân viên giao được việc cho đồng nghiệp cùng phòng ban và cho phòng ban khác; cấp quản lý giao được cho cấp dưới. Admin chỉnh được trong phân quyền.
+- Agency là đơn vị ngoài, chưa tạo tài khoản. Chức danh Flow Store được nhập sẵn cho module bán lẻ sau này, chưa cần tài khoản.
+- Quy mô 12 tháng tới: 2 chi nhánh, 20 – 30 tài khoản nhân viên.
 
 ## 3. Hành trình khách hàng
 
@@ -166,8 +191,11 @@ Phân hệ này thay file Excel "CRM Flow Fitness - MKT" đang nhập tay, giữ
 Thu và phân bổ lead
 - Nguồn vào: tin nhắn từ các kênh qua API hoặc webhook; walk-in và các kênh chưa tích hợp nhập tay bằng form nhanh.
 - Tách hai khái niệm: Kênh liên hệ (khách nhắn qua đâu) và Nguồn lead (khách biết Flow từ đâu), kèm phân loại Organic / Paid và chi tiết nguồn.
-- Phân bổ tự động: chia lượt xoay vòng cho nhân sự tư vấn đang hoạt động trong chi nhánh; quản lý phân bổ lại được bằng tay.
+- Phân bổ tự động: chia lượt xoay vòng có tỷ trọng. Mỗi tư vấn viên có hệ số lượt do admin đặt (khởi tạo 1); ví dụ full-time hệ số 2, part-time hệ số 1 thì trong mỗi vòng 3 lead, người full-time nhận 2. Chỉ chia cho người đang trong giờ làm và đang bật nhận lead; admin tạm tắt nhận lead cho từng người. Bộ quy tắc chia thiết kế để sau này thêm điều kiện theo kênh hoặc ngôn ngữ. Quản lý vẫn phân bổ lại được bằng tay.
 - Thông báo: quản lý nhận thông báo khi có lead mới; người tư vấn nhận thông báo khi được gán.
+- Trường bắt buộc khi tạo lead: họ tên và kênh liên hệ. Số điện thoại bổ sung sau, vì nhiều khách nhắn qua mạng xã hội chưa để lại số. Chặn trùng chỉ chạy khi có SĐT; khi trùng, tư vấn viên mở được hồ sơ cũ để chăm sóc tiếp theo quyền được cấp.
+- Tự động chuyển lượt: lead không được chăm sóc (bước đầu tiên chưa hoàn thành) trong 1 giờ thì chuyển sang tư vấn viên kế tiếp theo quy tắc chia lượt. Chỉ tính giờ trong khung làm việc của tư vấn, khởi tạo 08:30 – 20:30; ngoài khung lead chờ, không bị chuyển. Ví dụ lead vào lúc 20:00 còn 30 phút đến 20:30, sáng hôm sau chạy tiếp 30 phút còn lại từ 08:30. Thời hạn và khung giờ là tham số admin chỉnh được.
+- Lưu vết chuyển lượt: mỗi lần tự chuyển ghi lead nào, từ ai sang ai, lúc nào, đã chờ bao lâu. Người cũ nhận thông báo. Dashboard tư vấn đếm số lần bị chuyển lượt của từng người để đánh giá mức độ sát sao.
 
 Hồ sơ lead
 
@@ -176,7 +204,7 @@ Hồ sơ lead
 | Cơ bản | Ngày, người phụ trách (PIC), họ tên, giới tính, ngày sinh, SĐT, email | Giới tính: Nam, Nữ |
 | Kênh liên hệ | Kênh khách nhắn đến | WhatsApp, Messenger, Zalo, Gọi điện, Instagram, Threads, TikTok, Gmail, Khách tự tìm đến Flow |
 | Nguồn lead | Nguồn, phân loại, chi tiết nguồn | Website, Fanpage, Google Ads, Instagram, Threads, TikTok, Người quen, ChatGPT, Google Maps; Organic / Paid |
-| Quốc tịch | Nhóm quốc tịch | Việt Nam, Nước ngoài |
+| Quốc tịch | Quốc gia (danh sách các nước theo chuẩn ISO 3166); nhóm Việt Nam / Nước ngoài và ngôn ngữ email tự suy ra | Việt Nam, Nước ngoài |
 | Nhu cầu | Nhóm nhu cầu, chi tiết nhu cầu (văn bản) | 1 - Body Transformation; 2 - Pain Relief & Better Movement; 3 - Energy, Longevity & Performance; 4 - Group Class; Khác |
 | Phân loại cơn đau | Pain Status | No; 2.1 (Coach); 2.2 (Expert) |
 | Assessment | Loại buổi đánh giá được mời | Physical Assessment, Pain Assessment |
@@ -207,6 +235,9 @@ Mỗi lead có một checklist các bước. Hệ thống tự tạo việc cầ
 - Kết quả mỗi bước là drop-down: người tư vấn chọn kết quả từ danh sách đã thiết lập cho bước đó, không gõ tay. Giá trị khởi tạo lấy từ file Excel: "Done" cho các bước tư vấn và nhắc; "Khách xác nhận / Không phản hồi" cho nhắc trước hẹn; "Show / No show"; "Đặt lịch / Từ chối" cho tái chăm sóc.
 - Admin tùy biến cả checklist: thêm, bớt, đổi tên, sắp lại các bước; đặt mốc thời gian và danh sách kết quả cho từng bước; đánh dấu bước nào bắt buộc. Thay đổi chỉ áp dụng cho lead mới, lead đang chạy giữ checklist cũ.
 - Ngày giờ hẹn chọn bằng ô lịch; ghi chú là ô văn bản tùy chọn đi kèm, không thay cho kết quả.
+- Khóa checklist để hành trình phản ánh đúng thực tế: đã tick thì không bỏ tick được, tick nhầm chỉ admin gỡ kèm lý do. Quá hạn mà chưa tick thì trong khoảng gia hạn (admin đặt) vẫn tick được nhưng ghi "Trễ"; hết gia hạn thì bước tự khóa ở trạng thái "Không thực hiện", không ai tick bù được. Thời điểm tick do hệ thống ghi.
+- Mục đích của checklist là đo quy trình, không phải phạt nhân viên. Thiếu bước không có nghĩa là tư vấn viên không hoàn thành nhiệm vụ. Dashboard cho thấy tỷ lệ thực hiện từng bước và tương quan giữa việc làm bước đó với tỷ lệ đặt lịch, show, ký hợp đồng, để biết bước nào dư thừa, bước nào thiếu, rồi chỉnh quy trình.
+- AI hỗ trợ checklist (M11): khi nội dung chat đã vào hệ thống, AI đọc hội thoại và đề xuất các bước đã làm với khách; tư vấn viên xác nhận.
 
 Thư viện kịch bản tư vấn
 - Chuyển sheet "Framework tư vấn chung" thành thư viện mẫu câu trả lời theo tình huống, song ngữ Việt - Anh, quản lý sửa được.
@@ -221,7 +252,7 @@ Màn hình làm việc
 - Danh sách và bảng Kanban theo trạng thái; trang chi tiết lead có checklist bước, dòng thời gian, ghi chú, lịch hẹn.
 - "Việc hôm nay" của từng người tư vấn: các bước đến hạn và quá hạn.
 - Danh sách tái chăm sóc, sắp theo ngày cần liên hệ lại.
-- Nút "Chuyển thành khách hàng" khi Show, yêu cầu nhập đủ CCCD / Passport, ngày sinh, quốc tịch và email.
+- Nút "Chuyển thành khách hàng" khi Show, yêu cầu nhập đủ CCCD / Passport, ngày sinh, quốc gia và email. CCCD / Passport chỉ bắt buộc sau khi phần mã hóa dữ liệu nhạy cảm hoàn thành; trước đó trường này khóa và không lưu.
 
 ### 4.2 Khách hàng
 - Hồ sơ: mã khách, họ tên, SĐT, email (bắt buộc), ngày sinh, giới tính, quốc tịch, giấy tờ, địa chỉ, sức khỏe cơ bản, nhóm khách hàng, kênh liên hệ, nguồn lead, người liên hệ khẩn cấp, nhân viên phụ trách, chi nhánh, ghi chú.
@@ -308,7 +339,7 @@ Lịch là nơi ghi nhận buổi dạy của HLV, trừ buổi trên hợp đ�
 ### 6.1 Lưới lịch PT
 - Lưới theo ngày: mỗi PT một hàng, ô 30 phút, khung giờ khởi tạo 05:00 - 22:00 (admin chỉnh được). Có nút lùi ngày, Hôm nay, tới ngày, và chế độ xem tuần.
 - Bộ lọc: chi nhánh, ngày, huấn luyện viên, khách hàng.
-- Nền ô: xanh lá là khung có thể book; xám là PT không có lịch làm việc hoặc thời gian đã qua. Mỗi PT vì vậy cần có lịch làm việc (ca, ngày nghỉ).
+- Nền ô: tô màu phân biệt giờ trong ca trực và ngoài ca trực của từng PT, và thời gian đã qua. Ca làm việc là ca trực, không phải giới hạn đặt lịch: mọi PT, kể cả PT mới chưa có ca, đặt được lịch ở toàn bộ khung giờ của lưới, vì PT thường dạy ngoài giờ trực. PT có sẵn được đặt ca trực khởi tạo 05:00 – 22:00 mỗi ngày; PT mới chưa có ca cho đến khi quản lý nhập. Báo cáo đếm số buổi dạy trong ca và ngoài ca của từng PT.
 - Số trong ngoặc cạnh tên PT là số lịch của PT đó trong ngày.
 - Đặt lịch: PT hoặc lễ tân chọn khách, hợp đồng còn buổi, giờ bắt đầu, thời lượng. Hệ thống chặn trùng lịch của PT và của khách, chặn hợp đồng chưa duyệt, hết buổi, hết hạn hoặc đang Tạm vô hiệu.
 - PT thao tác chủ yếu trên điện thoại, nên màn hình này phải dùng tốt trên mobile.
@@ -365,6 +396,60 @@ Báo cáo theo file xuất "employee_pt_training" của GymMaster. Mỗi dòng l
 - Một hợp đồng có thể do nhiều HLV dạy; doanh thu chia theo số buổi mỗi người thực dạy.
 - Báo cáo lọc theo kỳ, HLV, chi nhánh; có dòng tổng theo HLV; xuất Excel đúng thứ tự cột của file hiện tại.
 - Báo cáo này là cơ sở để lập phiếu chi trả HLV trong Sổ quỹ (mục 8.1).
+
+### 6.6 Sẵn sàng tích hợp máy vân tay
+
+Máy vân tay gắn sau, nhưng dữ liệu, luồng xác nhận và API của lịch PT và buổi tập phải xây sẵn theo mục này ngay trong giai đoạn 1, để khi gắn máy không phải làm lại. Mọi con số là giá trị khởi tạo, admin chỉnh được.
+
+Luồng hoàn chỉnh
+
+1. PT đặt lịch trên lưới lịch PT.
+2. Khách và PT cùng quét vân tay tại phòng tập.
+3. Hệ thống ghép cặp quét với lịch đã đặt và chuyển buổi sang Đã tập, hình thức xác nhận "thiết bị".
+4. Cùng một sự kiện "buổi tập được xác nhận" kích hoạt: trừ 1 buổi trên hợp đồng, tính công và doanh thu phân bổ cho PT (báo cáo PT training), email báo khách số buổi đã tập và còn lại, ghi nhật ký. Admin bấm tay "Đã tập" đi vào đúng sự kiện này, không có luồng thứ hai.
+5. Sổ quỹ không ghi theo từng lần quét. Tiền trả PT đi ra khỏi Sổ quỹ khi kế toán lập phiếu chi theo kỳ, từ báo cáo doanh thu phân bổ.
+
+Quy tắc ghép cặp quét với lịch
+
+| Tình huống | Xử lý |
+|---|---|
+| Nguyên tắc chung | Mỗi buổi tập (1 giờ) cần một cặp quét riêng: 1 lần quét của khách và 1 lần quét của đúng PT được đặt cho buổi đó. Một lần quét chỉ dùng cho một buổi |
+| Ghép cặp trong 15 phút | Khách quét thì hệ thống ghi nhận và treo tối đa 15 phút chờ PT của khách quét. PT quét trong 15 phút đó thì buổi chuyển sang Đã tập. Áp dụng tương tự khi PT quét trước, và khi cả hai check-in trước giờ bắt đầu |
+| Quá 15 phút mà PT chưa quét | Buổi treo với lý do "Thiếu check-in của PT" |
+| Quá 15 phút mà khách chưa quét (PT quét trước) | Buổi treo với lý do "Thiếu check-in của khách" |
+| Khung ghép với lịch | Cặp quét phải nằm trong khoảng từ 1 giờ trước giờ bắt đầu đến 1 giờ sau giờ kết thúc của một lịch đã đặt giữa đúng khách và đúng PT đó |
+| Khách tập 2 – 3 buổi trong cùng ngày, có thể với các PT khác nhau | Bình thường, không giới hạn số buổi mỗi ngày. Khách quét bấy nhiêu lần, mỗi lần cùng PT của buổi đó. Mỗi buổi trừ vào hợp đồng gắn trên lịch của nó và tính công cho PT của nó |
+| PT dạy liền nhiều khách | PT quét một lần cho mỗi buổi, ghép cặp với lần quét của từng khách |
+| Có nhiều lịch khớp cùng một cặp quét | Ghép với lịch chưa xác nhận có giờ bắt đầu gần nhất; buổi kế tiếp cần cặp quét mới |
+| Quét mà không có lịch đã đặt | Ghi nhận LỖI, không trừ buổi, không tính công. Lần quét lỗi nằm trong danh sách riêng để admin xem |
+| Quét lặp lại trong vài giây (bấm hai lần) | Coi là một lần quét |
+| Quét vào hợp đồng hết buổi, hết hạn hoặc tạm vô hiệu | Ghi nhận LỖI, không tính |
+
+Khi buổi chưa có cặp quét hợp lệ
+
+- Sau khi kết thúc ca trong ngày, PT nhận thông báo đẩy danh sách buổi của mình chưa đủ check-in.
+- PT chọn từ drop-down: "Khách có tập nhưng quên quét" (gửi yêu cầu admin xác nhận Đã tập) hoặc "Khách không lên tập" (chuyển sang Khách không đến hoặc Hủy lịch theo đúng thực tế).
+- Sau 24 giờ vẫn treo thì báo lên Studio Manager và tạo việc trong phân hệ Giao việc.
+- Báo cáo đếm số buổi phải xác nhận tay của từng PT và từng khách.
+
+Dữ liệu và kết nối
+
+- Mã vân tay: hồ sơ khách và hồ sơ nhân viên có trường "Mã người dùng trên máy" (ví dụ 2606002 trong GymMaster). CRM chỉ lưu mã này, không lưu dấu vân tay hay ảnh khuôn mặt. Nhập mã cũ từ GymMaster để khách không phải đăng ký lại.
+- Lần quét thô: lưu mọi lần quét nhận từ máy (mã người dùng, máy, thời điểm, kết quả ghép) để đối soát.
+- Thiết bị: mỗi máy gắn một chi nhánh và có khóa bảo mật riêng; chỉ máy đã đăng ký được gửi dữ liệu.
+- Mất mạng và đồng bộ giờ: lần quét khi mất mạng được lưu tạm và gửi bù, ghép theo thời điểm quét thật; cảnh báo khi giờ trên máy lệch.
+- API nhận lần quét làm sẵn trong M5, dù chưa có máy.
+
+Khảo sát NextFace ID (developer trả lời trước M5)
+
+Hiện Flow dùng phần mềm NextFace ID cài trên máy tính để nối máy vân tay với GymMaster; phần mềm có mục Thiết bị, Cấu hình mã và "Nhập dữ liệu từ GymMaster".
+
+- ☐ Model và hãng của máy vân tay đang dùng (trong NextFace ID: Danh mục → Thiết bị).
+- ☐ Phương án A: NextFace ID có xuất hoặc đẩy dữ liệu lần quét sang phần mềm khác không? Cần hỏi nhà cung cấp.
+- ☐ Phương án B: nối CRM trực tiếp với máy qua SDK hoặc giao thức của hãng, bằng một chương trình nhỏ chạy tại phòng tập.
+- ☐ Phương án C: nếu A và B đều không được, đề xuất máy mới có sẵn kết nối đẩy dữ liệu lên máy chủ, kèm chi phí.
+- ☐ Dấu vân tay đã đăng ký trên máy có giữ được khi đổi phần mềm không.
+
 
 ## 7. Giáo án và nhật ký buổi tập
 
@@ -441,22 +526,28 @@ Phân hệ giao việc là nơi các phòng ban giao và nhận công việc v�
 - Việc tự sinh từ hệ thống: bước "Báo Studio" trong hành trình tư vấn (cho coach Manager: khách nào, hẹn lúc nào, loại Assessment, Pain Status); escalation từ buổi tập; hợp đồng và giá ngoại lệ chờ duyệt; hợp đồng Tạm vô hiệu quá 10 ngày; email gửi khách bị lỗi.
 - Việc tạo tay: bất kỳ nhân viên nào cũng giao được việc cho người hoặc phòng ban khác, theo quyền được cấp.
 - Màn hình: "Việc của tôi", "Việc tôi giao", việc theo phòng ban; lọc theo trạng thái và hạn; việc quá hạn được làm nổi và báo cho người giao.
-- Thông báo trong hệ thống: khi được giao, khi sắp đến hạn, khi quá hạn, khi có bình luận mới.
+- Thông báo trong hệ thống: khi được giao, khi quá hạn, khi có bình luận mới, và nhắc trước hạn nhiều mốc. Mốc nhắc khởi tạo: trước 24 giờ, trước 3 giờ, trước 1 giờ. Admin thêm, bớt, sửa mốc chung; người giao việc sửa được mốc cho từng việc.
 - Báo cáo: số việc giao, hoàn thành đúng hạn, trễ hạn theo người và theo phòng ban.
+- Thông báo cho nhân viên ngoài hệ thống: ngoài chuông trong hệ thống, nhân viên nhận email và thông báo đẩy trên điện thoại (khi đăng nhập CRM trên điện thoại) cho: việc sắp đến hạn theo các mốc nhắc, việc quá hạn, yêu cầu duyệt đang chờ, escalation, lead mới được giao hoặc bị chuyển lượt, buổi tập chưa đủ check-in. Mỗi nhân viên chọn loại nhận qua email hoặc điện thoại; admin đặt loại nào bắt buộc. Developer đề xuất cách làm thông báo đẩy và giới hạn trên iPhone, Android.
 
-### 8.3 Email tự động cho khách hàng
+### 8.3 Hạ tầng email tự động cho khách hàng
+
+- Trọng tâm là thiết lập được hạ tầng gửi email, để mọi thao tác ảnh hưởng đến quyền lợi của khách đều tự động báo về email của khách; mẫu email là phần nhỏ đi kèm.
+- Máy chủ và tên miền gửi: dịch vụ gửi email giao dịch (Resend hoặc Amazon SES), xác thực tên miền Flow (SPF, DKIM, DMARC) để không rơi vào thư rác, địa chỉ gửi và địa chỉ nhận phản hồi của Flow. Tài khoản dịch vụ đăng ký dưới tên Flow Group.
+- Hàng đợi và gửi lại: email gửi qua hàng đợi, lỗi thì tự thử lại; trạng thái đã gửi, lỗi, bị trả về lưu trong hồ sơ khách.
+- Thứ tự làm: dựng ngay khi bắt đầu M4, để mỗi nghiệp vụ của M4, M5, M8 khi làm xong là gắn email luôn.
 - Email là kênh thông báo duy nhất cho mọi khách hàng, không phân biệt Việt Nam hay nước ngoài. Không dùng Zalo OA.
 - Số buổi thay đổi thì gửi email: buổi được ghi nhận (Đã tập, Khách không đến, Burn Show) kèm số buổi đã tập và còn lại; buổi được hoàn lại do xóa, kèm lý do và số buổi còn lại mới.
 - Email hoàn buổi là điểm làm tốt hơn GymMaster: GymMaster chỉ báo khi check-in, không báo khi buổi bị xóa.
-- Các sự kiện khác, admin bật tắt từng loại: xác nhận lịch hẹn, hợp đồng được kích hoạt, phiếu thu, hợp đồng sắp hết hạn hoặc sắp hết buổi.
-- Mẫu email do admin soạn, có bản tiếng Việt và tiếng Anh; hệ thống chọn ngôn ngữ theo nhóm quốc tịch của khách.
+- Các sự kiện ảnh hưởng quyền lợi khác, admin bật tắt từng loại: xác nhận lịch hẹn, hợp đồng được kích hoạt, phiếu thu, gia hạn, nâng cấp, bảo lưu, chuyển nhượng, hủy, tạm vô hiệu và kích hoạt lại kèm hạn mới, hợp đồng sắp hết hạn hoặc sắp hết buổi.
+- Mẫu email do admin soạn, có bản tiếng Việt và tiếng Anh; khách có quốc gia Việt Nam nhận tiếng Việt, các quốc gia khác nhận tiếng Anh.
 - Email là trường bắt buộc khi chuyển lead thành khách hàng. Khách thiếu email được làm nổi để lễ tân bổ sung.
 - Mỗi email gửi đi được lưu trong hồ sơ khách kèm trạng thái đã gửi hoặc lỗi; email lỗi tạo việc cho lễ tân.
 - Gửi qua một dịch vụ email giao dịch, từ tên miền của Flow đã cấu hình xác thực để không rơi vào thư rác; developer đề xuất dịch vụ và chi phí.
 
 ### 8.4 Nhân viên
-- Hồ sơ: mã nhân viên, họ tên, ngày sinh, giới tính, SĐT, email, giấy tờ, phòng ban, nhóm, chức danh, chi nhánh, trạng thái làm việc.
-- Lịch làm việc của PT: ca và ngày nghỉ, dùng để xác định khung có thể book trên lưới lịch.
+- Hồ sơ: mã nhân viên, họ tên, ngày sinh, giới tính, SĐT, email, giấy tờ, phòng ban, nhóm, chức danh, quản lý trực tiếp, chi nhánh, trạng thái làm việc, có dạy PT hay không, mã người dùng trên máy vân tay. Với tư vấn viên: hệ số lượt chia lead và bật / tắt nhận lead.
+- Lịch làm việc của PT: ca trực và ngày nghỉ, dùng để hiển thị trên lưới lịch và báo cáo buổi dạy trong / ngoài ca; không giới hạn việc đặt lịch.
 - Mỗi nhân viên gắn một tài khoản đăng nhập theo mục 2.
 
 ### 8.5 Thùng rác
@@ -471,7 +562,7 @@ Mọi báo cáo lọc được theo chi nhánh, thời gian, nhân viên và xu�
 | Báo cáo | Nội dung |
 |---|---|
 | Dashboard tổng quan | Lead mới, tỷ lệ chuyển đổi, hội viên đang tập, PT hoạt động, hợp đồng sắp hết hạn, số buổi PT theo giờ trong ngày, doanh thu theo tháng và năm |
-| Dashboard tư vấn | Theo từng nhân sự và toàn đội: số lead nhận, phễu Lead → Đã tư vấn → Đã đặt lịch → Show → Ký hợp đồng, tỷ lệ show, tỷ lệ tuân thủ các bước đúng hạn, thời gian phản hồi đầu tiên, kết quả tái chăm sóc, điểm audit |
+| Dashboard tư vấn | Theo từng nhân sự và toàn đội: số lead nhận, phễu Lead → Đã tư vấn → Đã đặt lịch → Show → Ký hợp đồng, tỷ lệ show, tỷ lệ tuân thủ các bước đúng hạn, thời gian phản hồi đầu tiên, kết quả tái chăm sóc, điểm audit, số lần bị chuyển lượt, tỷ lệ thực hiện từng bước checklist và tương quan với tỷ lệ đặt lịch, show, ký hợp đồng |
 | Phân tích lead | Theo kênh liên hệ, nguồn lead, Organic / Paid, nhóm nhu cầu, quốc tịch, lý do từ chối |
 | Dashboard giáo án theo tuần | Trên toàn bộ khách hàng: tỷ lệ % từng loại Flag và từng loại Action tính trên tổng số set đã ghi; số khách có ít nhất một Flag khác Normal; so sánh với tuần trước; escalation đang chờ. Bấm vào một tỷ lệ để xem danh sách khách và buổi tập tương ứng |
 | Báo cáo hợp đồng | Doanh thu, công nợ, hợp đồng mới và tái ký, sắp hết hạn hoặc sắp hết buổi; nhóm theo dịch vụ và theo bậc số buổi |
@@ -490,9 +581,9 @@ Trục chính là Người (lead / khách) → Hợp đồng → Buổi tập �
 |---|---|---|
 | Chi nhánh | Tên, địa chỉ, hiệu lực | Cha của hầu hết thực thể |
 | Người dùng, Vai trò, Quyền | Tài khoản, vai trò, quyền theo phân hệ và thao tác, quyền riêng, ngưỡng duyệt, thời gian truy cập, lịch sử đăng nhập | Gắn với nhân viên |
-| Nhân viên | Mã, họ tên, phòng ban, chức danh, chi nhánh, lịch làm việc, trạng thái | Phụ trách lead, khách, buổi tập |
+| Nhân viên | Mã, họ tên, phòng ban, chức danh, quản lý trực tiếp, chi nhánh, ca trực, mã người dùng trên máy vân tay, hệ số lượt chia lead, bật nhận lead, trạng thái | Phụ trách lead, khách, buổi tập |
 | Kênh liên hệ, Nguồn lead | Tên, phân loại Organic / Paid | Gắn vào lead |
-| Lead / Khách hàng | Mã lead, mã khách, họ tên, SĐT, email, kênh, nguồn, nhóm nhu cầu, chi tiết nhu cầu, Pain Status, loại Assessment, trạng thái, người phụ trách, giấy tờ, ngày sinh, quốc tịch, sức khỏe | Một hồ sơ duy nhất, đổi trạng thái theo hành trình |
+| Lead / Khách hàng | Mã lead, mã khách, họ tên, SĐT, email, quốc gia, mã người dùng trên máy vân tay, kênh, nguồn, nhóm nhu cầu, chi tiết nhu cầu, Pain Status, loại Assessment, trạng thái, người phụ trách, giấy tờ, ngày sinh, quốc tịch, sức khỏe | Một hồ sơ duy nhất, đổi trạng thái theo hành trình |
 | Bước tư vấn | Loại bước, hạn, thời điểm hoàn thành, người thực hiện, kết quả, đúng hạn hay trễ | Thuộc một lead |
 | Lịch sử lead, Lịch hẹn | Trạng thái cũ và mới, lý do từ chối; ngày giờ hẹn, xác nhận lần 1 và 2, Show / No show | Thuộc một lead |
 | Audit tư vấn | Điểm tự động, điểm và nhận xét của quản lý, đề xuất của AI | Thuộc một lead |
@@ -513,6 +604,9 @@ Trục chính là Người (lead / khách) → Hợp đồng → Buổi tập �
 | Mẫu email, Email đã gửi | Loại sự kiện, nội dung Việt và Anh, bật tắt; người nhận, thời điểm, trạng thái | Email đã gửi thuộc một khách |
 | Tham số hệ thống | Mốc thời gian, quy tắc trạng thái buổi, màu, khung giờ lịch, ngưỡng nhắc | Toàn hệ thống |
 | Thùng rác, Nhật ký thao tác | Bản ghi bị xóa kèm lý do; ai, lúc nào, đối tượng, giá trị trước và sau | Toàn hệ thống |
+| Lịch sử chuyển lượt lead | Lead, từ người, sang người, thời điểm, thời gian đã chờ, tự động hay bằng tay | Thuộc một lead |
+| Thiết bị check-in, Lần quét | Máy: tên, chi nhánh, khóa bảo mật. Lần quét: mã người dùng, máy, thời điểm, kết quả ghép (hợp lệ, chờ ghép, lỗi), buổi tập được ghép | Lần quét ghép vào tối đa một buổi tập |
+| Mốc nhắc, Cài đặt thông báo | Danh sách mốc nhắc chung và của từng việc; loại thông báo mỗi nhân viên nhận qua email, điện thoại | Gắn với công việc và nhân viên |
 
 - Số buổi đã tập và còn lại của hợp đồng luôn tính từ buổi tập và phiếu biến động, không nhập tay.
 - Đã thanh toán và công nợ luôn tính từ phiếu thu còn hiệu lực.
@@ -540,11 +634,11 @@ Nhập tay phải dùng được ngay từ bản đầu; từng kênh API đư�
 - Nền tảng: ứng dụng web, dùng tốt trên điện thoại. App mobile riêng để giai đoạn sau.
 - Kiến trúc: tách backend API và giao diện; API có tài liệu, để các module ERP sau này, app mobile và thiết bị check-in dùng chung.
 - Cấu hình thay cho mã cứng: mọi giá trị ở cột "Admin tùy biến" của mục 1 nằm trong cơ sở dữ liệu và có màn hình quản lý.
-- Sở hữu: chủ đầu tư sở hữu toàn bộ mã nguồn, cơ sở dữ liệu, tên miền và tài khoản hạ tầng. Mã nguồn nằm trên kho Git của chủ đầu tư.
+- Sở hữu: chủ đầu tư sở hữu toàn bộ mã nguồn, cơ sở dữ liệu, tên miền và tài khoản hạ tầng. Mã nguồn nằm trên kho Git của chủ đầu tư. Các tài khoản hạ tầng (Vercel, Railway / Render, Resend / SES, tên miền) đăng ký dưới tên và email của Flow Group. Chi phí vận hành đã báo khoảng 65 – 130 USD mỗi tháng cho cả hai môi trường.
 - Công nghệ: developer đề xuất, ưu tiên công nghệ phổ biến, dễ tìm người thay thế và chi phí vận hành thấp.
 - Ngôn ngữ: giao diện tiếng Việt; thiết kế sẵn để thêm tiếng Anh.
 - Bảo mật: phân quyền kiểm tra ở phía server, mật khẩu được băm, HTTPS, sao lưu tự động hằng ngày và có thử khôi phục.
-- Dữ liệu cá nhân: hệ thống lưu giấy tờ tùy thân và thông tin sức khỏe, thuộc nhóm dữ liệu nhạy cảm theo quy định bảo vệ dữ liệu cá nhân của Việt Nam. Cần mã hóa các trường này, giới hạn người xem và ghi nhận sự đồng ý của khách. Chủ đầu tư nên xác nhận yêu cầu cụ thể với tư vấn pháp lý.
+- Dữ liệu cá nhân: hệ thống lưu giấy tờ tùy thân và thông tin sức khỏe, thuộc nhóm dữ liệu nhạy cảm theo quy định bảo vệ dữ liệu cá nhân của Việt Nam. Cần mã hóa các trường này, giới hạn người xem và ghi nhận sự đồng ý của khách. Số CCCD / hộ chiếu chưa được lưu cho đến khi phần mã hóa hoàn thành (trong M2). CRM không lưu dấu vân tay hay ảnh khuôn mặt, chỉ lưu mã người dùng trên máy. Chủ đầu tư nên xác nhận yêu cầu cụ thể với tư vấn pháp lý.
 - AI audit: nếu gửi nội dung chat của khách đến dịch vụ AI bên ngoài, cần sự đồng ý của chủ đầu tư và phương án ẩn thông tin định danh.
 - Môi trường: có bản thử nghiệm (staging) tách khỏi bản chạy thật.
 
@@ -560,11 +654,11 @@ Nhập tay phải dùng được ngay từ bản đầu; từng kênh API đư�
 
 Mỗi mốc là một bản chạy được trên staging để chủ đầu tư dùng thử. Developer báo giá và thời gian theo từng mốc, để chủ đầu tư có thể cắt hoặc lùi mốc.
 - Nền tảng: đăng nhập, người dùng, vai trò và cây phân quyền tùy biến, chi nhánh, nhân viên, tham số hệ thống, nhật ký thao tác, Thùng rác, thông báo trong hệ thống, phân hệ Giao việc.
-- Lead và hành trình tư vấn: nhập tay, phân bổ tự động, checklist bước có hạn, nhắc việc, tái chăm sóc, thư viện kịch bản, chuyển thành khách hàng.
+- Lead và hành trình tư vấn: nhập tay, phân bổ tự động theo hệ số lượt, tự chuyển lượt có lưu vết, checklist bước có hạn và cơ chế khóa, nhắc việc, tái chăm sóc, thư viện kịch bản, chuyển thành khách hàng.
 - Audit và dashboard tư vấn: audit tự động theo quy tắc, audit của quản lý, dashboard theo nhân sự.
 - Hợp đồng và Sổ quỹ: dịch vụ và bậc giá, đăng ký, duyệt, giá ngoại lệ, phiếu thu, phiếu chi, xóa có Thùng rác, hủy kích hoạt.
-- Lịch PT, lịch lớp và buổi tập: đặt lịch, check-in, trạng thái buổi, xóa buổi, Burn Show, điểm danh lớp, báo cáo doanh thu phân bổ theo HLV, chi trả HLV.
-- Email cho khách: mẫu email, các sự kiện ghi nhận và hoàn buổi.
+- Lịch PT, lịch lớp và buổi tập: đặt lịch mở toàn thời gian với ca trực, check-in, API nhận lần quét và quy tắc ghép cặp vân tay (mục 6.6), trạng thái buổi, xóa buổi, Burn Show, điểm danh lớp, báo cáo doanh thu phân bổ theo HLV, chi trả HLV.
+- Hạ tầng email tự động: dịch vụ gửi, xác thực tên miền, hàng đợi và gửi lại, email và thông báo điện thoại cho nhân viên. Dựng ngay khi bắt đầu M4; mỗi sự kiện ảnh hưởng quyền lợi khách được gắn email ngay khi nghiệp vụ đó làm xong.
 - Giáo án và nhật ký buổi tập: danh mục, template, giáo án của khách, nhật ký 3 phần, Flag / Action, escalation, tab tiến độ trong hồ sơ khách, dashboard giáo án theo tuần.
 - Nghiệp vụ biến động: gia hạn, bảo lưu, nâng cấp, chuyển nhượng, chuyển chi nhánh, chuyển đổi, hủy.
 - Báo cáo còn lại và nhập dữ liệu từ GymMaster và từ file Excel tư vấn.
@@ -595,6 +689,13 @@ Mỗi mốc là một bản chạy được trên staging để chủ đầu tư
 - ☐ Mọi kết quả bước tư vấn, mục checklist và lý do đều là drop-down; admin thêm hoặc vô hiệu một lựa chọn trên giao diện và thay đổi hiện ngay, dữ liệu cũ không đổi.
 - ☐ Chọn "Khác" trong bất kỳ drop-down nào thì không lưu được nếu chưa điền nội dung.
 - ☐ Thao tác thuộc nhóm cần duyệt chưa có hiệu lực cho đến khi được duyệt; người tạo không tự duyệt được; admin bật tắt yêu cầu duyệt và đổi người duyệt cho từng loại thao tác trên giao diện.
+- ☐ PT đặt được lịch ngoài ca trực; lưới hiển thị phân biệt trong và ngoài ca.
+- ☐ Lead chỉ cần họ tên và kênh; quốc gia chọn từ danh sách các nước và email gửi đúng ngôn ngữ theo quốc gia.
+- ☐ Lead chia đúng theo hệ số lượt; lead chưa chăm sóc sau 1 giờ làm việc thì tự chuyển, không chuyển ngoài khung 08:30 – 20:30, và mỗi lần chuyển có trong lịch sử và dashboard.
+- ☐ Bước checklist đã tick không bỏ tick được; bước quá hạn cộng gia hạn thì tự khóa "Không thực hiện" và không tick bù được.
+- ☐ Công việc được nhắc đủ 3 mốc trước hạn qua chuông, email và điện thoại; duyệt chậm quá 24 giờ thì báo đúng quản lý trực tiếp của người duyệt.
+- ☐ Gửi lần quét giả lập qua API: cặp khách và đúng PT trong 15 phút và trong khung ghép thì buổi chuyển Đã tập và kích hoạt trừ buổi, tính công, email; thiếu một bên thì treo đúng lý do; quét không có lịch thì ghi lỗi; khách tập 2 buổi với 2 PT thì mỗi buổi cần cặp quét riêng.
+- ☐ Buổi chưa đủ check-in thì PT nhận thông báo cuối ngày, sau 24 giờ thì Studio Manager được báo.
 
 ### Developer cần gửi lại trước khi bắt đầu
 - Đề xuất công nghệ và sơ đồ kiến trúc.
@@ -618,21 +719,21 @@ Mỗi mốc là một bản chạy được trên staging để chủ đầu tư
 | Nhật ký buổi tập | Coach nhập cả 3 phần; bỏ Match; Cardio là bài tập trong danh mục |
 | Sổ quỹ | Sổ thu chi nội bộ, không phải kế toán thuế |
 | Không làm | Chi trả tiền cọc, cập nhật tay số buổi đã tập, Gói tự do, Pro Shop, tủ đồ, Loyalty |
+| Lịch PT | Ca là ca trực; đặt lịch mở toàn thời gian cho mọi PT |
+| Chia lead | Xoay vòng theo hệ số lượt; tự chuyển sau 1 giờ làm việc trong khung 08:30 – 20:30, có lưu vết; tái chăm sóc sau 15 ngày |
+| Checklist tư vấn | Không duyệt; khóa sau khi tick và sau khi quá hạn; dùng để đo quy trình, không phạt |
+| Quốc tịch | Danh sách quốc gia; nhóm và ngôn ngữ email tự suy ra |
+| Thông báo nhân viên | Chuông, email và điện thoại; nhắc việc 3 mốc 24 giờ, 3 giờ, 1 giờ |
+| Master và cấp trên | Admin giữ Master trước; duyệt chậm báo quản lý trực tiếp theo sơ đồ tổ chức |
+| Máy vân tay | Ghép cặp khách và PT trong 15 phút, khung ±1 giờ; mỗi buổi một cặp quét; quét không có lịch là lỗi |
 
 
 ### Câu hỏi còn mở cho chủ đầu tư
-- ☐ Quy tắc phân lượt lead: xoay vòng đều, hay theo kênh, ca làm việc, ngôn ngữ của khách?
-- ☐ Tái chăm sóc sau 15 hay 16 ngày? Tiêu đề cột trong file Excel ghi 15 ngày, công thức đang cộng 16.
-- ☐ Sau bao lâu không xử lý thì lead bị thu hồi và phân cho người khác?
-- ☐ Ai giữ vai trò Master ở mỗi chi nhánh?
 - ☐ Doanh thu lớp nhóm phân bổ cho HLV theo đầu khách có mặt hay cố định mỗi buổi? Sức chứa mỗi lớp và quy định hủy chỗ?
 - ☐ Tỉ lệ hoa hồng và tỉ lệ chấm công PT đặt theo từng HLV, từng dịch vụ hay từng hợp đồng? "Giá trị phân bổ" có khi nào khác "Giá trị HĐ" không? Có cần hoa hồng cho sale không?
-- ☐ Nghiệp vụ biến động nào cần duyệt, và công thức phí hủy, phí chuyển nhượng, phí chuyển chi nhánh, giới hạn số ngày bảo lưu?
-- ☐ Danh sách phòng ban và ai được giao việc cho ai?
+- ☐ Công thức phí hủy, phí chuyển nhượng, phí chuyển chi nhánh, giới hạn số ngày bảo lưu?
 - ☐ AI audit: có đồng ý cho nội dung chat của khách được gửi đến dịch vụ AI bên ngoài không, và chấm theo tiêu chí nào?
-- ☐ Nhân viên chỉ cần thông báo trong hệ thống, hay cần thêm email cho escalation và việc quá hạn?
-- ☐ Khi nào đưa tích hợp máy vân tay vào để thay việc admin check-in tay?
-- ☐ Số chi nhánh và số người dùng dự kiến trong 12 tháng tới?
-- ☐ Ma trận duyệt: các thao tác hằng ngày (nhập lead, tick bước tư vấn, đặt lịch, ghi nhật ký buổi tập) có cần duyệt từng thao tác không, hay kiểm soát bằng audit và nhật ký như đề xuất ở mục 2?
+- ☐ Thời điểm gắn máy vân tay, sau khi có kết quả khảo sát NextFace ID ở mục 6.6.
+- ☐ Xác nhận bảng ghép chức danh với vai trò và tuyến báo cáo các nhánh Marketing ở mục 2.
 
-Các giá trị admin tự nhập trước ngày chạy thật, không chặn developer: bảng bậc giá của từng dịch vụ, mức giảm tối đa mỗi vai trò được tự duyệt, số buổi tối thiểu của một hợp đồng, khung giờ lịch (05:00 hay 05:30), mẫu email.
+Các giá trị admin tự nhập trước ngày chạy thật, không chặn developer: bảng bậc giá của từng dịch vụ, mức giảm tối đa mỗi vai trò được tự duyệt, số buổi tối thiểu của một hợp đồng, khung giờ lưới lịch, danh sách nhân viên và PT của từng chi nhánh, danh mục "Chi tiết nhu cầu" có mã số, mẫu email.

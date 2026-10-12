@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import {
   taskAssigneesSchema,
   taskCommentSchema,
@@ -13,8 +13,10 @@ import {
 import { AnySignedInUser, CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
-import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
+import { ApiErrors, ApiOptionalQuery, ApiResult, ApiExcelFile } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
+import { exportList } from "../../platform/export/export.service.js";
+import { tasksExport, TASK_EXPORT_QUERY } from "./task.export.js";
 import {
   addComment,
   createTask,
@@ -39,6 +41,18 @@ export class TasksController {
   @ApiResult(taskPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(taskPageSchema, await listTasks(actor, queryOf(request, FILTERS)));
+  }
+
+  /**
+   * The list as an Excel file (A-077 to A-080): the same search, filters, scope, and masks as
+   * the list, every row up to `exportRowLimit`; the permission is in addition to seeing it.
+   */
+  @Get("export")
+  @RequirePermission("task.export")
+  @ApiOptionalQuery(...TASK_EXPORT_QUERY)
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, tasksExport, queryOf(request, TASK_EXPORT_QUERY));
   }
 
   /** My open and overdue tasks, for the menu; zero without task.view. */

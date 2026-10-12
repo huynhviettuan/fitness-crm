@@ -15,6 +15,10 @@ export const taskSchema = z
     status: z.enum(TASK_STATUSES),
     priority: z.enum(TASK_PRIORITIES),
     dueAt: instant,
+    /** Its own reminder points, minutes before the deadline; null when it uses the shared ones (D-056). */
+    reminderMinutes: z.array(z.int()).nullable(),
+    /** The points that apply to it: its own, or the shared ones. */
+    reminders: z.array(z.int()),
     /** Still open after its deadline. */
     overdue: z.boolean(),
     assigner: person,

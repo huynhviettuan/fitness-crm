@@ -14,6 +14,7 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
 import { getTask, getTaskAssignees } from "@/lib/api/tasks";
+import { formatReminderHours } from "@flow/shared/tasks";
 import { EditTaskButton } from "../task-form";
 import { TaskComments, TaskMoves } from "./task-panel";
 
@@ -69,6 +70,10 @@ export default async function TaskPage({ params }: PageProps<"/tasks/[id]">) {
       value: task.assignee?.name ?? <span className="text-muted-foreground">{t("waitingInDepartment")}</span>,
     },
     { label: t("fields.department"), value: departmentName },
+    {
+      label: t("fields.reminders"),
+      value: `${formatReminderHours(task.reminders)} ${t("remindersUnit")}${task.reminderMinutes ? "" : ` · ${t("remindersShared")}`}`,
+    },
     { label: t("fields.assigner"), value: task.assigner.name },
     { label: t("fields.createdAt"), value: <DateTime value={task.createdAt} format="dateTime" /> },
     { label: t("fields.branch"), value: task.branch.name },

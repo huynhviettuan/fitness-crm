@@ -25,6 +25,7 @@ describe("employeeInputSchema", () => {
       team: null,
       titleId: null,
       titleNote: null,
+      managerId: null,
       status: "ACTIVE",
       isTrainer: false,
       userId: null,

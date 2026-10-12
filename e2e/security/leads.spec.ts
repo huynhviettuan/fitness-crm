@@ -219,7 +219,7 @@ const SHOW = {
   idDocumentType: "CCCD",
   idDocumentNumber: "079201001234",
   birthDate: "15/03/1990",
-  nationality: "Việt Nam",
+  countryCode: "VN",
   email: "khach@example.com",
   consent: true,
 };

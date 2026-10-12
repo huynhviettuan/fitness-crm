@@ -19,6 +19,8 @@ export type TaskWrite = {
   assigneeDepartmentId: string | null;
   dueAt: Date;
   priority: TaskPriority;
+  /** Its own reminder points, minutes before the deadline; empty for the shared ones (D-056). */
+  reminderMinutes: number[];
 };
 
 export function createTask(
@@ -188,17 +190,54 @@ export function findSystemTask(
   });
 }
 
-export function updateSystemTask(db: Db, id: string, data: { title: string; description: string | null; dueAt: Date }) {
+export async function updateSystemTask(
+  db: Db,
+  id: string,
+  data: { title: string; description: string | null; dueAt: Date },
+) {
+  const before = await db.task.findUniqueOrThrow({ where: { id }, select: { dueAt: true } });
+  // A new deadline gets its own reminders (D-056).
+  if (before.dueAt.getTime() !== data.dueAt.getTime()) await clearReminders(db, id);
   return db.task.update({ where: { id }, data, include: withRefs });
 }
 
-/** Claims open tasks whose reminder is due and marks them, so each goes out once (T-059). */
-export function claimDueSoon(db: Db, now: Date, until: Date) {
-  return db.$queryRaw<ReminderRow[]>`
-    UPDATE tasks SET due_soon_notified_at = ${now}
-    WHERE status IN ('NEW', 'ACCEPTED', 'IN_PROGRESS') AND due_soon_notified_at IS NULL AND overdue_notified_at IS NULL
-      AND due_at > ${now} AND due_at <= ${until}
-    RETURNING ${REMINDER_COLUMNS}`;
+/** Open tasks with their deadline ahead, no later than `until`, and the reminder points already sent (D-056). */
+export function remindable(db: Db, now: Date, until: Date) {
+  return db.task.findMany({
+    where: { status: { in: [...OPEN] }, dueAt: { gt: now, lte: until } },
+    select: {
+      id: true,
+      title: true,
+      branchId: true,
+      assignerId: true,
+      assigneeUserId: true,
+      assigneeDepartmentId: true,
+      dueAt: true,
+      reminderMinutes: true,
+      reminders: { select: { minutesBefore: true } },
+    },
+    orderBy: { dueAt: "asc" },
+  });
+}
+
+const OPEN = ["NEW", "ACCEPTED", "IN_PROGRESS"] as const;
+
+/**
+ * Marks reminder points as sent and returns those this call marked: another worker running at once marks
+ * the rest, so each point goes out once (T-059, D-056).
+ */
+export async function claimPoints(db: Db, taskId: string, points: number[], now: Date): Promise<Set<number>> {
+  const created = await db.taskReminder.createManyAndReturn({
+    data: points.map((minutesBefore) => ({ taskId, minutesBefore, sentAt: now })),
+    skipDuplicates: true,
+    select: { minutesBefore: true },
+  });
+  return new Set(created.map((row) => row.minutesBefore));
+}
+
+/** A new deadline gets its own reminders: the points sent for the old one are forgotten (D-056). */
+export async function clearReminders(db: Db, taskId: string): Promise<void> {
+  await db.taskReminder.deleteMany({ where: { taskId } });
 }
 
 export function claimOverdue(db: Db, now: Date) {

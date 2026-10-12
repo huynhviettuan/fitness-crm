@@ -1,3 +1,4 @@
+import { nationalityGroupOf } from "@flow/shared/countries";
 import { showInputSchema, type Lead, type ShowData } from "@flow/shared/leads";
 import { prisma, type Db } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
@@ -75,7 +76,8 @@ export async function convertLead(
       phone: data.phone,
       email: data.email,
       dateOfBirth: data.birthDate,
-      nationality: data.nationality,
+      countryCode: data.countryCode,
+      nationalityGroup: nationalityGroupOf(data.countryCode),
       idDocumentType: data.idDocumentType,
       idDocumentNumber: seal(data.idDocumentNumber),
       healthNote: seal(data.healthNote),
@@ -107,7 +109,7 @@ export async function convertLead(
       leadStatus: "SHOWED",
       phone: data.phone,
       email: data.email,
-      nationality: data.nationality,
+      countryCode: data.countryCode,
       idDocumentType: data.idDocumentType,
       idDocumentGiven: true,
       healthNoteGiven: data.healthNote !== null,

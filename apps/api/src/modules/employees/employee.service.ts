@@ -43,6 +43,7 @@ const AUDITED_FIELDS = [
   "team",
   "titleId",
   "titleNote",
+  "managerId",
   "status",
   "isTrainer",
   "userId",
@@ -305,6 +306,7 @@ async function toWrite(
       )
     : { optionId: null, note: null };
   await assertLinkable(db, data.userId, current?.id ?? null);
+  await assertManager(db, data.managerId, current?.id ?? null);
   return {
     branchId,
     fullName: data.fullName,
@@ -317,10 +319,26 @@ async function toWrite(
     team: data.team,
     titleId: title.optionId,
     titleNote: title.note,
+    managerId: data.managerId,
     status: data.status,
     isTrainer: data.isTrainer,
     userId: data.userId,
   };
+}
+
+/**
+ * D-046: the direct manager is another employee, and nobody reports to themselves, directly
+ * or through others, so the line up to the top always ends.
+ */
+async function assertManager(db: Db, managerId: string | null, employeeId: string | null): Promise<void> {
+  if (!managerId) return;
+  const error = (key: string) => new AppError("VALIDATION_FAILED", { fieldErrors: { managerId: [key] } });
+  if ((await repo.employeeExists(db, managerId)) === 0) throw error("invalidChoice");
+  if (!employeeId) return;
+  // Two edits at once must not close a loop between them.
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('employee-managers'))::text AS locked`;
+  if (managerId === employeeId) throw error("managerIsSelf");
+  if ((await repo.managerChain(db, managerId)).includes(employeeId)) throw error("managerCycle");
 }
 
 /** Brief §8.4: each employee has one login, and a login belongs to one employee at most. */
@@ -384,6 +402,7 @@ function toView(employee: repo.EmployeeRecord): EmployeeView {
     department: employee.department && chosen(employee.department, employee.departmentNote),
     team: employee.team,
     title: employee.title && chosen(employee.title, employee.titleNote),
+    manager: employee.manager,
     status: employee.status,
     isTrainer: employee.isTrainer,
     user: employee.user,

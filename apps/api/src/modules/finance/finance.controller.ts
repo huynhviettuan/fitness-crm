@@ -16,8 +16,16 @@ import { submittedSchema } from "@flow/shared/approvals";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
-import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
+import {
+  ApiErrors,
+  ApiIdempotencyKey,
+  ApiOptionalQuery,
+  ApiResult,
+  ApiExcelFile,
+} from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
+import { exportList } from "../../platform/export/export.service.js";
+import { cashExport, CASH_EXPORT_QUERY, paymentsExport, PAYMENT_EXPORT_QUERY } from "./finance.export.js";
 import { deleteCashTransaction, financeSummary, listCashTransactions, recordCashTransaction } from "./cash.service.js";
 import { collectedBetween, deletePayment, listDebts, listPayments } from "./payment.service.js";
 
@@ -35,6 +43,18 @@ export class PaymentsController {
   @ApiResult(paymentPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(paymentPageSchema, await listPayments(actor, queryOf(request, PAYMENT_FILTERS)));
+  }
+
+  /**
+   * The list as an Excel file (A-077 to A-080): the same search, filters, scope, and masks as
+   * the list, every row up to `exportRowLimit`; the permission is in addition to seeing it.
+   */
+  @Get("export")
+  @RequirePermission("payment.export")
+  @ApiOptionalQuery(...PAYMENT_EXPORT_QUERY)
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, paymentsExport, queryOf(request, PAYMENT_EXPORT_QUERY));
   }
 
   /** Confirmed payments received between two gym days, inclusive (dd/MM/yyyy). */
@@ -88,6 +108,15 @@ export class CashTransactionsController {
   @ApiResult(cashTransactionPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(cashTransactionPageSchema, await listCashTransactions(actor, queryOf(request, CASH_FILTERS)));
+  }
+
+  /** The list as an Excel file (A-077 to A-080); see `GET /payments/export`. */
+  @Get("export")
+  @RequirePermission("cash.export")
+  @ApiOptionalQuery(...CASH_EXPORT_QUERY)
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, cashExport, queryOf(request, CASH_EXPORT_QUERY));
   }
 
   /** T-015: a replay with the same key returns 200 with the original transaction. */

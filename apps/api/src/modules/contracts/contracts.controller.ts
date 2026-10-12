@@ -6,8 +6,16 @@ import { paymentInputSchema, paymentPageSchema, paymentSchema } from "@flow/shar
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
-import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
+import {
+  ApiErrors,
+  ApiIdempotencyKey,
+  ApiOptionalQuery,
+  ApiResult,
+  ApiExcelFile,
+} from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
+import { exportList } from "../../platform/export/export.service.js";
+import { contractsExport, CONTRACT_EXPORT_QUERY } from "./contract.export.js";
 import { listPayments, recordPayment } from "../finance/payment.service.js";
 import { activateContract, cancelContract, getContract, listContracts, updateContract } from "./contract.service.js";
 
@@ -25,6 +33,18 @@ export class ContractsController {
       contractPageSchema,
       await listContracts(actor, queryOf(request, ["q", "customerId", "page", "pageSize"])),
     );
+  }
+
+  /**
+   * The list as an Excel file (A-077 to A-080): the same search, filters, scope, and masks as
+   * the list, every row up to `exportRowLimit`; the permission is in addition to seeing it.
+   */
+  @Get("export")
+  @RequirePermission("contract.export")
+  @ApiOptionalQuery(...CONTRACT_EXPORT_QUERY)
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, contractsExport, queryOf(request, CONTRACT_EXPORT_QUERY));
   }
 
   @Get(":id")

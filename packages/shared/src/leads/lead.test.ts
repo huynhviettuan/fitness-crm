@@ -41,9 +41,10 @@ describe("leadInputSchema (brief §4.1)", () => {
       sourceNote: null,
       sourceType: null,
       sourceDetail: null,
-      nationalityGroup: null,
+      countryCode: null,
       needGroupId: null,
       needGroupNote: null,
+      needDetailId: null,
       needDetail: null,
       painStatusId: null,
       painStatusNote: null,
@@ -61,22 +62,20 @@ describe("leadInputSchema (brief §4.1)", () => {
         phone: "090 912.3456",
         email: " An@Mail.VN ",
         sourceType: "PAID",
-        nationalityGroup: "FOREIGN",
+        countryCode: "us",
       }),
-    ).toMatchObject({ phone: "0909123456", email: "an@mail.vn", sourceType: "PAID", nationalityGroup: "FOREIGN" });
+    ).toMatchObject({ phone: "0909123456", email: "an@mail.vn", sourceType: "PAID", countryCode: "US" });
   });
 
   it("rejects a missing name and channel, a bad phone, and unknown classifications", () => {
     expect(
-      fieldErrors(
-        leadInputSchema.safeParse({ fullName: " ", phone: "12", sourceType: "FREE", nationalityGroup: "MARS" }),
-      ),
+      fieldErrors(leadInputSchema.safeParse({ fullName: " ", phone: "12", sourceType: "FREE", countryCode: "MARS" })),
     ).toEqual({
       fullName: "required",
       channelId: "required",
       phone: "invalidPhone",
       sourceType: "invalidChoice",
-      nationalityGroup: "invalidChoice",
+      countryCode: "invalidChoice",
     });
   });
 

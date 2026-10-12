@@ -89,7 +89,7 @@ Never format money or dates anywhere else.
 
 ## 6. App shell
 
-- Collapsible shadcn Sidebar with the navigation groups from `08_UI_UX_SPECIFICATION.md` (Dashboard, Leads and consulting, Customers, Contracts, Schedules, Workout plans, Cash book, Tasks, Reports, Administration). Items without permission are hidden; the API enforces access (D-017).
+- Collapsible shadcn Sidebar with the navigation groups from `08_UI_UX_SPECIFICATION.md`, built from `lib/navigation.ts` (A-105): groups open and close (shadcn Collapsible), only the group of the current page is open at first, and the user's choice is remembered in the browser. With only the icons showing, a click on a group widens the sidebar. Items without permission are hidden, and so is a group left with none; the API enforces access (D-017).
 - Top bar: page title, branch switcher, global customer search (Ctrl+K: code, name, phone), approvals inbox, notification bell, user menu (name, role, language, sign out).
 - On phones the sidebar becomes a sheet and the top bar keeps search and notifications.
 
@@ -115,6 +115,9 @@ Each cross-cutting concern has exactly one owner in `apps/web/src/components/`. 
 |---|---|
 | `PageHeader` | Page title, description, primary action |
 | `DataTable` | Table, toolbar, server-side pagination, sorting, row actions |
+| `BarChart` | The shared chart of the dashboards, over the shadcn Chart (`components/ui/chart.tsx`, Recharts): horizontal grouped bars in the theme's chart colors (five distinct hues, `--chart-1` blue to `--chart-5` red; a single-series chart such as the funnel colors each group), with the chart's label for people who cannot see it. A chart always has its figures in a table beside it (A-094) |
+| `ExportButton` | **Export Excel** of a list: downloads the list's `/api/v1/<list>/export` with the page's own search and filters, shows a refusal (such as `EXPORT_TOO_LARGE`) as a toast, and is shown only to someone with the list's export permission |
+| `TablePagination` | The footer of every paginated list: the total, rows per page (10 by default; 20, 50, 100), first, previous, page numbers, next, and last. Each is a link built from the page's path and search params (`lib/paging.ts`), so filters and search are kept; a page reads `readPaging(params)` and passes `pageSize` to the API |
 | `EmptyState` | "Nothing here yet" message and its call to action |
 | Loading skeletons + `loading.tsx` | Loading states |
 | `ErrorState`, `toUserMessage(code)` | Showing errors; error code → translated message |

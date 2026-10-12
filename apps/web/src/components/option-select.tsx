@@ -7,8 +7,13 @@ import { SelectField, TextField } from "@/components/form-fields";
 import { useOptions } from "@/components/use-options";
 
 /** An option's label in the user's language (D-016: lists carry both). */
-export function optionLabel(option: Pick<Option, "labelVi" | "labelEn">, locale: string): string {
-  return locale === "vi" ? option.labelVi : option.labelEn;
+export function optionLabel(
+  option: Pick<Option, "labelVi" | "labelEn"> & { code?: string | null },
+  locale: string,
+): string {
+  const label = locale === "vi" ? option.labelVi : option.labelEn;
+  // A coded entry (D-066) is read by its number first: "ND01 · Giảm mỡ".
+  return option.code ? `${option.code} · ${label}` : label;
 }
 
 /** A chosen option as a record shows it: its label, then the note written with it. */

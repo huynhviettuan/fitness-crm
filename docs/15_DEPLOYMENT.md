@@ -38,7 +38,7 @@ BETTER_AUTH_URL         # the web app's public URL: Better Auth's base URL and t
 NODE_ENV                # production: no /api/docs, HSTS on
 GYM_TIMEZONE            # Asia/Ho_Chi_Minh (A-001)
 FIELD_ENCRYPTION_KEY    # AES-256-GCM key for ID and health fields (T-052, T-064): 32 random bytes, base64; one per environment, backed up apart from the database
-EMAIL_PROVIDER, EMAIL_API_KEY, EMAIL_FROM
+EMAIL_PROVIDER (`log` or `resend`), EMAIL_FROM, RESEND_API_KEY
 R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
 SENTRY_DSN, LOG_LEVEL
 

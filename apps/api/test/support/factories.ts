@@ -201,7 +201,75 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   },
   // Refusal reasons (M2 slice 2).
   { id: "c0000000-0000-4000-8000-00000000000d", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  // Customer groups (M2 slice 6).
+  { id: "c0000000-0000-4000-8000-00000000000e", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  // What a manager's Fail names (M3 slice 3).
+  { id: "c0000000-0000-4000-8000-00000000000f", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  // M2.7: the need details' "Khác", and the departments and job titles of the org chart (D-046, D-066).
+  { id: "c0000000-0000-4000-8000-000000000010", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000020", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  ...[
+    ["c0000000-0000-4000-8000-000000000201", "Ban điều hành", "Executive board"],
+    ["c0000000-0000-4000-8000-000000000202", "Studio", "Studio"],
+    ["c0000000-0000-4000-8000-000000000203", "Marketing", "Marketing"],
+    ["c0000000-0000-4000-8000-000000000204", "Finance", "Finance"],
+  ].map(([id, labelVi, labelEn], index) => ({ id, labelVi, labelEn, sortOrder: index + 1, active: true })),
+  ...[
+    ["c0000000-0000-4000-8000-000000000301", "CEO", "CEO"],
+    ["c0000000-0000-4000-8000-000000000302", "Trợ lý CEO", "CEO assistant"],
+    ["c0000000-0000-4000-8000-000000000303", "Studio Manager / Master", "Studio Manager / Master"],
+    ["c0000000-0000-4000-8000-000000000304", "Operation Coordinator", "Operation Coordinator"],
+    ["c0000000-0000-4000-8000-000000000305", "Client Care", "Client Care"],
+    ["c0000000-0000-4000-8000-000000000306", "Coach Leader", "Coach Leader"],
+    ["c0000000-0000-4000-8000-000000000307", "Coach Advance", "Coach Advance"],
+    ["c0000000-0000-4000-8000-000000000308", "Coach Junior", "Coach Junior"],
+    ["c0000000-0000-4000-8000-000000000309", "Coach Rookie", "Coach Rookie"],
+    ["c0000000-0000-4000-8000-00000000030a", "Marketing Manager", "Marketing Manager"],
+    ["c0000000-0000-4000-8000-00000000030b", "Content / Branding", "Content / Branding"],
+    ["c0000000-0000-4000-8000-00000000030c", "Content Creator / Ads Performance", "Content Creator / Ads Performance"],
+    ["c0000000-0000-4000-8000-00000000030d", "Media", "Media"],
+    ["c0000000-0000-4000-8000-00000000030e", "Growth / Performance", "Growth / Performance"],
+    [
+      "c0000000-0000-4000-8000-00000000030f",
+      "Content Creator / Branding Flow Fitness",
+      "Content Creator / Branding Flow Fitness",
+    ],
+    [
+      "c0000000-0000-4000-8000-000000000310",
+      "Content Creator / Branding Flow Store",
+      "Content Creator / Branding Flow Store",
+    ],
+    ["c0000000-0000-4000-8000-000000000311", "Media Flow Fitness", "Media Flow Fitness"],
+    ["c0000000-0000-4000-8000-000000000312", "Media Flow Store", "Media Flow Store"],
+    ["c0000000-0000-4000-8000-000000000313", "Direct Sale / Online Flow Fitness", "Direct Sale / Online Flow Fitness"],
+    ["c0000000-0000-4000-8000-000000000314", "Sale Flow Store", "Sale Flow Store"],
+    ["c0000000-0000-4000-8000-000000000315", "Kế toán trưởng", "Chief accountant"],
+    ["c0000000-0000-4000-8000-000000000316", "Kế toán Flow Fitness", "Accountant Flow Fitness"],
+    ["c0000000-0000-4000-8000-000000000317", "Kế toán Flow Store", "Accountant Flow Store"],
+    ["c0000000-0000-4000-8000-000000000318", "Dòng tiền Store", "Store cash flow"],
+    ["c0000000-0000-4000-8000-000000000319", "Kho", "Warehouse"],
+  ].map(([id, labelVi, labelEn], index) => ({ id, labelVi, labelEn, sortOrder: index + 1, active: true })),
 ];
+
+/** The 12 situations the migration creates (A-072), in order, with no answers. */
+export const SEEDED_SCRIPTS = [
+  "Chào lần đầu",
+  "Hỏi mục tiêu",
+  "Khách có cơn đau",
+  "Mời Assessment",
+  "Giá Hybrid",
+  "Giá Therapy",
+  "NKT",
+  "Lớp nhóm",
+  "Membership",
+  "Thanh toán",
+  "Nhắc lịch",
+  "Kết thúc tư vấn",
+].map((situationVi, index) => ({
+  id: `e0000000-0000-4000-8000-0000000000${String(index + 1).padStart(2, "0")}`,
+  situationVi,
+  sortOrder: index + 1,
+}));
 
 /** The approval matrix the migration creates (09_RBAC.md). */
 export const SEEDED_APPROVAL_RULES: { action: ApprovalAction; required: boolean; approvers: RoleCode[] }[] = [

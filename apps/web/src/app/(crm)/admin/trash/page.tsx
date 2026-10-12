@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FilterInput, FilterPanel, FilterSelect } from "@/components/filter-panel";
 import { filterValue } from "@/lib/filters";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -41,7 +42,13 @@ export default async function TrashPage({ searchParams }: PageProps<"/admin/tras
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          can(user, "trash.export") && <ExportButton path="/api/v1/trash/export" query={{ entityType, from, to }} />
+        }
+      />
       <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
         <FilterPanel action="/admin/trash" label={t("filters")} submitLabel={t("apply")}>
           <FilterSelect

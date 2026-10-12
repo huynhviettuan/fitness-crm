@@ -1,5 +1,6 @@
 // Direct database access for E2E setup and teardown only. Tests never assert on it;
 // they assert on what the UI shows.
+import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaClient } from "../../apps/api/src/generated/prisma/client";
@@ -39,7 +40,7 @@ export const E2E_TRAINER_NAME = "E2E PT Huấn luyện";
 
 export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE "notifications", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
+    `TRUNCATE TABLE "notifications", "email_messages", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
   // Checklist versions the specs saved; version 1 is the migration's (D-020).
@@ -101,6 +102,105 @@ export async function setContactAgainOn(leadId: string, day: string | null): Pro
       where: { id: leadId },
       data: { contactAgainOn: day ? new Date(`${day}T00:00:00Z`) : null },
     });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/** Moves a step's deadline to `minutesAgo` minutes ago, e.g. past the grace period (D-054). */
+export async function setStepDue(leadId: string, key: string, minutesAgo: number): Promise<void> {
+  const prisma = connect();
+  try {
+    await prisma.leadStep.updateMany({
+      where: { customerId: leadId, template: { key }, doneAt: null },
+      data: { dueAt: new Date(Date.now() - minutesAgo * 60_000) },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * Setup for the customer's "Emails sent" tab (M4.0): an outbox row as the sender would have left it. There is no
+ * screen that causes an email yet; the sender itself is covered by the API's integration tests. A waiting row is
+ * set a day ahead, so the worker running in the E2E API does not send it while the test looks.
+ */
+export async function insertEmailRow(
+  personId: string,
+  row: { subject: string; status: "QUEUED" | "SENT" | "FAILED"; failure?: string; attempts?: number },
+): Promise<void> {
+  const prisma = connect();
+  try {
+    await prisma.emailMessage.create({
+      data: {
+        personId,
+        branchId: E2E_BRANCH_ID,
+        event: "session.credited",
+        dedupeKey: `e2e:${randomUUID()}`,
+        toAddress: "khach@example.com",
+        locale: "vi",
+        subject: row.subject,
+        body: "Nội dung",
+        status: row.status,
+        attempts: row.attempts ?? (row.status === "QUEUED" ? 0 : 1),
+        failure: row.failure ?? null,
+        sentAt: row.status === "SENT" ? new Date() : null,
+        nextAttemptAt: new Date(Date.now() + 24 * 3_600_000),
+      },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/** Puts a lead in somebody's charge directly, e.g. a manager's: not through the round-robin. */
+export async function setLeadPic(leadId: string, userId: string): Promise<void> {
+  const prisma = connect();
+  try {
+    await prisma.customer.update({ where: { id: leadId }, data: { picUserId: userId } });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/** How a lead's first consulting step ("tư vấn") stands, for the audit specs (A-081). */
+export type FirstStepState = "onTime" | "late" | "openLate" | "openAhead";
+
+export async function setFirstStep(leadId: string, state: FirstStepState): Promise<void> {
+  const now = Date.now();
+  const hour = 3_600_000;
+  const data = {
+    onTime: { dueAt: new Date(now + hour), doneAt: new Date(now), timing: "ON_TIME" as const },
+    late: { dueAt: new Date(now - 2 * hour), doneAt: new Date(now), timing: "LATE" as const },
+    openLate: { dueAt: new Date(now - hour), doneAt: null, timing: null },
+    openAhead: { dueAt: new Date(now + hour), doneAt: null, timing: null },
+  }[state];
+  const prisma = connect();
+  try {
+    await prisma.leadStep.updateMany({ where: { customerId: leadId, template: { key: "tu-van" } }, data });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * The audit criteria are global configuration, so a spec that changes them puts back what was
+ * there (A-083). Returns the function that does.
+ */
+export async function rememberAuditCriteria(): Promise<() => Promise<void>> {
+  const prisma = connect();
+  try {
+    const before = await prisma.auditCriterion.findMany({ select: { key: true, active: true, weight: true } });
+    return async () => {
+      const again = connect();
+      try {
+        for (const { key, active, weight } of before) {
+          await again.auditCriterion.update({ where: { key }, data: { active, weight } });
+        }
+      } finally {
+        await again.$disconnect();
+      }
+    };
   } finally {
     await prisma.$disconnect();
   }

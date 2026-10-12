@@ -2,7 +2,9 @@ import { PgBoss } from "pg-boss";
 import { env } from "./platform/env.js";
 import { remindOverdueApprovals } from "./platform/approvals/approval.engine.js";
 import { remindTasks } from "./modules/tasks/task.service.js";
-import { remindDueSteps } from "./modules/leads/checklist.service.js";
+import { lockOverdueSteps, remindDueSteps } from "./modules/leads/checklist.service.js";
+import { reclaimLeads } from "./modules/leads/lead-reclaim.service.js";
+import { sendDueEmails } from "./modules/mail/mail.service.js";
 
 // Background work (T-045, T-059): pg-boss queues in PostgreSQL, no Redis. The same code
 // runs inside the API (RUN_JOBS=true, the default for development) or in the worker
@@ -11,12 +13,17 @@ import { remindDueSteps } from "./modules/leads/checklist.service.js";
 // reminders also mark what they sent.
 
 const REMINDERS = "reminders";
+const MAIL = "mail";
 
-/** Every reminder that is due: tasks before and after their deadline, overdue approvals, consulting steps. */
+/** Every reminder that is due: tasks before and after their deadline, overdue approvals, consulting steps, and leads to move on. */
 export async function sendReminders(now: Date = new Date()): Promise<void> {
   await remindTasks(now);
   await remindOverdueApprovals(now);
   await remindDueSteps(now);
+  // Steps past their deadline and grace period lock as "Không thực hiện" (D-054).
+  await lockOverdueSteps(now);
+  // Untouched leads move on to the next consultant (D-052).
+  await reclaimLeads(now);
 }
 
 export type Jobs = { stop(): Promise<void> };
@@ -40,5 +47,21 @@ export async function startJobs(): Promise<Jobs> {
   await boss.work(REMINDERS, async () => {
     await sendReminders();
   });
+  // The customer email outbox (D-036, P-6): own queue, so a failing reminder never holds an email back.
+  if (!(await boss.getQueue(MAIL))) await boss.createQueue(MAIL);
+  await boss.schedule(MAIL, "* * * * *", null, { tz: env.GYM_TIMEZONE });
+  await boss.work(MAIL, async () => {
+    await sendDueEmails();
+  });
+  if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
+    console.warn(
+      JSON.stringify({
+        time: new Date().toISOString(),
+        level: "warn",
+        type: "mail",
+        message: "EMAIL_PROVIDER is log: customer emails are recorded as sent but nothing leaves the server",
+      }),
+    );
+  }
   return { stop: () => boss.stop({ graceful: true, timeout: 10_000 }) };
 }

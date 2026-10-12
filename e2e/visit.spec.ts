@@ -38,7 +38,7 @@ test.describe("Show at reception", () => {
     await dialog.fill({
       idDocumentNumber: "0792 0100 1234",
       birthDate: "15/03/1990",
-      nationality: "Việt Nam",
+      country: "Việt Nam",
       email: `khach-${testTag.toLowerCase()}@example.com`,
       phone: uniquePhone(),
       healthNote: "Đau gối trái",

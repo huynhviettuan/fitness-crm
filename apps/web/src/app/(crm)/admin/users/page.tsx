@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
@@ -28,7 +29,12 @@ export default async function UsersPage() {
       <PageHeader
         title={t("title")}
         description={t("description")}
-        actions={<CreateUserButton roles={roles.map(({ id, name }) => ({ id, name }))} branches={user.branches} />}
+        actions={
+          <>
+            {can(user, "user.export") && <ExportButton path="/api/v1/users/export" query={{}} />}
+            <CreateUserButton roles={roles.map(({ id, name }) => ({ id, name }))} branches={user.branches} />
+          </>
+        }
       />
       <UsersTable users={users} currentUserId={user.id} />
     </>

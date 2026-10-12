@@ -24,6 +24,7 @@ import { useErrorMessage } from "@/components/use-error-message";
 import type { ErrorCode, FieldErrors } from "@/lib/api/errors";
 import { formatDateOnly } from "@/lib/format";
 import { EMPLOYEE_STATUSES, GENDERS, employeeInputSchema, type Employee } from "@flow/shared/employees";
+import { useEmployeeChoices } from "./use-employee-choices";
 import { createEmployeeAction, updateEmployeeAction } from "./actions";
 
 type BranchOption = { id: string; name: string };
@@ -35,6 +36,7 @@ const formSchema = employeeInputSchema.extend({
   userId: z.string(),
   departmentId: z.string(),
   titleId: z.string(),
+  managerId: z.string(),
   gender: z.string(),
 });
 
@@ -50,6 +52,7 @@ type FormValues = {
   team: string;
   titleId: string;
   titleNote: string;
+  managerId: string;
   status: (typeof EMPLOYEE_STATUSES)[number];
   isTrainer: boolean;
   userId: string;
@@ -68,6 +71,7 @@ function defaultsOf(employee: Employee | null): FormValues {
     team: employee?.team ?? "",
     titleId: employee?.title?.id ?? NONE,
     titleNote: employee?.title?.note ?? "",
+    managerId: employee?.manager?.id ?? NONE,
     status: employee?.status ?? "ACTIVE",
     isTrainer: employee?.isTrainer ?? false,
     userId: employee?.user?.id ?? NONE,
@@ -172,6 +176,15 @@ function EmployeeForm({
       .map((login) => ({ value: login.id, label: `${login.name} · ${login.email}` })),
   ];
 
+  // The direct manager is another active employee (D-046).
+  const managers = useEmployeeChoices();
+  const managerOptions = [
+    { value: NONE, label: t("employees.noManager") },
+    ...(managers ?? [])
+      .filter((manager) => manager.id !== employee?.id)
+      .map((manager) => ({ value: manager.id, label: `${manager.employeeCode} · ${manager.fullName}` })),
+  ];
+
   const showErrors = (result: { code: ErrorCode; fieldErrors?: FieldErrors }) => {
     applyFieldErrors(form.setError, result.fieldErrors);
     notify.error(errorMessage(result.code));
@@ -185,6 +198,7 @@ function EmployeeForm({
         gender: none(values.gender) as "" | (typeof GENDERS)[number],
         departmentId: none(values.departmentId),
         titleId: none(values.titleId),
+        managerId: none(values.managerId),
         userId: none(values.userId),
       };
       if (employee) {
@@ -272,6 +286,14 @@ function EmployeeForm({
           name="isTrainer"
           label={f("isTrainer")}
           description={t("employees.isTrainerDescription")}
+        />
+        <SelectField
+          control={form.control}
+          name="managerId"
+          label={f("manager")}
+          description={t("employees.managerDescription")}
+          placeholder={managers ? undefined : t("options.loading")}
+          options={managerOptions}
         />
         <SelectField
           control={form.control}

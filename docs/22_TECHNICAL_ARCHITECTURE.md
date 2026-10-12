@@ -106,6 +106,8 @@ Every one of these writes its audit event in the same transaction (T-048).
 
 pg-boss queues in PostgreSQL, processed by the worker: consulting step timers and reminders, re-care dates, approval and task overdue checks, freeze reminders (> 10 days), email outbox sending and retries, notification fan-out, nightly backup copy. Jobs are idempotent and keyed by the entity and step, so a retry never duplicates a reminder or an email.
 
+Customer email (A-106): a feature calls `queueEmail(tx, …)` in its own transaction, with a `dedupeKey` naming the cause. The `mail` queue (every minute) claims due rows with `FOR UPDATE SKIP LOCKED`, moves their next attempt ahead as a lease, sends outside the transaction with the row id as the provider's idempotency key, and records the result; a worker that dies leaves the lease to expire and the email is sent again under the same key. Retries wait 1, 5, and 30 minutes.
+
 ## 9. Derived values
 
 Never trust client values for sessions left, paid, debt, prices, payment status, PT credits, or permissions. They are computed by the API from records (T-050, D-034, D-032). Cached figures are allowed later only with a designed invalidation.

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { branchRefSchema } from "../branches/branch.schema.js";
-import { instant, pageOf } from "../validation/index.js";
+import { chosenOptionSchema } from "../options/option.schema.js";
+import { instant, listOf, pageOf } from "../validation/index.js";
 import { CUSTOMER_STATUSES } from "./customer.schema.js";
 import { ID_DOCUMENT_TYPES } from "../leads/show.schema.js";
 
@@ -21,15 +22,25 @@ export const customerSchema = z
     /** Given at Show (D-019); the number and health note are null when hidden (D-042), see maskedFields. */
     idDocumentType: z.enum(ID_DOCUMENT_TYPES).nullable(),
     idDocumentNumber: z.string().nullable(),
+    /** A country of ISO 3166-1 (D-057); `nationality` is the free text of records made before it. */
+    countryCode: z.string().nullable(),
     nationality: z.string().nullable(),
     healthNote: z.string().nullable(),
     /** When the customer agreed that the ID and health data are kept (D-042). */
     dataConsentAt: instant.nullable(),
+    /** The address and the emergency contact: null when hidden (A-069), see maskedFields. */
+    address: z.string().nullable(),
+    emergencyContactName: z.string().nullable(),
+    emergencyContactPhone: z.string().nullable(),
+    /** From the "customerGroups" list (A-070). */
+    customerGroup: chosenOptionSchema.nullable(),
+    /** The person in charge of the customer (A-071). */
+    staffInCharge: z.object({ id: z.uuid(), name: z.string() }).nullable(),
     notes: z.string().nullable(),
     createdAt: instant,
     updatedAt: instant,
     /** Fields hidden from this user, so screens can say "hidden" rather than "not provided". */
-    maskedFields: z.array(z.enum(["phone", "email", "idDocument", "health"])),
+    maskedFields: z.array(z.enum(["phone", "email", "address", "idDocument", "health"])),
     /**
      * A change of name, phone, or email waiting for approval (D-018): the values it
      * would set (hidden ones left out), or null. The fields above are still in effect.
@@ -46,6 +57,11 @@ export const customerSchema = z
   .meta({ id: "Customer" });
 
 export const customerPageSchema = pageOf(customerSchema).meta({ id: "CustomerPage" });
+
+/** Who can be put in charge of a customer, and filtered by: the active users of the actor's branches (A-071). */
+export const customerStaffListSchema = listOf(z.object({ id: z.uuid(), name: z.string() })).meta({
+  id: "CustomerStaffList",
+});
 
 /** How other records refer to their customer. */
 export const customerRefSchema = z

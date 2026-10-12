@@ -19,6 +19,7 @@ describe("taskInputSchema (brief §8.2)", () => {
       dueDate: new Date(Date.UTC(2026, 9, 20)),
       dueTime: "09:00",
       priority: "NORMAL",
+      reminders: null,
       entityType: null,
       entityId: null,
     });
@@ -86,5 +87,32 @@ describe("listTasksSchema and taskCommentSchema", () => {
       body: "required",
       "mentions.0": "invalidChoice",
     });
+  });
+});
+
+describe("the reminder points of a task (D-056)", () => {
+  const base = { title: "A", assigneeUserId: USER, dueDate: "20/10/2026", dueTime: "09:00" };
+
+  it("takes its own points in hours, as minutes before the deadline, longest first", () => {
+    expect(taskInputSchema.parse({ ...base, reminders: "1, 24" }).reminders).toEqual([1440, 60]);
+    expect(taskUpdateSchema.parse({ ...base, reminders: "0.5" }).reminders).toEqual([30]);
+  });
+
+  it("uses the shared points when empty", () => {
+    expect(taskInputSchema.parse({ ...base, reminders: "" }).reminders).toBeNull();
+    expect(taskUpdateSchema.parse(base).reminders).toBeNull();
+  });
+
+  it("refuses points it cannot read, repeats, and too many", () => {
+    const errors = (reminders: string) =>
+      Object.fromEntries(
+        (taskUpdateSchema.safeParse({ ...base, reminders }).error?.issues ?? []).map((issue) => [
+          issue.path.join("."),
+          issue.message,
+        ]),
+      );
+    expect(errors("soon")).toEqual({ reminders: "invalidReminders" });
+    expect(errors("3, 3")).toEqual({ reminders: "invalidReminders" });
+    expect(errors("1,2,3,4,5,6,7,8,9,10,11")).toEqual({ reminders: "tooManyReminders" });
   });
 });

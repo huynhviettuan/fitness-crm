@@ -14,6 +14,14 @@ import { parametersInputSchema, type Parameters } from "@flow/shared/parameters"
 import { useSubmit } from "../users/user-dialogs";
 import { updateParametersAction } from "./actions";
 
+function withoutNoOption(values: Parameters): Parameters {
+  return {
+    ...values,
+    studioDepartmentId: values.studioDepartmentId === NO_OPTION ? "" : values.studioDepartmentId,
+    receptionDepartmentId: values.receptionDepartmentId === NO_OPTION ? "" : values.receptionDepartmentId,
+  };
+}
+
 /** All parameters on one form, grouped by what reads them; saved together. */
 export function ParametersForm({ parameters, departments }: { parameters: Parameters; departments: Option[] }) {
   const t = useTranslations();
@@ -24,23 +32,20 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
     // A drop-down cannot hold "", so "no department" is NO_OPTION on screen.
     resolver: (values, context, options) =>
       zodResolver(parametersInputSchema, undefined, { raw: true })(
-        {
-          ...values,
-          studioDepartmentId: values.studioDepartmentId === NO_OPTION ? "" : values.studioDepartmentId,
-        } as never,
+        withoutNoOption(values) as never,
         context,
         options as never,
       ) as never,
-    defaultValues: { ...parameters, studioDepartmentId: parameters.studioDepartmentId || NO_OPTION },
+    defaultValues: {
+      ...parameters,
+      studioDepartmentId: parameters.studioDepartmentId || NO_OPTION,
+      receptionDepartmentId: parameters.receptionDepartmentId || NO_OPTION,
+    },
   });
 
   const onSubmit = form.handleSubmit((values) =>
     run(
-      () =>
-        updateParametersAction({
-          ...values,
-          studioDepartmentId: values.studioDepartmentId === NO_OPTION ? "" : values.studioDepartmentId,
-        }),
+      () => updateParametersAction(withoutNoOption(values)),
       (fieldErrors) => applyFieldErrors(form.setError, fieldErrors),
       () => {
         notify.success(t("parameters.saved"));
@@ -88,7 +93,14 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
           <CardTitle>{t("parameters.tasks")}</CardTitle>
           <CardDescription>{t("parameters.tasksHint")}</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">{field("taskDueSoonHours", "numeric")}</CardContent>
+        <CardContent className="grid gap-4 sm:grid-cols-3">{field("taskReminderHours")}</CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("parameters.exports")}</CardTitle>
+          <CardDescription>{t("parameters.exportsHint")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">{field("exportRowLimit", "numeric")}</CardContent>
       </Card>
       <Card>
         <CardHeader>
@@ -97,7 +109,11 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           {field("recareDays", "numeric")}
-          <div className="sm:col-span-2">
+          {field("reclaimMinutes", "numeric")}
+          {field("consultingWindowStart", "numeric")}
+          {field("consultingWindowEnd", "numeric")}
+          {field("stepGraceMinutes", "numeric")}
+          <div className="sm:col-span-3">
             <SelectField
               control={form.control}
               name="studioDepartmentId"
@@ -109,6 +125,23 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
               ]}
             />
           </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("parameters.mail")}</CardTitle>
+          <CardDescription>{t("parameters.mailHint")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SelectField
+            control={form.control}
+            name="receptionDepartmentId"
+            label={t("parameters.fields.receptionDepartmentId")}
+            options={[
+              { value: NO_OPTION, label: t("parameters.noDepartment") },
+              ...departments.map((department) => ({ value: department.id, label: optionLabel(department, locale) })),
+            ]}
+          />
         </CardContent>
       </Card>
       <div className="flex justify-end">

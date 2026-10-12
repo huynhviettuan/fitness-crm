@@ -8,8 +8,9 @@ import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import { resolveChoice } from "../../platform/options/option.service.js";
+import { nationalityGroupOf } from "@flow/shared/countries";
 import type { OptionListKey } from "@flow/shared/options";
-import { assertPhoneFree, findPhoneOwner, leadsVisibleTo } from "../customers/person.service.js";
+import { assertPhoneFree, duplicateOf, findPhoneOwner, leadsVisibleTo } from "../customers/person.service.js";
 import { visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import * as repo from "./lead.repository.js";
 import { present, visibleLead } from "./lead.present.js";
@@ -43,9 +44,11 @@ const AUDITED_FIELDS = [
   "sourceNote",
   "sourceType",
   "sourceDetail",
+  "countryCode",
   "nationalityGroup",
   "needGroupId",
   "needGroupNote",
+  "needDetailId",
   "needDetail",
   "painStatusId",
   "painStatusNote",
@@ -135,10 +138,9 @@ async function assertPhoneNew(db: Db, actor: Actor, phone: string | null): Promi
     who.permissions.has("customer.view") ? customersVisibleTo(who) : { id: { in: [] } },
   );
   if (!owner) return;
-  const { visible, ...duplicate } = owner;
   throw new AppError("DUPLICATE_PHONE", {
     fieldErrors: { phone: ["phoneAlreadyUsed"] },
-    duplicate: visible ? duplicate : undefined,
+    duplicate: duplicateOf(owner),
   });
 }
 
@@ -194,6 +196,17 @@ async function toWrite(db: Db, data: LeadData, current: repo.LeadRecord | null):
     data.needGroupNote,
     current?.needGroupId,
   );
+  // The text of the need detail is the note written with the catalog entry (D-066), so "Khác" needs it.
+  const needDetail = data.needDetailId
+    ? await resolveChoice(
+        db,
+        "needDetails",
+        "needDetailId",
+        { optionId: data.needDetailId, note: data.needDetail },
+        current?.needDetailId ?? null,
+        "needDetail",
+      )
+    : { optionId: null, note: data.needDetail };
   const painStatus = await choice(
     "painStatuses",
     "painStatusId",
@@ -220,10 +233,14 @@ async function toWrite(db: Db, data: LeadData, current: repo.LeadRecord | null):
     sourceNote: source.note,
     sourceType: data.sourceType,
     sourceDetail: data.sourceDetail,
-    nationalityGroup: data.nationalityGroup,
+    countryCode: data.countryCode,
+    // The group follows the country (D-057); a person from an old import with only a group keeps it.
+    nationalityGroup: data.countryCode ? nationalityGroupOf(data.countryCode) : (current?.nationalityGroup ?? null),
     needGroupId: needGroup.optionId,
     needGroupNote: needGroup.note,
-    needDetail: data.needDetail,
+    needDetailId: needDetail.optionId,
+    // The text is the note written with the catalog entry, or alone when none is chosen (D-066).
+    needDetail: needDetail.optionId ? needDetail.note : data.needDetail,
     painStatusId: painStatus.optionId,
     painStatusNote: painStatus.note,
     assessmentTypeId: assessmentType.optionId,

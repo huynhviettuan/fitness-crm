@@ -23,7 +23,11 @@ Each slice lists:
 | P-2 | Excel export | Build one shared export in M3.1 and add it to every existing list | The brief asks for Export Excel on every list (§1) and every report (§9); none exists yet. Every later list and report reuses it, and AC-01 checks that masked fields never reach a file. |
 | P-3 | File storage | Build signed-URL storage (Cloudflare R2, T-052) in M4.1, where the first files appear (service images), before receipt proofs (M4.5) | One owner for files; no file is served without a signed URL. |
 | P-4 | Staging | Set up staging (doc 15) before the owner's M2 trial | Every milestone ends on staging (doc 16), and M1 is still waiting for it. |
-| P-5 | Customer email before M6 | M5's credited and refunded sessions write an email event into the outbox table created in M5.4; M6 sends them | AC-17 needs one email per change, including changes made between M5 and M6. |
+| P-5 | Customer email before M6 | M5's credited and refunded sessions write an email event into the outbox table created in M5.4; M6 sends them | AC-17 needs one email per change, including changes made between M5 and M6. **Superseded by P-6.** |
+| P-6 | Email infrastructure first | M6 becomes "automatic email infrastructure" (D-059); M6.1 is built at the start of M4 as M4.0, and each later feature attaches its event as it is built | The owner's answer of 12/10/2026: every action that changes a customer's entitlements emails them, and nothing should be wired back later. |
+| P-7 | Customer feedback follow-up | A slice M2.7 changes what M1 and M2 built (lead form, nationality, weighted assignment, reclaim, checklist lock, reminders, organization), before M3.5 and M4 | The answers of 12/10/2026 reverse or extend decisions already built; the later the change, the more it costs. |
+| P-8 | Staff notifications | Email and phone push for staff are slice M6.4, after the sender exists (M4.0) | D-053 needs the infrastructure of D-059. |
+| P-9 | Fingerprint-ready check-in | The scan API, the pairing, and the machine data are slice M5.3b; the NextFace ID survey (TS-009) is answered before M5 starts | The updated brief of 12/10/2026 (§6.6, D-069 to D-072) asks for no rework when a machine is attached. |
 
 ## M2 — Leads and consulting (remaining)
 
@@ -41,7 +45,7 @@ Each slice lists:
   - Which record survives a merge (proposed: the older one, which keeps its codes)?
 - **Depends on:** M2.4.
 
-### M2.6 Script library, lead notes, and customer profile
+### M2.6 Script library, lead notes, and customer profile (done 2026-10-12)
 
 - **Builds:**
   - **Script library:** situations with Vietnamese and English answers, managed by managers. On a lead, a side panel picks a situation and copies the answer in the customer's language. The 12 situation names from the brief are seeded; the answers come from the owner's "Framework tư vấn chung" sheet, entered on screen.
@@ -59,9 +63,29 @@ Each slice lists:
 
 **M2 close:** the owner trial on staging for AC-03, AC-06, AC-07, AC-09 (lead part), and AC-23 (leads).
 
+### M2.7 Customer feedback follow-up (done 2026-10-12, from the answers of 12/10/2026)
+
+What the owner's answers change in what M1 and M2 already built. All numbers are parameters (D-015).
+
+- **Builds:**
+  - **Lead form:** only name and channel are required; the duplicate check runs only with a phone; a consultant can open the old profile of a returning person, within their permissions, instead of only being refused (D-060).
+  - **Nationality:** a list of ISO 3166 countries; the group (Việt Nam or Nước ngoài) and the email language are derived; old data with only "Nước ngoài" keeps the country empty and flagged for completion; the lead analysis can split by country (D-057).
+  - **Weighted assignment:** a turn weight per consultant (initially 1) and a receiving on/off switch; only people within their working hours get leads; the rule set takes new conditions without a rewrite (D-050).
+  - **Reclaim:** an untouched lead moves to the next consultant after 1 hour counted inside 08:30–20:30; each move is recorded, the previous owner is told, and the consulting dashboard reports moves per person and period (D-052).
+  - **Checklist lock:** a tick cannot be removed except by admin with a reason; an overdue step locks as "Không thực hiện" after a grace period; a tick in the grace period is "Trễ"; the system writes the tick time; the dashboard gets each step's completion rate and its relation to booking, show, and contract rates (D-054, D-055).
+  - **Reminders:** a list of points per task, initially 24 h, 3 h, and 1 h; admin edits the shared points and the assigner edits one task's (D-056).
+  - **Organization:** the "Quản lý trực tiếp" field; departments, job titles, and reporting lines seeded from the org chart; the title → role mapping; slow approvals told to the direct manager, else Admin; task assignment grants (D-046, D-047, D-048).
+  - **Need details:** a coded catalog with a note field (D-066).
+  - **Master:** stays with Admin (D-049).
+- **Source:** the owner's answers of 12/10/2026; D-046 to D-072; AC-03, AC-06, AC-07.
+- **Data:** employee direct manager; department and title catalogs with codes; consultant turn weight and receiving flag; lead moves; checklist locking fields and parameters; reminder points; the countries list.
+- **Tests:** unit for the weighted turn, the working-window clock (the 20:00 lead has 30 minutes, then 30 more at 08:30), the locked step states, and the group derived from the country; integration for each rule; E2E for the lead form and for admin removing a tick; security for who removes a tick and who switches receiving.
+- **Decide first:** the grace period default and the reclaim hours go to parameters with the owner's numbers (1 hour, 08:30–20:30); nothing else is open.
+- **Depends on:** M2.6.
+
 ## M3 — Audit and consulting dashboard
 
-### M3.1 Excel export (P-2)
+### M3.1 Excel export (P-2) (done 2026-10-12)
 
 - **Builds:** one shared export owner. Each list and report declares its columns once; the API streams `.xlsx` with the same filters, scope, and masks as the screen. The export permission is checked per list. Exports are audited (who, what, filters). Every existing list (users, customers, leads, contracts, payments, cash, tasks, history, trash) gets the Export button.
 - **Source:** brief §1 (list template), §2 (export is a sensitive permission), §9; D-017, D-041; AC-01 (export part).
@@ -70,7 +94,7 @@ Each slice lists:
 - **Decide first:** the export row limit (proposed: a parameter, 50,000 by default).
 - **Depends on:** —
 
-### M3.2 Rule-based consulting audit
+### M3.2 Rule-based consulting audit (done 2026-10-12)
 
 - **Builds:**
   - Compliance per lead and per consultant: on-time steps divided by due steps, with late and skipped counted.
@@ -82,7 +106,7 @@ Each slice lists:
 - **Decide first:** the score formula (proposed: share of due steps done on time; skipped steps count as missed).
 - **Depends on:** M2.6.
 
-### M3.3 Manager audit
+### M3.3 Manager audit (done 2026-10-12)
 
 - **Builds:** a manager opens a lead with its full timeline and marks it pass or fail. The decision has a comment and the failed criteria, taken from an option list. A queue lists each consultant's leads not yet audited. The audit score appears on the lead.
 - **Source:** brief §4.1 (manager audit), §10 (Audit tư vấn); FR-LEAD-011.
@@ -92,7 +116,7 @@ Each slice lists:
 - **Decide first:** can a lead be audited more than once (proposed: yes, and the latest counts)?
 - **Depends on:** M3.2.
 
-### M3.4 Consulting dashboard and lead analysis
+### M3.4 Consulting dashboard and lead analysis (done 2026-10-12)
 
 - **Builds:**
   - **Consulting dashboard**, per consultant and for the team:
@@ -121,6 +145,10 @@ Each slice lists:
 **M3 close:** reconcile AC-08 with the owner on staging.
 
 ## M4 — Contracts and cash book
+
+### M4.0 Email infrastructure (M6.1, moved here by P-6; built 2026-10-12, A-106)
+
+The sender, the outbox, the failure task, and the domain setup of M6.1 are built before M4.1, so every feature of M4, M5, and M8 attaches its email when it is built (D-059). **Built:** the `email_messages` outbox, `queueEmail` for the features, the pg-boss `mail` worker with Resend and a log provider, retries, the task for reception, and the customer's "Emails sent" tab. **Left for the owner:** the sending domain, its DNS records, and the sender name (OQ-036). The approval matrix is switched on for creating and editing contracts, exception prices, deactivation, and change vouchers as each of them is built (D-065).
 
 ### M4.1 Services, price tiers, and file storage
 
@@ -242,9 +270,10 @@ Each slice lists:
 ### M5.2 PT grid and booking
 
 - **Builds:**
-  - **Grid:** a row per PT, 30-minute cells, configurable hours, and day and week views. Filters: branch, date, PT, customer. Each PT shows a count; bookable cells are green, others grey.
+  - **Grid:** a row per PT, 30-minute cells, configurable hours, and day and week views. Filters: branch, date, PT, customer. Each PT shows a count; every cell can be booked (D-058), and cells inside the on-duty shift are colored differently from cells outside it.
   - **Phone first.**
-  - **Booking:** customer, a contract with sessions left, start, duration. It is refused when the contract isn't approved, is frozen or expired, or has no sessions left. It is also refused for trainer or customer overlap, outside working hours, or outside the service's hours and weekly or daily limits.
+  - **On-duty shifts (D-058):** a shift is only shown and reported, never a limit; a new PT with no shift can be booked; the PT report counts sessions taught in and outside the shift.
+  - **Booking:** customer, a contract with sessions left, start, duration. It is refused when the contract isn't approved, is frozen or expired, or has no sessions left. It is also refused for trainer or customer overlap, or outside the service's hours and weekly or daily limits.
 - **Source:** brief §6.1; FR-PT-001, FR-PT-002; D-030; BR-402, BR-403; OQ-001 and OQ-008 interim; AC-15 (refusals), AC-23.
 - **Data:** a customer-overlap exclusion constraint.
 - **Tests:** INT-003, INT-007, INT-009; E2E on a phone: book, then get refused for an overlap.
@@ -261,7 +290,23 @@ Each slice lists:
 - **Tests:** E2E-108; INT-001, INT-002.
 - **Depends on:** M5.2.
 
+### M5.3b Fingerprint-ready check-in (scan API and pairing)
+
+- **Builds:**
+  - **One event:** "session confirmed" is the only path to *Đã tập*; the admin's manual confirmation, bulk "Đã tập", and a paired scan all raise it, and it takes the session off the contract, credits the PT, emails the customer, and writes the log (D-069).
+  - **Machines and scans:** `POST` for a registered machine with its own key, a machine per branch, a raw scan table with the pairing result, offline scans paired by their real time, a warning when a clock is off (D-072).
+  - **The machine user code** on the customer and the employee; no fingerprint or face image is stored; the old codes arrive with the GymMaster import (M9).
+  - **Pairing** by the rules of D-070: 15 minutes to wait, the ±1 hour window, one pair per session, 2–3 sessions a day with different PTs, the nearest unconfirmed booking when several fit, repeat scans counted once.
+  - **Hanging sessions and errors:** "Thiếu check-in của PT" and "Thiếu check-in của khách"; an error list for scans with no booking or on a contract with no sessions left, expired, or on hold; the PT's end-of-day list with the drop-down choices; after 24 hours a task and a notice to the Studio Manager (D-071); a report of the sessions confirmed by hand, per PT and per customer.
+- **Source:** brief §6.6; D-069 to D-072; AC-29, AC-30; OQ-027 and TS-009.
+- **Data:** `checkin_devices`, `checkin_scans`, the machine user code columns, a confirmation method "device", the hanging reason.
+- **Tests:** unit for the pairing (every row of the table of D-070, and its edges: exactly 15 minutes, exactly 1 hour); integration for the one event (a paired scan and a manual confirmation consume once, also when repeated or concurrent); E2E for the error list and the PT's list on a phone; security for a machine key (an unknown or another branch's machine is refused, a key is never logged).
+- **Decide first:** nothing blocks (OQ-027 only blocks attaching a machine); the survey TS-009 is answered before M5 starts.
+- **Depends on:** M5.3; the notices to the PT and the Studio Manager use the in-app channel until M6.4 adds email and push.
+
 ### M5.4 Delete from check-in history and Burn Show; email outbox
+
+> The outbox and the sender are built earlier, in M6.1 at the start of M4 (P-6); this slice only writes the refund event into them.
 
 - **Builds:**
   - **Delete a recorded session** with a reason: 1 session refunded, the PT credit removed, the session to the trash.
@@ -308,9 +353,11 @@ Each slice lists:
 
 **M5 close:** AC-02, AC-09, AC-11, AC-15, AC-16, AC-18, and AC-23 on staging.
 
-## M6 — Customer email
+## M6 — Automatic email infrastructure
 
-### M6.1 Provider and sending
+The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infrastructure; the templates are a small part. M6.1 is built first, at the start of M4 (P-6); M6.2 and M6.3 attach each event as the feature that causes it is built; M6.4 is the staff side.
+
+### M6.1 Provider and sending (built first, as M4.0, 2026-10-12)
 
 - **Builds:**
   - **A sender worker** (pg-boss) that sends the outbox through the provider (doc 26: Resend or Amazon SES), with retries.
@@ -320,7 +367,7 @@ Each slice lists:
 - **Source:** brief §8.3; FR-MAIL-003; D-036.
 - **Tests:** the provider is mocked at its HTTP boundary; tests check that a failure leaves a task and the stored status.
 - **Decide first:** the provider (TS in doc 26) and the sending domain; the owner adds the DNS records.
-- **Depends on:** M5.4.
+- **Depends on:** — (moved to the start of M4, P-6).
 
 ### M6.2 Templates and session emails
 
@@ -333,9 +380,19 @@ Each slice lists:
 
 ### M6.3 Optional events
 
-- **Builds:** appointment confirmation, contract activated, receipt, contract expiring or running out of sessions (D-012 thresholds). Admin switches each one on or off.
+- **Builds:** the events of D-059, each with its template and an admin on/off switch: a confirmed session (Đã tập, Khách không đến, Burn Show) with sessions taken and left, a refunded session, contract activated, receipt, renewal, upgrade, hold, transfer, cancellation, deactivation and reactivation with the new end date, and a contract expiring or running out of sessions (D-012 thresholds). Each event is attached when its feature is built (M4, M5, M8); this slice is closed when the last one is.
 - **Source:** brief §8.3; D-012.
 - **Depends on:** M6.2.
+
+### M6.4 Staff notifications (email and phone)
+
+- **Builds:**
+  - **Email to staff** for the important events: a task near its reminder points, an overdue task, an approval waiting, an escalation from a workout session, a lead newly assigned or moved (D-053).
+  - **Push on the phone** when the employee is signed in on a phone; a written proposal of the way (the web app on the home screen) and its limits on iPhone and Android comes first.
+  - **Preferences:** each employee picks the types by email and by phone; admin marks the mandatory ones.
+- **Source:** D-053, D-056; OQ-026 answered.
+- **Tests:** the provider and the push service are mocked at their boundary; the preferences and the mandatory types; a muted type still arrives when mandatory.
+- **Depends on:** M6.1 and M2.7.
 
 **M6 close:** AC-17 on staging with the real domain.
 
@@ -424,3 +481,29 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 ## Order and parallel work
 
 Slices run in the order above. M7 can start after M5.3 (it needs sessions), in parallel with the rest of M5, if a second developer joins. M10.0 (the survey) and the owner's answers to the open questions of the next milestone (doc 16) should happen during the milestone before.
+
+## Checklist: the owner's answers of 12/10/2026
+
+Each item of the owner's list of work for the developer, with where it is built. ☐ is open; the docs part (this checklist and D-046 to D-072) is done.
+
+- ☑ M6 is "automatic email infrastructure", built at the start of M4 → M4.0 / M6.1 (P-6, D-059). Docs ☑, built ☑ 2026-10-12 (A-106); the domain waits for the owner (OQ-036).
+- ☐ PT booking is not limited by shifts; a shift is an on-duty shift for display and reports → M5.2 (D-058). Docs ☑.
+- ☑ A consultant's data scope is role configuration, not hard-coded → M2.7 checks it (D-061; built, A-095).
+- ☑ The lead form needs no phone → M2.7 (D-060).
+- ☑ Nationality is a list of countries, with the group and the email language derived → M2.7 (D-057).
+- ☑ Several reminder points per task, 24 h, 3 h, 1 h → M2.7 (D-056).
+- ☑ Lead turns by weight per person, receiving on/off → M2.7 (D-050).
+- ☑ Reclaim after 1 hour inside 08:30–20:30, recorded and reported → M2.7 (D-052).
+- ☑ Checklist lock, "Không thực hiện", per-step completion rates → M2.7 (D-054, D-055).
+- ☑ "Quản lý trực tiếp"; departments, titles, and reporting lines; slow approvals to the direct manager → M2.7 (D-046, D-048).
+- ☐ Staff notifications by email and phone, with a push proposal → M6.4 (D-053).
+- ☑ Admin keeps the Master role first (D-049): nothing to build; admin already holds it.
+- ☐ The next progress report follows these points → written by the developer at the end of M2.7.
+
+From the updated brief of 12/10/2026 (§6.6 and the new acceptance criteria):
+
+- ☐ Scan API, pairing rules, machine data, the hanging-session flow, and the manual-confirmation report → M5.3b (D-069 to D-072; AC-29, AC-30).
+- ☐ Answer the NextFace ID survey (machine model; options A, B, C; whether fingerprints survive a change of software) before M5 → TS-009.
+- ☐ The owner confirms the title → role table and the Marketing reporting lines → OQ-034; OQ-035 answered: the machines are integrated in the future; admin confirmation stays in phase 1.
+
+The owner will send: the employees, PTs, titles, and branches for the trial; the coded "Chi tiết nhu cầu" list; the confirmed lists of channels, sources, needs, Pain Status, and Assessment type.

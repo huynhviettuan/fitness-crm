@@ -3,6 +3,15 @@
     "name": "Fitness CRM"
   },
   "nav": {
+    "groups": {
+      "leads": "Lead và tư vấn",
+      "customers": "Khách hàng và hợp đồng",
+      "schedule": "Lịch và buổi tập",
+      "reports": "Báo cáo",
+      "people": "Người và quyền",
+      "config": "Cấu hình",
+      "monitoring": "Giám sát"
+    },
     "main": "Điều hướng",
     "dashboard": "Tổng quan",
     "leads": "Lead",
@@ -25,7 +34,13 @@
     "notifications": "Thông báo",
     "leadsToday": "Việc hôm nay",
     "checklist": "Checklist tư vấn",
-    "leadsRecare": "Tái chăm sóc"
+    "leadsRecare": "Tái chăm sóc",
+    "scripts": "Kịch bản tư vấn",
+    "leadsAudit": "Audit tư vấn",
+    "auditCriteria": "Tiêu chí audit",
+    "consultingReport": "Dashboard tư vấn",
+    "leadAnalysis": "Phân tích lead",
+    "leadReceivers": "Nhận lead"
   },
   "status": {
     "customer": {
@@ -97,11 +112,17 @@
     "leadStep": {
       "WAITING": "Chờ",
       "OPEN": "Đang mở",
-      "DONE": "Đã xong"
+      "DONE": "Đã xong",
+      "NOT_DONE": "Không thực hiện"
     },
     "stepTiming": {
       "ON_TIME": "Đúng hạn",
       "LATE": "Trễ hạn"
+    },
+    "email": {
+      "QUEUED": "Đang chờ gửi",
+      "SENT": "Đã gửi",
+      "FAILED": "Gửi lỗi"
     }
   },
   "common": {
@@ -125,7 +146,10 @@
     "notifications": "Thông báo",
     "hidden": "Đã ẩn",
     "chooseBranch": "Chọn chi nhánh",
-    "back": "Quay lại"
+    "back": "Quay lại",
+    "exportExcel": "Xuất Excel",
+    "exporting": "Đang xuất…",
+    "exportTooLarge": "Danh sách có {total} dòng, mỗi lần xuất tối đa {limit} dòng. Hãy lọc bớt trước."
   },
   "auth": {
     "title": "Đăng nhập",
@@ -212,7 +236,7 @@
       "sourceDetail": "Chi tiết nguồn",
       "nationalityGroup": "Nhóm quốc tịch",
       "needGroup": "Nhóm nhu cầu",
-      "needDetail": "Chi tiết nhu cầu",
+      "needDetail": "Ghi chú chi tiết nhu cầu",
       "painStatus": "Pain Status",
       "assessmentType": "Loại Assessment",
       "pic": "Người phụ trách",
@@ -225,7 +249,9 @@
       "appointmentTime": "Giờ hẹn",
       "refuseReason": "Lý do từ chối",
       "contactAgainOn": "Ngày liên hệ lại",
-      "statusNote": "Ghi chú (không bắt buộc)"
+      "statusNote": "Ghi chú (không bắt buộc)",
+      "country": "Quốc gia",
+      "needDetailChoice": "Chi tiết nhu cầu (danh mục)"
     },
     "changeStatus": "Đổi trạng thái",
     "changeStatusTitle": "Đổi trạng thái: {name}",
@@ -263,7 +289,9 @@
       "roundRobin": "Tự động chia lượt",
       "inquiry": "Liên hệ lại qua {channel}",
       "mergedFrom": "Gộp từ hồ sơ {code} · {name}",
-      "system": "Hệ thống"
+      "system": "Hệ thống",
+      "note": "Ghi chú",
+      "reclaimed": "Tự động chuyển từ {from} sang {to} vì {minutes} phút làm việc chưa được chăm sóc"
     },
     "checklist": "Checklist tư vấn",
     "merge": {
@@ -282,7 +310,28 @@
         "LEAD": "Lead",
         "CUSTOMER": "Khách hàng"
       }
-    }
+    },
+    "notes": {
+      "title": "Ghi chú",
+      "add": "Thêm ghi chú",
+      "placeholder": "Viết ghi chú về lead này…",
+      "saved": "Đã thêm ghi chú"
+    },
+    "scripts": {
+      "open": "Kịch bản",
+      "title": "Kịch bản tư vấn",
+      "description": "Chọn tình huống rồi sao chép câu trả lời để dán vào kênh chat.",
+      "language": "Ngôn ngữ câu trả lời",
+      "vi": "Tiếng Việt",
+      "en": "English",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "copyFailed": "Không sao chép được. Hãy chọn đoạn văn và sao chép thủ công.",
+      "noAnswer": "Chưa có câu trả lời bằng ngôn ngữ này.",
+      "empty": "Chưa có kịch bản nào có câu trả lời. Quản lý thêm trong mục Kịch bản tư vấn."
+    },
+    "countryMissing": "Chưa có quốc gia, cần bổ sung",
+    "needDetailHint": "Ghi chú đi kèm lựa chọn ở trên; bắt buộc khi chọn \"Khác\"."
   },
   "people": {
     "duplicateLead": "Số điện thoại này đã thuộc lead {code} · {name}. Mỗi người chỉ có một hồ sơ.",
@@ -292,7 +341,9 @@
     "duplicateTitle": "Số điện thoại đã có hồ sơ",
     "duplicateIntake": "Hồ sơ {code} · {name} đang dùng số này. \"Gộp vào hồ sơ này\" thêm lần liên hệ mới (kênh, nguồn, nhu cầu, ghi chú) vào hồ sơ đó và không tạo hồ sơ thứ hai.",
     "backToEdit": "Quay lại sửa",
-    "inquiryAdded": "Đã thêm lần liên hệ vào hồ sơ {code}"
+    "inquiryAdded": "Đã thêm lần liên hệ vào hồ sơ {code}",
+    "duplicateElsewhere": "Số điện thoại này đã thuộc lead {code} · {name}, do {person} phụ trách. Hãy liên hệ người đó hoặc quản lý để tiếp tục chăm sóc.",
+    "duplicateElsewhereNobody": "Số điện thoại này đã thuộc lead {code} · {name}, chưa có người phụ trách. Hãy báo quản lý."
   },
   "customers": {
     "title": "Khách hàng",
@@ -321,19 +372,51 @@
       "nationality": "Quốc tịch",
       "idDocument": "Giấy tờ",
       "healthNote": "Sức khỏe cơ bản",
-      "dataConsentAt": "Đồng ý lưu dữ liệu"
+      "dataConsentAt": "Đồng ý lưu dữ liệu",
+      "address": "Địa chỉ",
+      "emergencyContact": "Liên hệ khẩn cấp",
+      "emergencyContactName": "Tên người liên hệ khẩn cấp",
+      "emergencyContactPhone": "SĐT người liên hệ khẩn cấp",
+      "customerGroup": "Nhóm khách hàng",
+      "staffInCharge": "Nhân viên phụ trách"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
     "tabs": {
-      "overview": "Tổng quan",
+      "overview": "Thông tin",
       "contracts": "Hợp đồng",
       "bookings": "Lịch tập",
-      "payments": "Thanh toán"
+      "payments": "Thanh toán",
+      "consulting": "Lịch sử tư vấn",
+      "emails": "Email đã gửi"
     },
     "identitySubmitted": "Đã lưu. Thay đổi họ tên, điện thoại, email đang chờ duyệt.",
     "pendingIdentity": "Đang chờ duyệt: {changes}. Thông tin hiện tại vẫn có hiệu lực đến khi được duyệt.",
-    "intakeHistory": "Liên hệ lại và gộp hồ sơ"
+    "intakeHistory": "Liên hệ lại và gộp hồ sơ",
+    "filters": "Bộ lọc",
+    "apply": "Áp dụng",
+    "allBranches": "Tất cả chi nhánh",
+    "allStaff": "Tất cả nhân viên",
+    "allMonths": "Mọi tháng",
+    "allEmails": "Có hoặc không có email",
+    "onlyNoEmail": "Chỉ khách chưa có email",
+    "registeredFrom": "Đăng ký từ ngày",
+    "registeredTo": "Đăng ký đến ngày",
+    "birthdayMonth": "Tháng sinh nhật",
+    "emailFilter": "Email",
+    "dayHint": "dd/mm/yyyy",
+    "noEmail": "Chưa có email",
+    "noEmailHint": "Hãy xin email của khách: email báo buổi tập gửi về đó.",
+    "noStaff": "Chưa phân công",
+    "noGroup": "Không có",
+    "hiddenGroup": "Thông tin liên hệ",
+    "consulting": {
+      "timeline": "Dòng thời gian",
+      "checklist": "Checklist",
+      "empty": "Chưa có lịch sử tư vấn: khách này không đến từ lead."
+    },
+    "noResultsFilters": "Không có khách hàng nào khớp bộ lọc.",
+    "month": "Tháng {month}"
   },
   "users": {
     "title": "Người dùng",
@@ -464,7 +547,9 @@
     "PHONE_ALREADY_USED": "Số điện thoại này đã có trong hệ thống.",
     "DUPLICATE_PHONE": "Số điện thoại này đã có hồ sơ. Bạn có thể gộp vào hồ sơ đó.",
     "MERGE_CUSTOMERS_UNSUPPORTED": "Chưa thể gộp hai hồ sơ khách hàng.",
-    "PERSON_ALREADY_MERGED": "Hồ sơ này đã được gộp vào hồ sơ khác."
+    "PERSON_ALREADY_MERGED": "Hồ sơ này đã được gộp vào hồ sơ khác.",
+    "EXPORT_TOO_LARGE": "Danh sách quá dài để xuất. Hãy lọc bớt trước.",
+    "STEP_LOCKED": "Bước này đã quá hạn và hết thời gian gia hạn, nên đã khóa là Không thực hiện."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -492,7 +577,7 @@
     "notOnHalfHour": "Chọn giờ tròn hoặc giờ rưỡi, ví dụ 05:00 hoặc 05:30.",
     "invalidCodePrefix": "Tiền tố gồm 1 đến 5 chữ cái không dấu, ví dụ KH.",
     "approverRequired": "Chọn ít nhất một vai trò được duyệt.",
-    "outOfRange": "Nhập một số từ 1 đến 720.",
+    "outOfRange": "Giá trị ngoài khoảng cho phép.",
     "shiftsOverlap": "Các ca trong cùng một ngày không được chồng lên nhau.",
     "dayOffExists": "Ngày này đã là ngày nghỉ.",
     "oneAssigneeOnly": "Chỉ chọn một người hoặc một phòng ban.",
@@ -501,7 +586,16 @@
     "daysOutOfRange": "Nhập số ngày từ 1 đến 365.",
     "invalidKey": "Mã bước không hợp lệ.",
     "consentRequired": "Cần khách đồng ý trước khi lưu giấy tờ và thông tin sức khỏe.",
-    "invalidIdDocument": "Số giấy tờ không hợp lệ: CCCD gồm 12 chữ số, hộ chiếu 6 đến 20 chữ và số."
+    "invalidIdDocument": "Số giấy tờ không hợp lệ: CCCD gồm 12 chữ số, hộ chiếu 6 đến 20 chữ và số.",
+    "rowsOutOfRange": "Nhập số dòng từ 100 đến 200.000.",
+    "weightOutOfRange": "Nhập trọng số từ 1 đến 10.",
+    "noCriteriaOnPass": "Đạt thì không chọn tiêu chí.",
+    "codeAlreadyUsed": "Mã số này đã được dùng.",
+    "managerIsSelf": "Một người không thể là quản lý của chính mình.",
+    "managerCycle": "Người này đang báo cáo cho nhân viên đó, không thể đảo lại.",
+    "stepMovedTheLead": "Kết quả của bước này đã chuyển trạng thái lead nên không gỡ được. Hãy đổi trạng thái của lead.",
+    "invalidReminders": "Mốc nhắc phải là số giờ trước hạn, ngăn cách bằng dấu phẩy, không trùng nhau (ví dụ 24, 3, 1).",
+    "tooManyReminders": "Tối đa 10 mốc nhắc."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -604,7 +698,8 @@
       "status": "Trạng thái làm việc",
       "isTrainer": "Dạy PT",
       "login": "Tài khoản đăng nhập",
-      "branch": "Chi nhánh"
+      "branch": "Chi nhánh",
+      "manager": "Quản lý trực tiếp"
     },
     "schedule": {
       "title": "Lịch làm việc",
@@ -638,7 +733,9 @@
       "removeDayOffTitle": "Bỏ ngày nghỉ {date}?",
       "removeDayOffBody": "Nhân viên sẽ làm việc theo ca hằng tuần vào ngày này.",
       "dayOffRemoved": "Đã bỏ ngày nghỉ {date}"
-    }
+    },
+    "noManager": "Không có (báo Admin)",
+    "managerDescription": "Người được báo khi yêu cầu duyệt của nhân viên này chờ quá hạn."
   },
   "bookings": {
     "calendarTitle": "Lịch PT",
@@ -783,11 +880,14 @@
       "cashbook": "Sổ quỹ",
       "configuration": "Cấu hình",
       "history": "Lịch sử và thùng rác",
-      "tasks": "Giao việc"
+      "tasks": "Giao việc",
+      "exports": "Xuất Excel",
+      "reports": "Báo cáo"
     },
     "labels": {
       "user": {
-        "manage": "Quản lý người dùng"
+        "manage": "Quản lý người dùng",
+        "export": "Xuất danh sách người dùng"
       },
       "role": {
         "manage": "Quản lý vai trò và phân quyền"
@@ -797,13 +897,15 @@
       },
       "customer": {
         "view": "Xem khách hàng",
-        "manage": "Thêm và sửa khách hàng"
+        "manage": "Thêm và sửa khách hàng",
+        "export": "Xuất danh sách khách hàng"
       },
       "contract": {
         "view": "Xem hợp đồng",
         "create": "Tạo và sửa hợp đồng nháp",
         "approve": "Duyệt (kích hoạt) hợp đồng",
-        "cancel": "Hủy hợp đồng"
+        "cancel": "Hủy hợp đồng",
+        "export": "Xuất danh sách hợp đồng"
       },
       "booking": {
         "view": "Xem lịch PT và buổi tập",
@@ -820,27 +922,35 @@
       "payment": {
         "view": "Xem thanh toán và công nợ",
         "record": "Ghi nhận thanh toán",
-        "delete": "Xóa phiếu thu (vào thùng rác)"
+        "delete": "Xóa phiếu thu (vào thùng rác)",
+        "export": "Xuất danh sách phiếu thu"
       },
       "cash": {
         "manage": "Thu chi khác (xem, ghi)",
-        "delete": "Xóa khoản thu chi (vào thùng rác)"
+        "delete": "Xóa khoản thu chi (vào thùng rác)",
+        "export": "Xuất thu chi"
       },
       "config": {
         "manage": "Quản lý danh mục lựa chọn và tham số hệ thống"
       },
       "audit": {
-        "view": "Xem lịch sử thao tác"
+        "view": "Xem lịch sử thao tác",
+        "export": "Xuất lịch sử thao tác"
       },
       "trash": {
-        "view": "Xem thùng rác"
+        "view": "Xem thùng rác",
+        "export": "Xuất thùng rác"
       },
       "approval": {
         "manage": "Quản lý ma trận phê duyệt"
       },
       "task": {
         "view": "Xem và làm việc được giao",
-        "create": "Giao việc"
+        "create": "Giao việc",
+        "export": "Xuất danh sách công việc"
+      },
+      "script": {
+        "manage": "Quản lý thư viện kịch bản tư vấn"
       },
       "lead": {
         "view": "Xem lead",
@@ -848,7 +958,16 @@
         "manage": "Sửa thông tin và đổi trạng thái lead",
         "assign": "Phân công lại lead, nhận thông báo lead mới",
         "receive": "Nhận lead chia tự động",
-        "merge": "Gộp hai hồ sơ của một người"
+        "merge": "Gộp hai hồ sơ của một người",
+        "export": "Xuất danh sách lead",
+        "audit": "Xem audit tư vấn tự động",
+        "untick": "Gỡ tick bước tư vấn"
+      },
+      "report": {
+        "consulting": "Xem dashboard tư vấn",
+        "consultingExport": "Xuất dashboard tư vấn",
+        "leadAnalysis": "Xem phân tích lead",
+        "leadAnalysisExport": "Xuất phân tích lead"
       }
     },
     "resources": {
@@ -868,6 +987,7 @@
       "customer": {
         "phone": "Số điện thoại khách hàng",
         "email": "Email khách hàng",
+        "address": "Địa chỉ và liên hệ khẩn cấp của khách hàng",
         "idDocument": "Giấy tờ tùy thân của khách hàng",
         "health": "Sức khỏe của khách hàng"
       },
@@ -937,7 +1057,11 @@
       "needGroups": "Nhóm nhu cầu",
       "painStatuses": "Pain Status",
       "assessmentTypes": "Loại Assessment",
-      "leadRefuseReasons": "Lý do từ chối (lead)"
+      "leadRefuseReasons": "Lý do từ chối (lead)",
+      "customerGroups": "Nhóm khách hàng",
+      "auditFailReasons": "Tiêu chí audit chưa đạt",
+      "needDetails": "Chi tiết nhu cầu (có mã số)",
+      "stepReopenReasons": "Lý do gỡ tick"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -954,7 +1078,8 @@
       "labelVi": "Tên tiếng Việt",
       "labelEn": "Tên tiếng Anh",
       "status": "Trạng thái",
-      "active": "Đang dùng"
+      "active": "Đang dùng",
+      "code": "Mã số"
     },
     "empty": "Danh mục chưa có lựa chọn nào ngoài \"Khác\".",
     "choose": "Chọn",
@@ -968,7 +1093,8 @@
       "note": "Ghi chú",
       "count": "Số lần",
       "lastUsedAt": "Lần gần nhất"
-    }
+    },
+    "codeHint": "Không bắt buộc. Nếu có, mã là duy nhất trong danh sách và hiện trước tên."
   },
   "parameters": {
     "title": "Tham số hệ thống",
@@ -986,15 +1112,26 @@
       "employeeCodePrefix": "Mã nhân viên",
       "taskDueSoonHours": "Nhắc trước hạn (giờ)",
       "recareDays": "Tái chăm sóc sau (ngày)",
-      "studioDepartmentId": "Phòng ban nhận Báo Studio"
+      "studioDepartmentId": "Phòng ban nhận Báo Studio",
+      "exportRowLimit": "Số dòng tối đa mỗi lần xuất",
+      "reclaimMinutes": "Chuyển lượt sau (phút làm việc, 0 là tắt)",
+      "consultingWindowStart": "Khung tư vấn: từ",
+      "consultingWindowEnd": "Khung tư vấn: đến",
+      "stepGraceMinutes": "Gia hạn bước tư vấn (phút)",
+      "taskReminderHours": "Mốc nhắc việc chung (giờ trước hạn)",
+      "receptionDepartmentId": "Phòng ban nhận việc khi email gửi lỗi"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
-    "tasksHint": "Người nhận được nhắc trước hạn bấy nhiêu giờ; khi quá hạn, cả người nhận và người giao đều được báo.",
+    "tasksHint": "Người nhận được nhắc ở từng mốc trước hạn, ví dụ \"24, 3, 1\" là trước 24 giờ, 3 giờ và 1 giờ (dấu chấm cho số lẻ, tối đa 10 mốc). Người giao việc đặt mốc riêng cho từng việc. Khi quá hạn, cả người nhận và người giao đều được báo.",
     "leads": "Lead",
-    "leadsHint": "Lead Chưa phản hồi, Từ chối hoặc No show được hẹn liên hệ lại sau bấy nhiêu ngày.",
+    "leadsHint": "Lead Chưa phản hồi, Từ chối hoặc No show được hẹn liên hệ lại sau bấy nhiêu ngày. Lead chưa được chăm sóc quá số phút làm việc đã đặt (chỉ tính trong khung tư vấn) tự chuyển cho tư vấn viên kế tiếp. Bước tư vấn quá hạn vẫn tick được trong khoảng gia hạn (ghi là Trễ), sau đó tự khóa là Không thực hiện.",
     "studioHint": "Báo Studio tạo việc cho phòng ban này trong Giao việc. Chưa chọn thì không gửi.",
-    "noDepartment": "Chưa chọn"
+    "noDepartment": "Chưa chọn",
+    "exports": "Xuất Excel",
+    "exportsHint": "Danh sách có nhiều dòng hơn mức này phải được lọc bớt mới xuất được.",
+    "mail": "Email",
+    "mailHint": "Email gửi cho khách không đi được (khách chưa có email, hoặc nhà cung cấp từ chối nhiều lần) tạo việc cho phòng ban này trong Giao việc để báo khách bằng cách khác. Chưa chọn thì không tạo việc, email vẫn hiện là gửi lỗi."
   },
   "trash": {
     "title": "Thùng rác",
@@ -1056,7 +1193,10 @@
       "approval_rule": "Ma trận phê duyệt",
       "task": "Công việc",
       "consulting_checklist": "Checklist tư vấn",
-      "person": "Hồ sơ"
+      "consulting_script": "Kịch bản tư vấn",
+      "person": "Hồ sơ",
+      "export": "Xuất Excel",
+      "audit_criterion": "Tiêu chí audit"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1089,7 +1229,9 @@
       "status_changed": "Đổi trạng thái",
       "assigned": "Phân công",
       "step_completed": "Hoàn thành bước tư vấn",
-      "converted": "Chuyển thành khách hàng"
+      "converted": "Chuyển thành khách hàng",
+      "note_added": "Đã thêm ghi chú",
+      "downloaded": "Đã xuất file"
     },
     "fields": {
       "at": "Thời điểm",
@@ -1228,7 +1370,8 @@
       "status": "Trạng thái",
       "entity": "Liên quan đến",
       "branch": "Chi nhánh",
-      "createdAt": "Ngày giao"
+      "createdAt": "Ngày giao",
+      "reminders": "Mốc nhắc"
     },
     "actions": {
       "accept": "Nhận việc",
@@ -1259,7 +1402,11 @@
       "contract": "Hợp đồng",
       "lead": "Lead"
     },
-    "details": "Chi tiết công việc"
+    "details": "Chi tiết công việc",
+    "remindersHint": "Số giờ trước hạn, ví dụ 24, 3, 1. Để trống thì dùng mốc chung của hệ thống. Số lẻ dùng dấu chấm: 0.5 là nửa giờ.",
+    "remindersPlaceholder": "24, 3, 1",
+    "remindersUnit": "giờ trước hạn",
+    "remindersShared": "mốc chung"
   },
   "notifications": {
     "title": "Thông báo",
@@ -1277,7 +1424,7 @@
       "taskCancelled": "Việc \"{title}\" đã bị hủy",
       "taskCommented": "{by} bình luận trong việc \"{title}\"",
       "taskMentioned": "{by} nhắc đến bạn trong việc \"{title}\"",
-      "taskDueSoon": "Việc \"{title}\" đến hạn lúc {due}",
+      "taskDueSoon": "Việc \"{title}\" còn {hours} giờ nữa đến hạn ({due})",
       "taskOverdue": "Việc \"{title}\" đã quá hạn ({due})",
       "approvalSubmitted": "Có yêu cầu chờ bạn duyệt: {title}",
       "approvalDecided": "Yêu cầu \"{title}\": {status}",
@@ -1287,7 +1434,8 @@
       "leadStepDue": "Đến hạn: {step} · lead {code} · {name}",
       "leadRecare": "Lead {code} · {name} cần tái chăm sóc",
       "leadInquiry": "{name} ({code}) vừa liên hệ lại",
-      "personMerged": "Hồ sơ {mergedCode} đã được gộp vào {code} · {name}"
+      "personMerged": "Hồ sơ {mergedCode} đã được gộp vào {code} · {name}",
+      "leadReclaimed": "Lead {code} · {name} đã chuyển cho người khác vì {minutes} phút chưa được chăm sóc"
     }
   },
   "checklist": {
@@ -1316,7 +1464,15 @@
       "afterStep": "Mở {delay} sau bước \"{step}\"",
       "afterStepNow": "Mở ngay sau bước \"{step}\"",
       "recare": "Mở khi vào tái chăm sóc; hạn vào ngày liên hệ lại"
-    }
+    },
+    "lockedAt": "Khóa lúc",
+    "reopen": "Gỡ tick",
+    "reopenFor": "Gỡ tick của bước {step}",
+    "reopenTitle": "Gỡ tick: {step}",
+    "reopenDescription": "Chỉ dùng khi tick nhầm. Bước mở lại; lần tick, người tick và lý do gỡ được lưu trong lịch sử.",
+    "reopenReason": "Lý do gỡ",
+    "reopenConfirm": "Gỡ tick",
+    "reopened": "Đã gỡ tick của bước {step}"
   },
   "today": {
     "title": "Việc hôm nay",
@@ -1445,6 +1601,248 @@
       "contactAgainOn": "Liên hệ lại",
       "pic": "Người phụ trách",
       "refuseReason": "Lý do từ chối"
+    }
+  },
+  "scripts": {
+    "title": "Kịch bản tư vấn",
+    "description": "Các tình huống kèm câu trả lời tiếng Việt và tiếng Anh. Người tư vấn sao chép từ trang lead. Kịch bản không bị xóa; tắt đi để ẩn.",
+    "create": "Thêm kịch bản",
+    "edit": "Sửa kịch bản",
+    "created": "Đã thêm {name}",
+    "saved": "Đã lưu kịch bản",
+    "reordered": "Đã đổi thứ tự",
+    "moveUp": "Đưa {name} lên",
+    "moveDown": "Đưa {name} xuống",
+    "rowActions": "Sửa {name}",
+    "empty": "Chưa có kịch bản.",
+    "noAnswer": "Chưa có câu trả lời",
+    "fields": {
+      "order": "Thứ tự",
+      "situationVi": "Tình huống (tiếng Việt)",
+      "situationEn": "Tình huống (tiếng Anh)",
+      "answerVi": "Câu trả lời (tiếng Việt)",
+      "answerEn": "Câu trả lời (tiếng Anh)",
+      "active": "Đang dùng",
+      "status": "Trạng thái",
+      "answers": "Câu trả lời"
+    }
+  },
+  "leadAudit": {
+    "title": "Audit tư vấn",
+    "description": "Các bước của từng người tư vấn đúng hạn đến đâu và lead nào cần xem lại. Bước chỉ được tính khi đã đến hạn; điểm còn tính cả các trường mà tiêu chí yêu cầu.",
+    "consultants": "Người tư vấn",
+    "toCheck": "Lead cần kiểm tra",
+    "toCheckHint": "Lead còn trong hành trình có bước trễ hạn hoặc bỏ qua, hoặc thiếu trường, sắp theo mức khẩn cấp.",
+    "filters": "Bộ lọc",
+    "apply": "Áp dụng",
+    "from": "Tạo từ ngày",
+    "to": "Tạo đến ngày",
+    "dayHint": "dd/mm/yyyy",
+    "allConsultants": "Tất cả người tư vấn",
+    "consultant": "Người tư vấn",
+    "noConsultant": "Chưa có người phụ trách",
+    "team": "Toàn đội",
+    "fields": {
+      "leads": "Lead",
+      "due": "Bước đến hạn",
+      "onTime": "Đúng hạn",
+      "late": "Trễ hạn",
+      "skipped": "Bỏ qua",
+      "compliance": "Tỷ lệ đúng hạn",
+      "score": "Điểm",
+      "toCheck": "Cần kiểm tra",
+      "lead": "Lead",
+      "status": "Trạng thái",
+      "failed": "Thiếu",
+      "createdAt": "Ngày tạo",
+      "unaudited": "Chưa audit"
+    },
+    "noData": "—",
+    "emptyConsultants": "Không có lead nào trong kỳ này.",
+    "emptyToCheck": "Không có gì cần kiểm tra: mọi bước đến hạn đều đúng hạn và đủ các trường.",
+    "criteria": {
+      "needGroup": "Nhóm nhu cầu",
+      "phone": "Số điện thoại",
+      "refuseReason": "Lý do từ chối"
+    },
+    "tab": {
+      "title": "Audit",
+      "hint": "Tính tự động từ hạn của các bước và các trường của lead; không phải điểm của quản lý.",
+      "steps": "Các bước",
+      "criteria": "Tiêu chí",
+      "outcome": {
+        "ON_TIME": "Đúng hạn",
+        "LATE": "Trễ hạn",
+        "SKIPPED": "Bỏ qua",
+        "none": "Chưa đến hạn"
+      },
+      "passed": "Đã có",
+      "failed": "Thiếu",
+      "notApplicable": "Không áp dụng",
+      "off": "Đang tắt",
+      "weight": "Trọng số {weight}",
+      "empty": "Chưa có bước nào đến hạn."
+    },
+    "queue": {
+      "title": "Chưa audit",
+      "hint": "{total, plural, =0 {Mọi lead đã được audit} other {# lead chưa audit, cũ nhất trước}}. Mở lead để chấm; chấm xong lead rời khỏi danh sách này.",
+      "empty": "Mọi lead đã được audit."
+    },
+    "manager": {
+      "title": "Audit của quản lý",
+      "none": "Chưa có quản lý nào audit lead này.",
+      "earlier": "Các lần chấm trước",
+      "notMet": "Tiêu chí chưa đạt",
+      "grade": "Chấm lead này",
+      "gradeAgain": "Chấm lại",
+      "gradeTitle": "Audit {name}",
+      "gradeDescription": "Chưa đạt thì chọn tiêu chí chưa đáp ứng. Mỗi lần chấm đều được giữ; lần mới nhất là lần được tính.",
+      "resultLabel": "Kết quả",
+      "comment": "Nhận xét",
+      "saved": "Đã lưu audit",
+      "result": {
+        "PASS": "Đạt",
+        "FAIL": "Chưa đạt"
+      }
+    }
+  },
+  "auditCriteria": {
+    "title": "Tiêu chí audit",
+    "description": "Ngoài thời hạn của các bước, audit tự động còn yêu cầu gì ở mọi lead. Tiêu chí bị tắt không tính cho ai; trọng số từ 1 đến 10 cho biết mức quan trọng. Thay đổi áp dụng ngay cho mọi điểm.",
+    "criterion": "Tiêu chí",
+    "appliesTo": "Áp dụng cho",
+    "active": "Được tính",
+    "weight": "Trọng số",
+    "saved": "Đã lưu tiêu chí",
+    "applies": {
+      "needGroup": "Mọi lead",
+      "phone": "Mọi lead",
+      "refuseReason": "Lead bị từ chối"
+    }
+  },
+  "reports": {
+    "filters": "Bộ lọc",
+    "apply": "Áp dụng",
+    "from": "Tạo từ ngày",
+    "to": "Tạo đến ngày",
+    "dayHint": "dd/mm/yyyy",
+    "branch": "Chi nhánh",
+    "allBranches": "Tất cả chi nhánh",
+    "staff": "Người phụ trách",
+    "allStaff": "Tất cả"
+  },
+  "consultingReport": {
+    "title": "Dashboard tư vấn",
+    "description": "Các lead tạo trong kỳ, mỗi lead đi được đến đâu và việc tư vấn đúng hạn đến mức nào. Các tỷ lệ tính trên lead tạo trong kỳ.",
+    "kpis": "Chỉ số toàn đội",
+    "team": "Toàn đội",
+    "noConsultant": "Chưa có người phụ trách",
+    "noData": "—",
+    "minutes": "{count} phút",
+    "byConsultant": "Theo người tư vấn",
+    "empty": "Không có lead nào trong kỳ này.",
+    "recareValue": "{rebooked} / {entered} đặt lịch lại",
+    "fields": {
+      "consultant": "Người tư vấn",
+      "leads": "Lead nhận",
+      "bookingRate": "Tỷ lệ đặt lịch",
+      "showRate": "Tỷ lệ show",
+      "compliance": "Đúng hạn",
+      "firstResponse": "Phản hồi đầu tiên",
+      "recare": "Tái chăm sóc",
+      "score": "Điểm audit",
+      "reclaimed": "Bị chuyển lượt"
+    },
+    "funnel": {
+      "title": "Phễu",
+      "chartLabel": "Lead, đã tư vấn, đã đặt lịch, show và ký hợp đồng",
+      "leads": "Lead",
+      "consulted": "Đã tư vấn",
+      "booked": "Đã đặt lịch",
+      "showed": "Show",
+      "contracted": "Ký hợp đồng"
+    },
+    "steps": {
+      "title": "Thực hiện từng bước tư vấn",
+      "description": "Checklist đo quy trình, không phạt nhân viên: bước nào được làm thường xuyên và những lead có làm bước đó đặt lịch, show, ký hợp đồng ra sao so với lead không làm, để chỉnh bước dư thừa hoặc còn thiếu. Mỗi ô tỷ lệ ghi: có làm | không làm.",
+      "step": "Bước",
+      "due": "Đến hạn",
+      "done": "Đã làm",
+      "late": "Làm trễ",
+      "notDone": "Không thực hiện",
+      "completion": "Tỷ lệ thực hiện",
+      "booking": "Đặt lịch (làm | không)",
+      "show": "Show (làm | không)",
+      "contract": "Ký hợp đồng (làm | không)",
+      "chart": "Tỷ lệ thực hiện từng bước",
+      "chartHint": "Phần trăm lead đến hạn mà bước đã được làm.",
+      "chartLabel": "Tỷ lệ thực hiện của từng bước tư vấn",
+      "empty": "Chưa có bước nào đến hạn trong kỳ này."
+    }
+  },
+  "leadAnalysis": {
+    "title": "Phân tích lead",
+    "description": "Các lead tạo trong kỳ theo kênh liên hệ, nguồn, Organic / Paid, nhu cầu, quốc tịch và lý do từ chối, và mỗi nhóm đi được đến đâu.",
+    "total": "{count} lead trong kỳ này.",
+    "empty": "Không có lead nào trong kỳ này.",
+    "notGiven": "Chưa có",
+    "chartLabel": "Lead, đã đặt lịch và show theo {dimension}",
+    "dimensions": {
+      "channel": "Kênh liên hệ",
+      "source": "Nguồn lead",
+      "sourceType": "Organic / Paid",
+      "needGroup": "Nhóm nhu cầu",
+      "nationalityGroup": "Nhóm quốc tịch",
+      "refuseReason": "Lý do từ chối",
+      "country": "Quốc gia"
+    },
+    "values": {
+      "ORGANIC": "Organic",
+      "PAID": "Paid",
+      "VIETNAM": "Việt Nam",
+      "FOREIGN": "Nước ngoài"
+    },
+    "fields": {
+      "leads": "Lead",
+      "booked": "Đã đặt lịch",
+      "showed": "Show",
+      "contracted": "Ký hợp đồng",
+      "bookingRate": "Tỷ lệ đặt lịch",
+      "showRate": "Tỷ lệ show"
+    }
+  },
+  "leadReceivers": {
+    "title": "Nhận lead",
+    "description": "Chia lead theo lượt có tỷ trọng: hệ số 2 nhận 2 lead trong mỗi vòng mà hệ số 1 nhận 1. Tắt nhận lead cho người nghỉ phép hoặc đang bận; chỉ người đang trong giờ làm việc được chia.",
+    "name": "Tư vấn viên",
+    "branches": "Chi nhánh",
+    "allBranches": "Tất cả chi nhánh",
+    "inCharge": "Lead đang tư vấn",
+    "onDuty": "Giờ làm việc",
+    "onDutyYes": "Đang trong giờ",
+    "onDutyNo": "Ngoài giờ",
+    "turn": "Nhận lead và hệ số lượt",
+    "receivesFor": "Nhận lead: {name}",
+    "weightFor": "Hệ số lượt: {name}",
+    "saveFor": "Lưu {name}",
+    "saved": "Đã lưu cài đặt nhận lead của {name}",
+    "empty": "Chưa có tư vấn viên nào nhận lead trong các chi nhánh của bạn."
+  },
+  "mail": {
+    "title": "Email đã gửi",
+    "empty": "Chưa có email nào gửi cho khách này.",
+    "columns": {
+      "createdAt": "Tạo lúc",
+      "event": "Sự kiện",
+      "subject": "Tiêu đề",
+      "to": "Gửi tới",
+      "status": "Trạng thái",
+      "attempts": "Lần thử"
+    },
+    "failure": {
+      "noEmail": "Khách chưa có email",
+      "providerRejected": "Nhà cung cấp từ chối",
+      "providerUnavailable": "Nhà cung cấp không phản hồi"
     }
   }
 }

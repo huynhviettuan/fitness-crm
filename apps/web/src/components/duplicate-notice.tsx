@@ -12,6 +12,18 @@ import type { DuplicatePerson } from "@flow/shared/errors";
 export function DuplicateNotice({ duplicate }: { duplicate: DuplicatePerson | null }) {
   const t = useTranslations("people");
   if (!duplicate) return null;
+  // Another consultant's lead that the data scope does not open: say who has it (D-060).
+  if (!duplicate.openable) {
+    return (
+      <div role="alert" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+        {t(duplicate.inCharge ? "duplicateElsewhere" : "duplicateElsewhereNobody", {
+          code: duplicate.code,
+          name: duplicate.fullName,
+          person: duplicate.inCharge ?? "",
+        })}
+      </div>
+    );
+  }
   const href = duplicate.stage === "LEAD" ? `/leads/${duplicate.id}` : `/customers/${duplicate.id}`;
   return (
     <div role="alert" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">

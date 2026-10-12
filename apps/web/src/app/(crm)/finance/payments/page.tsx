@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { HiddenValue } from "@/components/hidden-value";
 import { Money } from "@/components/money";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -39,7 +40,11 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/finance
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={can(user, "payment.export") && <ExportButton path="/api/v1/payments/export" query={month.query} />}
+      />
       <FinanceTabs active="payments" showCash={can(user, "cash.manage")} />
       <MonthNav path="/finance/payments" month={month.from} thisMonth={month.thisMonth} />
       <p className="mb-4 text-sm">

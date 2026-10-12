@@ -197,6 +197,7 @@ describe("recordPayment", () => {
       id: OTHER_METHOD,
       labelVi: "Khác",
       labelEn: "Other",
+      code: null,
       isOther: true,
       note: "Ví MoMo",
     });

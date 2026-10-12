@@ -21,6 +21,8 @@ export const ERROR_HTTP_STATUS = {
   PERSON_ALREADY_MERGED: 409,
   CANNOT_CHANGE_OWN_ACCESS: 409,
   INVALID_STATUS_TRANSITION: 409,
+  // D-054: the step passed its deadline and the grace period and is "Không thực hiện"; nobody ticks it late.
+  STEP_LOCKED: 409,
   CONTRACT_NOT_EDITABLE: 409,
   CONTRACT_NOT_ACTIVE: 409,
   CONTRACT_NO_REMAINING_SESSIONS: 409,
@@ -36,6 +38,8 @@ export const ERROR_HTTP_STATUS = {
   // D-030: only inside the trainer's working hours, never on a day off.
   BOOKING_OUTSIDE_WORKING_HOURS: 422,
   PAYMENT_EXCEEDS_CONTRACT_VALUE: 422,
+  // A-078: the list has more rows than `exportRowLimit`; narrow the filters.
+  EXPORT_TOO_LARGE: 422,
   INTERNAL_ERROR: 500,
 } as const;
 
@@ -49,6 +53,13 @@ export const duplicatePersonSchema = z.object({
   stage: z.enum(["LEAD", "CUSTOMER"]),
   code: z.string(),
   fullName: z.string(),
+  /**
+   * False when the record is another consultant's lead the user's data scope does not open (D-060):
+   * the notice then says who is in charge instead of linking to it.
+   */
+  openable: z.boolean().default(true),
+  /** The person in charge of a lead that is not openable. */
+  inCharge: z.string().nullable().optional(),
 });
 export type DuplicatePerson = z.output<typeof duplicatePersonSchema>;
 
@@ -61,6 +72,8 @@ export const apiErrorSchema = z
       fieldErrors: z.record(z.string(), z.array(z.string())).optional(),
       /** PHONE_ALREADY_USED, DUPLICATE_PHONE: the person who has the phone, when the user may see them. */
       duplicate: duplicatePersonSchema.optional(),
+      /** EXPORT_TOO_LARGE: the most rows an export holds and how many the list has (A-078). */
+      exportLimit: z.object({ limit: z.int(), total: z.int() }).optional(),
     }),
   })
   .meta({ id: "ApiError" });

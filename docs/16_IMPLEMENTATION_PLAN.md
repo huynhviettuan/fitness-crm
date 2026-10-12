@@ -13,7 +13,7 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M3 | Audit and consulting dashboard | Rule-based audit, manager audit, consulting dashboard, lead analysis | — | AC-08 |
 | M4 | Contracts and cash book | Services and price tiers, promotions, contract form with approval and exception price, locked contracts, deletion with trash, deactivation; receipts, expense vouchers, cash book, debt; contract and exception-price reports | Contract module (idempotency, locks, derived figures), payments (becomes receipts), cash (becomes vouchers) | AC-02, AC-05, AC-09–AC-14, AC-19 |
 | M5 | PT schedule, classes, sessions | PT grid (rows per PT, week view, working schedules), configurable session statuses with snapshots, customer overlap, admin "Đã tập" in bulk, delete from history, Burn Show, classes and attendance, PT revenue allocation, PT payouts and adjustments, booking report | PT calendar, booking and session services, locked transactions, overlap constraint | AC-02, AC-09, AC-11, AC-15, AC-16, AC-18, AC-23 |
-| M6 | Customer email | Provider, outbox, templates in VI/EN, session credited and refunded emails, optional events, failure tasks | — | AC-17 |
+| M6 | Automatic email infrastructure (built first, from the start of M4; D-059) | Provider, outbox, templates in VI/EN, session credited and refunded emails, optional events, failure tasks | — | AC-17 |
 | M7 | Workout plans and logs | Catalogs, templates, customer plans, three-part session log, Flags and Actions, escalation, progress tab, weekly workout dashboard | — | AC-20, AC-21, AC-23 |
 | M8 | Contract change vouchers | Renewal, upgrade, hold, transfer, branch transfer, conversion, cancellation with refund | Contract cancellation cascade (D-010) | (D-024) |
 | M9 | Remaining reports and import | Overview dashboard, remaining reports and exports; GymMaster import with cleanup list and reconciliation; consulting Excel import; staging trial and parallel run | Opening balances (D-011) | AC-22 |
@@ -37,7 +37,15 @@ Work inside a milestone in **vertical slices**: schema and migration → API ser
 | M2 | 3. Consulting checklist: versioned steps with triggers, delays, results, and required flags; admin editor; a lead's checklist with deadlines, results, on time or late; "Việc hôm nay"; reminders when a step comes due (T-063, A-055 to A-058) | **Done** 2026-10-11 |
 | M2 | 4. Show and No show: Show converts the lead to a customer in the same record with the ID document, health note, and consent; No show to re-care; checklist results with effects; Báo Studio tasks for the studio's department; ID numbers and health notes encrypted (T-064, A-059 to A-061, OQ-032) | **Done** 2026-10-11 |
 | M2 | 5. Re-care and merge: the re-care list (status, consultant, overdue, mine or all); the re-care step's results book the lead again or refuse it with the next contact-again day; a duplicate phone offers "Gộp vào hồ sơ này" (inquiry on the existing record); managers merge two records of one person (T-065, A-062 to A-068, OQ-033) | **Done** 2026-10-12 |
-| M2 | Next: M2.6 scripts, lead notes, and customer profile (`28_SLICE_PLAN.md`) | Not started |
+| M2 | 6. Scripts, notes, and the customer profile: the script library (12 seeded situations, answers in two languages, copy on the lead, managers edit and order); dated notes on the lead's timeline; the customer's address, emergency contact, group, and staff in charge; list filters (branch, staff, registration days, birthday month, no email) and the Consulting history tab (A-069 to A-076) | **Done** 2026-10-12 |
+| M2 | 7. Customer feedback follow-up (D-046 to D-072 and `28_SLICE_PLAN.md`): lead form without a phone, nationality as a country list, weighted assignment with receiving on/off, reclaim after 1 hour in 08:30–20:30, checklist lock, several reminder points, direct manager, departments and titles | **Done** 2026-10-12 |
+| M2 | All slices built, M2.7 included (the full E2E suite passed at its close); next: the owner trial on staging for AC-03, AC-06, AC-07, AC-09 (lead part), and AC-23 (leads) | — |
+| M3 | 1. Excel export: one writer, one permission per list, the screen's filters, scope, and masks, an audited and row-limited download from the nine lists (A-077 to A-080) | **Done** 2026-10-12 |
+| M3 | 2. Rule-based consulting audit: each step on time, late, or skipped; compliance and score per lead and per consultant; configurable criteria (need group, phone, refusal reason); the Audit card on a lead, the consultants' table, and "Leads to check" for managers (A-081 to A-085) | **Done** 2026-10-12 |
+| M3 | 3. Manager audit: a manager grades a lead Pass or Fail with a comment and the criteria not met (an admin list); every grade is kept, the latest counts, and whoever sees the lead sees it; the queue "Chưa audit" and each consultant's count (A-086 to A-088) | **Done** 2026-10-12 |
+| M3 | 4. Consulting dashboard and lead analysis: the funnel, rates, compliance, first response, and re-care per consultant and for the team; the leads by channel, source, Organic or Paid, need, nationality, and refusal reason with the notes of "Khác"; filters by period, branch, and staff; one shared chart; Excel exports; four report permissions (A-089 to A-094) | **Done** 2026-10-12 |
+| M4 | 0. Email infrastructure (M6.1, first by P-6): the outbox, the `mail` worker with Resend, retries, a task for reception when an email finally fails, and the customer's "Emails sent" tab (A-106, OQ-036) | **Done** 2026-10-12 |
+| M3 | Next: M3.5 the consulting-Excel import, which needs the owner's anonymized file (`28_SLICE_PLAN.md`) | Not started |
 
 ## Open questions per milestone
 
@@ -45,10 +53,10 @@ Build the interim behavior from `18_DECISIONS_ASSUMPTIONS.md` and leave the bloc
 
 | Milestone | Open questions |
 |---|---|
-| M1 | OQ-024 (departments), OQ-026 (staff email), OQ-028 (sizing), OQ-029 (approval of daily operations), TS-004, TS-005 |
-| M2 | OQ-017 (assignment rule), OQ-018 (15 or 16 days), OQ-019 (reclaim), OQ-020 (Master per branch) |
+| M1 | OQ-024, OQ-026, OQ-028, and OQ-029 answered on 12/10/2026 (D-046, D-047, D-053, D-067, D-054); TS-004, TS-005 |
+| M2 | OQ-017, OQ-018, OQ-019, and OQ-020 answered on 12/10/2026 (D-050, D-051, D-052, D-049); built in M2.7; OQ-034 (title → role table and Marketing reporting lines) |
 | M4 | OQ-003 (overpayment), OQ-010 (group packages), OQ-013 (cancellation settlement), OQ-015 answered |
-| M5 | OQ-001 (dates), OQ-008 (overbooking), OQ-021 (class revenue), OQ-022 (rates), OQ-027 (devices) |
+| M5 | OQ-001 (dates), OQ-008 (overbooking), OQ-021 (class revenue), OQ-022 (rates), OQ-027 (when a machine is attached; the scan flow is built, D-069), TS-009 (NextFace ID survey, answered before M5) |
 | M8 | OQ-023 (fees, approvals, hold limit), OQ-030 (cancellation cascade) |
 | M9 | OQ-014 (go-live, volume, cleanup sign-off) |
 | M11 | OQ-025 (AI consent and criteria) |

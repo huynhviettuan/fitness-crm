@@ -17,12 +17,22 @@ describe("option lists (D-016)", () => {
     expect(optionInputSchema.parse({ labelVi: " Ví MoMo ", labelEn: "MoMo wallet" })).toEqual({
       labelVi: "Ví MoMo",
       labelEn: "MoMo wallet",
+      code: null,
       active: true,
     });
     expect(errors(optionInputSchema, { labelVi: " ", labelEn: "x".repeat(101) })).toEqual({
       labelVi: ["required"],
       labelEn: ["tooLong"],
     });
+  });
+
+  it("an entry may have a number, which is trimmed and empty for none (D-066)", () => {
+    expect(optionInputSchema.parse({ labelVi: "A", labelEn: "A", code: " ND01 " }).code).toBe("ND01");
+    expect(optionInputSchema.parse({ labelVi: "A", labelEn: "A", code: "" }).code).toBeNull();
+    expect(errors(optionInputSchema, { labelVi: "A", labelEn: "A", code: "x".repeat(31) })).toEqual({
+      code: ["tooLong"],
+    });
+    expect(isOptionList("needDetails")).toBe(true);
   });
 
   it("an order is a list of option ids", () => {

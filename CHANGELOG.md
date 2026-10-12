@@ -1,5 +1,101 @@
 # Documentation Changelog
 
+## 2026-10-12 — M4.0: email infrastructure
+
+- **Outbox and sender** (A-106, P-6, T-051): the table `email_messages`, `queueEmail` for the features to call in their own transaction (one email per cause), and a `mail` worker every minute that sends through Resend (or only logs with `EMAIL_PROVIDER=log`). A busy or broken provider is tried again after 1, 5, and 30 minutes; a refusal, or a fourth failure, leaves the email Failed.
+- **Failures reach people**: a customer without an address, or an email that finally fails, creates one task for the department of the new parameter `receptionDepartmentId` (Admin, Parameters, Email).
+- **Emails sent tab** on the customer (`GET /customers/:id/emails`, FR-MAIL-003): status, attempts, and why one failed; no message body; the address hides from roles that may not see emails.
+- **Open**: the sending domain, its DNS records, and the sender name (OQ-036). Docs 07, 13, 15, 16, 18, 22, 28; E2E-151.
+
+## 2026-10-12 — Grouped sidebar, charts, paging
+
+- **Sidebar** (A-105): about 25 flat items become collapsible groups (Leads and consulting, Customers and contracts, Schedule and sessions, Reports; under Administration People and access, Configuration, Monitoring). Only the group of the current page is open; the user's choice is remembered per browser. The structure is `lib/navigation.ts` with a unit test; E2E-147 to E2E-150. Docs 08, 13, 18, 23.
+- **Charts** use five distinct hues instead of greys (the funnel colors each stage), the legend shows the configured labels, every category label shows, and a grouped chart grows with its rows (doc 23).
+- **Paging**: every list defaults to 10 rows per page; the "Not audited yet" queue pages on its own (`queuePage`, `queueSize`) instead of showing only its first 10.
+
+## 2026-10-12 — M2 slice 7: the owner's answers of 12/10/2026 built
+
+- **Lead intake** (D-060, A-095): only name and channel are required; the duplicate notice of another consultant's lead says who has it, with no way in and no phone. **Nationality** is a country of ISO 3166-1 (D-057, A-096) with the group and the email language derived; old "foreign" data keeps the country empty, flagged; the lead analysis splits by country.
+- **Organization** (D-046, D-048, A-098, A-099): the departments and 25 job titles of the org chart, the direct manager of an employee, and the title → role pairing in 09_RBAC.md; a slow approval is told to the approver's direct manager, else Admin. **Coded catalog** (D-066, A-097): any option can have a number; "Chi tiết nhu cầu" is a coded list with the old text as its note.
+- **Lead assignment** (D-050, D-052, A-100, A-101): a turn weight and a receiving switch per consultant on a new page (Lead receiving), only people within their working hours are dealt leads, and an untouched lead moves to the next consultant after 60 working minutes inside 08:30–20:30, recorded, notified, and counted per person on the consulting dashboard.
+- **Checklist lock** (D-054, D-055, A-102, A-103): a tick cannot be removed except by Admin with a reason; an overdue step locks as "Không thực hiện" after a grace period (120 minutes); the dashboard shows each step's completion and how those who did it fare against those who did not. **Reminders** (D-056, A-104): 24, 3, and 1 hours before a task's deadline, shared or its own.
+- New: permission `lead.untick`, endpoints `GET` and `PUT /lead-receivers`, `POST /leads/:id/steps/:stepId/reopen`, error `STEP_LOCKED`, parameters `reclaimMinutes`, `consultingWindowStart`, `consultingWindowEnd`, `stepGraceMinutes`, `taskReminderHours` (replacing `taskDueSoonHours`), five migrations.
+- Tests: shared 211, web 343, API unit 154, integration 476, E2E and security 691 (the full suite, run at the close of M2).
+- Docs: 04, 06, 07, 09, 13, 16, 18 (A-095 to A-104, T-066), 24, 25, 28.
+
+## 2026-10-12 — The updated brief (12/10/2026) replaces the copy in `docs/source`
+
+- **`docs/source/BRIEF_V2_vi.md`** now holds the brief of 12/10/2026 ("Bản hoàn chỉnh (1)"). Changes against the 10/10 copy: the organization table and reporting lines (§2); the Master role given to Admin first; slow approvals to the direct manager; the lead form with a name and a channel only; weighted turns, receiving on/off, and the automatic move after 1 hour inside 08:30–20:30 with a log; the country list; the checklist lock and its purpose; PT booking at all hours with on-duty shifts; the new **§6.6 fingerprint-ready check-in** (pairing rules, scan API, machine user codes, the NextFace ID survey); several reminder points and staff email and phone notifications (§8.2); §8.3 as the automatic email infrastructure; the employee and data-model fields; seven new acceptance criteria; seven new rows in the decisions table; and the open questions reduced to the remaining ones.
+- **Doc 18:** D-069 to D-072 (fingerprint-ready check-in, pairing rules, hanging sessions, machine data), TS-009 (the NextFace ID survey), OQ-027 reworded, OQ-034 (title → role table and Marketing reporting lines), OQ-035 (the brief's decisions table still says "no fingerprint integration yet"). D-013, D-002, and D-026 are amended; D-046 and D-053 carry the brief's reporting lines and the PT's unfinished check-ins.
+- **Doc 28:** new slice M5.3b, plan decision P-9, and three items on the owner's checklist. **Doc 14:** AC-24 to AC-30. **Docs 01, 16, 19, 25 and AGENTS.md:** the fingerprint scope line and the milestone tables.
+- The reply of 12/10 had shown the Studio Manager reporting to "CEO, Trợ lý CEO" and some Marketing lines differently; the brief's table is built and OQ-034 asks the owner to confirm.
+
+## 2026-10-12 — The owner's answers of 12/10/2026 recorded (docs only, no code)
+
+- **Doc 18:** D-046 to D-068 record the owner's reply to the progress report and the org chart (Ver 2): organization, departments, titles, direct manager and the title → role mapping; task assignment; slow approvals to the direct manager; Master with Admin; weighted lead assignment with receiving on/off; re-care after 15 days; reclaim after 1 hour inside 08:30–20:30 with a move log and a report; staff email and phone notifications; the checklist lock and its purpose (measure the process); several reminder points; nationality as a country list; PT booking at all hours with on-duty shifts; M6 as the email infrastructure built first; the lead form without a phone; and the confirmations of the 7 provisional points, scale, cost, and the old version.
+- **Closed:** OQ-017, OQ-018, OQ-019, OQ-020, OQ-024, OQ-026, OQ-028, OQ-029, OQ-031 (answered). **Amended or superseded:** D-030, A-027, A-042, A-043, A-046, A-047, A-049, A-052.
+- **Doc 28:** new slice M2.7 (customer feedback follow-up), M4.0 (M6.1 moved to the start of M4), M6 renamed "Automatic email infrastructure", new M6.4 (staff notifications), M5.2 without the shift limit, plan decisions P-6 to P-8, and a checklist of the owner's list.
+- **Docs 16 and 25:** the M6 name, the M2.7 row, the open questions per milestone, and the reworks.
+
+## 2026-10-12 — M3 slice 4: consulting dashboard and lead analysis
+
+- **Dashboard tư vấn** (brief §9): for the leads created in a period, per consultant and for the team: leads received, consulted, booked, shown, and contracted (a funnel chart and a table), booking rate, show rate, on-time compliance, the audit score, the median time to the first response, and the re-care results (how many entered and how many were booked again). Filters: period, branch, and person in charge.
+- **Phân tích lead**: the same leads by contact channel, source, Organic or Paid, need group, nationality, and refusal reason, each with a chart and a table of leads, booked, shown, contracted, and the rates, plus the notes written with "Khác", most used first, so admin can turn them into options.
+- **How it counts** (A-089 to A-091): a cohort of the people who came in as leads in the period. Consulted = the first step of the checklist is done; Booked = ever Booked; Show = shown; Contracted = has an approved contract. Booking rate = booked ÷ received; show rate = shown ÷ booked. The reports hold counts and rates, never a name or a phone.
+- **Charts** (A-094): one shared chart over the shadcn Chart (new dependency recharts); each chart has its figures in a table beside it.
+- **Permissions** (A-093): `report.consulting` (Admin, Fitness Manager, and Consulting, who see their own leads), `report.leadAnalysis` (Admin, Fitness Manager, Marketing), and an Excel export permission for each. Both reports export to Excel like the lists do.
+- API: `GET /reports/consulting`, `/reports/lead-analysis` and their `/export`.
+- Tests: unit (shared 176, web 331, API 151), integration 429, E2E and security 644.
+- Docs: 07, 09, 13, 16, 18 (A-089 to A-094), 23, 24, 28.
+
+## 2026-10-12 — M3 slice 3: the manager audit
+
+- **Manager audit** (brief §4.1, FR-LEAD-011): on a lead's page a manager (`lead.audit`) grades the consulting Pass or Fail, with a comment. A Fail names the criteria not met, chosen from a new admin list "Tiêu chí audit chưa đạt" (only "Khác" at first; "Khác" needs the comment); a Pass names none. Every grade is kept and the latest counts (A-086, A-087).
+- **Who sees it**: whoever can see the lead sees its latest grade, comment, and criteria, and the earlier grades, so the consultant learns the result; only managers get the button to grade.
+- **Queue "Chưa audit"** (A-088): on the audit page, the oldest people nobody has graded yet, narrowed by consultant and period; a person leaves it once graded, whatever the result. The consultants' table has a new column with each one's count.
+- The history records that a grade was made and its result, never the comment.
+- API: `GET` and `POST /leads/:id/audits`, `GET /lead-audit/queue`; the consultants' table also answers `unaudited`.
+- Data: `consulting_audits`, `consulting_audit_criteria`, the option list `auditFailReasons`.
+- Tests: unit (shared 166, web 323, API 147), integration 415, E2E and security 595.
+- Docs: 04, 06, 07, 13, 16, 18 (A-086 to A-088), 24, 28.
+
+## 2026-10-12 — M3 slice 2: the automatic consulting audit
+
+- **Audit tư vấn** (brief §4.1, FR-LEAD-011): a new menu item for managers (permission `lead.audit`: Admin, Fitness Manager). It shows each consultant's steps as on time, late, or skipped, their compliance (on-time steps ÷ due steps) and score, and the team's, and under it "Lead cần kiểm tra": leads still in the journey with a late or skipped step or a missing field, most urgent first. Filters: leads created in a period, and one consultant.
+- **How steps count** (A-081): a step counts once it is due. On time: done by its deadline. Late: done after it, or still open past it. Skipped: never done, and the person was shown or contracted in the meantime. Waiting steps and steps not yet due count for nothing.
+- **The score** (A-082): every due step is a check of weight 1, and so is each active criterion that applies to the lead, at its own weight; the score is the weight passed over the weight checked. A consultant's figures add up their leads' checks, not an average of lead scores.
+- **Criteria** (A-083): need group, phone, and refusal reason (only for Refused leads), each with a switch and a weight of 1 to 10, edited under Administration → Audit criteria. A change applies to every score at once, and is in the action history. A user who cannot see phones is not shown the phone criterion.
+- **The lead page** has an Audit card for managers: the score, the on-time rate, how each step went, and the criteria.
+- API: `GET /lead-audit/consultants`, `/lead-audit/leads`, `/lead-audit/leads/:id`, `/lead-audit/criteria`, `PUT /lead-audit/criteria`.
+- Data: `audit_criteria`; the figures are computed from `lead_steps`, never stored.
+- Tests: unit (shared 166, web 321, API 144), integration 402, E2E and security 570.
+- Docs: 04, 06, 07, 09, 13, 16, 18 (A-081 to A-085), 24, 28.
+
+## 2026-10-12 — M3 slice 1: Excel export
+
+- **Export Excel** (brief §1, §2): customers, leads, contracts, receipts, income and expenses, tasks, the action history, the trash, and the users each have an Export Excel button. The file holds every row the list shows for the same search, filters, branches, and data scope, not just the page; the screen's hidden fields (D-017) are not columns of the file. One writer owns it all: a list declares its columns once.
+- **Permissions** (A-077): one per list, `customer.export`, `lead.export`, `contract.export`, `payment.export`, `cash.export`, `task.export`, `audit.export`, `trash.export`, `user.export`, in a new "Export to Excel" group; each is needed in addition to seeing the list. Admin has all nine; Fitness Manager the first six.
+- **Row limit** (A-078): the new system parameter "Most rows in one export" (50,000 by default, 100 to 200,000) under Administration → System parameters. A longer list is refused with a message that names the limit and the count, before anything is sent; narrow the filters.
+- **The file** (A-079): a bold header row in the user's language, dates as dates in the gym's time, money as numbers, and text never as a formula (a name like `=HYPERLINK(...)` stays text). Named after the list and the day, e.g. `customers-20261012.xlsx`.
+- **Audit** (A-080): every export is recorded: who, which list, the filters, and the row count; the search text only as present, since it may be a phone.
+- Fix: `PATCH /customers/:id` with an id that is not a UUID answered `500`; it is now `404`.
+- API: `GET /<list>/export` for the nine lists; error `EXPORT_TOO_LARGE` (422).
+- Tests: unit (shared 154, web 311, API 139), integration 385, E2E and security 526.
+- Docs: 07, 09, 13, 16, 18 (A-077 to A-080), 23, 24, 28.
+
+## 2026-10-12 — M2 slice 6: scripts, notes, and the customer profile
+
+- **Script library** (brief §4.1, FR-LEAD-010): managers (new permission `script.manage`: Admin, Fitness Manager) manage "Kịch bản tư vấn" under Administration: a situation and its answer in Vietnamese and English, order, and an on/off switch; the 12 situations of the brief are there from the start with empty answers, to be entered from the owner's sheet. Scripts are never deleted. On a lead, a "Kịch bản" panel (full width on a phone) picks a situation and copies the answer in the customer's language: English for a foreign lead, Vietnamese otherwise, switchable (A-072, A-073).
+- **Lead notes** (FR-LEAD-006): dated notes with the author at the top of the lead's history. They are never edited or deleted, and the history records that a note was added, not what it says (A-074).
+- **Customer profile** (brief §4.2, FR-CUS-001): address, emergency contact (name and phone), customer group (new option list `customerGroups`), and staff in charge, in the add and edit forms and on the Information tab. The address and the emergency contact are hidden together by a new hideable field, nobody has it hidden by default (A-069 to A-071).
+- **Customer list**: filters on the left for branch, staff in charge, registration days, birthday month, and "without email"; customers without an email are marked for reception (FR-CUS-003, FR-CUS-005, A-075).
+- **Consulting history tab** on the customer page: the lead's timeline (notes, status changes, assignments, inquiries, merges) and its checklist, read-only. It replaces the "Inquiries and merges" card (A-076).
+- **Lists**: every paginated list has the same footer: rows per page (10, 20, 50, 100), first, previous, numbered pages, next, and last, keeping the search and filters (`TablePagination` with `lib/paging.ts`). Toasts have a close button. `pnpm db:seed:bulk` loads volume data for trying the lists by hand (leads in every status, customers with contracts, payments, sessions, tasks, deletions, pending approvals).
+- API: `/consulting-scripts` (list, create, `PATCH`, `PUT /order`), `POST /leads/:id/notes`, `GET /customers/staff`, filters on `GET /customers`, the profile fields on create and `PATCH`; the timeline and the checklist also open for the customer a lead became (`customer.view`).
+- Data: `consulting_scripts`, `lead_notes`, profile columns on the customers table, the option list `customerGroups`.
+- Tests: unit (shared 154, web 310, API 130), integration 368, E2E and security 426.
+- Docs: 04, 07, 09, 13, 16, 18 (A-069 to A-076), 23, 24, 28.
+
 ## 2026-10-12 — M2 slice 5: re-care and merge
 
 - **Danh sách tái chăm sóc** (FR-LEAD-007, BR-204): a new menu item lists the leads in No response, Refused, or No show by the day to contact them again (those without a date last). Filters: status, overdue; mine (default) or all. It works on a phone.

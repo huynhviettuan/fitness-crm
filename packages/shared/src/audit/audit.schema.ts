@@ -19,6 +19,9 @@ export const AUDIT_ENTITY_TYPES = [
   "approval_rule",
   "task",
   "consulting_checklist",
+  "consulting_script",
+  "audit_criterion",
+  "export",
   "person",
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requiredCountry } from "../countries/country.schema.js";
 import { hasNoControlCharacters, normalizePhone, parseDateOnly } from "../validation/index.js";
 
 // Show (brief §3 stage 3, §4.1; D-019, D-036, D-042): the lead came in and becomes a
@@ -29,7 +30,8 @@ export const showInputSchema = z
       }
       return date;
     }),
-    nationality: text(100).pipe(z.string().min(1, { error: "required" })),
+    /** The nationality, a country of ISO 3166-1 (D-057). */
+    countryCode: requiredCountry,
     email: z
       .string()
       .trim()

@@ -20,6 +20,7 @@ export const NOTIFICATION_KINDS = [
   // Leads (brief §4.1): managers hear of new leads, consultants of leads given to them.
   "leadNew",
   "leadAssigned",
+  "leadReclaimed",
   // A consulting step's deadline has come (FR-LEAD-004).
   "leadStepDue",
   // A lead entered re-care (BR-204), or a person wrote again (BR-202): the consultant and managers hear of it.

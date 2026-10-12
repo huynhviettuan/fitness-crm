@@ -19,14 +19,16 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | In-app notifications and Tasks (D-037) | Built (M1 slice 7, T-060); system-generated tasks join with their modules; task report in M9 (A-045) | M1 |
 | Leads, consulting journey, re-care, scripts (D-019, D-020) | Intake, profile, one person per phone (M2 slice 1, T-061); round-robin, reassignment, status flow, timeline, Kanban (M2 slice 2, T-062); consulting checklist and "Việc hôm nay" (M2 slice 3, T-063); Show, No show, Báo Studio, ID encryption (M2 slice 4, T-064); the rest in M2 slices 5–6 | M2 |
 | Consulting audit and dashboard (D-045) | New | M3 |
+| Organization: departments, job titles, direct manager, title → role mapping (D-046); staff notifications by email and phone (D-053) | Built (M2.7) except staff email and phone | M2.7, M6.4 |
 | Customers (simple profile → full profile from lead, derived status) | Partly | M2, M4 |
 | Services and price tiers, promotions, vouchers (D-021) | New | M4 |
 | Contracts (draft/activate/cancel → pending approval, locked, exception price, splits, delete, freeze) | Conflicts | M4 |
 | Payments and cash (payments + void, separate cash → receipts, expense vouchers, cash book, trash) | Conflicts | M4 |
 | PT schedule and sessions (check-in → complete; no-show free → configurable statuses, admin "Đã tập", Burn Show, delete with refund) | Conflicts | M5 |
 | Class schedule and attendance | New | M5 |
+| Fingerprint-ready check-in: scan API, pairing, machine user codes, hanging sessions (D-069 to D-072, brief §6.6) | New (the machine itself is attached later) | M5.3b |
 | PT revenue allocation and payouts (D-032) | New | M5 |
-| Customer email (D-036) | New | M6 |
+| Automatic email infrastructure (D-036, D-059) | New; built first, at the start of M4 | M6 (M4.0) |
 | Workout plans and logs, escalation (D-033) | New | M7 |
 | Contract change vouchers (D-024) | New | M8 |
 | Reports and dashboards (D-041) | New | M3, M5, M7, M9 |
@@ -58,6 +60,10 @@ Status legend: **Built** (meets brief v2) · **Partly** (exists, needs changes) 
 | Contract DRAFT → ACTIVE → CANCELLED; drafts editable; free contract value | Pending approval → approved (locked); price from tiers; exception price; statuses incl. Frozen and On hold; delete to trash (D-021–D-023) | New contract model and screens; existing contracts migrate as approved, with their value as an exception price flagged "imported". | M4 |
 | Contract cancel cascades to bookings (D-010) | Cancellation is a change voucher with fee and refund (D-024) | Rework cancel into the change-voucher flow; keep the cascade (OQ-030 interim). | M8 (M4 keeps the current cancel until then) |
 | Booking BOOKED → CHECKED_IN → COMPLETED; no-show and cancel consume nothing | Booked, Đã tập, Hủy lịch, no-show, deleted; no-show consumes and credits the PT; rules configurable (D-025, D-026, T-050) | Replace the booking status enum with configurable statuses; store consume/credit flags per session; remove the separate check-in; "Đã tập" admin-only and locked; add delete-with-refund and Burn Show. | M5 |
+| Bookings only inside a PT's shift (D-030, T-058, A-042) | Booking at all hours; a shift is an on-duty shift, shown and reported only (D-058) | Remove the "inside working hours" refusal in the booking check; keep the grid shading as on-duty and off-duty; count sessions in and outside the shift. | M5.2 |
+| Single task reminder 24 h before (A-046); approvers' superiors are Admin (A-047) | Several reminder points; the direct manager is told (D-056, D-048) | Reminder points per task; the direct-manager field. | M2.7 (built, 2026-10-12) |
+| Round-robin by account age, ignoring shifts (A-052); no reclaim | Weighted turns, receiving on/off, working hours, reclaim after 1 hour (D-050, D-052) | Turn weights, the flag, the working window clock, the move log and its report. | M2.7 (built, 2026-10-12) |
+| Free tick of checklist steps; nationality group fixed (A-049); "Chi tiết nhu cầu" free text | Locked ticks and "Không thực hiện" (D-054); a country list (D-057); a coded catalog (D-066) | Lock rules, the countries list with the derived group, the coded catalog. | M2.7 (built, 2026-10-12) |
 | Trainer overlap only | Trainer and customer overlap; PT working schedules (D-030) | Working schedules, the booking check, and grid shading done in M1 slice 6 (T-058); customer overlap remains. | M5 |
 | Trainers as a separate table with an optional login | Employees with accounts; PTs are employees (brief §8.4) | Done in M1 slice 6: trainers became employees in place, codes kept (T-058). | M1 |
 | Payments CONFIRMED/VOIDED with void reason | Receipts with approval, deleted to trash; receipt date edit permission (D-034, D-035) | Payments become receipts; voided payments migrate as deleted receipts with their reason. | M4 |

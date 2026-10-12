@@ -10,6 +10,7 @@ const withRefs = {
   branch: { select: { id: true, name: true } },
   department: { select: chosenSelect },
   title: { select: chosenSelect },
+  manager: { select: { id: true, employeeCode: true, fullName: true } },
 } as const satisfies Prisma.EmployeeInclude;
 
 export type EmployeeRecord = Prisma.EmployeeGetPayload<{ include: typeof withRefs }>;
@@ -27,6 +28,7 @@ export type EmployeeWrite = {
   team: string | null;
   titleId: string | null;
   titleNote: string | null;
+  managerId: string | null;
   status: "ACTIVE" | "INACTIVE";
   isTrainer: boolean;
   userId: string | null;
@@ -71,6 +73,23 @@ export function findEmployee(
 export async function lockEmployee(db: Db, id: string): Promise<boolean> {
   const rows = await db.$queryRaw<{ id: string }[]>`SELECT "id" FROM "employees" WHERE "id" = ${id}::uuid FOR UPDATE`;
   return rows.length === 1;
+}
+
+/** The direct managers above an employee, nearest first, for the cycle check (D-046). */
+export async function managerChain(db: Db, employeeId: string): Promise<string[]> {
+  const rows = await db.$queryRaw<{ id: string }[]>`
+    WITH RECURSIVE chain(id, depth) AS (
+      SELECT "manager_id", 1 FROM "employees" WHERE "id" = ${employeeId}::uuid AND "manager_id" IS NOT NULL
+      UNION
+      SELECT e."manager_id", c.depth + 1 FROM "employees" e JOIN chain c ON e."id" = c.id
+      WHERE e."manager_id" IS NOT NULL AND c.depth < 50
+    )
+    SELECT id::text FROM chain ORDER BY depth`;
+  return rows.map((row) => row.id);
+}
+
+export function employeeExists(db: Db, id: string): Promise<number> {
+  return db.employee.count({ where: { id } });
 }
 
 export function findEmployeeByUserId(db: Db, userId: string) {

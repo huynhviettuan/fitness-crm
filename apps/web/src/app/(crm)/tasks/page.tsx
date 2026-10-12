@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
 import { FilterPanel, FilterSelect } from "@/components/filter-panel";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -69,7 +70,14 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
       <PageHeader
         title={t("title")}
         description={t("description")}
-        actions={assignees && <CreateTaskButton assignees={assignees} branches={user.branches} />}
+        actions={
+          <>
+            {can(user, "task.export") && (
+              <ExportButton path="/api/v1/tasks/export" query={{ view, status, overdueOnly, q }} />
+            )}
+            {assignees && <CreateTaskButton assignees={assignees} branches={user.branches} />}
+          </>
+        }
       />
       {/* D-018: the approver gets their approvals in the task module; they are decided in the inbox. */}
       {approvals && approvals.toDecide > 0 && (

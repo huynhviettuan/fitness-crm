@@ -19,6 +19,7 @@ import { FieldGroup } from "@/components/ui/field";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CheckboxField, SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
+import { useCountryOptions } from "@/components/use-countries";
 import { useErrorMessage } from "@/components/use-error-message";
 import { formatDateOnly } from "@/lib/format";
 import { ID_DOCUMENT_TYPES, showInputSchema, type Lead } from "@flow/shared/leads";
@@ -29,7 +30,7 @@ export type ShowValues = {
   idDocumentType: string;
   idDocumentNumber: string;
   birthDate: string;
-  nationality: string;
+  countryCode: string;
   email: string;
   phone: string;
   healthNote: string;
@@ -37,12 +38,12 @@ export type ShowValues = {
 };
 
 /** What the lead already has fills the form (brief §3 stage 3). */
-export function showDefaults(lead: Lead, nationalityVietnam: string): ShowValues {
+export function showDefaults(lead: Lead): ShowValues {
   return {
     idDocumentType: "CCCD",
     idDocumentNumber: "",
     birthDate: lead.birthDate ? formatDateOnly(lead.birthDate) : "",
-    nationality: lead.nationalityGroup === "VIETNAM" ? nationalityVietnam : "",
+    countryCode: lead.countryCode ?? "",
     email: lead.email ?? "",
     phone: lead.phone ?? "",
     healthNote: "",
@@ -57,6 +58,7 @@ export function showDefaults(lead: Lead, nationalityVietnam: string): ShowValues
  */
 export function ShowFields<T extends FieldValues>({ control, prefix = "" }: { control: Control<T>; prefix?: string }) {
   const t = useTranslations("visit");
+  const countries = useCountryOptions();
   const name = (field: keyof ShowValues) => `${prefix}${field}` as Path<T>;
   return (
     <FieldGroup>
@@ -82,7 +84,7 @@ export function ShowFields<T extends FieldValues>({ control, prefix = "" }: { co
           placeholder={t("datePlaceholder")}
           autoComplete="off"
         />
-        <TextField control={control} name={name("nationality")} label={t("fields.nationality")} autoComplete="off" />
+        <SelectField control={control} name={name("countryCode")} label={t("fields.nationality")} options={countries} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField control={control} name={name("email")} label={t("fields.email")} type="email" autoComplete="off" />
@@ -107,7 +109,7 @@ export function ShowButton({ lead }: { lead: Lead }) {
   const { pending, run } = useSubmit();
   const form = useForm<ShowValues>({
     resolver: zodResolver(showInputSchema, undefined, { raw: true }) as never,
-    defaultValues: showDefaults(lead, t("visit.vietnam")),
+    defaultValues: showDefaults(lead),
   });
   const onSubmit = form.handleSubmit((values) =>
     run(

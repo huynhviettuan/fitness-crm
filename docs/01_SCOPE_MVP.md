@@ -30,4 +30,4 @@ Phase 1 delivers 12 modules (brief §1, D-013), in the milestones of `16_IMPLEME
 
 ## Out of phase 1
 
-Pro Shop, lockers, towels, loyalty contracts and points, day passes, fingerprint integration, member mobile app, Zalo OA, tax accounting and e-invoices, and other ERP modules (retail, inventory, HR and payroll). Also not built: GymMaster's "edit approved contract", "type sessions used", "deposit payout", and "free package" (D-022). See `19_FUTURE_ROADMAP.md`.
+Pro Shop, lockers, towels, loyalty contracts and points, day passes, attaching fingerprint machines (the scan API and pairing are built in M5, D-069), member mobile app, Zalo OA, tax accounting and e-invoices, and other ERP modules (retail, inventory, HR and payroll). Also not built: GymMaster's "edit approved contract", "type sessions used", "deposit payout", and "free package" (D-022). See `19_FUTURE_ROADMAP.md`.

@@ -27,6 +27,7 @@ const optionSelect = {
   listKey: true,
   labelVi: true,
   labelEn: true,
+  code: true,
   sortOrder: true,
   active: true,
   isOther: true,
@@ -38,7 +39,7 @@ const listOrder: Prisma.OptionOrderByWithRelationInput[] = [
 ];
 
 /** How records include the option they chose, for `chosen()`. */
-export const chosenSelect = { id: true, labelVi: true, labelEn: true, isOther: true } as const;
+export const chosenSelect = { id: true, labelVi: true, labelEn: true, code: true, isOther: true } as const;
 
 /** An option as a record shows it, with the note written with it. */
 export function chosen(option: Omit<ChosenOption, "note">, note: string | null): ChosenOption {
@@ -63,7 +64,7 @@ export async function createOption(actor: Actor, rawKey: string, input: unknown)
   const data = parseInput(optionInputSchema, input);
   return withLabelConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
-      await assertLabelFree(tx, listKey, data.labelVi, null);
+      await assertLabelFree(tx, listKey, data.labelVi, null, data.code);
       const last = await tx.option.aggregate({ where: { listKey, isOther: false }, _max: { sortOrder: true } });
       const option = await tx.option.create({
         data: { ...data, listKey, sortOrder: (last._max.sortOrder ?? 0) + 1 },
@@ -93,9 +94,9 @@ export async function updateOption(actor: Actor, rawKey: string, id: string, inp
       if (!before) throw new AppError("NOT_FOUND");
       if (before.isOther && !data.active)
         throw new AppError("VALIDATION_FAILED", { fieldErrors: { active: ["otherAlwaysActive"] } });
-      await assertLabelFree(tx, listKey, data.labelVi, id);
+      await assertLabelFree(tx, listKey, data.labelVi, id, data.code);
       const after = await tx.option.update({ where: { id }, data, select: optionSelect });
-      const changes = diffFields(before, after, ["labelVi", "labelEn", "active"]);
+      const changes = diffFields(before, after, ["labelVi", "labelEn", "code", "active"]);
       if (changes) {
         await recordAudit(tx, {
           actorUserId: actor.id,
@@ -171,6 +172,11 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     assessmentTypes: Prisma.sql`SELECT "assessment_type_note" AS note, "created_at" AS at FROM "customers" WHERE "assessment_type_option_id" = ${id}::uuid`,
     // Every refusal, also of leads that came back since (D-020).
     leadRefuseReasons: Prisma.sql`SELECT "reason_note" AS note, "changed_at" AS at FROM "lead_status_changes" WHERE "reason_option_id" = ${id}::uuid`,
+    auditFailReasons: Prisma.sql`SELECT a."comment" AS note, a."created_at" AS at FROM "consulting_audit_criteria" c JOIN "consulting_audits" a ON a."id" = c."audit_id" WHERE c."option_id" = ${id}::uuid`,
+    needDetails: Prisma.sql`SELECT "need_detail" AS note, "updated_at" AS at FROM "customers" WHERE "need_detail_option_id" = ${id}::uuid`,
+    // The note of a removed tick is in its history entry, with the reason's name (D-054).
+    stepReopenReasons: Prisma.sql`SELECT "metadata"->>'note' AS note, "created_at" AS at FROM "audit_events" WHERE "action" = 'lead.step_reopened' AND "metadata"->>'reason' = (SELECT "label_vi" FROM "options" WHERE "id" = ${id}::uuid)`,
+    customerGroups: Prisma.sql`SELECT "customer_group_note" AS note, "updated_at" AS at FROM "customers" WHERE "customer_group_option_id" = ${id}::uuid`,
   };
   const rows = await prisma.$queryRaw<{ note: string; count: number; lastUsedAt: Date }[]>`
     SELECT MIN(btrim(note)) AS note, COUNT(*)::int AS count, MAX(at) AS "lastUsedAt"
@@ -193,6 +199,8 @@ export async function resolveChoice(
   field: string,
   choice: { optionId: string; note: string | null },
   current: string | null = null,
+  /** The form field of the note when it is not `<field>Note`. */
+  noteField: string = field.replace(/Id$/, "Note"),
 ): Promise<{ optionId: string; note: string | null }> {
   const option = await db.option.findFirst({
     where: { id: choice.optionId, listKey },
@@ -202,7 +210,7 @@ export async function resolveChoice(
     throw new AppError("VALIDATION_FAILED", { fieldErrors: { [field]: ["invalidChoice"] } });
   }
   if (option.isOther && !choice.note) {
-    throw new AppError("VALIDATION_FAILED", { fieldErrors: { [field.replace(/Id$/, "Note")]: ["otherNeedsNote"] } });
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { [noteField]: ["otherNeedsNote"] } });
   }
   return { optionId: option.id, note: choice.note };
 }
@@ -218,7 +226,15 @@ async function assertLabelFree(
   listKey: OptionListKey,
   labelVi: string,
   exceptId: string | null,
+  code: string | null = null,
 ): Promise<void> {
+  if (code) {
+    const same = await db.option.findFirst({
+      where: { listKey, code: { equals: code, mode: "insensitive" }, ...(exceptId ? { id: { not: exceptId } } : {}) },
+      select: { id: true },
+    });
+    if (same) throw new AppError("VALIDATION_FAILED", { fieldErrors: { code: ["codeAlreadyUsed"] } });
+  }
   const clash = await db.option.findFirst({
     where: {
       listKey,

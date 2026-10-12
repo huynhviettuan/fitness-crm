@@ -1,11 +1,12 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import {
   showInputSchema,
   showResultSchema,
   leadChecklistSchema,
   stepCompleteSchema,
+  stepReopenSchema,
   todayStepsSchema,
   leadAssignSchema,
   leadAssigneesSchema,
@@ -14,6 +15,8 @@ import {
   leadPageSchema,
   leadSchema,
   leadStatusChangeSchema,
+  leadNoteInputSchema,
+  leadNoteSchema,
   leadTimelineSchema,
   leadUpdateSchema,
   recarePageSchema,
@@ -21,11 +24,14 @@ import {
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
-import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
+import { ApiErrors, ApiOptionalQuery, ApiResult, ApiExcelFile } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
+import { exportList } from "../../platform/export/export.service.js";
+import { leadsExport, LEAD_EXPORT_QUERY } from "./lead.export.js";
 import { createLead, getLead, leadBoard, listLeads, updateLead } from "./lead.service.js";
 import { assignLead, changeLeadStatus, leadAssignees, leadTimeline } from "./lead-journey.service.js";
-import { completeLeadStep, leadChecklist, todaySteps } from "./checklist.service.js";
+import { addLeadNote } from "./lead-note.service.js";
+import { completeLeadStep, leadChecklist, reopenLeadStep, todaySteps } from "./checklist.service.js";
 import { noShowLead, showLead } from "./lead-outcome.service.js";
 import { recareList } from "./lead-recare.service.js";
 
@@ -44,6 +50,18 @@ export class LeadsController {
   @ApiResult(leadPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(leadPageSchema, await listLeads(actor, queryOf(request, FILTERS)));
+  }
+
+  /**
+   * The list as an Excel file (A-077 to A-080): the same search, filters, scope, and masks as
+   * the list, every row up to `exportRowLimit`; the permission is in addition to seeing it.
+   */
+  @Get("export")
+  @RequirePermission("lead.export")
+  @ApiOptionalQuery(...LEAD_EXPORT_QUERY)
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, leadsExport, queryOf(request, LEAD_EXPORT_QUERY));
   }
 
   /** The Kanban board (FR-LEAD-006): a column per status, the first 30 cards of each with its total. */
@@ -115,7 +133,19 @@ export class LeadsController {
     return encode(leadSchema, await updateLead(actor, id, body));
   }
 
-  /** Every status change and assignment, newest first (D-020). */
+  /** A note on the lead (A-074): append-only, never edited or deleted. */
+  @Post(":id/notes")
+  @RequirePermission("lead.manage")
+  @ApiResult(leadNoteSchema, 201, "Created")
+  async addNote(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: leadNoteInputSchema }) body: unknown,
+  ) {
+    return encode(leadNoteSchema, await addLeadNote(actor, id, body));
+  }
+
+  /** Every status change, assignment, note, inquiry, and merge, newest first (D-020); also of the customer a lead became. */
   @Get(":id/timeline")
   @RequirePermission("lead.view")
   @ApiResult(leadTimelineSchema)
@@ -180,6 +210,23 @@ export class LeadsController {
     @Body({ schema: stepCompleteSchema }) body: unknown,
   ) {
     return encode(leadChecklistSchema, await completeLeadStep(actor, id, stepId, body));
+  }
+
+  /**
+   * Admin removes the tick of a step done by mistake (D-054), with a reason; the step is open again and
+   * the removal is in the history. A result that moved the lead cannot be removed.
+   */
+  @Post(":id/steps/:stepId/reopen")
+  @RequirePermission("lead.untick")
+  @HttpCode(200)
+  @ApiResult(leadChecklistSchema)
+  async reopenStep(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Param("stepId") stepId: string,
+    @Body({ schema: stepReopenSchema }) body: unknown,
+  ) {
+    return encode(leadChecklistSchema, await reopenLeadStep(actor, id, stepId, body));
   }
 
   /**

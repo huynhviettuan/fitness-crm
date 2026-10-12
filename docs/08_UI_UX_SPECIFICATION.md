@@ -5,17 +5,20 @@ Visual design, components, languages, and formatting are in `23_UI_DESIGN_SYSTEM
 ## Navigation
 
 ```text
-Tổng quan (Dashboard)
-Lead & Tư vấn: Kanban, Danh sách, Việc hôm nay, Tái chăm sóc, Kịch bản
-Khách hàng
-Hợp đồng: Danh sách, Chờ duyệt, Phiếu biến động
-Lịch: Lịch PT, Lịch lớp
-Giáo án: Giáo án khách, Template, Danh mục, Escalation
-Sổ quỹ: Phiếu thu, Phiếu chi, Chi trả HLV, Sổ quỹ, Công nợ
-Giao việc
-Báo cáo
-Quản trị: Người dùng, Vai trò, Ma trận duyệt, Chi nhánh, Nhân viên, Danh mục lựa chọn, Tham số, Dịch vụ & bậc giá, Mẫu email, Thùng rác, Nhật ký thao tác
+Tổng quan
+▸ Lead và tư vấn: Lead, Việc hôm nay, Tái chăm sóc, Audit tư vấn, Nhận lead
+▸ Khách hàng và hợp đồng: Khách hàng, Hợp đồng (M4: Chờ duyệt, Phiếu biến động)
+▸ Lịch và buổi tập: Lịch PT, Buổi tập (M5: Lịch lớp)
+Công việc
+Tài chính (M4: Phiếu thu, Phiếu chi, Chi trả HLV, Sổ quỹ, Công nợ)
+▸ Báo cáo: Dashboard tư vấn, Phân tích lead
+Quản trị
+  ▸ Người và quyền: Nhân viên, Người dùng, Vai trò và phân quyền, Chi nhánh, Ma trận phê duyệt
+  ▸ Cấu hình: Danh mục lựa chọn, Tham số hệ thống, Checklist tư vấn, Tiêu chí audit, Kịch bản tư vấn (M4: Dịch vụ và bậc giá, Mẫu email)
+  ▸ Giám sát: Lịch sử thao tác, Thùng rác
 ```
+
+The sidebar is grouped (A-105): a group (▸) opens and closes, only the group of the current page is open when a page loads, and what a user opens or closes is remembered in that browser. A group with no item the user may see is not shown, and a group with a single visible item is shown as that item. Giáo án (M7) gets its own group when built.
 
 The top bar holds the branch switcher (for users with several branches), global customer search (Ctrl+K), the notification bell, the approvals inbox, and the user menu.
 

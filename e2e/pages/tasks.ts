@@ -21,12 +21,14 @@ export class TaskFormDialog {
     dueDate: string;
     dueTime?: string;
     priority?: string;
+    reminders?: string;
   }): Promise<void> {
     await this.field(k.fields.title).fill(input.title);
     await this.choose(k.fields.assignee, input.assignee);
     await this.field(k.fields.dueDate).fill(input.dueDate);
     if (input.dueTime) await this.field(k.fields.dueTime).fill(input.dueTime);
     if (input.priority) await this.choose(k.fields.priority, input.priority);
+    if (input.reminders !== undefined) await this.field(k.fields.reminders).fill(input.reminders);
   }
 
   async save(): Promise<void> {

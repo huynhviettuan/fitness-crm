@@ -24,6 +24,12 @@ export class EmployeeFormDialog {
     if (input.isTrainer) await this.root.getByRole("switch", { name: e.fields.isTrainer }).check();
   }
 
+  /** The direct manager (D-046), chosen by the text the list shows: "NV001 · name". */
+  async chooseManager(text: string): Promise<void> {
+    await this.root.getByRole("combobox", { name: e.fields.manager, exact: true }).click();
+    await this.root.page().getByRole("listbox").getByRole("option", { name: text, exact: true }).click();
+  }
+
   async save(): Promise<void> {
     await this.root.getByRole("button", { name: labels.common.save }).click();
   }
@@ -109,6 +115,14 @@ export class EmployeePage {
     await this.shell.main.getByLabel(s.date, { exact: true }).fill(date);
     await this.shell.main.getByLabel(s.note, { exact: true }).fill(note);
     await this.shell.main.getByRole("button", { name: s.addDayOff, exact: true }).click();
+  }
+
+  /** One line of the profile card, e.g. the direct manager. */
+  detail(label: string): Locator {
+    return this.shell.main
+      .locator("dt")
+      .filter({ hasText: new RegExp(`^${label}$`) })
+      .locator("xpath=following-sibling::dd[1]");
   }
 
   async editDetails(): Promise<EmployeeFormDialog> {

@@ -4,6 +4,7 @@ import { GENDERS } from "../employees/employee.schema.js";
 import { chosenOptionSchema } from "../options/option.schema.js";
 import { instant, pageOf } from "../validation/index.js";
 import { BOARD_STATUSES, RECARE_STATUSES } from "./lead.domain.js";
+import { ASSIGNMENT_KINDS } from "./assignment.domain.js";
 import { LEAD_STATUSES, NATIONALITY_GROUPS, PERSON_STAGES, SOURCE_TYPES } from "./lead.schema.js";
 
 const person = z.object({ id: z.uuid(), name: z.string() });
@@ -36,8 +37,13 @@ export const leadSchema = z
     source: chosenOptionSchema.nullable(),
     sourceType: z.enum(SOURCE_TYPES).nullable(),
     sourceDetail: z.string().nullable(),
+    /** A country of ISO 3166-1; empty for old data that only says Vietnamese or foreign (D-057). */
+    countryCode: z.string().nullable(),
+    /** Derived from the country (D-057). */
     nationalityGroup: z.enum(NATIONALITY_GROUPS).nullable(),
     needGroup: chosenOptionSchema.nullable(),
+    /** The entry chosen from the coded catalog (D-066); `needDetail` is the note written with it. */
+    needDetailOption: chosenOptionSchema.nullable(),
     needDetail: z.string().nullable(),
     painStatus: chosenOptionSchema.nullable(),
     assessmentType: chosenOptionSchema.nullable(),
@@ -79,7 +85,16 @@ const assignmentEntry = z.object({
   by: person.nullable(),
   from: person.nullable(),
   to: person,
+  /** The round-robin at intake, a manager, or the system moving an untouched lead on (D-050, D-052). */
+  how: z.enum(ASSIGNMENT_KINDS),
+  /** The system's move: the working minutes the lead waited (D-052). */
+  waitedMinutes: z.int().nullable(),
 });
+
+/** A note on the lead (A-074): free text, never edited or deleted. */
+export const leadNoteSchema = z
+  .object({ kind: z.literal("note"), id: z.uuid(), at: instant, by: person, body: z.string() })
+  .meta({ id: "LeadNote" });
 
 /** The same person wrote or came in again (BR-202): channel, source, need, and note of that inquiry. */
 export const inquirySchema = z
@@ -116,9 +131,13 @@ export const mergeEntry = z
   })
   .meta({ id: "PersonMergeEntry" });
 
-/** Every status change, assignment, inquiry, and merge, newest first: who and when (D-020). */
+/** Every status change, assignment, note, inquiry, and merge, newest first: who and when (D-020). */
 export const leadTimelineSchema = z
-  .object({ items: z.array(z.discriminatedUnion("kind", [statusEntry, assignmentEntry, inquirySchema, mergeEntry])) })
+  .object({
+    items: z.array(
+      z.discriminatedUnion("kind", [statusEntry, assignmentEntry, leadNoteSchema, inquirySchema, mergeEntry]),
+    ),
+  })
   .meta({ id: "LeadTimeline" });
 
 /** One row of the re-care list (FR-LEAD-007). */
@@ -180,6 +199,7 @@ export type PersonIntakeHistory = z.output<typeof personIntakeHistorySchema>;
 export type RecarePage = z.output<typeof recarePageSchema>;
 export type RecareRow = z.output<typeof recareRowSchema>;
 export type LeadInquiry = z.output<typeof inquirySchema>;
+export type LeadNote = z.output<typeof leadNoteSchema>;
 export type InquiryResult = z.output<typeof inquiryResultSchema>;
 export type MergeResult = z.output<typeof mergeResultSchema>;
 export type LeadTimelineEntry = LeadTimeline["items"][number];

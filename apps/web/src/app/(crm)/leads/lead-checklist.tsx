@@ -33,6 +33,7 @@ import {
 import { useSubmit } from "../admin/users/user-dialogs";
 import { completeLeadStepAction } from "./actions";
 import { ShowFields, showDefaults, type ShowValues } from "./lead-visit";
+import { ReopenStepButton } from "./reopen-step";
 
 // Each result's own details are checked only when it is chosen; see the resolver.
 const withShow = stepCompleteSchema.omit({ book: true, refuse: true }).extend({ show: showInputSchema });
@@ -41,7 +42,7 @@ const emptyShow: ShowValues = {
   idDocumentType: "CCCD",
   idDocumentNumber: "",
   birthDate: "",
-  nationality: "",
+  countryCode: "",
   email: "",
   phone: "",
   healthNote: "",
@@ -115,7 +116,19 @@ export function useTriggerText(): (step: Trigger, steps: (Labelled & { key: stri
 }
 
 /** The lead's checklist (FR-LEAD-004): every step in order, what it waits for, its deadline or result. */
-export function ChecklistSteps({ lead, steps, canComplete }: { lead: Lead; steps: LeadStep[]; canComplete: boolean }) {
+export function ChecklistSteps({
+  lead,
+  steps,
+  canComplete,
+  canUntick = false,
+}: {
+  /** Null for the customer a lead became: the checklist is then only read (A-076). */
+  lead: Lead | null;
+  steps: LeadStep[];
+  canComplete: boolean;
+  /** Admin may remove a tick done by mistake (D-054). */
+  canUntick?: boolean;
+}) {
   const t = useTranslations("checklist");
   const label = useLabel();
   const triggerText = useTriggerText();
@@ -142,6 +155,11 @@ export function ChecklistSteps({ lead, steps, canComplete }: { lead: Lead; steps
               )}
               {step.overdue && <Badge variant="destructive">{t("overdue")}</Badge>}
               {step.state === "WAITING" && <span className="text-muted-foreground">{triggerText(step, steps)}</span>}
+              {step.state === "NOT_DONE" && step.lockedAt && (
+                <span className="text-muted-foreground">
+                  {t("lockedAt")} <DateTime value={step.lockedAt} format="dateTime" />
+                </span>
+              )}
               {step.state === "DONE" && step.result && (
                 <>
                   <span className="font-medium">{label(step.result)}</span>
@@ -156,8 +174,11 @@ export function ChecklistSteps({ lead, steps, canComplete }: { lead: Lead; steps
             )}
             {step.note && <p className="text-sm whitespace-pre-line text-muted-foreground">{step.note}</p>}
           </div>
-          {canComplete && step.state === "OPEN" && (
+          {canComplete && lead && step.state === "OPEN" && (
             <CompleteStepButton leadId={lead.id} leadName={lead.fullName} step={step} lead={lead} />
+          )}
+          {canUntick && lead && step.state === "DONE" && step.reopenable && (
+            <ReopenStepButton leadId={lead.id} step={step} stepName={label(step)} />
           )}
         </li>
       ))}
@@ -211,7 +232,7 @@ export function CompleteStepButton({
     defaultValues: {
       resultIndex: step.results.length === 1 ? "0" : "",
       note: "",
-      show: lead ? showDefaults(lead, t("visit.vietnam")) : { ...emptyShow, nationality: "" },
+      show: lead ? showDefaults(lead) : emptyShow,
       book: emptyBook,
       refuse: emptyRefuse,
     },

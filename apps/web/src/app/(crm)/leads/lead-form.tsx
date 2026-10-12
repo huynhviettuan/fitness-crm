@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,15 +12,17 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
-import { NO_OPTION, OptionSelect } from "@/components/option-select";
+import { NO_OPTION, OptionSelect, optionLabel } from "@/components/option-select";
+import { useOptions } from "@/components/use-options";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DuplicateNotice } from "@/components/duplicate-notice";
 import { notify } from "@/components/notify";
+import { useCountryOptions } from "@/components/use-countries";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { DuplicatePerson } from "@/lib/api/errors";
 import { formatDateOnly } from "@/lib/format";
 import { GENDERS } from "@flow/shared/employees";
-import { NATIONALITY_GROUPS, SOURCE_TYPES, leadInputSchema, type Lead } from "@flow/shared/leads";
+import { SOURCE_TYPES, leadInputSchema, type Lead } from "@flow/shared/leads";
 import { addInquiryAction, createLeadAction, updateLeadAction } from "./actions";
 
 type BranchOption = { id: string; name: string };
@@ -38,9 +40,10 @@ type FormValues = {
   sourceNote: string;
   sourceType: string;
   sourceDetail: string;
-  nationalityGroup: string;
+  countryCode: string;
   needGroupId: string;
   needGroupNote: string;
+  needDetailId: string;
   needDetail: string;
   painStatusId: string;
   painStatusNote: string;
@@ -70,9 +73,10 @@ function defaultsOf(lead: Lead | null): FormValues {
     sourceNote: lead?.source?.note ?? "",
     sourceType: lead?.sourceType ?? NO_OPTION,
     sourceDetail: lead?.sourceDetail ?? "",
-    nationalityGroup: lead?.nationalityGroup ?? NO_OPTION,
+    countryCode: lead?.countryCode ?? NO_OPTION,
     needGroupId: id(lead?.needGroup ?? null),
     needGroupNote: lead?.needGroup?.note ?? "",
+    needDetailId: id(lead?.needDetailOption ?? null),
     needDetail: lead?.needDetail ?? "",
     painStatusId: id(lead?.painStatus ?? null),
     painStatusNote: lead?.painStatus?.note ?? "",
@@ -129,6 +133,9 @@ function LeadSheet({ open, onOpenChange, lead, branches }: SheetProps) {
 }
 
 function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: BranchOption[]; onDone: () => void }) {
+  const countries = useCountryOptions();
+  const needDetails = useOptions("needDetails");
+  const locale = useLocale();
   const t = useTranslations();
   const f = useTranslations("leads.fields");
   const router = useRouter();
@@ -154,7 +161,7 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
       if (!result.ok) {
         setDuplicate(result.duplicate ?? null);
         // A phone already in use: offer to add this contact to the record that has it, when the user may see it.
-        if (!lead && result.code === "DUPLICATE_PHONE" && result.duplicate) {
+        if (!lead && result.code === "DUPLICATE_PHONE" && result.duplicate?.openable) {
           setSubmitted(fromNone(values) as FormValues);
           setMergeOpen(true);
         }
@@ -280,7 +287,23 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
               label={f("needGroup")}
               noneLabel={none}
             />
-            <TextField control={form.control} name="needDetail" label={f("needDetail")} multiline />
+            <SelectField
+              control={form.control}
+              name="needDetailId"
+              label={f("needDetailChoice")}
+              placeholder={needDetails ? t("options.choose") : t("options.loading")}
+              options={[
+                { value: NO_OPTION, label: none },
+                ...(needDetails ?? []).map((option) => ({ value: option.id, label: optionLabel(option, locale) })),
+              ]}
+            />
+            <TextField
+              control={form.control}
+              name="needDetail"
+              label={f("needDetail")}
+              description={t("leads.needDetailHint")}
+              multiline
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <OptionSelect
                 control={form.control}
@@ -322,12 +345,9 @@ function LeadForm({ lead, branches, onDone }: { lead: Lead | null; branches: Bra
             )}
             <SelectField
               control={form.control}
-              name="nationalityGroup"
-              label={f("nationalityGroup")}
-              options={[
-                { value: NO_OPTION, label: none },
-                ...NATIONALITY_GROUPS.map((value) => ({ value, label: t(`leads.nationalityGroups.${value}`) })),
-              ]}
+              name="countryCode"
+              label={f("country")}
+              options={[{ value: NO_OPTION, label: none }, ...countries]}
             />
             <TextField control={form.control} name="notes" label={f("notes")} multiline />
           </>

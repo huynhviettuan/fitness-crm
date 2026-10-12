@@ -4,7 +4,7 @@ Items after phase 1 (D-013). The data model is split per module so each can be a
 
 | Area | Notes |
 |---|---|
-| Fingerprint / device check-in | The API and the "Đã tập" flow are device-ready (D-026); timing is OQ-027. Devices authenticate with scoped API keys (`26_TECH_PROPOSAL.md` §5). |
+| Fingerprint / device check-in | The scan API, the pairing rules (15 minutes, ±1 hour), the raw scans, and the machine user codes are built in M5 (D-069 to D-072); attaching a machine is OQ-027, after the survey TS-009. Devices authenticate with scoped API keys (`26_TECH_PROPOSAL.md` §5). |
 | Member mobile app | Uses the same `/api/v1` with token authentication (T-043, T-044). |
 | Pro Shop, lockers, towels | Retail and inventory modules of the ERP. |
 | Loyalty contracts and points, day passes | New contract and service types. |

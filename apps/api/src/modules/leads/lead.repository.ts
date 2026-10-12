@@ -12,6 +12,7 @@ const withRefs = {
   channel: { select: chosenSelect },
   source: { select: chosenSelect },
   needGroup: { select: chosenSelect },
+  needDetailOption: { select: chosenSelect },
   painStatus: { select: chosenSelect },
   assessmentType: { select: chosenSelect },
   refuseReason: { select: chosenSelect },
@@ -34,9 +35,11 @@ export type LeadWrite = {
   sourceNote: string | null;
   sourceType: "ORGANIC" | "PAID" | null;
   sourceDetail: string | null;
+  countryCode: string | null;
   nationalityGroup: "VIETNAM" | "FOREIGN" | null;
   needGroupId: string | null;
   needGroupNote: string | null;
+  needDetailId: string | null;
   needDetail: string | null;
   painStatusId: string | null;
   painStatusNote: string | null;
@@ -116,6 +119,8 @@ export async function addAssignment(
     toUserId: string;
     assignedById: string | null;
     assignedAt: Date;
+    kind: "ROUND_ROBIN" | "MANUAL" | "RECLAIM";
+    waitedMinutes?: number | null;
   },
 ): Promise<void> {
   await db.leadAssignment.create({ data });
@@ -139,6 +144,18 @@ export function timeline(db: Db, customerId: string) {
   ]);
 }
 
+const noteInclude = { author: person } as const;
+export type NoteRecord = Prisma.LeadNoteGetPayload<{ include: typeof noteInclude }>;
+
+/** The notes of a person's record, newest first (A-074). */
+export function notesOf(db: Db, personId: string): Promise<NoteRecord[]> {
+  return db.leadNote.findMany({ where: { personId }, include: noteInclude, orderBy: { createdAt: "desc" } });
+}
+
+export function addNote(db: Db, data: { personId: string; body: string; createdBy: string }): Promise<NoteRecord> {
+  return db.leadNote.create({ data, include: noteInclude });
+}
+
 /** Who may be given the branch's leads (BR-203): active users of the branch who receive leads, in round-robin order. */
 export function receivers(db: Db, branchId: string): Promise<{ id: string; name: string; createdAt: Date }[]> {
   return db.user.findMany({
@@ -146,6 +163,51 @@ export function receivers(db: Db, branchId: string): Promise<{ id: string; name:
     select: { id: true, name: true, createdAt: true },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });
+}
+
+/**
+ * Who the round-robin may give the branch's leads to (D-050): the receivers whose switch is on,
+ * with their turn weight and access windows (their working hours), in their fixed order.
+ */
+export function turnTakers(db: Db, branchId: string) {
+  return db.user.findMany({
+    where: { AND: [activeInBranch(branchId), holding("lead.receive"), { receivesLeads: true }] },
+    select: {
+      id: true,
+      name: true,
+      createdAt: true,
+      leadWeight: true,
+      accessWindows: { select: { weekdays: true, startTime: true, endTime: true } },
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+}
+
+/**
+ * Where the branch's consultants stand in the weighted round-robin: each one's virtual time, and the
+ * highest of the branch (a newcomer starts level with it). A person never dealt a lead has no row.
+ */
+export async function turnState(
+  db: Db,
+  branchId: string,
+  userIds: string[],
+): Promise<{ vtimes: Map<string, bigint>; latest: bigint }> {
+  const rows = await db.leadTurn.findMany({ where: { branchId } });
+  const latest = rows.reduce((max, row) => (row.vtime > max ? row.vtime : max), 0n);
+  return {
+    vtimes: new Map(rows.filter((row) => userIds.includes(row.userId)).map((row) => [row.userId, row.vtime])),
+    latest,
+  };
+}
+
+export async function saveTurnTimes(db: Db, branchId: string, vtimes: Record<string, bigint>): Promise<void> {
+  for (const [userId, vtime] of Object.entries(vtimes)) {
+    await db.leadTurn.upsert({
+      where: { branchId_userId: { branchId, userId } },
+      create: { branchId, userId, vtime },
+      update: { vtime },
+    });
+  }
 }
 
 /** Who should hear of the branch's new leads: active users of the branch who reassign them (brief §4.1). */
@@ -160,22 +222,6 @@ export async function leadManagers(db: Db, branchId: string): Promise<string[]> 
 /** Serializes the branch's round-robin; held until the transaction ends. */
 export async function lockRoundRobin(db: Db, branchId: string): Promise<void> {
   await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`lead-round-robin:${branchId}`}))::text AS locked`;
-}
-
-export async function lastReceiver(db: Db, branchId: string): Promise<{ id: string; createdAt: Date } | null> {
-  const row = await db.leadRoundRobin.findUnique({
-    where: { branchId },
-    select: { lastUser: { select: { id: true, createdAt: true } } },
-  });
-  return row?.lastUser ?? null;
-}
-
-export async function setLastReceiver(db: Db, branchId: string, userId: string): Promise<void> {
-  await db.leadRoundRobin.upsert({
-    where: { branchId },
-    create: { branchId, lastUserId: userId },
-    update: { lastUserId: userId },
-  });
 }
 
 /** One Kanban column (FR-LEAD-006): appointments soonest first, the rest longest in their status last. */

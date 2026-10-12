@@ -19,8 +19,8 @@ const STATUS_VARIANTS = {
     REFUSED: "muted",
     CONTRACTED: "success",
   },
-  // FR-LEAD-004: a step waits for its trigger, is open with a deadline, or is done.
-  leadStep: { WAITING: "muted", OPEN: "info", DONE: "success" },
+  // FR-LEAD-004: a step waits for its trigger, is open with a deadline, or is done; or locked as "Không thực hiện" (D-054).
+  leadStep: { WAITING: "muted", OPEN: "info", DONE: "success", NOT_DONE: "destructive" },
   stepTiming: { ON_TIME: "success", LATE: "destructive" },
   user: { ACTIVE: "success", DISABLED: "muted" },
   contract: { DRAFT: "muted", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted" },
@@ -33,6 +33,8 @@ const STATUS_VARIANTS = {
   login: { SUCCESS: "success", FAILED: "destructive" },
   task: { NEW: "info", ACCEPTED: "warning", IN_PROGRESS: "warning", DONE: "success", CANCELLED: "muted" },
   taskPriority: { LOW: "muted", NORMAL: "info", HIGH: "destructive" },
+  // D-036: a customer email waits to be sent, was sent, or could not be.
+  email: { QUEUED: "info", SENT: "success", FAILED: "destructive" },
 } as const satisfies Record<string, Record<string, BadgeVariant>>;
 
 // Larger surfaces in a status color, e.g. booking blocks in the PT calendar.

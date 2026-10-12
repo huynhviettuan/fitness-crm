@@ -5,6 +5,7 @@ import { FileTextIcon, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -34,7 +35,11 @@ export default async function ContractsPage({ searchParams }: PageProps<"/contra
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={can(user, "contract.export") && <ExportButton path="/api/v1/contracts/export" query={{ q }} />}
+      />
       <Form action="/contracts" role="search" className="relative mb-4 max-w-sm">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input

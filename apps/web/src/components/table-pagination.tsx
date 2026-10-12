@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PAGE_SIZES, pagingHref, type SearchParams } from "@/lib/paging";
+import { PAGE_SIZES, pagingHref, type PagingKeys, type SearchParams } from "@/lib/paging";
 
 type TablePaginationProps = {
   page: number;
@@ -11,13 +11,15 @@ type TablePaginationProps = {
   /** The list's path and its current search params: page links keep the search and filters. */
   path: string;
   params: SearchParams;
+  /** Parameter names of a second list on the same screen; the default ones are page and pageSize. */
+  keys?: PagingKeys;
 };
 
 /** Server-side pagination: each page and each page size is a link, so it works without client state. */
-export function TablePagination({ page, pageSize, total, path, params }: TablePaginationProps) {
+export function TablePagination({ page, pageSize, total, path, params, keys }: TablePaginationProps) {
   const t = useTranslations("common");
   const pages = Math.max(1, Math.ceil(total / pageSize));
-  const hrefFor = (target: number, size = pageSize) => pagingHref(path, params, target, size);
+  const hrefFor = (target: number, size = pageSize) => pagingHref(path, params, target, size, keys);
 
   return (
     <nav

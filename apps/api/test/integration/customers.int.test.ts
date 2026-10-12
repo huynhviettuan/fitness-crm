@@ -64,6 +64,15 @@ beforeEach(async () => {
 });
 
 describe("updateCustomer", () => {
+  it("answers NOT_FOUND for an id that is not a UUID or belongs to no customer, not an internal error", async () => {
+    const { actor } = await createTestUser("RECEPTIONIST");
+
+    await expect(updateCustomer(actor, "export", { notes: "x" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(updateCustomer(actor, "00000000-0000-4000-8000-000000000000", { notes: "x" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
   it("audits only the fields that changed, with before and after", async () => {
     const { actor } = await createTestUser("FITNESS_MANAGER");
     const customer = await createCustomer(actor, validCustomer);

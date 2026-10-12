@@ -3,6 +3,7 @@ import {
   checklistInputSchema,
   leadStatusChangeSchema,
   stepCompleteSchema,
+  stepReopenSchema,
   todayStepsQuerySchema,
   type Checklist,
   type LeadChecklist,
@@ -19,9 +20,11 @@ import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { notify } from "../../platform/notifications/notification.service.js";
+import { resolveChoice } from "../../platform/options/option.service.js";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { leadsVisibleTo } from "../customers/person.service.js";
 import * as repo from "./checklist.repository.js";
-import { lockedLead, visibleLead } from "./lead.present.js";
+import { lockedLead, visiblePerson } from "./lead.present.js";
 import { applyJourneyEvent, finishOutcomeStep, finishStep, resultsOf } from "./checklist.engine.js";
 import { convertLead, recordNoShow } from "./lead-outcome.service.js";
 import { moveLead } from "./lead-journey.service.js";
@@ -64,7 +67,8 @@ export async function saveChecklist(actor: Actor, input: unknown): Promise<Check
 
 export async function leadChecklist(actor: Actor, leadId: string, now: Date = new Date()): Promise<LeadChecklist> {
   assertCan(actor, "lead.view");
-  const lead = await visibleLead(prisma, actor, leadId);
+  // Read-only for the customer a lead became, on the Consulting history tab (A-076).
+  const lead = await visiblePerson(prisma, actor, leadId);
   return checklistOf(prisma, lead.id, now);
 }
 
@@ -83,10 +87,14 @@ export async function completeLeadStep(
 ): Promise<LeadChecklist> {
   assertCan(actor, "lead.manage");
   const data = parseInput(stepCompleteSchema, input);
+  // A step past its deadline and grace period locks first, in a transaction that stays (D-054).
+  if (z.uuid().safeParse(leadId).success) await lockOverdueSteps(now, leadId);
   return prisma.$transaction(async (tx) => {
     const lead = await lockedLead(tx, actor, leadId);
     const step = z.uuid().safeParse(stepId).success ? await repo.findLeadStep(tx, lead.id, stepId) : null;
     if (!step) throw new AppError("NOT_FOUND");
+    await repo.lockStepRow(tx, step.id);
+    if ((await repo.findLeadStep(tx, lead.id, stepId))?.lockedAt) throw new AppError("STEP_LOCKED");
     if (step.doneAt || !step.dueAt) throw new AppError("INVALID_STATUS_TRANSITION");
     const result = resultsOf(step.template)[data.resultIndex];
     if (!result) throw new AppError("VALIDATION_FAILED", { fieldErrors: { resultIndex: ["invalidChoice"] } });
@@ -114,6 +122,89 @@ export async function completeLeadStep(
       context: data.note ? { note: data.note } : undefined,
     });
     await applyJourneyEvent(tx, lead, { kind: "STEP_DONE", key: step.template.key, at: now, by: actor.id });
+    return checklistOf(tx, lead.id, now);
+  });
+}
+
+/**
+ * Locks as "Không thực hiện" every open step whose deadline and grace period (`stepGraceMinutes`) have
+ * passed, so nobody comes back to tick it to make the process look right (D-054). Run every minute by
+ * the worker (T-059), and for one lead before a tick. The system writes it in the history.
+ */
+export async function lockOverdueSteps(now: Date = new Date(), customerId: string | null = null): Promise<number> {
+  const grace = Number(await readParameter(prisma, "stepGraceMinutes"));
+  return prisma.$transaction(async (tx) => {
+    const locked = await repo.lockOverdue(tx, now, grace, customerId);
+    for (const step of locked) {
+      const template = await tx.consultingStepTemplate.findUniqueOrThrow({
+        where: { id: step.template_id },
+        select: { key: true },
+      });
+      await recordAudit(tx, {
+        actorUserId: null,
+        entityType: "lead",
+        entityId: step.customer_id,
+        action: "lead.step_locked",
+        after: { step: template.key, dueAt: step.due_at.toISOString() },
+        context: { graceMinutes: grace },
+      });
+    }
+    return locked.length;
+  });
+}
+
+/**
+ * Admin removes the tick of a step done by mistake (D-054): the step is open again, with a deadline of
+ * now at the earliest, and the tick, who made it, and the removal with its reason stay in the history.
+ * A result that moved the lead (booked it, refused it, Show, No show) cannot be removed: change the
+ * lead's status instead.
+ */
+export async function reopenLeadStep(
+  actor: Actor,
+  leadId: string,
+  stepId: string,
+  input: unknown,
+  now: Date = new Date(),
+): Promise<LeadChecklist> {
+  assertCan(actor, "lead.untick");
+  const data = parseInput(stepReopenSchema, input);
+  return prisma.$transaction(async (tx) => {
+    const lead = await lockedLead(tx, actor, leadId);
+    const step = z.uuid().safeParse(stepId).success ? await repo.findLeadStep(tx, lead.id, stepId) : null;
+    if (!step) throw new AppError("NOT_FOUND");
+    if (!step.doneAt) throw new AppError("INVALID_STATUS_TRANSITION");
+    const result = step.resultIndex === null ? null : (resultsOf(step.template)[step.resultIndex] ?? null);
+    if (result?.effect) {
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { stepId: ["stepMovedTheLead"] } });
+    }
+    const reason = await resolveChoice(
+      tx,
+      "stepReopenReasons",
+      "reasonId",
+      { optionId: data.reasonId, note: data.reasonNote },
+      null,
+      "reasonNote",
+    );
+    await repo.reopenStep(tx, step.id, step.dueAt && step.dueAt.getTime() > now.getTime() ? step.dueAt : now);
+    const reasonOption = await tx.option.findUniqueOrThrow({
+      where: { id: reason.optionId },
+      select: { labelVi: true },
+    });
+    await recordAudit(tx, {
+      actorUserId: actor.id,
+      entityType: "lead",
+      entityId: lead.id,
+      action: "lead.step_reopened",
+      before: {
+        step: step.template.key,
+        result: result?.labelVi ?? null,
+        doneAt: step.doneAt.toISOString(),
+        doneBy: step.doneById,
+        timing: step.timing,
+      },
+      after: { step: step.template.key, state: "open" },
+      context: { reason: reasonOption.labelVi, ...(reason.note ? { note: reason.note } : {}) },
+    });
     return checklistOf(tx, lead.id, now);
   });
 }
@@ -237,15 +328,21 @@ function presentStep(step: repo.LeadStepRecord, now: Date): LeadStep {
   return {
     ...templateView(step.template),
     id: step.id,
-    state: step.doneAt ? "DONE" : step.dueAt ? "OPEN" : "WAITING",
+    state: step.doneAt ? "DONE" : step.lockedAt ? "NOT_DONE" : step.dueAt ? "OPEN" : "WAITING",
     openedAt: step.openedAt,
     dueAt: step.dueAt,
-    overdue: !step.doneAt && step.dueAt !== null && step.dueAt.getTime() < now.getTime(),
+    overdue: !step.doneAt && !step.lockedAt && step.dueAt !== null && step.dueAt.getTime() < now.getTime(),
     doneAt: step.doneAt,
     doneBy: step.doneBy,
     result: step.resultIndex === null ? null : (results[step.resultIndex] ?? null),
     note: step.note,
     timing: step.timing,
+    lockedAt: step.lockedAt,
+    // Only a plain tick can be taken back: a result that moved the lead stays (D-054).
+    reopenable:
+      step.doneAt !== null &&
+      step.resultIndex !== null &&
+      (resultsOf(step.template)[step.resultIndex]?.effect ?? null) === null,
   };
 }
 

@@ -50,7 +50,8 @@ erDiagram
 | Table | Key fields |
 |---|---|
 | `branches` | name, address, active |
-| `employees` | employee_code (prefix parameter, initially NV; trainer codes kept), full_name, search_name, birth_date, gender, phone, email, department_option_id + department_note, team, title_option_id + title_note, branch_id, status (ACTIVE, INACTIVE), is_trainer, user_id (unique). ID document (encrypted) arrives in M2 (A-041). Built in M1 slice 6 from `trainers` (T-058) |
+| `employees` | employee_code (prefix parameter, initially NV; trainer codes kept), full_name, search_name, birth_date, gender, phone, email, department_option_id + department_note, team, title_option_id + title_note, branch_id, status (ACTIVE, INACTIVE), is_trainer, manager_id (the direct manager, another employee, D-046), user_id (unique). ID document (encrypted) arrives in M2 (A-041). Built in M1 slice 6 from `trainers` (T-058) |
+| `users` (M2.7, A-100) | lead_weight (1 to 20, initially 1), receives_leads (the switch for leave or busy) |
 | `employee_shifts` | employee_id, weekday (ISO 1–7), start_minute, end_minute (end exclusive, up to 1440); exclusion constraint: no overlap per employee and weekday |
 | `employee_days_off` | employee_id, date (unique per employee), note |
 | `user_accounts` | username, email, employee_id (unique), role_id, all_branches, active; Better Auth `auth_*` tables keep sessions and password hashes |
@@ -66,6 +67,7 @@ erDiagram
 | `approval_rules` | action_type (unique; keys are code, T-057), required, overdue_hours (1–720); approver roles in `approval_rule_roles` (action_type, role_id). Escalation by discount threshold arrives with M4 |
 | `approval_requests` | action_type, entity_type, entity_id, branch_id, title, amount, payload (json), submitted_by, submitted_at, status (PENDING, APPROVED, REJECTED, CANCELLED), decided_by, decided_at, reject_reason_option_id, reject_reason_note; checks: decided_by ≠ submitted_by, decision complete; one PENDING per action and record |
 | `options` | list_key (channels, sources, needs, refusal reasons, delete reasons, freeze reasons, exception reasons, step results, flags, actions, session summaries, income categories, expense types, payment methods, departments, …; the keys are code, T-055), label_vi (unique per list), label_en, sort_order, active, is_other; one "Khác" per list, always active (A-034). Records keep `<field>_option_id` and `<field>_note` |
+| `options` (M2.7, A-097) | code (optional number, unique in its list, D-066); the lists `needDetails` and `stepReopenReasons`; the seeded departments and job titles (D-046) |
 | `system_parameters` | key (unique), value (json) — timers, thresholds, calendar hours, code prefixes, cancel cut-off, freeze reminder days, re-care days; keys and defaults are code, a missing row means the default (T-055) |
 | `session_status_rules` | status key, label, consumes, credits_pt, color token, active |
 | *(sequences)* | One PostgreSQL sequence per code (`customer_code_seq`, …); the prefix is a system parameter — codes never reused (D-038, T-055) |
@@ -79,14 +81,21 @@ erDiagram
 | Table | Key fields |
 |---|---|
 | `people` (built as `customers`, T-061; ID document, nationality, health note, and data consent since T-064) | lead_code, customer_code (set at Show), stage (LEAD, CUSTOMER), status (lead statuses, D-020), pic_employee_id, full_name, gender, birth_date, phone (unique per active person), email, nationality_group, nationality, id_document (encrypted), address, health_basic (encrypted), customer_group_option_id, channel_option_id, source_option_id, source_type (ORGANIC, PAID), source_detail, need_group_option_id, need_detail_option_id, need_note, pain_status_option_id, assessment_type_option_id, emergency_contact, consent_at, notes |
+| `people` (M2.7, A-096, A-097) | country_code (ISO 3166-1; nationality_group derived from it), need_detail_option_id (the coded catalog; need_detail is its note) |
 | `person_merges` | kept_person_id, merged_person_id, by, at |
 | `lead_inquiries` (T-065) | person_id, branch_id, channel_option_id, channel_note, source_option_id, source_note, source_type, source_detail, need_group_option_id, need_group_note, need_detail, note, created_by, created_at; one row per later intake on an existing record (BR-202) |
+| `lead_notes` (M2 slice 6, A-074) | person_id, body, created_by, created_at; append-only, never edited or deleted; stays with the record after Show |
+| `consulting_audits` and `consulting_audit_criteria` (M3 slice 3, A-086, A-087) | person_id, result (PASS, FAIL), comment, auditor_id, created_at; the criteria not met are rows (audit_id, option_id) from the list `auditFailReasons`; append-only, the latest grade counts |
+| `audit_criteria` (M3 slice 2, A-083) | key (needGroup, phone, refuseReason), active, weight (1 to 10); the audit's compliance and score are computed from `lead_steps` and these, never stored |
+| `consulting_scripts` (M2 slice 6, A-072) | situation_vi, situation_en, answer_vi, answer_en, active, sort_order; the 12 situations of the brief are seeded; never deleted |
+| `people` profile columns (M2 slice 6) | address, emergency_contact_name, emergency_contact_phone, customer_group_option_id and customer_group_note (list `customerGroups`, A-070); the staff in charge is `pic_user_id` (A-071); an index on `created_at` for the registration filter |
 | `person_merges` (T-065) | survivor_id, merged_id (unique), reason_option_id, reason_note, merged_by, before (the merged record without encrypted values, the conflicting phone and email, the filled fields), created_at; the merged record keeps its row with `merged_into_id` and `merged_at` (no phone), its codes stay reserved (D-038) |
 | `lead_status_history` (built as `lead_status_changes`, T-062) | person_id, from_status (null at creation), to_status, appointment_at, reason_option_id, reason_note, note, by (null: the system), at |
-| `lead_assignments` (T-062) | person_id, from_user_id, to_user_id, by (null: round-robin), at |
+| `lead_assignments` (T-062) | person_id, from_user_id, to_user_id, by (null: round-robin and the automatic move), at, kind (ROUND_ROBIN, MANUAL, RECLAIM), waited_minutes (RECLAIM; D-050, D-052) |
 | `lead_round_robin` (T-062) | branch_id, last_user_id: the branch's last receiver of a new lead |
+| `lead_turns` (M2.7, A-100) | branch_id, user_id, vtime (virtual time of the weighted round-robin); replaces `lead_round_robin`, which stays for the leads dealt before |
 | `consulting_checklists` / `consulting_step_templates` (T-063) | version, created_by (no foreign key); step key, order, labels, trigger (ASSIGNED, STATUS, APPOINTMENT, AFTER_STEP, RECARE), trigger status or step, offset minutes, required, auto_complete, results (labels) |
-| `consulting_steps` (built as `lead_steps`, T-063) | person_id, template_step_id, opened_at, due_at, due_notified_at, done_at, done_by, result_index, note, timing (ON_TIME, LATE; SKIPPED in M3) |
+| `consulting_steps` (built as `lead_steps`, T-063) | person_id, template_step_id, opened_at, due_at, due_notified_at, done_at, done_by, result_index, note, timing (ON_TIME, LATE), locked_at (locked as "Không thực hiện", D-054, A-102) |
 | `appointments` | person_id, at, assessment_type_option_id, confirmation_1, confirmation_2, outcome (SHOW, NO_SHOW) |
 | `recare_queue` | person_id, contact_on, reason, resolved_at |
 | `consulting_audits` | person_id, auto_score, compliance_pct, manager_result (PASS, FAIL), manager_note, ai_suggestion (json), audited_by |
@@ -142,6 +151,8 @@ erDiagram
 | Table | Key fields |
 |---|---|
 | `tasks` | branch_id, title, description, assigner_id, assignee_user_id and/or assignee_department_option_id (checks: at least one; a person once accepted), due_at, priority (LOW, NORMAL, HIGH), status (NEW, ACCEPTED, IN_PROGRESS, DONE, CANCELLED), accepted_at, started_at, done_at, cancelled_at, entity_type + entity_id (both or neither), due_soon_notified_at, overdue_notified_at. Built in M1 slice 7 (T-060); system-generated sources arrive with their modules (A-045) |
+| `tasks` (M2.7, A-104) | reminder_minutes (its own reminder points; empty for the shared ones); `due_soon_notified_at` is gone |
+| `task_reminders` (M2.7, A-104) | task_id, minutes_before, sent_at: which point went out, once; cleared by a new deadline |
 | `task_comments` | task_id, author_id, body, mentions (user ids); never edited or deleted |
 | `email_templates` | event_key, enabled, subject_vi, body_vi, subject_en, body_en |
 | `email_outbox` | person_id, event_key, language, to, subject, body, status (QUEUED, SENT, FAILED), attempts, provider_id, sent_at, error |

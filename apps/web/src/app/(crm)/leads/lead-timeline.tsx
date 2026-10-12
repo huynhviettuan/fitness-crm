@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/status-badge";
 import type { LeadTimelineEntry } from "@flow/shared/leads";
 import type { ChosenOption } from "@flow/shared/options";
 
-/** Every status change and assignment of the lead, newest first, with who and when (D-020). */
+/** Every status change, assignment, note, inquiry, and merge, newest first, with who and when (D-020). */
 export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
   const t = useTranslations("leads.timeline");
   const locale = useLocale();
@@ -31,6 +31,8 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
               )
             ) : entry.kind === "inquiry" ? (
               <span className="font-medium">{t("inquiry", { channel: chosen(entry.channel) })}</span>
+            ) : entry.kind === "note" ? (
+              <span className="font-medium">{t("note")}</span>
             ) : entry.kind === "merge" ? (
               <span className="font-medium">
                 {t("mergedFrom", {
@@ -40,9 +42,15 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
               </span>
             ) : (
               <span className="font-medium">
-                {entry.from
-                  ? t("reassigned", { from: entry.from.name, to: entry.to.name })
-                  : t("assigned", { to: entry.to.name })}
+                {entry.how === "RECLAIM"
+                  ? t("reclaimed", {
+                      from: entry.from?.name ?? "",
+                      to: entry.to.name,
+                      minutes: entry.waitedMinutes ?? 0,
+                    })
+                  : entry.from
+                    ? t("reassigned", { from: entry.from.name, to: entry.to.name })
+                    : t("assigned", { to: entry.to.name })}
               </span>
             )}
           </div>
@@ -67,10 +75,12 @@ export function LeadTimeline({ entries }: { entries: LeadTimelineEntry[] }) {
           {entry.kind === "inquiry" && entry.note && (
             <p className="text-sm whitespace-pre-line text-muted-foreground">{entry.note}</p>
           )}
+          {entry.kind === "note" && <p className="text-sm whitespace-pre-line">{entry.body}</p>}
           {entry.kind === "merge" && <p className="text-sm">{t("reason", { reason: chosen(entry.reason) })}</p>}
           <p className="text-xs text-muted-foreground">
             <DateTime value={entry.at} format="dateTime" /> ·{" "}
-            {entry.by?.name ?? (entry.kind === "assignment" ? t("roundRobin") : t("system"))}
+            {entry.by?.name ??
+              (entry.kind === "assignment" && entry.how === "ROUND_ROBIN" ? t("roundRobin") : t("system"))}
           </p>
         </li>
       ))}

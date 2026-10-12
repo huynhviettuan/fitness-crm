@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
 import { HiddenValue } from "@/components/hidden-value";
 import { Money } from "@/components/money";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -50,7 +51,12 @@ export default async function CashPage({ searchParams }: PageProps<"/finance/cas
       <PageHeader
         title={t("title")}
         description={t("description")}
-        actions={<RecordCashButton branches={user.branches} />}
+        actions={
+          <>
+            {can(user, "cash.export") && <ExportButton path="/api/v1/cash-transactions/export" query={month.query} />}
+            <RecordCashButton branches={user.branches} />
+          </>
+        }
       />
       <FinanceTabs active="cash" showCash />
       <MonthNav path="/finance/cash" month={month.from} thisMonth={month.thisMonth} />

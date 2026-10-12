@@ -4,7 +4,11 @@ import { normalizeForSearch, normalizePhone } from "@flow/shared/validation";
 import { formatCustomerCode } from "@flow/shared/customers";
 import { readParameter } from "../../platform/parameters/parameter.service.js";
 
-const withBranch = { branch: { select: { id: true, name: true } } } as const;
+const withBranch = {
+  branch: { select: { id: true, name: true } },
+  customerGroup: true,
+  pic: { select: { id: true, name: true } },
+} as const;
 
 export type CustomerRecord = Prisma.CustomerGetPayload<{ include: typeof withBranch }>;
 
@@ -15,6 +19,23 @@ export type CustomerWrite = {
   dateOfBirth: Date | null;
   notes: string | null;
   status?: CustomerStatus;
+  address?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  customerGroupId?: string | null;
+  customerGroupNote?: string | null;
+  picUserId?: string | null;
+};
+
+/** What the list narrows by besides the search (FR-CUS-003, A-075). */
+export type CustomerFilters = {
+  branchId?: string;
+  staffId?: string;
+  /** Registration instants: from inclusive, to exclusive. */
+  registeredFrom?: Date;
+  registeredBefore?: Date;
+  birthdayMonth?: number;
+  noEmail: boolean;
 };
 
 /**
@@ -57,8 +78,11 @@ export async function listCustomers(
   query: { q: string; page: number; pageSize: number },
   visibility: Prisma.CustomerWhereInput,
   searchPhone: boolean,
+  filters: CustomerFilters,
 ) {
-  const where: Prisma.CustomerWhereInput = { AND: [visibility, searchWhere(query.q, searchPhone)] };
+  const where: Prisma.CustomerWhereInput = {
+    AND: [visibility, searchWhere(query.q, searchPhone), await filterWhere(db, filters)],
+  };
   const [items, total] = await Promise.all([
     db.customer.findMany({
       where,
@@ -70,6 +94,23 @@ export async function listCustomers(
     db.customer.count({ where }),
   ]);
   return { items, total };
+}
+
+async function filterWhere(db: Db, filters: CustomerFilters): Promise<Prisma.CustomerWhereInput> {
+  const conditions: Prisma.CustomerWhereInput[] = [];
+  if (filters.branchId) conditions.push({ branchId: filters.branchId });
+  if (filters.staffId) conditions.push({ picUserId: filters.staffId });
+  if (filters.registeredFrom) conditions.push({ createdAt: { gte: filters.registeredFrom } });
+  if (filters.registeredBefore) conditions.push({ createdAt: { lt: filters.registeredBefore } });
+  // A hidden email cannot be probed through "no email" either (D-017): the caller drops the filter.
+  if (filters.noEmail) conditions.push({ email: null });
+  if (filters.birthdayMonth) {
+    // Prisma cannot filter by the month of a date, so the ids come from SQL.
+    const rows = await db.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "customers" WHERE EXTRACT(MONTH FROM "date_of_birth") = ${filters.birthdayMonth}`;
+    conditions.push({ id: { in: rows.map((row) => row.id) } });
+  }
+  return { AND: conditions };
 }
 
 // FR-CUS-002: search by code, name (ignoring Vietnamese accents), or phone, unless the

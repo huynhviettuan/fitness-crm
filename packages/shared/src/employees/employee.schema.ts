@@ -81,6 +81,8 @@ export const employeeInputSchema = z.object({
   /** From the "jobTitles" list; "Khác" needs a note. */
   titleId: optionalChoice.prefault(""),
   titleNote: optionNote,
+  /** The direct manager, another employee (D-046); told when this person's approval waits too long (D-048). */
+  managerId: optionalChoice.prefault(""),
   status: z.enum(EMPLOYEE_STATUSES, { error: "invalidChoice" }).prefault("ACTIVE"),
   /** Teaches PT: appears on the PT calendar and can be booked (D-030). */
   isTrainer: z.boolean({ error: "invalidChoice" }).prefault(false),

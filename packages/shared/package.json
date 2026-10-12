@@ -25,6 +25,10 @@
       "types": "./dist/contracts/index.d.ts",
       "default": "./dist/contracts/index.js"
     },
+    "./countries": {
+      "types": "./dist/countries/index.d.ts",
+      "default": "./dist/countries/index.js"
+    },
     "./customers": {
       "types": "./dist/customers/index.d.ts",
       "default": "./dist/customers/index.js"
@@ -44,6 +48,10 @@
     "./leads": {
       "types": "./dist/leads/index.d.ts",
       "default": "./dist/leads/index.js"
+    },
+    "./mail": {
+      "types": "./dist/mail/index.d.ts",
+      "default": "./dist/mail/index.js"
     },
     "./notifications": {
       "types": "./dist/notifications/index.d.ts",

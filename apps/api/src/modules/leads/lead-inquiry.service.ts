@@ -76,7 +76,7 @@ export async function addInquiry(
       // Still with their consultant while that person receives leads in the branch; else the next in turn.
       const receivers = await leads.receivers(tx, person.branchId);
       if (!person.picUserId || !receivers.some((user) => user.id === person.picUserId)) {
-        const next = await nextReceiver(tx, person.branchId);
+        const next = await nextReceiver(tx, person.branchId, now);
         if (next) person = await assign(tx, actor, person, next, null, now);
       }
       if (inquiryReopens(person.leadStatus)) {

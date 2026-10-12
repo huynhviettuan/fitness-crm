@@ -283,7 +283,14 @@ describe("seeing tasks (data scope tasks)", () => {
 
     const assignees = await taskAssignees(manager);
 
-    expect(assignees.departments.map((d) => d.labelVi)).toEqual(["Kinh doanh"]);
+    // The org chart's four departments (D-046) come with the migration; the inactive one is not offered.
+    expect(assignees.departments.map((d) => d.labelVi)).toEqual([
+      "Ban điều hành",
+      "Studio",
+      "Marketing",
+      "Finance",
+      "Kinh doanh",
+    ]);
     expect(assignees.users.find((user) => user.id === sale.id)).toMatchObject({ department: { id: department } });
   });
 });
@@ -323,8 +330,14 @@ describe("comments", () => {
   });
 });
 
-describe("reminders (worker, T-059)", () => {
-  it("reminds the assignee before the deadline and tells both sides once it passes, each once", async () => {
+describe("reminders (worker, T-059, D-056)", () => {
+  const dueSoon = (taskId: string, hours: string) => ({
+    kind: "taskDueSoon",
+    params: { title: "Gọi lại", due: "20/10/2026 17:00", hours },
+    link: `/tasks/${taskId}`,
+  });
+
+  it("reminds the assignee at each point before the deadline (24, 3, and 1 hours) and tells both sides once it passes, each once", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     const { actor: hong } = await createTestUser("RECEPTIONIST");
     // 20/10/2026 17:00 in Ho Chi Minh is 10:00 UTC.
@@ -333,10 +346,13 @@ describe("reminders (worker, T-059)", () => {
     await moveTask(hong, done.id, "accept");
     await moveTask(hong, done.id, "complete");
 
-    // 25 hours before: nothing yet. 23 hours before: the reminder, once.
+    // 25 hours before: nothing yet. Then one reminder at each point, each once.
     expect(await remindTasks(new Date("2026-10-19T09:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
     expect(await remindTasks(new Date("2026-10-19T11:00:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
     expect(await remindTasks(new Date("2026-10-19T12:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T07:30:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T07:31:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T09:15:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
     // After the deadline: the assignee and the assigner, once.
     expect(await remindTasks(new Date("2026-10-20T10:01:00Z"))).toEqual({ dueSoon: 0, overdue: 1 });
     expect(await remindTasks(new Date("2026-10-20T11:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
@@ -344,7 +360,9 @@ describe("reminders (worker, T-059)", () => {
     expect(await notificationsOf(hong.id)).toEqual([
       expect.objectContaining({ kind: "taskAssigned" }),
       expect.objectContaining({ kind: "taskAssigned" }),
-      { kind: "taskDueSoon", params: { title: "Gọi lại", due: "20/10/2026 17:00" }, link: `/tasks/${task.id}` },
+      dueSoon(task.id, "24"),
+      dueSoon(task.id, "3"),
+      dueSoon(task.id, "1"),
       { kind: "taskOverdue", params: { title: "Gọi lại", due: "20/10/2026 17:00" }, link: `/tasks/${task.id}` },
     ]);
     expect((await notificationsOf(manager.id)).map((n) => n.kind)).toEqual([
@@ -354,12 +372,105 @@ describe("reminders (worker, T-059)", () => {
     ]);
   });
 
-  it("the reminder time is a parameter", async () => {
+  it("the shared points are a parameter", async () => {
     const { actor: manager } = await createTestUser("FITNESS_MANAGER");
     await createTask(manager, { title: "Gọi lại", assigneeUserId: manager.id, ...DUE });
-    await prisma.systemParameter.create({ data: { key: "taskDueSoonHours", value: "2" } });
+    await prisma.systemParameter.create({ data: { key: "taskReminderHours", value: "2" } });
 
     expect(await remindTasks(new Date("2026-10-20T07:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
     expect(await remindTasks(new Date("2026-10-20T08:30:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T09:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
+  });
+
+  it("a task has its own points when its assigner gives them, in place of the shared ones", async () => {
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const task = await createTask(manager, {
+      title: "Gọi lại",
+      assigneeUserId: manager.id,
+      reminders: "6, 0.5",
+      ...DUE,
+    });
+
+    expect(task).toMatchObject({ reminderMinutes: [360, 30], reminders: [360, 30] });
+    // The shared 24, 3, and 1 hours do not apply to it: nothing at 23 hours before.
+    expect(await remindTasks(new Date("2026-10-19T11:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T04:00:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T09:30:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+    const told = (await notificationsOf(manager.id)).filter((n) => n.kind === "taskDueSoon");
+    expect(told.map((n) => n.params)).toEqual([
+      expect.objectContaining({ hours: "6" }),
+      expect.objectContaining({ hours: "0.5" }),
+    ]);
+    expect((await createTask(manager, { title: "B", assigneeUserId: manager.id, ...DUE })).reminderMinutes).toBeNull();
+  });
+
+  it("tells only the tightest point when several have come at once, as for a task made close to its deadline", async () => {
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const task = await createTask(manager, { title: "Gọi lại", assigneeUserId: manager.id, ...DUE });
+
+    // Half an hour before: the 24, 3, and 1 hour points have all come; one notice, for the last.
+    expect(await remindTasks(new Date("2026-10-20T09:30:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-20T09:31:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
+
+    const told = (await notificationsOf(manager.id)).filter((n) => n.kind === "taskDueSoon");
+    expect(told).toEqual([dueSoon(task.id, "1")]);
+    expect(await prisma.taskReminder.count({ where: { taskId: task.id } })).toBe(3);
+  });
+
+  it("two workers at once tell a point once", async () => {
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    await createTask(manager, { title: "Gọi lại", assigneeUserId: manager.id, ...DUE });
+    const at = new Date("2026-10-19T11:00:00Z");
+
+    const results = await Promise.all([remindTasks(at), remindTasks(at)]);
+
+    expect(results.reduce((sum, r) => sum + r.dueSoon, 0)).toBe(1);
+    expect((await notificationsOf(manager.id)).filter((n) => n.kind === "taskDueSoon")).toHaveLength(1);
+  });
+
+  it("gives a new deadline its own reminders, and a new list does not fire for a point already passed", async () => {
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const task = await createTask(manager, { title: "Gọi lại", assigneeUserId: manager.id, ...DUE });
+    await remindTasks(new Date("2026-10-19T11:00:00Z"));
+
+    // A later deadline (21/10 17:00): the 24-hour point is new again, so it goes out when it comes.
+    await updateTask(manager, task.id, {
+      title: "Gọi lại",
+      assigneeUserId: manager.id,
+      dueDate: "21/10/2026",
+      dueTime: "17:00",
+    });
+    expect(await prisma.taskReminder.count({ where: { taskId: task.id } })).toBe(0);
+    expect(await remindTasks(new Date("2026-10-20T11:00:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+
+    // Adding a 12-hour point with six hours left tells nobody at once, and it is not told later either.
+    await updateTask(
+      manager,
+      task.id,
+      {
+        title: "Gọi lại",
+        assigneeUserId: manager.id,
+        dueDate: "21/10/2026",
+        dueTime: "17:00",
+        reminders: "24, 12, 3, 1",
+      },
+      new Date("2026-10-21T04:00:00Z"),
+    );
+    expect(await remindTasks(new Date("2026-10-21T04:00:00Z"))).toEqual({ dueSoon: 0, overdue: 0 });
+    expect(await remindTasks(new Date("2026-10-21T08:00:00Z"))).toEqual({ dueSoon: 1, overdue: 0 });
+  });
+
+  it("refuses points it cannot read, and only someone who may edit the task changes them", async () => {
+    const { actor: manager } = await createTestUser("FITNESS_MANAGER");
+    const { actor: hong } = await createTestUser("RECEPTIONIST");
+    const task = await createTask(manager, { title: "Gọi lại", assigneeUserId: hong.id, ...DUE });
+
+    await expect(
+      createTask(manager, { title: "A", assigneeUserId: hong.id, reminders: "soon", ...DUE }),
+    ).rejects.toMatchObject({ fieldErrors: { reminders: ["invalidReminders"] } });
+    await expect(
+      updateTask(hong, task.id, { title: "Gọi lại", assigneeUserId: hong.id, reminders: "1", ...DUE }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect((await getTask(hong, task.id)).reminderMinutes).toBeNull();
   });
 });

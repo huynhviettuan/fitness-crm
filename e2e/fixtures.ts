@@ -13,6 +13,9 @@ import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
 import { ChecklistAdminPage, TodayPage } from "./pages/checklist";
+import { ScriptsAdminPage } from "./pages/scripts";
+import { LeadAuditPage } from "./pages/lead-audit";
+import { LeadReceiversPage } from "./pages/lead-receivers";
 import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
 import { CustomerDetailPage, CustomersPage } from "./pages/customers";
@@ -37,6 +40,9 @@ type Fixtures = {
   recarePage: RecarePage;
   todayPage: TodayPage;
   checklistAdminPage: ChecklistAdminPage;
+  scriptsAdminPage: ScriptsAdminPage;
+  leadAuditPage: LeadAuditPage;
+  leadReceiversPage: LeadReceiversPage;
   taskPage: TaskPage;
   notificationsPage: NotificationsPage;
   employeePage: EmployeePage;
@@ -97,6 +103,9 @@ export const test = base.extend<Fixtures>({
   recarePage: async ({ page }, use) => use(new RecarePage(page)),
   todayPage: async ({ page }, use) => use(new TodayPage(page)),
   checklistAdminPage: async ({ page }, use) => use(new ChecklistAdminPage(page)),
+  scriptsAdminPage: async ({ page }, use) => use(new ScriptsAdminPage(page)),
+  leadAuditPage: async ({ page }, use) => use(new LeadAuditPage(page)),
+  leadReceiversPage: async ({ page }, use) => use(new LeadReceiversPage(page)),
   taskPage: async ({ page }, use) => use(new TaskPage(page)),
   notificationsPage: async ({ page }, use) => use(new NotificationsPage(page)),
   employeePage: async ({ page }, use) => use(new EmployeePage(page)),
@@ -262,6 +271,29 @@ export const test = base.extend<Fixtures>({
       await prisma.leadStatusChange.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.leadStep.deleteMany({ where: { customerId: { in: customerIds } } });
       await prisma.leadAssignment.deleteMany({ where: { customerId: { in: customerIds } } });
+      // Notes on tagged leads (M2 slice 6), and scripts named with the tag with their history.
+      await prisma.leadNote.deleteMany({ where: { personId: { in: customerIds } } });
+      // Emails queued for tagged customers (M4.0); their failure tasks carry the tag in their title.
+      await prisma.emailMessage.deleteMany({ where: { personId: { in: customerIds } } });
+      // Manager audits of tagged leads (M3 slice 3), and of any lead naming a tagged option.
+      const taggedOptions = ids(
+        await prisma.option.findMany({ where: { labelVi: { contains: tag } }, select: { id: true } }),
+      );
+      const taggedAudits = ids(
+        await prisma.consultingAudit.findMany({
+          where: {
+            OR: [{ personId: { in: customerIds } }, { criteria: { some: { optionId: { in: taggedOptions } } } }],
+          },
+          select: { id: true },
+        }),
+      );
+      await prisma.consultingAuditCriterion.deleteMany({ where: { auditId: { in: taggedAudits } } });
+      await prisma.consultingAudit.deleteMany({ where: { id: { in: taggedAudits } } });
+      const scriptIds = ids(
+        await prisma.consultingScript.findMany({ where: { situationVi: { contains: tag } }, select: { id: true } }),
+      );
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: scriptIds } } });
+      await prisma.consultingScript.deleteMany({ where: { id: { in: scriptIds } } });
       // Inquiries and merges (M2 slice 5): the merged records point at their survivors.
       await prisma.leadInquiry.deleteMany({ where: { personId: { in: customerIds } } });
       await prisma.personMerge.deleteMany({
@@ -300,6 +332,12 @@ export const test = base.extend<Fixtures>({
       const asUser = { in: userIds };
       // Inquiries and merges the test's accounts made on other records.
       await prisma.leadInquiry.deleteMany({ where: { createdById: asUser } });
+      await prisma.leadNote.deleteMany({ where: { createdBy: asUser } });
+      const byAuditors = ids(
+        await prisma.consultingAudit.findMany({ where: { auditorId: asUser }, select: { id: true } }),
+      );
+      await prisma.consultingAuditCriterion.deleteMany({ where: { auditId: { in: byAuditors } } });
+      await prisma.consultingAudit.deleteMany({ where: { id: { in: byAuditors } } });
       await prisma.personMerge.deleteMany({ where: { mergedById: asUser } });
       await prisma.leadStatusChange.updateMany({ where: { changedById: asUser }, data: { changedById: null } });
       await prisma.leadStep.updateMany({ where: { doneById: asUser }, data: { doneById: null } });

@@ -181,10 +181,12 @@ describe("completing a step (FR-LEAD-004)", () => {
       after: { step: "nhac-truoc-hen-1", result: "Không phản hồi", timing: "ON_TIME" },
     });
 
-    const first = step(checklist, "tu-van");
+    // The first step of another lead, ticked after its deadline but inside the grace period (D-054): late.
+    const fresh = await assignedLead();
+    const first = step(await leadChecklist(fresh.manager, fresh.lead.id), "tu-van");
     const late = await completeLeadStep(
-      consultant,
-      lead.id,
+      fresh.manager,
+      fresh.lead.id,
       first.id,
       { resultIndex: 0 },
       new Date(first.dueAt!.getTime() + MINUTE),

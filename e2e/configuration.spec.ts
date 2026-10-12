@@ -125,6 +125,14 @@ test.describe("configuration", () => {
     await expect(parametersPage.field("calendarDayEnd")).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByText(labels.validation.notOnHalfHour)).toBeVisible();
 
+    // The reminder points of a task are hours before the deadline; a list that cannot be read is refused (D-056).
+    const points = await parametersPage.field("taskReminderHours").inputValue();
+    await parametersPage.field("taskReminderHours").fill("soon");
+    await parametersPage.save();
+    await expect(parametersPage.field("taskReminderHours")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByText(labels.validation.invalidReminders)).toBeVisible();
+    await parametersPage.field("taskReminderHours").fill(points);
+
     await parametersPage.field("calendarDayEnd").fill("22:30");
     await parametersPage.save();
     await expect(

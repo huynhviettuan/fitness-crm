@@ -8,7 +8,7 @@ One section per module of phase 1 (`01_SCOPE_MVP.md`). Rules are in `05_BUSINESS
 - **FR-PLT-002** Admin creates, edits, and clones roles; ticks permissions in the tree (module × action); sets data scope, field masks, and discount thresholds per role.
 - **FR-PLT-003** Admin switches individual permissions on or off per user, grants branches, and sets allowed login days and times.
 - **FR-PLT-004** Admin manages branches.
-- **FR-PLT-005** Admin manages option lists: add, edit, reorder, deactivate options; each list has "Khác"; a report shows "Khác" entries to promote.
+- **FR-PLT-005** Admin manages option lists: add, edit, reorder, deactivate options; each list has "Khác"; a report shows "Khác" entries to promote. An entry can have a number (M2.7, A-097).
 - **FR-PLT-006** Admin manages system parameters (timers, thresholds, calendar hours, cut-offs), session status rules and colors, code prefixes, and the approval matrix.
 - **FR-PLT-007** Submissions under the approval matrix stay pending, create an approver task, and take effect only when approved; rejection takes a reason; self-approval is refused; overdue requests remind.
 - **FR-PLT-008** Every change is recorded in the action history with before and after values; admins search it by user, entity, and date.
@@ -28,15 +28,15 @@ One section per module of phase 1 (`01_SCOPE_MVP.md`). Rules are in `05_BUSINESS
 
 - **FR-LEAD-001** Quick form for walk-ins and unintegrated channels; channel APIs feed the same intake later (D-044).
 - **FR-LEAD-002** Lead profile: date, PIC, name, gender, birth date, phone, email, channel, source with Organic/Paid and detail, nationality group, need group and coded need detail with note, pain status, assessment type, appointment status and time, Show / No show, notes.
-- **FR-LEAD-003** New leads are assigned round-robin to active consultants of the branch; managers reassign; manager notified of new leads, consultant notified when assigned.
-- **FR-LEAD-004** Each lead has the consulting checklist; due steps create tasks; results are drop-downs; steps are marked on time, late, or skipped.
+- **FR-LEAD-003** New leads are assigned round-robin to active consultants of the branch; managers reassign; manager notified of new leads, consultant notified when assigned. Built (M2.7, A-100, A-101): a turn weight per consultant (initially 1) and a switch for receiving, only people within their working hours are dealt leads, and a lead not taken care of within 60 working minutes (08:30–20:30) moves to the next consultant, recorded and counted per person on the dashboard.
+- **FR-LEAD-004** Each lead has the consulting checklist; due steps create tasks; results are drop-downs; steps are marked on time, late, or skipped. Built (M2.7, A-102): a tick cannot be removed except by Admin with a reason; an overdue step locks as "Không thực hiện" after a grace period; the time of a tick is the system's.
 - **FR-LEAD-005** "Today's tasks" per consultant shows due and overdue steps.
 - **FR-LEAD-006** List and Kanban by status; lead detail with checklist, timeline, notes, and appointments.
 - **FR-LEAD-007** Re-care list sorted by contact-again date. Built (M2 slice 5): filters status, consultant, overdue; mine or all; phone-friendly.
-- **FR-LEAD-008** "Convert to customer" at Show requires ID document, birth date, nationality, and email; the record keeps its ID.
+- **FR-LEAD-008** "Convert to customer" at Show requires ID document, birth date, nationality, and email; the record keeps its ID. The nationality is a country of ISO 3166-1; the Vietnamese / foreign group and the email language follow it (M2.7, A-096).
 - **FR-LEAD-009** Duplicate phone warning with merge. Built (M2 slice 5): inquiry on the existing record, and a manager's merge of two records.
 - **FR-LEAD-010** Script library: situations with Vietnamese and English answers; copy button; managed by managers.
-- **FR-LEAD-011** Automatic audit per lead and consultant (compliance %, late and skipped steps, missing required fields); manager audit with pass/fail and comment.
+- **FR-LEAD-011** Automatic audit per lead and consultant (compliance %, late and skipped steps, missing required fields; built in M3.2, A-081 to A-085); manager audit with pass/fail, comment, and the criteria not met (built in M3.3, A-086 to A-088).
 - **FR-LEAD-012** AI-assisted audit suggestions (milestone 11, OQ-025).
 
 ## Customers (FR-CUS) — brief §4.2
@@ -105,7 +105,7 @@ One section per module of phase 1 (`01_SCOPE_MVP.md`). Rules are in `05_BUSINESS
 
 ## Tasks (FR-TASK) — brief §8.2
 
-- **FR-TASK-001** Create a task: title, description, assignee (person or department), deadline, priority, link to a lead, customer, contract, or session.
+- **FR-TASK-001** Create a task: title, description, assignee (person or department), deadline, priority, link to a lead, customer, contract, or session. A task has reminder points, initially 24, 3, and 1 hours before the deadline, shared or its own (M2.7, A-104).
 - **FR-TASK-002** Statuses New, Accepted, In progress, Done, Cancelled; the assignee accepts.
 - **FR-TASK-003** Comments with mentions.
 - **FR-TASK-004** System-generated tasks (Báo Studio, escalations, approvals, long freezes, failed emails).

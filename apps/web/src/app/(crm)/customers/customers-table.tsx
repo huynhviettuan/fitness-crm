@@ -7,6 +7,7 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
 import { HiddenValue } from "@/components/hidden-value";
 import { StatusBadge } from "@/components/status-badge";
+import { Badge } from "@/components/ui/badge";
 
 export type CustomerRow = {
   id: string;
@@ -14,6 +15,10 @@ export type CustomerRow = {
   fullName: string;
   /** Null when the phone is hidden from the user (D-017). */
   phone: string | null;
+  /** Null when there is none, or when the email is hidden from the user (see maskedFields). */
+  email: string | null;
+  maskedFields: ("phone" | "email" | "address" | "idDocument" | "health")[];
+  staffInCharge: { id: string; name: string } | null;
   branch: { id: string; name: string };
   status: "ACTIVE" | "INACTIVE";
   createdAt: Date;
@@ -48,6 +53,27 @@ export function CustomersTable({ customers, empty, footer }: CustomersTableProps
       ),
     },
     { id: "phone", header: t("fields.phone"), cell: ({ row }) => row.original.phone ?? <HiddenValue /> },
+    {
+      id: "email",
+      header: t("fields.email"),
+      cell: ({ row }) => {
+        const { email, maskedFields } = row.original;
+        if (maskedFields.includes("email")) return <HiddenValue />;
+        // FR-CUS-005: reception sees at a glance who still needs an email.
+        return (
+          email ?? (
+            <Badge variant="warning" title={t("noEmailHint")}>
+              {t("noEmail")}
+            </Badge>
+          )
+        );
+      },
+    },
+    {
+      id: "staffInCharge",
+      header: t("fields.staffInCharge"),
+      cell: ({ row }) => row.original.staffInCharge?.name ?? <span className="text-muted-foreground">—</span>,
+    },
     { id: "branch", header: t("fields.branch"), cell: ({ row }) => row.original.branch.name },
     {
       id: "status",

@@ -1,12 +1,15 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { addManagerAudit } from "@/lib/api/lead-audit";
 import {
   addInquiry,
+  addLeadNote,
   assignLead,
   changeLeadStatus,
   completeLeadStep,
   createLead,
+  reopenLeadStep,
   mergePersons,
   noShowLead,
   showLead,
@@ -16,10 +19,13 @@ import type {
   LeadAssignInput,
   LeadInput,
   LeadInquiryInput,
+  LeadNoteInput,
+  ManagerAuditInput,
   MergeInput,
   LeadStatusChangeInput,
   LeadUpdateInput,
   StepCompleteInput,
+  StepReopenInput,
   ShowInput,
 } from "@flow/shared/leads";
 
@@ -58,6 +64,12 @@ export async function completeLeadStepAction(
   });
 }
 
+export async function reopenLeadStepAction(id: string, stepId: string, input: StepReopenInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await reopenLeadStep(id, stepId, input);
+  });
+}
+
 /** Returns the customer's id: after Show the record is a customer (D-019). */
 export async function showLeadAction(id: string, input: ShowInput): Promise<ActionResult<{ customerId: string }>> {
   return runAction(async () => showLead(id, input));
@@ -88,5 +100,17 @@ export async function mergePersonsAction(
   return runAction(async () => {
     const result = await mergePersons(id, input);
     return { survivorId: result.survivorId, stage: result.stage };
+  });
+}
+
+export async function addLeadNoteAction(id: string, input: LeadNoteInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await addLeadNote(id, input);
+  });
+}
+
+export async function addManagerAuditAction(id: string, input: ManagerAuditInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await addManagerAudit(id, input);
   });
 }
