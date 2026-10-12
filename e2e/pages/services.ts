@@ -89,10 +89,26 @@ export class ServiceDetailPage {
       .locator("xpath=ancestor::div[@data-slot='card']");
   }
 
-  async tryPrice(sessions: number, startDate?: string): Promise<void> {
+  async tryPrice(
+    sessions: number,
+    startDate?: string,
+    options: { promotion?: string; voucher?: string; vat?: string } = {},
+  ): Promise<void> {
     await this.lookup.getByLabel(s.lookup.sessions, { exact: true }).fill(String(sessions));
     if (startDate) await this.lookup.getByLabel(s.lookup.startDate, { exact: true }).fill(startDate);
+    if (options.promotion) {
+      await this.lookup.getByRole("combobox", { name: s.lookup.promotion, exact: true }).click();
+      await this.page.getByRole("option", { name: options.promotion, exact: true }).click();
+    }
+    await this.lookup.getByLabel(s.lookup.voucher, { exact: true }).fill(options.voucher ?? "");
+    await this.lookup.getByLabel(s.lookup.vat, { exact: true }).fill(options.vat ?? "");
     await this.lookup.getByRole("button", { name: s.lookup.run }).click();
+  }
+
+  /** Opens the promotion drop-down of the price card and returns the option with this name. */
+  async promotionOption(name: string): Promise<Locator> {
+    await this.lookup.getByRole("combobox", { name: s.lookup.promotion, exact: true }).click();
+    return this.page.getByRole("option", { name, exact: true });
   }
 
   async openPackages(): Promise<Locator> {

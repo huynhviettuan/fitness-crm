@@ -20,6 +20,7 @@ import { PersonsController } from "./modules/leads/persons.controller.js";
 import { ChecklistController } from "./modules/leads/checklist.controller.js";
 import { ScriptsController } from "./modules/scripts/scripts.controller.js";
 import { ServicesController } from "./modules/services/services.controller.js";
+import { PromotionsController, QuoteController } from "./modules/promotions/promotions.controller.js";
 import { LeadAuditController } from "./modules/leads/lead-audit.controller.js";
 import { LeadReceiversController } from "./modules/leads/lead-receivers.controller.js";
 import { ManagerAuditController } from "./modules/leads/manager-audit.controller.js";
@@ -44,6 +45,8 @@ import { NotificationsController } from "./platform/notifications/notifications.
     ChecklistController,
     ScriptsController,
     ServicesController,
+    PromotionsController,
+    QuoteController,
     LeadAuditController,
     LeadReceiversController,
     ManagerAuditController,

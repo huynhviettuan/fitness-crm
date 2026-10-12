@@ -166,16 +166,14 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decided (working assumptions):** a count that falls in no tier is refused (A-107); an end date counts the start day (A-108, to check with one real contract, OQ-037).
 - **Depends on:** —
 
-### M4.2 Promotions and approval thresholds
+### M4.2 Promotions and approval thresholds (done 2026-10-12, A-110 to A-112, OQ-038)
 
 - **Builds:**
   - **Promotions and vouchers:** a percent or an amount off, dates, and services. They apply to the tier price and are not an exception price.
   - **Discount thresholds per role:** the most a role may discount without approval, and who approves above it (brief §2).
 - **Source:** brief §2 (thresholds), §5.1; FR-SVC-004; FR-PLT-002.
 - **Tests:** a promotion outside its dates isn't offered. A discount above the role's threshold goes to approval, and one below doesn't.
-- **Decide first:**
-  - Can a promotion and a voucher stack (proposed: one of each, applied in order promo → voucher)?
-  - Is VAT applied after discounts (proposed: yes)?
+- **Decided (working assumptions):** one promotion and one voucher stack, promotion first (A-110); VAT after discounts (A-111); the discount limit is a percent of the tier price per role and escalates above it (A-112). M4.4 calls `canApproveDiscount` when a contract is approved.
 - **Depends on:** M4.1.
 
 ### M4.3 Contract model and creation

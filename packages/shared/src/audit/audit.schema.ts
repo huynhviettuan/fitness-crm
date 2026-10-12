@@ -22,6 +22,7 @@ export const AUDIT_ENTITY_TYPES = [
   "consulting_script",
   "audit_criterion",
   "service",
+  "promotion",
   "price_tier_version",
   "export",
   "person",

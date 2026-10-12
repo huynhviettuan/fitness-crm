@@ -1,8 +1,10 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { createService, lookupPrice, saveQuickPackages, saveTiers, updateService } from "@/lib/api/services";
-import type { PriceLookup, QuickPackagesInput, ServiceInput, TiersInput } from "@flow/shared/services";
+import { quotePrice } from "@/lib/api/promotions";
+import { createService, saveQuickPackages, saveTiers, updateService } from "@/lib/api/services";
+import type { PriceQuote } from "@flow/shared/promotions";
+import type { QuickPackagesInput, ServiceInput, TiersInput } from "@flow/shared/services";
 
 export async function createServiceAction(input: ServiceInput): Promise<ActionResult<{ id: string; name: string }>> {
   return runAction(async () => {
@@ -29,9 +31,9 @@ export async function saveQuickPackagesAction(id: string, input: QuickPackagesIn
   });
 }
 
-export async function lookupPriceAction(
+export async function quotePriceAction(
   id: string,
-  params: { sessions: string; startDate?: string },
-): Promise<ActionResult<PriceLookup>> {
-  return runAction(() => lookupPrice(id, params));
+  params: { sessions: string; startDate?: string; promotionId?: string; voucherCode?: string; vatPercent?: string },
+): Promise<ActionResult<PriceQuote>> {
+  return runAction(() => quotePrice(id, params));
 }

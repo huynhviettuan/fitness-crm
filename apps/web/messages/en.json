@@ -41,7 +41,8 @@
     "consultingReport": "Consulting dashboard",
     "leadAnalysis": "Lead analysis",
     "leadReceivers": "Lead receiving",
-    "services": "Services and price tiers"
+    "services": "Services and price tiers",
+    "promotions": "Promotions and vouchers"
   },
   "status": {
     "customer": {
@@ -606,7 +607,13 @@
     "effectiveInPast": "The start day cannot be in the past.",
     "nameTaken": "A service with this name already exists.",
     "noPriceTier": "No price tier covers this number of sessions.",
-    "noPriceVersion": "The service has no price list in force on this day."
+    "noPriceVersion": "The service has no price list in force on this day.",
+    "invalidPercent": "Enter a percent above 0 and up to 100.",
+    "invalidVoucherCode": "A voucher code is 3 to 20 capital letters, digits, or dashes.",
+    "promotionHasNoCode": "A promotion has no code; only a voucher does.",
+    "codeTaken": "This code is already used.",
+    "promotionNotValid": "This promotion cannot be used for the chosen service or day.",
+    "voucherNotValid": "The voucher code is wrong or cannot be used for the chosen service or day."
   },
   "contracts": {
     "title": "Contracts",
@@ -894,7 +901,8 @@
       "tasks": "Tasks",
       "exports": "Export to Excel",
       "reports": "Reports",
-      "services": "Services and price tiers"
+      "services": "Services and price tiers",
+      "promotions": "Promotions and vouchers"
     },
     "labels": {
       "user": {
@@ -984,6 +992,9 @@
       "service": {
         "view": "View services and price tiers",
         "manage": "Manage services and price tiers"
+      },
+      "promotion": {
+        "manage": "Manage promotions and vouchers"
       }
     },
     "resources": {
@@ -1034,10 +1045,12 @@
       "dataScopesHint": "\"Only their own\": customers they created or train, their contracts, sessions they teach, vouchers they entered. Staff \"only mine\": one's own profile and working schedule. Tasks \"only mine\": tasks one gave, got, or that went to one's department. Leads \"only mine\": leads one entered or is in charge of.",
       "fieldMasks": "Hidden fields",
       "fieldMasksHint": "Hidden on every screen, and not searchable.",
-      "users": "Users"
+      "users": "Users",
+      "discountThresholdPct": "Discount it may approve (%)"
     },
     "backToList": "All roles",
-    "emptyTitle": "No roles yet"
+    "emptyTitle": "No roles yet",
+    "discountThresholdHint": "The largest discount, as a percent of the tier price, that holders of this role may approve themselves. A contract with a bigger discount must be approved by a role with a higher limit."
   },
   "branches": {
     "title": "Branches",
@@ -1214,7 +1227,8 @@
       "export": "Excel export",
       "audit_criterion": "Audit criterion",
       "service": "Service",
-      "price_tier_version": "Price tier version"
+      "price_tier_version": "Price tier version",
+      "promotion": "Promotions and vouchers"
     },
     "verbs": {
       "created": "Created",
@@ -1960,7 +1974,50 @@
       "total": "Total",
       "displayName": "Display name",
       "endDate": "End date",
-      "version": "Price list"
+      "version": "Price list",
+      "promotion": "Promotion",
+      "noPromotion": "None",
+      "voucher": "Voucher code",
+      "vat": "VAT (%)",
+      "discount": "Discount",
+      "discountPercent": "{percent}% off the tier price",
+      "vatAmount": "VAT",
+      "payable": "To pay",
+      "net": "After discounts"
     }
+  },
+  "promotions": {
+    "title": "Promotions and vouchers",
+    "description": "A percent or an amount off, with dates, applied to the tier price and not an exception price. A contract takes at most one promotion and one voucher; the promotion comes first and the voucher is taken off what is left.",
+    "create": "Add promotion or voucher",
+    "edit": "Edit promotion or voucher",
+    "empty": "No promotion or voucher yet.",
+    "created": "{name} added",
+    "saved": "{name} saved",
+    "rowActions": "Edit {name}",
+    "fields": {
+      "kind": "Kind",
+      "name": "Name",
+      "code": "Voucher code",
+      "discountType": "Kind of discount",
+      "value": "Discount",
+      "validFrom": "From",
+      "validTo": "Until",
+      "services": "Services",
+      "active": "In use",
+      "status": "Status",
+      "validity": "Dates",
+      "discount": "Discount"
+    },
+    "kinds": {
+      "PROMOTION": "Promotion",
+      "VOUCHER": "Voucher"
+    },
+    "types": {
+      "PERCENT": "Percent",
+      "AMOUNT": "Amount"
+    },
+    "allServices": "Every service",
+    "noEnd": "No limit"
   }
 }

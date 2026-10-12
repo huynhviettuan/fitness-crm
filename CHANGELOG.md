@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-12 — M4.2: promotions, vouchers, and discount limits
+
+- **Promotions and vouchers** (A-110, FR-SVC-004, BR-303): a percent or an amount off the tier price, with dates and services; not exception prices. A contract takes one of each, the promotion first, then the voucher on what is left. Admin manages them; staff see only the promotions on offer and never a voucher code.
+- **Quote** (`GET /services/:id/quote`, A-111): the tier price, the promotion, the voucher, then VAT on the discounted price; one that cannot be used is refused, never ignored. The "Try a price" card shows it.
+- **Discount limit per role** (A-112, FR-PLT-002): the largest discount, as a percent of the tier price, a role may approve itself; above it the contract goes to a role with a higher limit. `canApproveDiscount` is ready for the contract approval (M4.4). Initial limits are a proposal (OQ-038).
+- Docs 04, 07, 08, 09, 13, 16, 18, 28; E2E-155 to E2E-158.
+
 ## 2026-10-12 — M4.1a: services and price tiers
 
 - **Services** (A-109, FR-SVC-001): name, kind, branches, allowed hours, commission rate, group limit, limits per week and per day, validity; never deleted, only made inactive. Admin edits; every role that creates contracts or sees payments reads (`service.view`, `service.manage`).

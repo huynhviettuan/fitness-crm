@@ -23,6 +23,7 @@ const EMPTY_ROLE: EditableRole = {
   id: null,
   name: "",
   description: null,
+  discountThresholdPct: 0,
   permissions: [],
   dataScopes: Object.fromEntries(
     DATA_SCOPE_RESOURCES.map((resource) => [resource, "OWN"]),

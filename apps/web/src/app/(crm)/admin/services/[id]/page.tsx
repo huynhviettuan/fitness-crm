@@ -11,6 +11,7 @@ import { isApiError } from "@/lib/api/errors";
 import { requirePageUser } from "@/lib/auth/current-user";
 import { can } from "@/lib/permissions";
 import { listBranches } from "@/lib/api/branches";
+import { listPromotions } from "@/lib/api/promotions";
 import { getService } from "@/lib/api/services";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { versionInForce } from "@flow/shared/services";
@@ -42,6 +43,10 @@ export default async function ServicePage({ params }: PageProps<"/admin/services
   const t = await getTranslations("services");
   const canManage = can(user, "service.manage");
   const branches = canManage ? (await listBranches()).filter((branch) => branch.active) : [];
+  // The promotions on offer today that can be used for this service.
+  const offers = (await listPromotions({ kind: "PROMOTION", onOffer: true }))
+    .filter((promotion) => promotion.services.length === 0 || promotion.services.some((s) => s.id === service.id))
+    .map(({ id, name }) => ({ id, name }));
 
   // The version in force today is the latest that has started; later ones have not (BR-301).
   const today = calendarDateInTimeZone(await getTimeZone());
@@ -110,7 +115,7 @@ export default async function ServicePage({ params }: PageProps<"/admin/services
         </TabsList>
         <TabsContent value="tiers" className="space-y-4">
           <TiersPanel serviceId={service.id} versions={versions} canManage={canManage} />
-          {inForce && <LookupCard serviceId={service.id} />}
+          {inForce && <LookupCard serviceId={service.id} promotions={offers} />}
         </TabsContent>
         <TabsContent value="packages">
           <PackagesPanel serviceId={service.id} sessions={service.quickPackages} canManage={canManage} />

@@ -83,7 +83,7 @@ There is no default Accountant role. Cash-book work (receipts, expense vouchers,
 | Creating and editing workout plans and templates | Yes | Master |
 | Daily operations: lead entry, consulting steps, booking and cancelling, session logs, tasks | No (audit, admin check-in, and logs) | — (OQ-029) |
 
-Each role also has a **discount threshold**: the largest discount it may approve itself; above it, the request escalates to the next level.
+Each role also has a **discount threshold** (`discountThresholdPct`, set on the role screen): the largest total discount, as a percent of the tier price, that it may approve itself; above it, the request escalates to the next level (A-112). Initially Admin 100%, Fitness Manager 10%, others 0% (OQ-038). `promotion.manage` (Admin) creates promotions and vouchers; staff with `service.view` see only the promotions on offer.
 
 - Nobody approves their own submission.
 - Requests pending longer than the configured time remind the approver and notify their superior.

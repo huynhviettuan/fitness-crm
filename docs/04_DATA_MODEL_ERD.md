@@ -109,6 +109,7 @@ erDiagram
 | `price_tier_versions` | service_id, version, effective_from, created_by; a version is never edited; contracts reference the version they used (A-109) |
 | `price_tiers` | version_id, min_sessions, max_sessions (empty: no limit), unit_price, validity_months, validity_days; tiers of one version never overlap (exclusion constraint) |
 | `quick_packages` | service_id, sessions |
+| `promotions` | kind (PROMOTION, VOUCHER), name, code (vouchers; unique), discount_type (PERCENT, AMOUNT), value, valid_from, valid_to, active; `promotion_services` (none: every service) (A-110) |
 | `promotions` | name, kind (PERCENT, AMOUNT), value, from, to, voucher_code |
 | `contracts` | code, person_id, service_id, price_tier_id, contract_type (NEW, RENEW), contract_date, sessions_bought, bonus_sessions, bonus_months, bonus_days, display_name (generated), tier_unit_price, approved_unit_price, is_exception_price, exception_reason_option_id, exception_note, promotion_id, discount_pct, discount_amount, total_discount, vat_pct, vat_amount, value, activation_deadline, planned_start, start_date, end_date, previous_contract_id, signed, signed_on, signed_by, status (PENDING_APPROVAL, ACTIVE, FROZEN, ON_HOLD, CANCELLED; EXPIRED derived), approval_status, approved_by, payment_due_on, opening_sessions_used, opening_paid_amount (D-011), legacy_code |
 | `contract_members` | contract_id, person_id (companions on group packages, OQ-010) |

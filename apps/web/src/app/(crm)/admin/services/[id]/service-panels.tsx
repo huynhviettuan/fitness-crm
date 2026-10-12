@@ -21,12 +21,14 @@ import { FieldGroup } from "@/components/ui/field";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
-import { TextField, applyFieldErrors } from "@/components/form-fields";
+import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
+import { NO_OPTION } from "@/components/option-select";
 import { Money } from "@/components/money";
 import { notify } from "@/components/notify";
-import { quickPackagesInputSchema, type PriceLookup, type PriceTierVersion, type Service } from "@flow/shared/services";
+import type { PriceQuote } from "@flow/shared/promotions";
+import { quickPackagesInputSchema, type PriceTierVersion, type Service } from "@flow/shared/services";
 import { useSubmit } from "../../users/user-dialogs";
-import { lookupPriceAction, saveQuickPackagesAction } from "../actions";
+import { quotePriceAction, saveQuickPackagesAction } from "../actions";
 import { ServiceDialog } from "../service-dialog";
 import { TiersDialog } from "./tiers-dialog";
 
@@ -251,20 +253,41 @@ function PackagesDialog({
 const splitCounts = (value: string | string[]) =>
   Array.isArray(value) ? value : value.split(/[,;\s]+/).filter((part) => part !== "");
 
-/** Any session count, looked up as the contract form does (BR-301): unit price, total, name, and end date. */
-export function LookupCard({ serviceId }: { serviceId: string }) {
+/** Any session count, priced as the contract form does (BR-301, A-110, A-111): tier, promotion, voucher, and VAT. */
+export function LookupCard({
+  serviceId,
+  promotions,
+}: {
+  serviceId: string;
+  /** The promotions on offer for this service. */
+  promotions: { id: string; name: string }[];
+}) {
   const t = useTranslations("services.lookup");
   const { pending, run } = useSubmit();
-  const [result, setResult] = useState<PriceLookup | null>(null);
+  const [result, setResult] = useState<PriceQuote | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<{ sessions: string; startDate: string }>({ defaultValues: { sessions: "", startDate: "" } });
+  const form = useForm<{
+    sessions: string;
+    startDate: string;
+    promotionId: string;
+    voucherCode: string;
+    vatPercent: string;
+  }>({ defaultValues: { sessions: "", startDate: "", promotionId: NO_OPTION, voucherCode: "", vatPercent: "" } });
 
   const onSubmit = form.handleSubmit((values) =>
     run(
-      () => lookupPriceAction(serviceId, { sessions: values.sessions, startDate: values.startDate || undefined }),
+      () =>
+        quotePriceAction(serviceId, {
+          sessions: values.sessions,
+          startDate: values.startDate || undefined,
+          promotionId: values.promotionId === NO_OPTION ? undefined : values.promotionId,
+          voucherCode: values.voucherCode || undefined,
+          vatPercent: values.vatPercent || undefined,
+        }),
       (fieldErrors) => {
         setResult(null);
-        setError(fieldErrors?.sessions?.[0] ?? fieldErrors?.startDate?.[0] ?? "invalidNumber");
+        const first = Object.values(fieldErrors ?? {})[0]?.[0];
+        setError(first ?? "invalidNumber");
       },
       (found) => {
         setError(null);
@@ -282,9 +305,20 @@ export function LookupCard({ serviceId }: { serviceId: string }) {
         <CardDescription>{t("hint")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form onSubmit={onSubmit} noValidate className="grid items-end gap-4 sm:grid-cols-[1fr_1fr_auto]">
+        <form onSubmit={onSubmit} noValidate className="grid items-end gap-4 sm:grid-cols-3">
           <TextField control={form.control} name="sessions" label={t("sessions")} inputMode="numeric" />
           <TextField control={form.control} name="startDate" label={t("startDate")} placeholder="dd/mm/yyyy" />
+          <SelectField
+            control={form.control}
+            name="promotionId"
+            label={t("promotion")}
+            options={[
+              { value: NO_OPTION, label: t("noPromotion") },
+              ...promotions.map((promotion) => ({ value: promotion.id, label: promotion.name })),
+            ]}
+          />
+          <TextField control={form.control} name="voucherCode" label={t("voucher")} autoComplete="off" />
+          <TextField control={form.control} name="vatPercent" label={t("vat")} inputMode="decimal" />
           <Button type="submit" disabled={pending}>
             {t("run")}
           </Button>
@@ -299,8 +333,29 @@ export function LookupCard({ serviceId }: { serviceId: string }) {
                 <Money amount={result.unitPrice} />
               </Row>
               <Row label={t("total")}>
-                <Money amount={result.total} />
+                <Money amount={result.breakdown.gross} />
               </Row>
+              {result.breakdown.totalDiscount > 0 && (
+                <>
+                  <Row label={t("discount")}>
+                    <Money amount={result.breakdown.totalDiscount} />{" "}
+                    {`(${t("discountPercent", { percent: result.discountPercent })})`}
+                  </Row>
+                  <Row label={t("net")}>
+                    <Money amount={result.breakdown.net} />
+                  </Row>
+                </>
+              )}
+              {result.breakdown.vatPercent > 0 && (
+                <Row label={t("vatAmount")}>
+                  <Money amount={result.breakdown.vatAmount} />
+                </Row>
+              )}
+              {(result.breakdown.totalDiscount > 0 || result.breakdown.vatPercent > 0) && (
+                <Row label={t("payable")}>
+                  <Money amount={result.breakdown.total} />
+                </Row>
+              )}
               {result.endDate && (
                 <Row label={t("endDate")}>
                   <DateTime value={result.endDate} format="dateOnly" />

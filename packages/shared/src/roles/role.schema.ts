@@ -26,6 +26,19 @@ const description = z
   .transform((value) => (value === "" ? null : value))
   .prefault("");
 
+/** The largest discount, as a percent of the tier price, that holders of the role may approve themselves (A-112). */
+const discountThresholdPct = z
+  .union([z.number(), z.string()], { error: "invalidNumber" })
+  // A decimal comma, as typed in Vietnamese, reads like a dot.
+  .transform((value) => (typeof value === "string" ? value.replace(",", ".") : value))
+  .pipe(
+    z.coerce
+      .number<string | number>({ error: "invalidNumber" })
+      .min(0, { error: "invalidPercent" })
+      .max(100, { error: "invalidPercent" }),
+  )
+  .transform((value) => Math.round(value * 100) / 100);
+
 const dataScopes = z.object(
   Object.fromEntries(
     DATA_SCOPE_RESOURCES.map((resource) => [resource, z.enum(DATA_SCOPES, { error: "invalidChoice" })]),
@@ -39,6 +52,7 @@ const dataScopes = z.object(
 export const roleInputSchema = z.object({
   name,
   description,
+  discountThresholdPct: discountThresholdPct.prefault(0),
   permissions: z.array(z.enum(PERMISSION_KEYS, { error: "invalidChoice" })).transform((keys) => [...new Set(keys)]),
   dataScopes,
   fieldMasks: z.array(z.enum(MASKABLE_FIELDS, { error: "invalidChoice" })).transform((fields) => [...new Set(fields)]),
@@ -54,6 +68,7 @@ export const roleSchema = z
     code: z.string().nullable(),
     name: z.string(),
     description: z.string().nullable(),
+    discountThresholdPct: z.number(),
     permissions: z.array(z.enum(PERMISSION_KEYS)),
     dataScopes: z.record(z.enum(DATA_SCOPE_RESOURCES), z.enum(DATA_SCOPES)),
     fieldMasks: z.array(z.enum(MASKABLE_FIELDS)),

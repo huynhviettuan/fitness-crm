@@ -14,6 +14,7 @@ import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
 import { ChecklistAdminPage, TodayPage } from "./pages/checklist";
 import { ScriptsAdminPage } from "./pages/scripts";
+import { PromotionsPage } from "./pages/promotions";
 import { ServiceDetailPage, ServicesPage } from "./pages/services";
 import { LeadAuditPage } from "./pages/lead-audit";
 import { LeadReceiversPage } from "./pages/lead-receivers";
@@ -43,6 +44,7 @@ type Fixtures = {
   checklistAdminPage: ChecklistAdminPage;
   scriptsAdminPage: ScriptsAdminPage;
   servicesPage: ServicesPage;
+  promotionsPage: PromotionsPage;
   serviceDetailPage: ServiceDetailPage;
   leadAuditPage: LeadAuditPage;
   leadReceiversPage: LeadReceiversPage;
@@ -108,6 +110,7 @@ export const test = base.extend<Fixtures>({
   checklistAdminPage: async ({ page }, use) => use(new ChecklistAdminPage(page)),
   scriptsAdminPage: async ({ page }, use) => use(new ScriptsAdminPage(page)),
   servicesPage: async ({ page }, use) => use(new ServicesPage(page)),
+  promotionsPage: async ({ page }, use) => use(new PromotionsPage(page)),
   serviceDetailPage: async ({ page }, use) => use(new ServiceDetailPage(page)),
   leadAuditPage: async ({ page }, use) => use(new LeadAuditPage(page)),
   leadReceiversPage: async ({ page }, use) => use(new LeadReceiversPage(page)),
@@ -299,6 +302,8 @@ export const test = base.extend<Fixtures>({
       );
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: scriptIds } } });
       await prisma.consultingScript.deleteMany({ where: { id: { in: scriptIds } } });
+      // Promotions and vouchers named with the tag (their service links go with them).
+      await prisma.promotion.deleteMany({ where: { name: { contains: tag } } });
       // Services named with the tag, with their price versions, tiers, and quick-pick counts (M4.1).
       const serviceIds = ids(
         await prisma.service.findMany({ where: { name: { contains: tag } }, select: { id: true } }),

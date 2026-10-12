@@ -41,7 +41,8 @@
     "consultingReport": "Dashboard tư vấn",
     "leadAnalysis": "Phân tích lead",
     "leadReceivers": "Nhận lead",
-    "services": "Dịch vụ và bậc giá"
+    "services": "Dịch vụ và bậc giá",
+    "promotions": "Khuyến mãi và voucher"
   },
   "status": {
     "customer": {
@@ -606,7 +607,13 @@
     "effectiveInPast": "Ngày hiệu lực không được ở quá khứ.",
     "nameTaken": "Tên dịch vụ này đã có.",
     "noPriceTier": "Không có bậc giá nào cho số buổi này.",
-    "noPriceVersion": "Dịch vụ chưa có bảng giá hiệu lực vào ngày này."
+    "noPriceVersion": "Dịch vụ chưa có bảng giá hiệu lực vào ngày này.",
+    "invalidPercent": "Nhập phần trăm lớn hơn 0 và không quá 100.",
+    "invalidVoucherCode": "Mã voucher gồm 3 đến 20 chữ in hoa, số hoặc dấu gạch ngang.",
+    "promotionHasNoCode": "Chương trình khuyến mãi không có mã; chỉ voucher mới có.",
+    "codeTaken": "Mã này đã được dùng.",
+    "promotionNotValid": "Chương trình khuyến mãi này không dùng được cho dịch vụ hoặc ngày đã chọn.",
+    "voucherNotValid": "Mã voucher không đúng hoặc không dùng được cho dịch vụ hoặc ngày đã chọn."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -894,7 +901,8 @@
       "tasks": "Giao việc",
       "exports": "Xuất Excel",
       "reports": "Báo cáo",
-      "services": "Dịch vụ và bậc giá"
+      "services": "Dịch vụ và bậc giá",
+      "promotions": "Khuyến mãi và voucher"
     },
     "labels": {
       "user": {
@@ -984,6 +992,9 @@
       "service": {
         "view": "Xem dịch vụ và bậc giá",
         "manage": "Quản lý dịch vụ và bậc giá"
+      },
+      "promotion": {
+        "manage": "Quản lý khuyến mãi và voucher"
       }
     },
     "resources": {
@@ -1034,10 +1045,12 @@
       "dataScopesHint": "\"Chỉ của mình\": khách do mình tạo hoặc mình dạy, hợp đồng của họ, buổi mình dạy, phiếu mình ghi. Nhân viên \"chỉ của mình\": hồ sơ và lịch làm việc của chính mình. Công việc \"chỉ của mình\": việc mình giao, mình nhận và của phòng ban mình. Lead \"chỉ của mình\": lead mình nhập hoặc mình phụ trách.",
       "fieldMasks": "Thông tin bị ẩn",
       "fieldMasksHint": "Ẩn trên mọi màn hình và không tìm kiếm được.",
-      "users": "Người dùng"
+      "users": "Người dùng",
+      "discountThresholdPct": "Ngưỡng giảm giá tự duyệt (%)"
     },
     "backToList": "Danh sách vai trò",
-    "emptyTitle": "Chưa có vai trò"
+    "emptyTitle": "Chưa có vai trò",
+    "discountThresholdHint": "Mức giảm giá lớn nhất, tính theo phần trăm giá theo bậc, mà người giữ vai trò này tự duyệt được. Hợp đồng giảm nhiều hơn phải do vai trò có ngưỡng cao hơn duyệt."
   },
   "branches": {
     "title": "Chi nhánh",
@@ -1214,7 +1227,8 @@
       "export": "Xuất Excel",
       "audit_criterion": "Tiêu chí audit",
       "service": "Dịch vụ",
-      "price_tier_version": "Phiên bản bậc giá"
+      "price_tier_version": "Phiên bản bậc giá",
+      "promotion": "Khuyến mãi và voucher"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1960,7 +1974,50 @@
       "total": "Tổng tiền",
       "displayName": "Tên hiển thị",
       "endDate": "Ngày kết thúc",
-      "version": "Bảng giá"
+      "version": "Bảng giá",
+      "promotion": "Khuyến mãi",
+      "noPromotion": "Không dùng",
+      "voucher": "Mã voucher",
+      "vat": "VAT (%)",
+      "discount": "Giảm giá",
+      "discountPercent": "Giảm {percent}% giá theo bậc",
+      "vatAmount": "Tiền VAT",
+      "payable": "Thành tiền",
+      "net": "Sau giảm giá"
     }
+  },
+  "promotions": {
+    "title": "Khuyến mãi và voucher",
+    "description": "Giảm theo phần trăm hoặc số tiền, có thời gian áp dụng, áp lên giá theo bậc và không phải giá ngoại lệ. Một hợp đồng dùng tối đa một khuyến mãi và một voucher; khuyến mãi tính trước, voucher tính trên phần còn lại.",
+    "create": "Thêm khuyến mãi hoặc voucher",
+    "edit": "Sửa khuyến mãi hoặc voucher",
+    "empty": "Chưa có khuyến mãi hay voucher nào.",
+    "created": "Đã thêm {name}",
+    "saved": "Đã lưu {name}",
+    "rowActions": "Sửa {name}",
+    "fields": {
+      "kind": "Loại",
+      "name": "Tên",
+      "code": "Mã voucher",
+      "discountType": "Hình thức giảm",
+      "value": "Mức giảm",
+      "validFrom": "Từ ngày",
+      "validTo": "Đến ngày",
+      "services": "Dịch vụ áp dụng",
+      "active": "Đang áp dụng",
+      "status": "Trạng thái",
+      "validity": "Thời gian",
+      "discount": "Giảm"
+    },
+    "kinds": {
+      "PROMOTION": "Khuyến mãi",
+      "VOUCHER": "Voucher"
+    },
+    "types": {
+      "PERCENT": "Phần trăm",
+      "AMOUNT": "Số tiền"
+    },
+    "allServices": "Mọi dịch vụ",
+    "noEnd": "Không giới hạn"
   }
 }

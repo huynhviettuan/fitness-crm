@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +39,8 @@ export type EditableRole = {
   id: string | null;
   name: string;
   description: string | null;
+  /** The largest discount, as a percent of the tier price, the role may approve itself (A-112). */
+  discountThresholdPct: number;
   permissions: Permission[];
   dataScopes: Record<DataScopeResource, DataScope>;
   fieldMasks: MaskableField[];
@@ -60,6 +62,8 @@ export function RoleEditor({ role }: { role: EditableRole }) {
   const [permissions, setPermissions] = useState<Set<Permission>>(new Set(role.permissions));
   const [dataScopes, setDataScopes] = useState(role.dataScopes);
   const [fieldMasks, setFieldMasks] = useState<Set<MaskableField>>(new Set(role.fieldMasks));
+  const [discountThreshold, setDiscountThreshold] = useState(String(role.discountThresholdPct));
+  const [thresholdError, setThresholdError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
 
   const toggle = <T,>(set: Set<T>, value: T, on: boolean) => {
@@ -75,12 +79,24 @@ export function RoleEditor({ role }: { role: EditableRole }) {
 
   const save = () => {
     setNameError(null);
-    const input = { name, description, permissions: [...permissions], dataScopes, fieldMasks: [...fieldMasks] };
+    setThresholdError(null);
+    const input = {
+      name,
+      description,
+      discountThresholdPct: discountThreshold,
+      permissions: [...permissions],
+      dataScopes,
+      fieldMasks: [...fieldMasks],
+    };
+    const showErrors = (fieldErrors?: Record<string, string[]>) => {
+      setNameError(fieldErrors?.name?.[0] ?? null);
+      setThresholdError(fieldErrors?.discountThresholdPct?.[0] ?? null);
+    };
     if (role.id) {
       const roleId = role.id;
       run(
         () => updateRoleAction(roleId, input),
-        (fieldErrors) => setNameError(fieldErrors?.name?.[0] ?? null),
+        showErrors,
         () => {
           notify.success(t("roles.saved"));
           router.refresh();
@@ -89,7 +105,7 @@ export function RoleEditor({ role }: { role: EditableRole }) {
     } else {
       run(
         () => createRoleAction(input),
-        (fieldErrors) => setNameError(fieldErrors?.name?.[0] ?? null),
+        showErrors,
         (created) => {
           notify.success(t("roles.created", { name: created.name }));
           router.push(`/admin/roles/${created.id}`);
@@ -120,6 +136,20 @@ export function RoleEditor({ role }: { role: EditableRole }) {
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
+            </Field>
+            <Field data-invalid={thresholdError ? true : undefined}>
+              <FieldLabel htmlFor={`${id}-threshold`}>{t("roles.fields.discountThresholdPct")}</FieldLabel>
+              <Input
+                id={`${id}-threshold`}
+                value={discountThreshold}
+                onChange={(event) => setDiscountThreshold(event.target.value)}
+                inputMode="decimal"
+                autoComplete="off"
+                aria-invalid={Boolean(thresholdError)}
+                className="max-w-32"
+              />
+              <FieldDescription>{t("roles.discountThresholdHint")}</FieldDescription>
+              {thresholdError && <FieldError>{validationMessage(thresholdError)}</FieldError>}
             </Field>
           </FieldGroup>
         </CardContent>

@@ -26,6 +26,8 @@ export const PERMISSION_GROUPS = {
   customers: ["customer.view", "customer.manage"],
   // Services and their price tiers (brief §5.1, D-021): everyone who sells reads them, only Admin edits them.
   services: ["service.view", "service.manage"],
+  // Promotions and vouchers (brief §5.1, A-110): Admin creates them; selling staff see those on offer through service.view.
+  promotions: ["promotion.manage"],
   contracts: ["contract.view", "contract.create", "contract.approve", "contract.cancel"],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
   // Employee profiles and working schedules (brief §8.4).

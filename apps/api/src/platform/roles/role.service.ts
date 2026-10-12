@@ -39,7 +39,9 @@ export async function createRole(actor: Actor, input: unknown): Promise<Role> {
   const data = parseInput(roleInputSchema, input);
   return withNameConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
-      const role = await tx.role.create({ data: { name: data.name, description: data.description } });
+      const role = await tx.role.create({
+        data: { name: data.name, description: data.description, discountThresholdPct: data.discountThresholdPct },
+      });
       await writeConfiguration(tx, role.id, data);
       await recordAudit(tx, {
         actorUserId: actor.id,
@@ -68,7 +70,10 @@ export async function updateRole(actor: Actor, id: string, input: unknown): Prom
   return withNameConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
       const before = toRole(await findOrThrow(tx, id));
-      await tx.role.update({ where: { id }, data: { name: data.name, description: data.description } });
+      await tx.role.update({
+        where: { id },
+        data: { name: data.name, description: data.description, discountThresholdPct: data.discountThresholdPct },
+      });
       await tx.rolePermission.deleteMany({ where: { roleId: id } });
       await tx.roleDataScope.deleteMany({ where: { roleId: id } });
       await tx.roleFieldMask.deleteMany({ where: { roleId: id } });
@@ -94,7 +99,14 @@ export async function cloneRole(actor: Actor, id: string, input: unknown): Promi
   return withNameConflictsMapped(() =>
     prisma.$transaction(async (tx) => {
       const source = toRole(await findOrThrow(tx, id));
-      const role = await tx.role.create({ data: { name, description: source.description, clonedFromId: source.id } });
+      const role = await tx.role.create({
+        data: {
+          name,
+          description: source.description,
+          discountThresholdPct: source.discountThresholdPct,
+          clonedFromId: source.id,
+        },
+      });
       await writeConfiguration(tx, role.id, source);
       await recordAudit(tx, {
         actorUserId: actor.id,
@@ -135,6 +147,7 @@ function toRole(role: RoleRecord): Role {
     code: role.code,
     name: role.name,
     description: role.description,
+    discountThresholdPct: Number(role.discountThresholdPct),
     permissions: role.permissions.map((p) => p.permission).sort() as Role["permissions"],
     dataScopes: Object.fromEntries(
       DATA_SCOPE_RESOURCES.map((resource) => [resource, scopes.get(resource) ?? "OWN"]),
@@ -145,7 +158,13 @@ function toRole(role: RoleRecord): Role {
 }
 
 function configurationOf(role: Role) {
-  return { name: role.name, permissions: role.permissions, dataScopes: role.dataScopes, fieldMasks: role.fieldMasks };
+  return {
+    name: role.name,
+    discountThresholdPct: role.discountThresholdPct,
+    permissions: role.permissions,
+    dataScopes: role.dataScopes,
+    fieldMasks: role.fieldMasks,
+  };
 }
 
 async function withNameConflictsMapped<T>(body: () => Promise<T>): Promise<T> {

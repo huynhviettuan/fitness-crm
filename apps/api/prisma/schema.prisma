@@ -250,16 +250,18 @@ model Branch {
 }
 
 model Role {
-  id           String   @id @default(uuid()) @db.Uuid
+  id                   String   @id @default(uuid()) @db.Uuid
   // Set on the default roles (09_RBAC.md) so code and tests can find them; null for
   // roles admin creates. Never shown to users.
-  code         String?  @unique
-  name         String   @unique
-  description  String?
-  clonedFromId String?  @map("cloned_from_id") @db.Uuid
-  clonedFrom   Role?    @relation("RoleClones", fields: [clonedFromId], references: [id], onDelete: SetNull)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  code                 String?  @unique
+  name                 String   @unique
+  description          String?
+  // The largest discount, as a percent of the tier price, holders may approve themselves (A-112).
+  discountThresholdPct Decimal  @default(0) @map("discount_threshold_pct") @db.Decimal(5, 2)
+  clonedFromId         String?  @map("cloned_from_id") @db.Uuid
+  clonedFrom           Role?    @relation("RoleClones", fields: [clonedFromId], references: [id], onDelete: SetNull)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   clones        Role[]             @relation("RoleClones")
   users         User[]
@@ -1369,6 +1371,7 @@ model Service {
   branches      ServiceBranch[]
   versions      PriceTierVersion[]
   quickPackages QuickPackage[]
+  promotions    PromotionService[]
 
   @@map("services")
 }
@@ -1427,4 +1430,53 @@ model QuickPackage {
 
   @@unique([serviceId, sessions])
   @@map("quick_packages")
+}
+
+// ---------------------------------------------------------------------------
+// Promotions and vouchers (M4.2, D-021, BR-303, A-110)
+// ---------------------------------------------------------------------------
+
+enum PromotionKind {
+  PROMOTION
+  VOUCHER
+}
+
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
+// A percent or an amount off the tier price, with dates; not an exception price. A promotion is picked from the
+// list on offer; a voucher is found by its code. Never deleted, only made inactive.
+model Promotion {
+  id           String        @id @default(uuid()) @db.Uuid
+  kind         PromotionKind
+  name         String
+  // Vouchers only; upper case, unique.
+  code         String?       @unique
+  discountType DiscountType  @map("discount_type")
+  // A percent (0 to 100, two decimals) or whole đồng.
+  value        Decimal       @db.Decimal(14, 2)
+  validFrom    DateTime?     @map("valid_from") @db.Date
+  validTo      DateTime?     @map("valid_to") @db.Date
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  // None: every service.
+  services PromotionService[]
+
+  @@index([kind, active])
+  @@map("promotions")
+}
+
+model PromotionService {
+  promotionId String    @map("promotion_id") @db.Uuid
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  serviceId   String    @map("service_id") @db.Uuid
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([promotionId, serviceId])
+  @@index([serviceId])
+  @@map("promotion_services")
 }
