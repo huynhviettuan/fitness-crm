@@ -1,10 +1,8 @@
 name: Full E2E
 
-# The whole Playwright suite is slow, so the pull-request CI runs only the smoke cases (ci.yml). This runs everything
-# every night, and whenever someone starts it by hand (run it before closing a milestone).
+# The whole Playwright suite is slow, so the pull-request CI runs only the smoke cases (ci.yml). This runs everything,
+# and only when someone starts it by hand (Actions, Full E2E, Run workflow): run it before closing a milestone.
 on:
-  schedule:
-    - cron: "0 19 * * *"
   workflow_dispatch:
 
 env:
