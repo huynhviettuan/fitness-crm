@@ -29,6 +29,14 @@ export async function createService(input: ServiceInput) {
   return read(serviceDetailSchema, (await api()).POST("/api/v1/services", { body: input as never }));
 }
 
+/** Sets the picture of a service from an uploaded file, or takes it off with null (M4.1b, A-143). */
+export async function setServiceImage(id: string, fileId: string | null) {
+  return read(
+    serviceDetailSchema,
+    (await api()).PUT("/api/v1/services/{id}/image", { params: { path: { id } }, body: { fileId } }),
+  );
+}
+
 export async function updateService(id: string, input: ServiceInput) {
   return read(
     serviceDetailSchema,

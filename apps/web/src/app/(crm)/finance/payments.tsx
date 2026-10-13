@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTimeZone, useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BanknoteIcon, CalendarCogIcon } from "lucide-react";
+import { BanknoteIcon, CalendarCogIcon, ImageIcon } from "lucide-react";
+import { PictureManager } from "@/components/picture-manager";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,7 +29,7 @@ import { useErrorMessage } from "@/components/use-error-message";
 import { formatDate, formatMoney } from "@/lib/format";
 import { paymentInputSchema, receiptDateSchema, type PaymentInput } from "@flow/shared/finance";
 import type { ChosenOption } from "@flow/shared/options";
-import { deletePaymentAction, recordPaymentAction, updateReceiptDateAction } from "./actions";
+import { deletePaymentAction, recordPaymentAction, setReceiptProofAction, updateReceiptDateAction } from "./actions";
 import { useSubmit } from "../admin/users/user-dialogs";
 import { DeleteDialog } from "./delete-dialog";
 
@@ -39,6 +40,7 @@ export type PaymentRow = {
   method: ChosenOption;
   saleEmployee: { id: string; fullName: string } | null;
   note: string | null;
+  proofFileId: string | null;
   paidOn: Date;
   approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   createdBy: string;
@@ -52,6 +54,8 @@ type PaymentsTableProps = {
   canDelete: boolean;
   /** payment.editDate: its own permission (D-034). */
   canEditDate?: boolean;
+  /** payment.record: may add, replace, or remove the transfer proof picture (A-144). */
+  canAttachProof?: boolean;
   label: string;
   /** Hide columns the page already shows. */
   hide?: { contract?: boolean; customer?: boolean };
@@ -64,6 +68,7 @@ export function PaymentsTable({
   payments,
   canDelete,
   canEditDate = false,
+  canAttachProof = false,
   label,
   hide = {},
   empty,
@@ -74,6 +79,7 @@ export function PaymentsTable({
   const router = useRouter();
   const [deleting, setDeleting] = useState<PaymentRow | null>(null);
   const [dating, setDating] = useState<PaymentRow | null>(null);
+  const [proving, setProving] = useState<PaymentRow | null>(null);
 
   const columns: DataTableColumn<PaymentRow>[] = [
     {
@@ -139,6 +145,12 @@ export function PaymentsTable({
       header: () => <span className="sr-only">{t("delete")}</span>,
       cell: ({ row }) => (
         <div className="flex gap-1">
+          {(row.original.proofFileId || canAttachProof) && (
+            <Button variant="ghost" size="sm" onClick={() => setProving(row.original)}>
+              <ImageIcon />
+              {row.original.proofFileId ? t("proofView") : t("proofAdd")}
+            </Button>
+          )}
           {canEditDate && (
             <Button variant="ghost" size="sm" onClick={() => setDating(row.original)}>
               <CalendarCogIcon />
@@ -166,6 +178,13 @@ export function PaymentsTable({
         getRowId={(row) => row.id}
       />
       {dating && <ReceiptDateDialog receipt={dating} onClose={() => setDating(null)} />}
+      {proving && (
+        <ProofDialog
+          receipt={payments.find((payment) => payment.id === proving.id) ?? proving}
+          canChange={canAttachProof}
+          onClose={() => setProving(null)}
+        />
+      )}
       <DeleteDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
@@ -178,6 +197,36 @@ export function PaymentsTable({
         }}
       />
     </>
+  );
+}
+
+/** The transfer proof picture of a receipt (brief §8.1, A-144): seen by those who see receipts, changed by those who record them. */
+function ProofDialog({
+  receipt,
+  canChange,
+  onClose,
+}: {
+  receipt: PaymentRow;
+  canChange: boolean;
+  onClose: () => void;
+}) {
+  const t = useTranslations("finance");
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("proofTitle", { number: receipt.receiptNumber })}</DialogTitle>
+          <DialogDescription>{t("proofBody")}</DialogDescription>
+        </DialogHeader>
+        <PictureManager
+          purpose="receipt_proof"
+          fileId={receipt.proofFileId}
+          alt={t("proofTitle", { number: receipt.receiptNumber })}
+          canChange={canChange}
+          attach={(fileId) => setReceiptProofAction(receipt.id, fileId)}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
 

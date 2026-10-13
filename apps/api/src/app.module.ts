@@ -25,6 +25,7 @@ import { LeadAuditController } from "./modules/leads/lead-audit.controller.js";
 import { LeadReceiversController } from "./modules/leads/lead-receivers.controller.js";
 import { ManagerAuditController } from "./modules/leads/manager-audit.controller.js";
 import { ReportsController } from "./modules/reports/reports.controller.js";
+import { FilesController } from "./platform/files/files.controller.js";
 import {
   CashTransactionsController,
   DebtsController,
@@ -51,6 +52,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
     LeadReceiversController,
     ManagerAuditController,
     ReportsController,
+    FilesController,
     CustomersController,
     ContractsController,
     EmployeesController,

@@ -38,11 +38,25 @@ const envSchema = z
       .transform((value) => value === "true"),
     // D-036, T-051: how customer emails go out. "log" only records that one would be sent (development, tests);
     // "resend" sends through Resend and needs the key and a sender on the authenticated domain (SPF, DKIM, DMARC).
+    // T-052: where private files are kept. "local" writes to FILE_STORAGE_DIR (development, tests); "r2" uses a
+    // Cloudflare R2 bucket (staging, production) and needs its account, keys, and bucket.
+    FILE_STORAGE: z.enum(["local", "r2"]).default("local"),
+    FILE_STORAGE_DIR: z.string().min(1).default(".data/files"),
+    R2_ACCOUNT_ID: z.string().min(1).optional(),
+    R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+    R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    R2_BUCKET: z.string().min(1).optional(),
     EMAIL_PROVIDER: z.enum(["log", "resend"]).default("log"),
     EMAIL_FROM: z.string().min(3).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.FILE_STORAGE === "r2") {
+      for (const key of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"] as const) {
+        if (!value[key])
+          ctx.addIssue({ code: "custom", path: [key], message: `${key} is required with FILE_STORAGE=r2` });
+      }
+    }
     if (value.EMAIL_PROVIDER !== "resend") return;
     for (const key of ["EMAIL_FROM", "RESEND_API_KEY"] as const) {
       if (!value[key])

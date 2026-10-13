@@ -648,7 +648,10 @@
     "tooManyCompanions": "Vượt quá số hội viên tối đa của gói.",
     "serviceNotOnSale": "Dịch vụ này không bán tại chi nhánh hoặc vào ngày này.",
     "onlyOnCreate": "Chỉ nhập khoản thanh toán đầu khi tạo hợp đồng.",
-    "periodTooLong": "Khoảng thời gian quá dài."
+    "periodTooLong": "Khoảng thời gian quá dài.",
+    "fileTooLarge": "Ảnh quá lớn (tối đa 5 MB).",
+    "notAnImage": "Chỉ nhận ảnh PNG, JPEG hoặc WebP.",
+    "fileInUse": "Ảnh này đã được dùng ở nơi khác."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1131,7 +1134,11 @@
     "editDateTitle": "Sửa ngày phiếu thu {number}",
     "editDateBody": "Chỉ người có quyền này mới sửa được. Ngày cũ và ngày mới được ghi vào nhật ký.",
     "dateChanged": "Đã sửa ngày thu",
-    "saleDefault": "Nhân viên sale chính của hợp đồng"
+    "saleDefault": "Nhân viên sale chính của hợp đồng",
+    "proofView": "Xem ảnh",
+    "proofAdd": "Đính kèm ảnh",
+    "proofTitle": "Ảnh chuyển khoản {number}",
+    "proofBody": "Ảnh chụp chứng từ chuyển khoản của phiếu thu. Chỉ người được xem phiếu thu mới xem được."
   },
   "permissions": {
     "groups": {
@@ -1505,7 +1512,8 @@
       "service": "Dịch vụ",
       "price_tier_version": "Phiên bản bậc giá",
       "promotion": "Khuyến mãi và voucher",
-      "cash_opening_balance": "Số dư quỹ đầu kỳ"
+      "cash_opening_balance": "Số dư quỹ đầu kỳ",
+      "file": "Tệp"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2268,7 +2276,8 @@
       "vatAmount": "Tiền VAT",
       "payable": "Thành tiền",
       "net": "Sau giảm giá"
-    }
+    },
+    "image": "Ảnh dịch vụ"
   },
   "promotions": {
     "title": "Khuyến mãi và voucher",
@@ -2390,5 +2399,14 @@
       "share": "Tỷ lệ",
       "difference": "Chênh lệch"
     }
+  },
+  "files": {
+    "choose": "Chọn ảnh",
+    "replace": "Đổi ảnh",
+    "remove": "Xóa ảnh",
+    "none": "Chưa có ảnh.",
+    "saved": "Đã lưu ảnh.",
+    "removed": "Đã xóa ảnh.",
+    "unavailable": "Không tải được ảnh."
   }
 }

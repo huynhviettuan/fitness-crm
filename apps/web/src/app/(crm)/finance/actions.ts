@@ -6,6 +6,7 @@ import {
   deletePayment,
   recordCashTransaction,
   recordPayment,
+  setReceiptProof,
   updateReceiptDate,
 } from "@/lib/api/finance";
 import type { CashTransactionInput, PaymentInput } from "@flow/shared/finance";
@@ -53,4 +54,11 @@ export async function deleteCashTransactionAction(
   input: DeleteInput,
 ): Promise<ActionResult<{ submitted: boolean }>> {
   return runAction(async () => ({ submitted: await deleteCashTransaction(id, input) }));
+}
+
+/** Attaches an uploaded transfer proof to a receipt, or removes it with null (A-144). */
+export async function setReceiptProofAction(id: string, fileId: string | null): Promise<ActionResult> {
+  return runAction(async () => {
+    await setReceiptProof(id, fileId);
+  });
 }

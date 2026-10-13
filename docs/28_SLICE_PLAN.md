@@ -150,7 +150,7 @@ What the owner's answers change in what M1 and M2 already built. All numbers are
 
 The sender, the outbox, the failure task, and the domain setup of M6.1 are built before M4.1, so every feature of M4, M5, and M8 attaches its email when it is built (D-059). **Built:** the `email_messages` outbox, `queueEmail` for the features, the pg-boss `mail` worker with Resend and a log provider, retries, the task for reception, and the customer's "Emails sent" tab. **Left for the owner:** the sending domain, its DNS records, and the sender name (OQ-036). The approval matrix is switched on for creating and editing contracts, exception prices, deactivation, and change vouchers as each of them is built (D-065).
 
-### M4.1 Services, price tiers, and file storage (split: M4.1a built 2026-10-12, A-107 to A-109; M4.1b remains)
+### M4.1 Services, price tiers, and file storage (split: M4.1a built 2026-10-12, A-107 to A-109; M4.1b built 2026-10-15, A-143 and A-144, OQ-047)
 
 M4.1a is the services, the price tiers in versions, the quick-pick packages, the lookup, and the admin screens. M4.1b is **file storage on R2 with signed URLs and the service image**; it comes next, before receipt proofs (M4.5), and needs the R2 bucket and keys from the owner's side (no package is added: the signing is done with the Node crypto module).
 

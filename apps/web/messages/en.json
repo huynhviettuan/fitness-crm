@@ -648,7 +648,10 @@
     "tooManyCompanions": "More than the package's maximum members.",
     "serviceNotOnSale": "This service is not sold in this branch or on this day.",
     "onlyOnCreate": "The first payment is entered only when the contract is created.",
-    "periodTooLong": "The period is too long."
+    "periodTooLong": "The period is too long.",
+    "fileTooLarge": "The picture is too large (5 MB at most).",
+    "notAnImage": "Only PNG, JPEG, or WebP pictures are accepted.",
+    "fileInUse": "This picture is already used elsewhere."
   },
   "contracts": {
     "title": "Contracts",
@@ -1131,7 +1134,11 @@
     "editDateTitle": "Edit the date of receipt {number}",
     "editDateBody": "Only a user with this permission can. The old and the new day are recorded in the history.",
     "dateChanged": "Date changed",
-    "saleDefault": "The contract's main salesperson"
+    "saleDefault": "The contract's main salesperson",
+    "proofView": "View picture",
+    "proofAdd": "Attach picture",
+    "proofTitle": "Transfer proof {number}",
+    "proofBody": "The picture of the transfer slip for this receipt. Only people who may see receipts can see it."
   },
   "permissions": {
     "groups": {
@@ -1505,7 +1512,8 @@
       "service": "Service",
       "price_tier_version": "Price tier version",
       "promotion": "Promotions and vouchers",
-      "cash_opening_balance": "Opening cash balance"
+      "cash_opening_balance": "Opening cash balance",
+      "file": "File"
     },
     "verbs": {
       "created": "Created",
@@ -2268,7 +2276,8 @@
       "vatAmount": "VAT",
       "payable": "To pay",
       "net": "After discounts"
-    }
+    },
+    "image": "Service picture"
   },
   "promotions": {
     "title": "Promotions and vouchers",
@@ -2390,5 +2399,14 @@
       "share": "Share",
       "difference": "Difference"
     }
+  },
+  "files": {
+    "choose": "Choose a picture",
+    "replace": "Replace picture",
+    "remove": "Remove picture",
+    "none": "No picture yet.",
+    "saved": "Picture saved.",
+    "removed": "Picture removed.",
+    "unavailable": "The picture could not be loaded."
   }
 }

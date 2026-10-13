@@ -16,6 +16,7 @@ export const AUDIT_ENTITY_TYPES = [
   "payment",
   "cash_transaction",
   "cash_opening_balance",
+  "file",
   "approval_request",
   "approval_rule",
   "task",

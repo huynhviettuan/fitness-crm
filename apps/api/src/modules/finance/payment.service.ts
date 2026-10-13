@@ -22,6 +22,8 @@ import {
 import type { RecordApprovalStatus } from "@flow/shared/approvals";
 import type { Db as TxDb } from "../../platform/db/prisma.js";
 import { encode } from "../../platform/http/encode.js";
+import { attachFileSchema } from "@flow/shared/files";
+import { claimFile } from "../../platform/files/file.service.js";
 import { deleteSchema } from "@flow/shared/trash";
 import type { ChosenOption } from "@flow/shared/options";
 import { findContract, lockContract } from "../contracts/contract.repository.js";
@@ -48,6 +50,7 @@ export type PaymentView = {
   method: ChosenOption;
   saleEmployee: { id: string; employeeCode: string; fullName: string } | null;
   note: string | null;
+  proofFileId: string | null;
   paidOn: Date;
   approvalStatus: RecordApprovalStatus;
   createdAt: Date;
@@ -381,6 +384,32 @@ export async function updateReceiptDate(actor: Actor, id: string, input: unknown
   }, LOCKING_TRANSACTION);
 }
 
+/**
+ * Attaches the transfer proof picture to a receipt, or takes it off with null (brief §8.1, M4.1b, A-144). Whoever may
+ * record receipts may add one, also after approval; the change is logged. The file must be a receipt picture the actor
+ * uploaded and nobody has used.
+ */
+export async function setReceiptProof(actor: Actor, id: string, input: unknown): Promise<PaymentView> {
+  assertCan(actor, "payment.record");
+  const { fileId } = parseInput(attachFileSchema, input);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+  return prisma.$transaction(async (tx) => {
+    const before = await repo.findPayment(tx, id, paymentsVisibleTo(actor));
+    if (!before) throw new AppError("NOT_FOUND");
+    if (fileId) await claimFile(tx, actor, fileId, "receipt_proof", before.proofFileId);
+    await tx.payment.update({ where: { id }, data: { proofFileId: fileId } });
+    await recordAudit(tx, {
+      actorUserId: actor.id,
+      entityType: "payment",
+      entityId: id,
+      action: "payment.proof_changed",
+      before: { proofFileId: before.proofFileId },
+      after: { proofFileId: fileId },
+    });
+    return toView((await repo.findPayment(tx, id))!);
+  });
+}
+
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
 export async function listDebts(
   actor: Actor,
@@ -430,6 +459,7 @@ function toView(payment: repo.PaymentRecord): PaymentView {
     method: chosen(payment.method, payment.methodNote),
     saleEmployee: payment.saleEmployee,
     note: payment.note,
+    proofFileId: payment.proofFileId,
     paidOn: payment.paidOn,
     approvalStatus: payment.approvalStatus as RecordApprovalStatus,
     createdAt: payment.createdAt,

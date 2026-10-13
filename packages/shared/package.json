@@ -41,6 +41,10 @@
       "types": "./dist/errors/index.d.ts",
       "default": "./dist/errors/index.js"
     },
+    "./files": {
+      "types": "./dist/files/index.d.ts",
+      "default": "./dist/files/index.js"
+    },
     "./finance": {
       "types": "./dist/finance/index.d.ts",
       "default": "./dist/finance/index.js"

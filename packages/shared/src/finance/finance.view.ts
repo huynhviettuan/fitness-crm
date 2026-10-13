@@ -17,6 +17,8 @@ export const paymentSchema = z
     /** The salesperson the receipt is credited to. */
     saleEmployee: z.object({ id: z.uuid(), employeeCode: z.string(), fullName: z.string() }).nullable(),
     note: z.string().nullable(),
+    /** The transfer proof picture (M4.1b, A-144): fetched through a signed link, `GET /files/{id}/link`. */
+    proofFileId: z.uuid().nullable(),
     /** The gym day the money was received (T-039). */
     paidOn: instant,
     /** Counts toward the paid amount only when APPROVED (D-018, D-034). */

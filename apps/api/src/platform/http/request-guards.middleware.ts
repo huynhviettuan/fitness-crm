@@ -11,7 +11,9 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
  * Runs before every /api/v1 handler (T-033, OWASP A08):
  * 1. A state-changing request must carry the app's Origin. Browsers always send it on
  *    POST/PATCH/DELETE; a request without one is refused too (fail closed).
- * 2. A body must be JSON, so a plain HTML form on another site cannot post here.
+ * 2. A body must be JSON, so a plain HTML form on another site cannot post here. The one exception is the upload
+ *    of a picture (M4.1b), whose body is the picture itself with an image type; a form cannot send that type, and
+ *    the Origin check above still applies.
  */
 export function requestGuards(request: Request, response: Response, next: NextFunction): void {
   if (SAFE_METHODS.has(request.method)) return next();
@@ -30,7 +32,11 @@ export function requestGuards(request: Request, response: Response, next: NextFu
   const contentType = request.headers["content-type"];
   const hasBody =
     Number(request.headers["content-length"] ?? 0) > 0 || request.headers["transfer-encoding"] !== undefined;
-  if ((contentType !== undefined || hasBody) && !/^application\/json\b/i.test(contentType ?? "")) {
+  const isPictureUpload =
+    request.method === "POST" &&
+    /\/files\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
+    /^image\/(png|jpeg|webp)$/i.test(contentType ?? "");
+  if ((contentType !== undefined || hasBody) && !isPictureUpload && !/^application\/json\b/i.test(contentType ?? "")) {
     return sendError(response, new AppError("UNSUPPORTED_MEDIA_TYPE"));
   }
   next();

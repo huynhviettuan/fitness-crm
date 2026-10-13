@@ -309,6 +309,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
                 payments={payments.items}
                 canDelete={can(user, "payment.delete")}
                 canEditDate={can(user, "payment.editDate")}
+                canAttachProof={can(user, "payment.record")}
                 label={t("paymentHistory")}
                 hide={{ contract: true, customer: true }}
                 empty={<EmptyState icon={BanknoteIcon} title={t("paymentHistoryEmpty")} />}

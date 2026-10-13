@@ -15,6 +15,8 @@ import { listPromotions } from "@/lib/api/promotions";
 import { getService } from "@/lib/api/services";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { versionInForce } from "@flow/shared/services";
+import { PictureManager } from "@/components/picture-manager";
+import { setServiceImageAction } from "../actions";
 import { EditServiceButton, LookupCard, PackagesPanel, TiersPanel, type VersionView } from "./service-panels";
 
 async function loadService(id: string) {
@@ -121,6 +123,22 @@ export default async function ServicePage({ params }: PageProps<"/admin/services
           <PackagesPanel serviceId={service.id} sessions={service.quickPackages} canManage={canManage} />
         </TabsContent>
         <TabsContent value="info">
+          <Card className="mb-4 max-w-3xl">
+            <CardHeader>
+              <CardTitle>
+                <h2>{t("image")}</h2>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PictureManager
+                purpose="service_image"
+                fileId={service.imageFileId}
+                alt={service.name}
+                canChange={canManage}
+                attach={setServiceImageAction.bind(null, service.id)}
+              />
+            </CardContent>
+          </Card>
           <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>

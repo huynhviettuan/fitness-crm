@@ -44,6 +44,8 @@ export const serviceSchema = z
     activeTo: instant.nullable(),
     active: z.boolean(),
     notes: z.string().nullable(),
+    /** The picture of the service (M4.1b): fetched through a signed link, `GET /files/{id}/link`. */
+    imageFileId: z.uuid().nullable(),
     createdAt: instant,
     /** The version of the tiers in force today, or null when none has started. */
     currentVersion: z.int().nullable(),

@@ -28,6 +28,8 @@ export async function createApp(options: { logger?: false; docs?: boolean } = {}
   // Better Auth reads the raw body itself, so it is mounted before the JSON parser (T-044).
   app.getHttpAdapter().getInstance().all("/api/auth/*splat", toNodeHandler(auth));
   app.useBodyParser("json", { limit: "200kb" });
+  // A picture is the body of its upload (M4.1b); anything bigger than 5 MB is refused before it is read.
+  app.useBodyParser("raw", { type: ["image/png", "image/jpeg", "image/webp"], limit: "5mb" });
   app.setGlobalPrefix(API_PREFIX);
   app.enableShutdownHooks();
   await app.init();

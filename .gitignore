@@ -41,3 +41,6 @@ e2e/blob-report/
 # OpenAPI types for the web app, generated from apps/api/openapi.json by `pnpm generate`
 apps/web/src/lib/api/schema.d.ts
 
+
+# local private files (development)
+.data/

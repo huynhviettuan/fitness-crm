@@ -2,7 +2,7 @@
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { quotePrice } from "@/lib/api/promotions";
-import { createService, saveQuickPackages, saveTiers, updateService } from "@/lib/api/services";
+import { createService, saveQuickPackages, saveTiers, setServiceImage, updateService } from "@/lib/api/services";
 import type { PriceQuote } from "@flow/shared/promotions";
 import type { QuickPackagesInput, ServiceInput, TiersInput } from "@flow/shared/services";
 
@@ -43,4 +43,11 @@ export async function quotePriceAction(
   },
 ): Promise<ActionResult<PriceQuote>> {
   return runAction(() => quotePrice(id, params));
+}
+
+/** Attaches an uploaded picture to the service, or removes it with null (A-143). */
+export async function setServiceImageAction(id: string, fileId: string | null): Promise<ActionResult> {
+  return runAction(async () => {
+    await setServiceImage(id, fileId);
+  });
 }

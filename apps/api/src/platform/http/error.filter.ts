@@ -40,6 +40,14 @@ export class ErrorFilter implements ExceptionFilter {
       }
       return sendError(response, new AppError("NOT_FOUND"));
     }
+    // A body over the parser's limit (the 5 MB of a picture, the 200 kB of JSON) is the client's error, not ours.
+    if ((exception as { type?: string } | null)?.type === "entity.too.large") {
+      const upload = /\/files\/?$/.test(request.originalUrl.split("?")[0] ?? "");
+      return sendError(
+        response,
+        new AppError("VALIDATION_FAILED", upload ? { fieldErrors: { file: ["fileTooLarge"] } } : {}),
+      );
+    }
     // Malformed or oversized JSON, from the body parser.
     if (exception instanceof BadRequestException || exception instanceof PayloadTooLargeException) {
       return sendError(response, new AppError("VALIDATION_FAILED", { message: "Request body must be JSON" }));

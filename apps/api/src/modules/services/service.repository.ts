@@ -64,6 +64,10 @@ export async function updateService(
 }
 
 /** Holds the service's row until the transaction ends, so two new versions never take the same number. */
+export function setImage(db: Db, id: string, fileId: string | null): Promise<ServiceRecord> {
+  return db.service.update({ where: { id }, data: { imageFileId: fileId }, include: withRefs });
+}
+
 export async function lockService(db: Db, id: string): Promise<boolean> {
   const rows = await db.$queryRaw<{ id: string }[]>`SELECT "id" FROM "services" WHERE "id" = ${id}::uuid FOR UPDATE`;
   return rows.length === 1;

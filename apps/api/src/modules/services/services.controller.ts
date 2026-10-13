@@ -9,6 +9,7 @@ import {
   serviceListSchema,
   tiersInputSchema,
 } from "@flow/shared/services";
+import { attachFileSchema } from "@flow/shared/files";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
@@ -21,6 +22,7 @@ import {
   lookupPrice,
   saveQuickPackages,
   saveTiers,
+  setServiceImage,
   updateService,
 } from "./service.service.js";
 
@@ -64,6 +66,18 @@ export class ServicesController {
     @Body({ schema: serviceInputSchema }) body: unknown,
   ) {
     return encode(serviceDetailSchema, await updateService(actor, id, body));
+  }
+
+  /** Sets the picture from an uploaded file, or takes it off with null (M4.1b, A-143). */
+  @Put(":id/image")
+  @RequirePermission("service.manage")
+  @ApiResult(serviceDetailSchema)
+  async image(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: attachFileSchema }) body: unknown,
+  ) {
+    return encode(serviceDetailSchema, await setServiceImage(actor, id, body));
   }
 
   /** A new version of the whole tier set, from a day on (BR-301). */

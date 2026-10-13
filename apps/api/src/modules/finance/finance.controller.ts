@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Req, Res } from "@nestjs/common";
 import { ApiNoContentResponse } from "@nestjs/swagger";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
@@ -14,6 +14,7 @@ import {
   receiptDateSchema,
 } from "@flow/shared/finance";
 import { deleteSchema } from "@flow/shared/trash";
+import { attachFileSchema } from "@flow/shared/files";
 import { submittedSchema } from "@flow/shared/approvals";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
@@ -36,7 +37,14 @@ import {
   PAYMENT_EXPORT_QUERY,
 } from "./finance.export.js";
 import { deleteCashTransaction, financeSummary, listCashTransactions, recordCashTransaction } from "./cash.service.js";
-import { collectedBetween, deletePayment, listDebts, listPayments, updateReceiptDate } from "./payment.service.js";
+import {
+  collectedBetween,
+  deletePayment,
+  listDebts,
+  listPayments,
+  setReceiptProof,
+  updateReceiptDate,
+} from "./payment.service.js";
 
 const PAYMENT_FILTERS = ["from", "to", "contractId", "customerId", "page", "pageSize"] as const;
 const CASH_FILTERS = ["from", "to", "type", "page", "pageSize"] as const;
@@ -73,6 +81,18 @@ export class PaymentsController {
   @ApiResult(collectedSchema)
   async collected(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(collectedSchema, { total: await collectedBetween(actor, queryOf(request, ["from", "to"])) });
+  }
+
+  /** The transfer proof picture of a receipt, or null to take it off (brief §8.1, A-144). */
+  @Put(":id/proof")
+  @RequirePermission("payment.record")
+  @ApiResult(paymentSchema)
+  async proof(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: attachFileSchema }) body: unknown,
+  ) {
+    return encode(paymentSchema, await setReceiptProof(actor, id, body));
   }
 
   /** Editing a receipt's date is its own permission and is always logged (D-034, FR-CASH-004). */

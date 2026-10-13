@@ -2975,6 +2975,67 @@
         "x-permission": "service.manage"
       }
     },
+    "/api/v1/services/{id}/image": {
+      "put": {
+        "operationId": "ServicesController_image",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileId": {
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "fileId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "services"
+        ],
+        "x-permission": "service.manage"
+      }
+    },
     "/api/v1/services/{id}/tiers": {
       "put": {
         "operationId": "ServicesController_saveTiers",
@@ -5033,6 +5094,146 @@
           "reports"
         ],
         "x-permission": "report.exceptionPricesExport"
+      }
+    },
+    "/api/v1/files": {
+      "post": {
+        "operationId": "FilesController_upload",
+        "parameters": [
+          {
+            "name": "purpose",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredFile"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "files"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/files/{id}/link": {
+      "get": {
+        "operationId": "FilesController_link",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "files"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/files/{id}/content": {
+      "get": {
+        "operationId": "FilesController_content",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expires",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signature",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "files"
+        ],
+        "x-permission": "authenticated"
       }
     },
     "/api/v1/customers": {
@@ -9049,6 +9250,67 @@
           "finance"
         ],
         "x-permission": "payment.view"
+      }
+    },
+    "/api/v1/payments/{id}/proof": {
+      "put": {
+        "operationId": "PaymentsController_proof",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileId": {
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "fileId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "finance"
+        ],
+        "x-permission": "payment.record"
       }
     },
     "/api/v1/payments/{id}/date": {
@@ -15085,6 +15347,11 @@
             "nullable": true,
             "type": "string"
           },
+          "imageFileId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -15110,6 +15377,7 @@
           "activeTo",
           "active",
           "notes",
+          "imageFileId",
           "createdAt",
           "currentVersion"
         ]
@@ -15194,6 +15462,11 @@
             "nullable": true,
             "type": "string"
           },
+          "imageFileId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -15231,6 +15504,7 @@
           "activeTo",
           "active",
           "notes",
+          "imageFileId",
           "createdAt",
           "currentVersion",
           "versions",
@@ -17096,6 +17370,60 @@
           "totals"
         ]
       },
+      "StoredFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "service_image",
+              "receipt_proof"
+            ]
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/webp"
+            ]
+          },
+          "size": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "contentType",
+          "size",
+          "createdAt"
+        ]
+      },
+      "FileLink": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
+        ]
+      },
       "CustomerPage": {
         "type": "object",
         "properties": {
@@ -18195,6 +18523,11 @@
             "nullable": true,
             "type": "string"
           },
+          "proofFileId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
           "paidOn": {
             "type": "string",
             "format": "date-time"
@@ -18245,6 +18578,7 @@
           "method",
           "saleEmployee",
           "note",
+          "proofFileId",
           "paidOn",
           "approvalStatus",
           "createdAt",

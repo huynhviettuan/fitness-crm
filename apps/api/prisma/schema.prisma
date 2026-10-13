@@ -193,6 +193,7 @@ model User {
   paymentsDeleted    Payment[]                @relation("PaymentDeletedBy")
   cashRecorded       CashTransaction[]        @relation("CashTransactionCreatedBy")
   cashOpeningsSet    CashOpeningBalance[]     @relation("CashOpeningUpdatedBy")
+  filesUploaded      StoredFile[]             @relation("FileUploadedBy")
   cashDeleted        CashTransaction[]        @relation("CashTransactionDeletedBy")
   trashEntries       TrashEntry[]
   approvalsSubmitted ApprovalRequest[]        @relation("ApprovalSubmittedBy")
@@ -1221,6 +1222,9 @@ model Payment {
   saleEmployeeId   String?        @map("sale_employee_id") @db.Uuid
   saleEmployee     Employee?      @relation("PaymentSaleEmployee", fields: [saleEmployeeId], references: [id], onDelete: Restrict)
   note             String?
+  // The transfer proof picture (brief §8.1, M4.1b, A-144).
+  proofFileId      String?        @map("proof_file_id") @db.Uuid
+  proofFile        StoredFile?    @relation("PaymentProof", fields: [proofFileId], references: [id], onDelete: Restrict)
   createdById      String         @map("created_by") @db.Uuid
   createdBy        User           @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -1516,6 +1520,9 @@ model Service {
   activeTo       DateTime?   @map("active_to") @db.Date
   active         Boolean     @default(true)
   notes          String?
+  // The picture shown with the service (M4.1b, A-143).
+  imageFileId    String?     @map("image_file_id") @db.Uuid
+  imageFile      StoredFile? @relation("ServiceImage", fields: [imageFileId], references: [id], onDelete: Restrict)
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -1668,4 +1675,24 @@ model ContractFreeze {
 
   @@index([contractId])
   @@map("contract_freezes")
+}
+
+// A private file kept in object storage (T-052, M4.1b, A-143): the row says what it is for and who may fetch it; the
+// bytes are never served without a signed, expiring link. A file belongs to the record it is attached to.
+model StoredFile {
+  id          String   @id @default(uuid()) @db.Uuid
+  purpose     String
+  contentType String   @map("content_type")
+  size        Int
+  sha256      String
+  // Where the bytes are in the storage (a path or object key); never shown to a client.
+  storageKey  String   @unique @map("storage_key")
+  uploadedById String  @map("uploaded_by") @db.Uuid
+  uploadedBy  User     @relation("FileUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  serviceImages Service[] @relation("ServiceImage")
+  paymentProofs Payment[] @relation("PaymentProof")
+
+  @@map("files")
 }

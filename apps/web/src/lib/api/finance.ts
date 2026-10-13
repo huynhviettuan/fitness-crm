@@ -42,6 +42,14 @@ export async function recordPayment(contractId: string, input: PaymentInput, ide
   );
 }
 
+/** Attaches the transfer proof picture to a receipt, or takes it off with null (M4.1b, A-144). */
+export async function setReceiptProof(id: string, fileId: string | null) {
+  return read(
+    paymentSchema,
+    (await api()).PUT("/api/v1/payments/{id}/proof", { params: { path: { id } }, body: { fileId } }),
+  );
+}
+
 /** Edits a receipt's date: its own permission, always logged (D-034). */
 export async function updateReceiptDate(id: string, input: { paidOn: string }) {
   return read(

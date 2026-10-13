@@ -13,6 +13,7 @@ import {
   type Service,
   type ServiceDetail,
 } from "@flow/shared/services";
+import { attachFileSchema } from "@flow/shared/files";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import type { Prisma } from "../../generated/prisma/client.js";
 import type { Actor } from "../../platform/auth/session.js";
@@ -22,6 +23,7 @@ import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
 import { parseInput } from "../../platform/validation/parse.js";
+import { claimFile } from "../../platform/files/file.service.js";
 import * as repo from "./service.repository.js";
 
 // Services and price tiers (brief §5.1, D-021, BR-301). Everyone who sells reads them; only Admin edits them. A
@@ -123,6 +125,31 @@ export async function updateService(actor: Actor, id: string, rawInput: unknown)
         ...changes,
       });
     }
+    return detail(after);
+  });
+}
+
+/**
+ * Sets or takes off the picture of a service (M4.1b, A-143). The file must be an unattached service picture the actor
+ * uploaded; the old picture stays in the storage but is no longer shown.
+ */
+export async function setServiceImage(actor: Actor, id: string, rawInput: unknown): Promise<ServiceDetail> {
+  assertCan(actor, "service.manage");
+  const { fileId } = parseInput(attachFileSchema, rawInput);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+  return prisma.$transaction(async (tx) => {
+    if (!(await repo.lockService(tx, id))) throw new AppError("NOT_FOUND");
+    const before = await getOrThrow(tx, actor, id);
+    if (fileId) await claimFile(tx, actor, fileId, "service_image", before.imageFileId);
+    const after = await repo.setImage(tx, id, fileId);
+    await recordAudit(tx, {
+      actorUserId: actor.id,
+      entityType: "service",
+      entityId: id,
+      action: "service.imageChanged",
+      before: { imageFileId: before.imageFileId },
+      after: { imageFileId: fileId },
+    });
     return detail(after);
   });
 }
@@ -299,6 +326,7 @@ function present(record: repo.ServiceRecord, today: Date): Service {
     activeTo: record.activeTo,
     active: record.active,
     notes: record.notes,
+    imageFileId: record.imageFileId,
     createdAt: record.createdAt,
     currentVersion: version?.version ?? null,
   };

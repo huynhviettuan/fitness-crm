@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-15 — M4.1b: private file storage
+
+- **Files** (A-143): pictures (PNG, JPEG, WebP up to 5 MB, checked by their bytes) in private storage (folder in development, Cloudflare R2 in staging and production); shown only through links signed for the user that expire in five minutes, and only to people who may see what the picture belongs to.
+- **Service picture** and **transfer proof of a receipt** (A-144, brief §8.1; OQ-044 built as optional).
+- **Fixed**: a body over the size limit answered 500 instead of 400.
+- **Open**: OQ-047 (R2 bucket and keys, retention, whether a transfer needs its proof). Docs 04, 07, 13, 16, 18, 28; E2E-166.
+
 ## 2026-10-15 — M4.7: cash book and reports
 
 - **Cash book** (A-138, AC-19): opening, in, out and closing per branch and method and per day, chained so the last closing is the period's; only approved, undeleted receipts and vouchers count. Admin sets the opening balance of each branch and method (audited).
