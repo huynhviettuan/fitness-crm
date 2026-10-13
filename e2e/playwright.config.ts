@@ -56,7 +56,9 @@ export default defineConfig({
   // web app, which forwards /api/* to the API (T-053).
   webServer: [
     {
-      command: "node dist/main.js",
+      // The API answers its readiness check from the database, so the schema must exist before it starts: on a fresh
+      // database (CI) the global setup would run too late.
+      command: "pnpm exec prisma migrate deploy && node dist/main.js",
       cwd: API_DIR,
       url: `http://localhost:${API_PORT}/api/auth/ok`,
       reuseExistingServer: !process.env.CI,
