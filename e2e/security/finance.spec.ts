@@ -83,6 +83,8 @@ test.describe("A01 finance roles (docs/09, A-021)", () => {
         data: {
           type: "INCOME",
           categoryId: await createOptionViaApi(await apiAs("ADMIN"), "incomeCategories", `Bán nước ${testTag} ${role}`),
+          methodId: await otherOptionId(await apiAs("ADMIN"), "paymentMethods"),
+          methodNote: "E2E",
           amount: "100.000",
           occurredOn: gymToday().date,
         },

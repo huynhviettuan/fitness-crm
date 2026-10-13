@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-14 — M4.5: receipts and expense vouchers
+
+- **Numbers** (D-034, A-129): every receipt and voucher has a number from a sequence, never reused; receipts (with or without a contract) are PT…, expense vouchers PC…; the prefixes are parameters.
+- **Receipt and voucher fields** (A-130): salesperson and note on a receipt, payee and method on a voucher, a refund linked to its contract; the contract has a derived payment status.
+- **Date edit** (A-132): a receipt's date is edited with its own permission and always logged.
+- **Customer standing** (A-131, D-040): training, expiring soon, expired, or no contract, derived from approved contracts, with the window a parameter.
+- **Open**: OQ-044 (the transfer proof image waits for file storage). Docs 04, 07, 09, 13, 16, 18, 28; E2E-164.
+
 ## 2026-10-14 — M4.4b: contract list and detail
 
 - **The list** (brief §5.3, A-126): every column, nine filters (branch, type, contract date, service, PT, promotion, payment, signature, approval), the totals of value, paid, and debt over the whole filter, and the same filters in the Excel export.

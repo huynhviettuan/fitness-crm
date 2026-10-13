@@ -1,7 +1,13 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { deleteCashTransaction, deletePayment, recordCashTransaction, recordPayment } from "@/lib/api/finance";
+import {
+  deleteCashTransaction,
+  deletePayment,
+  recordCashTransaction,
+  recordPayment,
+  updateReceiptDate,
+} from "@/lib/api/finance";
 import type { CashTransactionInput, PaymentInput } from "@flow/shared/finance";
 import type { DeleteInput } from "@flow/shared/trash";
 
@@ -15,6 +21,12 @@ export async function recordPaymentAction(
   return runAction(async () => {
     const payment = await recordPayment(contractId, input, idempotencyKey);
     return { pending: payment.approvalStatus === "PENDING" };
+  });
+}
+
+export async function updateReceiptDateAction(id: string, input: { paidOn: string }): Promise<ActionResult> {
+  return runAction(async () => {
+    await updateReceiptDate(id, input);
   });
 }
 

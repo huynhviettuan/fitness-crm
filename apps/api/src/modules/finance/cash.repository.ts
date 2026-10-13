@@ -1,20 +1,31 @@
 import type { Db } from "../../platform/db/prisma.js";
 import type { CashTransactionType, Prisma } from "../../generated/prisma/client.js";
 import type { CashTransactionData } from "@flow/shared/finance";
+import { formatCode } from "@flow/shared/parameters";
 import { chosenSelect } from "../../platform/options/option.service.js";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 
 const cashInclude = {
   branch: { select: { id: true, name: true } },
   category: { select: chosenSelect },
+  method: { select: chosenSelect },
+  contract: { select: { id: true, contractCode: true } },
   createdBy: { select: { name: true } },
 } as const satisfies Prisma.CashTransactionInclude;
 
 export type CashTransactionRecord = Prisma.CashTransactionGetPayload<{ include: typeof cashInclude }>;
 
+/** The next expense voucher number (D-034); a receipt without a contract takes a receipt number instead. */
+export async function nextExpenseNumber(db: Db): Promise<string> {
+  const [row] = await db.$queryRaw<{ value: bigint }[]>`SELECT nextval('expense_voucher_seq') AS value`;
+  return formatCode(await readParameter(db, "expenseCodePrefix"), row.value, 6);
+}
+
 export function createCashTransaction(
   db: Db,
   data: Omit<CashTransactionData, "branchId"> & {
     branchId: string;
+    number: string;
     idempotencyKey: string;
     createdById: string;
     approvalStatus: "PENDING" | "APPROVED";

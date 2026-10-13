@@ -379,6 +379,7 @@ model Option {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   paymentMethods       Payment[]                  @relation("PaymentMethod")
+  cashMethods          CashTransaction[]          @relation("CashMethod")
   paymentDeleteReasons Payment[]                  @relation("PaymentDeleteReason")
   cashCategories       CashTransaction[]          @relation("CashCategory")
   cashDeleteReasons    CashTransaction[]          @relation("CashDeleteReason")
@@ -1008,6 +1009,7 @@ model Contract {
 
   bookings   Booking[]
   payments   Payment[]
+  cashTransactions CashTransaction[]
   shares     ContractStaffShare[]
   companions ContractCompanion[]
 
@@ -1094,6 +1096,7 @@ model Employee {
 
   bookings       Booking[]
   contractShares ContractStaffShare[]
+  receiptsSold   Payment[]            @relation("PaymentSaleEmployee")
   shifts         EmployeeShift[]
   daysOff        EmployeeDayOff[]
 
@@ -1202,6 +1205,12 @@ model Payment {
   approvalStatus   ApprovalStatus @default(APPROVED) @map("approval_status")
   // T-015: replaying a create with the same key returns this payment.
   idempotencyKey   String         @unique @map("idempotency_key")
+  // The receipt number (D-034): from receipt_seq, never reused; the collector is who recorded it.
+  receiptNumber    String         @unique @map("receipt_number")
+  // The salesperson the receipt is credited to (brief §8.1), an employee of the contract's branch.
+  saleEmployeeId   String?        @map("sale_employee_id") @db.Uuid
+  saleEmployee     Employee?      @relation("PaymentSaleEmployee", fields: [saleEmployeeId], references: [id], onDelete: Restrict)
+  note             String?
   createdById      String         @map("created_by") @db.Uuid
   createdBy        User           @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -1237,6 +1246,16 @@ model CashTransaction {
   // D-018, D-034: counts toward the totals only when APPROVED.
   approvalStatus   ApprovalStatus      @default(APPROVED) @map("approval_status")
   idempotencyKey   String              @unique @map("idempotency_key")
+  // The voucher number (D-034): receipts without a contract share the receipt series, expenses have their own.
+  number           String              @unique
+  // An expense voucher's payee; the payer is who recorded it.
+  payee            String?
+  methodId         String              @map("method_option_id") @db.Uuid
+  method           Option              @relation("CashMethod", fields: [methodId], references: [id], onDelete: Restrict)
+  methodNote       String?             @map("method_note")
+  // A refund on cancellation is an expense voucher linked to the contract (D-034).
+  contractId       String?             @map("contract_id") @db.Uuid
+  contract         Contract?           @relation(fields: [contractId], references: [id], onDelete: Restrict)
   createdById      String              @map("created_by") @db.Uuid
   createdBy        User                @relation("CashTransactionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)

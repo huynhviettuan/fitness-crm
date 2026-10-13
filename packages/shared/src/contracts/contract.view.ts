@@ -4,7 +4,7 @@ import { branchRefSchema } from "../branches/branch.schema.js";
 import { customerRefSchema } from "../customers/customer.view.js";
 import { chosenOptionSchema } from "../options/option.schema.js";
 import { instant, listOf, pageOf } from "../validation/index.js";
-import { CONTRACT_STATUSES, CONTRACT_TYPES, STAFF_ROLES } from "./contract.domain.js";
+import { CONTRACT_STATUSES, CONTRACT_TYPES, PAYMENT_STATUSES, STAFF_ROLES } from "./contract.domain.js";
 
 /** One staff member's share (A-115). */
 export const contractShareSchema = z.object({
@@ -82,6 +82,8 @@ export const contractSchema = z
     confirmedPaidAmount: z.int(),
     paidAmount: z.int(),
     debt: z.int(),
+    /** Unpaid, part, or all paid, derived from valid receipts (brief §8.1). */
+    paymentStatus: z.enum(PAYMENT_STATUSES),
   })
   .meta({ id: "Contract" });
 

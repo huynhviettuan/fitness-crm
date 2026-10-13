@@ -24,7 +24,9 @@ import { encode } from "../../platform/http/encode.js";
 import { deleteSchema } from "@flow/shared/trash";
 import { idempotencyKeySchema } from "@flow/shared/contracts";
 import * as repo from "./cash.repository.js";
-import { sumValidPayments } from "./payment.repository.js";
+import { findContract } from "../contracts/contract.repository.js";
+import { contractsVisibleTo } from "../contracts/contract.service.js";
+import { nextReceiptNumber, sumValidPayments } from "./payment.repository.js";
 import { paymentsVisibleTo } from "./payment.service.js";
 import {
   isFutureDay,
@@ -103,9 +105,24 @@ export async function recordCashTransaction(
         optionId: data.categoryId,
         note: data.categoryNote,
       });
+      const method = await resolveChoice(tx, "paymentMethods", "methodId", {
+        optionId: data.methodId,
+        note: data.methodNote,
+      });
+      // A refund is linked to a contract of the voucher's branch that the actor may see (D-034).
+      if (data.contractId) {
+        const contract = await findContract(tx, data.contractId, contractsVisibleTo(actor));
+        if (!contract || contract.branchId !== branchId) {
+          throw new AppError("VALIDATION_FAILED", { fieldErrors: { contractId: ["invalidChoice"] } });
+        }
+      }
       const rule = await ruleFor(tx, "cash.create");
+      const number = data.type === "INCOME" ? await nextReceiptNumber(tx) : await repo.nextExpenseNumber(tx);
       const transaction = await repo.createCashTransaction(tx, {
         ...data,
+        number,
+        methodId: method.optionId,
+        methodNote: method.note,
         approvalStatus: rule.required ? "PENDING" : "APPROVED",
         categoryId: category.optionId,
         categoryNote: category.note,
@@ -119,8 +136,12 @@ export async function recordCashTransaction(
         entityId: transaction.id,
         action: "cash_transaction.created",
         after: {
+          number,
           type: data.type,
           category: { optionId: category.optionId, note: category.note },
+          method: { optionId: method.optionId, note: method.note },
+          payee: data.payee,
+          contractId: data.contractId,
           amount: data.amount,
           occurredOn: data.occurredOn.toISOString().slice(0, 10),
           approvalStatus: transaction.approvalStatus,
@@ -248,7 +269,8 @@ export async function decideCashTransaction(
 }
 
 function titleOf(view: CashTransactionView): string {
-  return view.category.note ? `${view.category.labelVi}: ${view.category.note}` : view.category.labelVi;
+  const category = view.category.note ? `${view.category.labelVi}: ${view.category.note}` : view.category.labelVi;
+  return `${view.number} · ${category}`;
 }
 
 async function replayOf(key: string, data: CashTransactionData, actor: Actor): Promise<CashTransactionView | null> {
@@ -259,6 +281,10 @@ async function replayOf(key: string, data: CashTransactionData, actor: Actor): P
     existing.type === data.type &&
     existing.categoryId === data.categoryId &&
     existing.categoryNote === data.categoryNote &&
+    existing.methodId === data.methodId &&
+    existing.methodNote === data.methodNote &&
+    existing.payee === data.payee &&
+    existing.contractId === data.contractId &&
     Number(existing.amount) === data.amount &&
     existing.description === data.description &&
     existing.reference === data.reference &&
@@ -270,9 +296,13 @@ async function replayOf(key: string, data: CashTransactionData, actor: Actor): P
 function toView(transaction: repo.CashTransactionRecord): CashTransactionView {
   return {
     id: transaction.id,
+    number: transaction.number,
     branch: transaction.branch,
     type: transaction.type,
     category: chosen(transaction.category, transaction.categoryNote),
+    method: chosen(transaction.method, transaction.methodNote),
+    payee: transaction.payee,
+    contract: transaction.contract,
     amount: Number(transaction.amount),
     description: transaction.description,
     reference: transaction.reference,

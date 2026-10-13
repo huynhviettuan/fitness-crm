@@ -36,14 +36,18 @@ import {
   paymentInputSchema,
   paymentSchema,
   periodSchema,
+  receiptDateSchema,
   type PaymentData,
 } from "@flow/shared/finance";
 
 /** What the UI and API see. */
 export type PaymentView = {
   id: string;
+  receiptNumber: string;
   amount: number;
   method: ChosenOption;
+  saleEmployee: { id: string; employeeCode: string; fullName: string } | null;
+  note: string | null;
   paidOn: Date;
   approvalStatus: RecordApprovalStatus;
   createdAt: Date;
@@ -177,6 +181,9 @@ export async function recordPaymentIn(
     paidOn: data.paidOn,
     methodId: method.optionId,
     methodNote: method.note,
+    receiptNumber: await repo.nextReceiptNumber(tx),
+    saleEmployeeId: await resolveSalesperson(tx, contract, data.saleEmployeeId),
+    note: data.note,
     contractId,
     branchId: contract.branchId,
     idempotencyKey: key,
@@ -193,6 +200,8 @@ export async function recordPaymentIn(
       method: { optionId: method.optionId, note: method.note },
       paidOn: data.paidOn.toISOString().slice(0, 10),
       approvalStatus: payment.approvalStatus,
+      receiptNumber: payment.receiptNumber,
+      saleEmployeeId: payment.saleEmployeeId,
     },
   });
   const view = toView(payment);
@@ -315,7 +324,61 @@ export async function decidePayment(
 }
 
 function titleOf(view: PaymentView): string {
-  return `${view.contract.contractCode} · ${view.customer.fullName}`;
+  return `${view.receiptNumber} · ${view.contract.contractCode} · ${view.customer.fullName}`;
+}
+
+/**
+ * The salesperson a receipt is credited to (brief §8.1): the one chosen, an active employee of the contract's branch,
+ * or by default the contract's Sale with the largest share (A-130).
+ */
+async function resolveSalesperson(
+  tx: TxDb,
+  contract: { branchId: string; shares: { role: string; percent: unknown; employee: { id: string } }[] },
+  chosenId: string | null,
+): Promise<string | null> {
+  if (chosenId === null) {
+    const sales = contract.shares.filter((share) => share.role === "SALE");
+    sales.sort((a, b) => Number(b.percent) - Number(a.percent));
+    return sales[0]?.employee.id ?? null;
+  }
+  const employee = await tx.employee.findFirst({
+    where: { id: chosenId, branchId: contract.branchId, status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (!employee) throw new AppError("VALIDATION_FAILED", { fieldErrors: { saleEmployeeId: ["invalidChoice"] } });
+  return employee.id;
+}
+
+/**
+ * Edits a receipt's date (D-034, FR-CASH-004): its own permission, the day cannot be in the future, and the change
+ * is always logged with the old and the new day. Runs under the contract lock.
+ */
+export async function updateReceiptDate(actor: Actor, id: string, input: unknown): Promise<PaymentView> {
+  assertCan(actor, "payment.editDate");
+  const { paidOn } = parseInput(receiptDateSchema, input);
+  if (isFutureDay(paidOn, gymToday())) {
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { paidOn: ["futureDate"] } });
+  }
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+  return prisma.$transaction(async (tx) => {
+    const found = await repo.findPayment(tx, id, paymentsVisibleTo(actor));
+    if (!found) throw new AppError("NOT_FOUND");
+    await lockContract(tx, found.contractId);
+    const before = await repo.findPayment(tx, id);
+    if (!before) throw new AppError("NOT_FOUND");
+    if (before.paidOn.getTime() !== paidOn.getTime()) {
+      await tx.payment.update({ where: { id }, data: { paidOn } });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "payment",
+        entityId: id,
+        action: "payment.date_changed",
+        before: { paidOn: before.paidOn.toISOString().slice(0, 10) },
+        after: { paidOn: paidOn.toISOString().slice(0, 10) },
+      });
+    }
+    return toView((await repo.findPayment(tx, id))!);
+  }, LOCKING_TRANSACTION);
 }
 
 /** Contracts that still owe money, largest debt first (BR-013, A-022). */
@@ -351,6 +414,8 @@ async function replayOf(
     Number(existing.amount) === data.amount &&
     existing.methodId === data.methodId &&
     existing.methodNote === data.methodNote &&
+    existing.saleEmployeeId === (data.saleEmployeeId ?? existing.saleEmployeeId) &&
+    existing.note === data.note &&
     existing.paidOn.getTime() === data.paidOn.getTime();
   if (!same) throw new AppError("IDEMPOTENCY_KEY_REUSED");
   return toView(existing);
@@ -360,8 +425,11 @@ function toView(payment: repo.PaymentRecord): PaymentView {
   const { customer, ...contract } = payment.contract;
   return {
     id: payment.id,
+    receiptNumber: payment.receiptNumber,
     amount: Number(payment.amount),
     method: chosen(payment.method, payment.methodNote),
+    saleEmployee: payment.saleEmployee,
+    note: payment.note,
     paidOn: payment.paidOn,
     approvalStatus: payment.approvalStatus as RecordApprovalStatus,
     createdAt: payment.createdAt,

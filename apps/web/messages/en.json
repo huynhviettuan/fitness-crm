@@ -126,6 +126,13 @@
       "QUEUED": "Waiting to send",
       "SENT": "Sent",
       "FAILED": "Failed"
+    },
+    "customerContract": {
+      "NO_CONTRACT": "No contract",
+      "TRAINING": "Training",
+      "EXPIRING_SOON": "Expiring soon",
+      "EXPIRED": "Expired",
+      "ON_HOLD": "On hold"
     }
   },
   "common": {
@@ -386,7 +393,8 @@
       "emergencyContactName": "Emergency contact name",
       "emergencyContactPhone": "Emergency contact phone",
       "customerGroup": "Customer group",
-      "staffInCharge": "Staff in charge"
+      "staffInCharge": "Staff in charge",
+      "contractStatus": "Contract status"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
@@ -705,7 +713,8 @@
       "approval": "Approval",
       "phone": "Phone",
       "branch": "Branch",
-      "usedSessions": "Used"
+      "usedSessions": "Used",
+      "paymentStatus": "Payment"
     },
     "cancelBookingsList": "{count, plural, one {This booking will be cancelled:} other {These # bookings will be cancelled:}}",
     "sessionHistory": "Session history",
@@ -1072,7 +1081,14 @@
       "reference": "Reference",
       "description": "Description",
       "branch": "Branch",
-      "approvalStatus": "Approval"
+      "approvalStatus": "Approval",
+      "receiptNumber": "Receipt",
+      "number": "Number",
+      "saleEmployee": "Salesperson",
+      "note": "Note",
+      "collector": "Collector",
+      "payee": "Payee",
+      "collectorOrPayer": "Collector / payer"
     },
     "delete": "Delete",
     "deletePaymentTitle": "Delete the payment of {amount}?",
@@ -1080,7 +1096,12 @@
     "deleteCashTitle": "Delete the entry of {amount}?",
     "deleteCashBody": "It goes to the trash and no longer counts toward the totals. It cannot be restored; record it again if needed.",
     "deleted": "Deleted and moved to the trash",
-    "deleteReason": "Reason for deleting"
+    "deleteReason": "Reason for deleting",
+    "editDate": "Edit date",
+    "editDateTitle": "Edit the date of receipt {number}",
+    "editDateBody": "Only a user with this permission can. The old and the new day are recorded in the history.",
+    "dateChanged": "Date changed",
+    "saleDefault": "The contract's main salesperson"
   },
   "permissions": {
     "groups": {
@@ -1142,7 +1163,8 @@
         "view": "View payments and debt",
         "record": "Record payments",
         "delete": "Delete receipts (to the trash)",
-        "export": "Export the receipts"
+        "export": "Export the receipts",
+        "editDate": "Edit a receipt's date"
       },
       "cash": {
         "manage": "Other income and expenses (view, record)",
@@ -1349,7 +1371,10 @@
       "consultingWindowEnd": "Consulting window: to",
       "stepGraceMinutes": "Grace for a consulting step (minutes)",
       "taskReminderHours": "Shared task reminder points (hours before the deadline)",
-      "receptionDepartmentId": "Department told when an email fails"
+      "receptionDepartmentId": "Department told when an email fails",
+      "receiptCodePrefix": "Receipt number",
+      "expenseCodePrefix": "Expense voucher number",
+      "expiringSoonDays": "Expiring soon within (days)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",

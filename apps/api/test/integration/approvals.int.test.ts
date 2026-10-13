@@ -52,7 +52,7 @@ describe("a receipt under the approval matrix (D-018, AC-05)", () => {
     expect(item).toMatchObject({
       action: "payment.create",
       entityId: payment.id,
-      title: `${contract.contractCode} · Nguyễn Văn An`,
+      title: `${payment.receiptNumber} · ${contract.contractCode} · Nguyễn Văn An`,
       amount: 5_000_000,
       status: "PENDING",
       submittedBy: { id: reception.id },
@@ -156,7 +156,14 @@ describe("other actions under the matrix", () => {
     const categoryId = await createTestOption("expenseTypes", "Điện nước");
     const { transaction } = await recordCashTransaction(
       accountant,
-      { type: "EXPENSE", categoryId, amount: "1.500.000", occurredOn: "03/10/2026" },
+      {
+        type: "EXPENSE",
+        categoryId,
+        methodId: await optionId("paymentMethods", "Tiền mặt"),
+        payee: "Công ty điện lực",
+        amount: "1.500.000",
+        occurredOn: "03/10/2026",
+      },
       randomUUID(),
     );
     const period = { from: "01/10/2026", to: "31/10/2026" };

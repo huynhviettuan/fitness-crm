@@ -282,6 +282,7 @@ async function seed(prisma: typeof client) {
   console.log("Income and expenses…");
   const incomeCategories = await optionIds("incomeCategories");
   const expenseTypes = await optionIds("expenseTypes");
+  const [cashMethod] = await optionIds("paymentMethods");
   const cashRows: { id: string }[] = [];
   for (let i = 0; i < COUNTS.cash; i++) {
     const income = i % 3 === 0;
@@ -292,6 +293,8 @@ async function seed(prisma: typeof client) {
         {
           type: income ? "INCOME" : "EXPENSE",
           categoryId: list[i % list.length],
+          methodId: cashMethod,
+          payee: income ? "" : `Nhà cung cấp ${i % 7}`,
           amount: vnd((income ? 200_000 : 500_000) + (i % 9) * 150_000),
           occurredOn: day(-((i * 2) % 85)),
           reference: i % 4 === 0 ? `REF-${1000 + i}` : "",

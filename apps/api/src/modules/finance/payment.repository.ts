@@ -1,6 +1,8 @@
 import type { Db } from "../../platform/db/prisma.js";
 import { Prisma } from "../../generated/prisma/client.js";
+import { formatCode } from "@flow/shared/parameters";
 import { chosenSelect } from "../../platform/options/option.service.js";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 
 const paymentInclude = {
   contract: {
@@ -12,8 +14,18 @@ const paymentInclude = {
     },
   },
   method: { select: chosenSelect },
+  saleEmployee: { select: { id: true, employeeCode: true, fullName: true } },
   createdBy: { select: { name: true } },
 } as const satisfies Prisma.PaymentInclude;
+
+/**
+ * The next receipt number (D-034): from the sequence, so concurrent callers never share one and a deleted receipt's
+ * number is never given again. Receipts without a contract draw from the same series.
+ */
+export async function nextReceiptNumber(db: Db): Promise<string> {
+  const [row] = await db.$queryRaw<{ value: bigint }[]>`SELECT nextval('receipt_seq') AS value`;
+  return formatCode(await readParameter(db, "receiptCodePrefix"), row.value, 6);
+}
 
 export type PaymentRecord = Prisma.PaymentGetPayload<{ include: typeof paymentInclude }>;
 
@@ -25,6 +37,9 @@ export function createPayment(
     amount: number;
     methodId: string;
     methodNote: string | null;
+    receiptNumber: string;
+    saleEmployeeId: string | null;
+    note: string | null;
     approvalStatus: "PENDING" | "APPROVED";
     paidOn: Date;
     idempotencyKey: string;

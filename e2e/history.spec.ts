@@ -25,7 +25,7 @@ test.describe("the trash and the action history as an admin", () => {
     const payment = await recordPaymentViaApi(reception, contract.id, "4.000.000", {
       approver: await apiAs("FITNESS_MANAGER"),
     });
-    const title = `${contract.contractCode} · ${customer.fullName}`;
+    const title = `${payment.receiptNumber} · ${contract.contractCode} · ${customer.fullName}`;
     const reason = `Ghi nhầm ${testTag}`;
 
     // "Kế toán" asks to delete; deleting is approved by an admin (09_RBAC.md).

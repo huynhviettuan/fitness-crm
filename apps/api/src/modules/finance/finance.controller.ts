@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, Res } from "@nestjs/common";
 import { ApiNoContentResponse } from "@nestjs/swagger";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
@@ -10,6 +10,8 @@ import {
   debtPageSchema,
   financeSummarySchema,
   paymentPageSchema,
+  paymentSchema,
+  receiptDateSchema,
 } from "@flow/shared/finance";
 import { deleteSchema } from "@flow/shared/trash";
 import { submittedSchema } from "@flow/shared/approvals";
@@ -28,7 +30,7 @@ import { queryOf } from "../../platform/http/query.js";
 import { exportList } from "../../platform/export/export.service.js";
 import { cashExport, CASH_EXPORT_QUERY, paymentsExport, PAYMENT_EXPORT_QUERY } from "./finance.export.js";
 import { deleteCashTransaction, financeSummary, listCashTransactions, recordCashTransaction } from "./cash.service.js";
-import { collectedBetween, deletePayment, listDebts, listPayments } from "./payment.service.js";
+import { collectedBetween, deletePayment, listDebts, listPayments, updateReceiptDate } from "./payment.service.js";
 
 const PAYMENT_FILTERS = ["from", "to", "contractId", "customerId", "page", "pageSize"] as const;
 const CASH_FILTERS = ["from", "to", "type", "page", "pageSize"] as const;
@@ -65,6 +67,18 @@ export class PaymentsController {
   @ApiResult(collectedSchema)
   async collected(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(collectedSchema, { total: await collectedBetween(actor, queryOf(request, ["from", "to"])) });
+  }
+
+  /** Editing a receipt's date is its own permission and is always logged (D-034, FR-CASH-004). */
+  @Patch(":id/date")
+  @RequirePermission("payment.editDate")
+  @ApiResult(paymentSchema)
+  async changeDate(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: receiptDateSchema }) body: unknown,
+  ) {
+    return encode(paymentSchema, await updateReceiptDate(actor, id, body));
   }
 
   /**

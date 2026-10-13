@@ -32,6 +32,10 @@ import { DeleteDialog } from "./delete-dialog";
 
 export type CashRow = {
   id: string;
+  number: string;
+  method: ChosenOption;
+  payee: string | null;
+  contract: { id: string; contractCode: string } | null;
   type: (typeof CASH_TRANSACTION_TYPES)[number];
   category: ChosenOption;
   amount: number;
@@ -60,6 +64,11 @@ export function CashTable({ transactions, canDelete, label, empty, footer }: Cas
 
   const columns: DataTableColumn<CashRow>[] = [
     {
+      id: "number",
+      header: t("fields.number"),
+      cell: ({ row }) => <span className="font-mono text-sm">{row.original.number}</span>,
+    },
+    {
       id: "occurredOn",
       header: t("fields.occurredOn"),
       cell: ({ row }) => <DateTime value={row.original.occurredOn} format="dateOnly" />,
@@ -77,6 +86,19 @@ export function CashTable({ transactions, canDelete, label, empty, footer }: Cas
         </div>
       ),
     },
+    {
+      id: "payee",
+      header: t("fields.payee"),
+      cell: ({ row }) => (
+        <div className="max-w-48 whitespace-normal">
+          <p>{row.original.payee}</p>
+          {row.original.contract && (
+            <p className="font-mono text-xs text-muted-foreground">{row.original.contract.contractCode}</p>
+          )}
+        </div>
+      ),
+    },
+    { id: "method", header: t("fields.method"), cell: ({ row }) => <ChosenOptionText option={row.original.method} /> },
     { id: "reference", header: t("fields.reference"), cell: ({ row }) => row.original.reference },
     {
       id: "amount",
@@ -88,7 +110,7 @@ export function CashTable({ transactions, canDelete, label, empty, footer }: Cas
       header: t("fields.approvalStatus"),
       cell: ({ row }) => <StatusBadge entity="approval" status={row.original.approvalStatus} />,
     },
-    { id: "createdBy", header: t("fields.createdBy"), cell: ({ row }) => row.original.createdBy },
+    { id: "createdBy", header: t("fields.collectorOrPayer"), cell: ({ row }) => row.original.createdBy },
     {
       id: "actions",
       header: () => <span className="sr-only">{t("delete")}</span>,
@@ -131,6 +153,10 @@ type CashFormValues = {
   type: string;
   categoryId: string;
   categoryNote: string;
+  methodId: string;
+  methodNote: string;
+  payee: string;
+  contractId: string;
   amount: string;
   occurredOn: string;
   reference: string;
@@ -190,6 +216,10 @@ function CashForm({
       type: "",
       categoryId: "",
       categoryNote: "",
+      methodId: "",
+      methodNote: "",
+      payee: "",
+      contractId: "",
       amount: "",
       occurredOn: formatDate(new Date(), timeZone),
       reference: "",
@@ -254,6 +284,16 @@ function CashForm({
           listKey={listKey}
           label={t(`${f}.category`)}
         />
+        <OptionSelect
+          control={form.control}
+          name="methodId"
+          noteName="methodNote"
+          listKey="paymentMethods"
+          label={t(`${f}.method`)}
+        />
+        {type === "EXPENSE" && (
+          <TextField control={form.control} name="payee" label={t(`${f}.payee`)} autoComplete="off" />
+        )}
         <div className="grid grid-cols-2 gap-4">
           <TextField
             control={form.control}

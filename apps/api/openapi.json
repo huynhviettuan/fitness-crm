@@ -5378,6 +5378,33 @@
                           }
                         ]
                       },
+                      "saleEmployeeId": {
+                        "default": "",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                              null
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        ]
+                      },
+                      "note": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 500
+                      },
                       "methodId": {
                         "type": "string",
                         "format": "uuid"
@@ -6220,6 +6247,33 @@
                           }
                         ]
                       },
+                      "saleEmployeeId": {
+                        "default": "",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                              null
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        ]
+                      },
+                      "note": {
+                        "default": "",
+                        "type": "string",
+                        "maxLength": 500
+                      },
                       "methodId": {
                         "type": "string",
                         "format": "uuid"
@@ -6764,6 +6818,33 @@
                         "type": "string"
                       }
                     ]
+                  },
+                  "saleEmployeeId": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
                   },
                   "methodId": {
                     "type": "string",
@@ -8249,6 +8330,66 @@
         "x-permission": "payment.view"
       }
     },
+    "/api/v1/payments/{id}/date": {
+      "patch": {
+        "operationId": "PaymentsController_changeDate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paidOn": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "paidOn"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Payment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "finance"
+        ],
+        "x-permission": "payment.editDate"
+      }
+    },
     "/api/v1/payments/{id}": {
       "delete": {
         "operationId": "PaymentsController_delete",
@@ -8479,6 +8620,42 @@
                       "EXPENSE"
                     ]
                   },
+                  "methodId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "methodNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "payee": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "contractId": {
+                    "default": "",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
                   "categoryId": {
                     "type": "string",
                     "format": "uuid"
@@ -8515,6 +8692,7 @@
                 },
                 "required": [
                   "type",
+                  "methodId",
                   "categoryId",
                   "amount",
                   "occurredOn"
@@ -9198,6 +9376,7 @@
                             "payment.view",
                             "payment.record",
                             "payment.delete",
+                            "payment.editDate",
                             "cash.manage",
                             "cash.delete"
                           ]
@@ -9609,6 +9788,7 @@
                         "payment.view",
                         "payment.record",
                         "payment.delete",
+                        "payment.editDate",
                         "cash.manage",
                         "cash.delete"
                       ]
@@ -9868,6 +10048,7 @@
                         "payment.view",
                         "payment.record",
                         "payment.delete",
+                        "payment.editDate",
                         "cash.manage",
                         "cash.delete"
                       ]
@@ -10581,6 +10762,14 @@
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
                   },
+                  "receiptCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  },
+                  "expenseCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  },
                   "employeeCodePrefix": {
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
@@ -10589,6 +10778,10 @@
                     "type": "string"
                   },
                   "recareDays": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
+                  },
+                  "expiringSoonDays": {
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
                   },
@@ -10649,9 +10842,12 @@
                   "leadCodePrefix",
                   "customerCodePrefix",
                   "contractCodePrefix",
+                  "receiptCodePrefix",
+                  "expenseCodePrefix",
                   "employeeCodePrefix",
                   "taskReminderHours",
                   "recareDays",
+                  "expiringSoonDays",
                   "studioDepartmentId",
                   "receptionDepartmentId",
                   "exportRowLimit",
@@ -12379,6 +12575,7 @@
                 "payment.view",
                 "payment.record",
                 "payment.delete",
+                "payment.editDate",
                 "cash.manage",
                 "cash.delete"
               ]
@@ -15664,6 +15861,16 @@
               "INACTIVE"
             ]
           },
+          "contractStatus": {
+            "type": "string",
+            "enum": [
+              "NO_CONTRACT",
+              "TRAINING",
+              "EXPIRING_SOON",
+              "EXPIRED",
+              "ON_HOLD"
+            ]
+          },
           "idDocumentType": {
             "nullable": true,
             "type": "string",
@@ -15789,6 +15996,7 @@
           "email",
           "dateOfBirth",
           "status",
+          "contractStatus",
           "idDocumentType",
           "idDocumentNumber",
           "countryCode",
@@ -16234,6 +16442,14 @@
           },
           "debt": {
             "type": "integer"
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": [
+              "UNPAID",
+              "PARTIAL",
+              "PAID"
+            ]
           }
         },
         "required": [
@@ -16290,7 +16506,8 @@
           "openingPaidAmount",
           "confirmedPaidAmount",
           "paidAmount",
-          "debt"
+          "debt",
+          "paymentStatus"
         ]
       },
       "CustomerRef": {
@@ -16602,11 +16819,39 @@
             "type": "string",
             "format": "uuid"
           },
+          "receiptNumber": {
+            "type": "string"
+          },
           "amount": {
             "type": "integer"
           },
           "method": {
             "$ref": "#/components/schemas/ChosenOption"
+          },
+          "saleEmployee": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "employeeCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "employeeCode",
+              "fullName"
+            ]
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
           },
           "paidOn": {
             "type": "string",
@@ -16653,8 +16898,11 @@
         },
         "required": [
           "id",
+          "receiptNumber",
           "amount",
           "method",
+          "saleEmployee",
+          "note",
           "paidOn",
           "approvalStatus",
           "createdAt",
@@ -17201,6 +17449,9 @@
             "type": "string",
             "format": "uuid"
           },
+          "number": {
+            "type": "string"
+          },
           "branch": {
             "$ref": "#/components/schemas/BranchRef"
           },
@@ -17213,6 +17464,30 @@
           },
           "category": {
             "$ref": "#/components/schemas/ChosenOption"
+          },
+          "method": {
+            "$ref": "#/components/schemas/ChosenOption"
+          },
+          "payee": {
+            "nullable": true,
+            "type": "string"
+          },
+          "contract": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode"
+            ]
           },
           "amount": {
             "type": "integer"
@@ -17247,9 +17522,13 @@
         },
         "required": [
           "id",
+          "number",
           "branch",
           "type",
           "category",
+          "method",
+          "payee",
+          "contract",
           "amount",
           "description",
           "reference",
@@ -17455,6 +17734,7 @@
                     "payment.view",
                     "payment.record",
                     "payment.delete",
+                    "payment.editDate",
                     "cash.manage",
                     "cash.delete"
                   ]
@@ -17707,6 +17987,7 @@
                 "payment.view",
                 "payment.record",
                 "payment.delete",
+                "payment.editDate",
                 "cash.manage",
                 "cash.delete"
               ]
@@ -17925,6 +18206,12 @@
           "contractCodePrefix": {
             "type": "string"
           },
+          "receiptCodePrefix": {
+            "type": "string"
+          },
+          "expenseCodePrefix": {
+            "type": "string"
+          },
           "employeeCodePrefix": {
             "type": "string"
           },
@@ -17932,6 +18219,9 @@
             "type": "string"
           },
           "recareDays": {
+            "type": "string"
+          },
+          "expiringSoonDays": {
             "type": "string"
           },
           "studioDepartmentId": {
@@ -17962,9 +18252,12 @@
           "leadCodePrefix",
           "customerCodePrefix",
           "contractCodePrefix",
+          "receiptCodePrefix",
+          "expenseCodePrefix",
           "employeeCodePrefix",
           "taskReminderHours",
           "recareDays",
+          "expiringSoonDays",
           "studioDepartmentId",
           "receptionDepartmentId",
           "exportRowLimit",

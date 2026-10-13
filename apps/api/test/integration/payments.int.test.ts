@@ -260,7 +260,7 @@ describe("deletePayment (D-035)", () => {
     expect((await listPayments(reception, { contractId: contract.id })).total).toBe(0);
     expect(await prisma.trashEntry.findFirst({ where: { entityId: payment.id } })).toMatchObject({
       entityType: "payment",
-      title: `${contract.contractCode} · Nguyễn Văn An`,
+      title: `${payment.receiptNumber} · ${contract.contractCode} · Nguyễn Văn An`,
       reasonId: OTHER_REASON,
       reasonNote: "Ghi nhầm hợp đồng",
       deletedById: accountant.id,

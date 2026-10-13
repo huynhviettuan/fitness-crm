@@ -389,4 +389,37 @@ test.describe("contracts as an admin", () => {
     await expect(contractDetailPage.heading(`${contract.contractCode} · ${PT24.packageName}`)).toBeVisible();
     await expect(page.getByRole("button", { name: labels.contracts.printNow, exact: true })).toBeVisible();
   });
+
+  test("E2E-164: a receipt has a number and a salesperson, only Admin edits its date, and the customer shows as training (D-034, D-040)", async ({
+    page,
+    apiAs,
+    testTag,
+    contractDetailPage,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const customer = await createCustomerViaApi(reception, testTag);
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: await apiAs("ADMIN"),
+    });
+    const receipt = await recordPaymentViaApi(reception, contract.id, "2.000.000", {
+      approver: await apiAs("FITNESS_MANAGER"),
+      paidOn: gymDay(-3),
+    });
+
+    await contractDetailPage.goto(contract.id);
+    const row = contractDetailPage.payments.row(receipt.receiptNumber);
+    await expect(row).toContainText("2.000.000");
+    await expect(row).toContainText(E2E_SALESPERSON_NAME);
+    await expect(contractDetailPage.figure(f.paymentStatus)).toHaveText(labels.contracts.paymentStatuses.PARTIAL);
+
+    await contractDetailPage.payments.editDate(gymDay(-5), receipt.receiptNumber);
+    await expect(contractDetailPage.payments.row(receipt.receiptNumber)).toContainText(gymDay(-5));
+    const refused = await (
+      await apiAs("FITNESS_MANAGER")
+    ).patch(`/api/v1/payments/${receipt.id}/date`, { data: { paidOn: gymDay(-1) } });
+    expect(refused.status()).toBe(403);
+
+    await page.goto(`/customers/${customer.id}`);
+    await expect(page.getByText(labels.status.customerContract.TRAINING, { exact: true }).first()).toBeVisible();
+  });
 });

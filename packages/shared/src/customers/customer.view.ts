@@ -2,6 +2,7 @@ import { z } from "zod";
 import { branchRefSchema } from "../branches/branch.schema.js";
 import { chosenOptionSchema } from "../options/option.schema.js";
 import { instant, listOf, pageOf } from "../validation/index.js";
+import { CUSTOMER_CONTRACT_STATUSES } from "../contracts/contract.domain.js";
 import { CUSTOMER_STATUSES } from "./customer.schema.js";
 import { ID_DOCUMENT_TYPES } from "../leads/show.schema.js";
 
@@ -19,6 +20,8 @@ export const customerSchema = z
     /** A calendar date at UTC midnight. */
     dateOfBirth: instant.nullable(),
     status: z.enum(CUSTOMER_STATUSES),
+    /** Derived from the customer's contracts (D-040): training, expiring soon, expired, on hold, no contract. */
+    contractStatus: z.enum(CUSTOMER_CONTRACT_STATUSES),
     /** Given at Show (D-019); the number and health note are null when hidden (D-042), see maskedFields. */
     idDocumentType: z.enum(ID_DOCUMENT_TYPES).nullable(),
     idDocumentNumber: z.string().nullable(),

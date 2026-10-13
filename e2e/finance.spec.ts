@@ -165,7 +165,7 @@ test.describe("finance as an accountant", () => {
     await financePage.goto("cash", month);
     for (const entry of [
       { type: fin.types.INCOME, category: `Bán nước ${testTag}`, amount: "300.000" },
-      { type: fin.types.EXPENSE, category: `Điện nước ${testTag}`, amount: "1.500.000" },
+      { type: fin.types.EXPENSE, category: `Điện nước ${testTag}`, amount: "1.500.000", payee: "Công ty điện lực" },
     ]) {
       const dialog = await financePage.openRecordCash();
       await dialog.fill(entry);

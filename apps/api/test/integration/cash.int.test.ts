@@ -23,14 +23,24 @@ beforeEach(async () => {
 });
 
 const OTHER_REASON = await optionId("deleteReasons", "Khác");
+const CASH = await optionId("paymentMethods", "Tiền mặt");
 
 // Categories are options of the income and expense lists (D-016); tests add their own.
-let expense: { type: string; categoryId: string; amount: string; occurredOn: string };
+let expense: {
+  type: string;
+  categoryId: string;
+  methodId: string;
+  payee: string;
+  amount: string;
+  occurredOn: string;
+};
 let sales: string;
 beforeEach(async () => {
   expense = {
     type: "EXPENSE",
     categoryId: await createTestOption("expenseTypes", "Điện nước"),
+    methodId: CASH,
+    payee: "Công ty điện lực",
     amount: "1.500.000",
     occurredOn: "03/10/2026",
   };
@@ -118,7 +128,7 @@ describe("deleteCashTransaction (D-035)", () => {
     expect((await listCashTransactions(accountant, {})).total).toBe(0);
     expect(await prisma.trashEntry.findFirst({ where: { entityId: transaction.id } })).toMatchObject({
       entityType: "cash_transaction",
-      title: "Điện nước",
+      title: expect.stringMatching(/^PC\d{6} · Điện nước$/),
       reasonNote: "Nhập sai số tiền",
       snapshot: { id: transaction.id, type: "EXPENSE", amount: 1_500_000 },
     });
@@ -157,7 +167,13 @@ describe("financeSummary (FR-CASH-002, OQ-007 interim)", () => {
       { amount: "5.000.000", methodId: await optionId("paymentMethods", "Chuyển khoản"), paidOn: "02/10/2026" },
       randomUUID(),
     );
-    await record(manager, { type: "INCOME", categoryId: sales, amount: "300.000", occurredOn: "04/10/2026" });
+    await record(manager, {
+      type: "INCOME",
+      categoryId: sales,
+      methodId: CASH,
+      amount: "300.000",
+      occurredOn: "04/10/2026",
+    });
     await record(manager, expense);
     const voided = await record(manager, { ...expense, amount: "9.000.000" });
     await deleteCashTransaction(admin, voided.transaction.id, { reasonId: OTHER_REASON, reasonNote: "Trùng" });

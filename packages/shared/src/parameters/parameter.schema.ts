@@ -18,11 +18,16 @@ export const PARAMETER_DEFAULTS = {
   leadCodePrefix: "LD",
   customerCodePrefix: "KH",
   contractCodePrefix: "HD",
+  /** Receipts (phiếu thu) and expense vouchers (phiếu chi), M4.5. */
+  receiptCodePrefix: "PT",
+  expenseCodePrefix: "PC",
   employeeCodePrefix: "NV",
   /** The shared reminder points of a task, hours before its deadline: 24, 3, and 1 (brief §8.2, D-056). */
   taskReminderHours: "24, 3, 1",
   /** Days after No response, Refused, or No show before the lead is contacted again (BR-204, OQ-018). */
   recareDays: "15",
+  /** A customer whose last active contract ends within this many days is "expiring soon" (D-040, M4.5). */
+  expiringSoonDays: "30",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
   studioDepartmentId: "",
   /** The department whose task an email that could not be sent creates (FR-MAIL-003); "" for none yet. */
@@ -96,9 +101,12 @@ export const parametersInputSchema = z
     leadCodePrefix: codePrefix,
     customerCodePrefix: codePrefix,
     contractCodePrefix: codePrefix,
+    receiptCodePrefix: codePrefix,
+    expenseCodePrefix: codePrefix,
     employeeCodePrefix: codePrefix,
     taskReminderHours: reminderHours,
     recareDays: days,
+    expiringSoonDays: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     exportRowLimit: rows,
@@ -123,9 +131,12 @@ export const parametersSchema = z
     leadCodePrefix: z.string(),
     customerCodePrefix: z.string(),
     contractCodePrefix: z.string(),
+    receiptCodePrefix: z.string(),
+    expenseCodePrefix: z.string(),
     employeeCodePrefix: z.string(),
     taskReminderHours: z.string(),
     recareDays: z.string(),
+    expiringSoonDays: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),
     exportRowLimit: z.string(),

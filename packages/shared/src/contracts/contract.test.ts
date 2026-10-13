@@ -5,6 +5,8 @@ import {
   canActivate,
   canCancel,
   canUnapprove,
+  customerContractStatus,
+  paymentStatusOf,
   contractEndDate,
   contractFigures,
   effectiveStatus,
@@ -259,5 +261,48 @@ describe("contractInputSchema", () => {
     ]) {
       expect(parsed).not.toHaveProperty(key);
     }
+  });
+});
+
+describe("paymentStatusOf (brief §8.1)", () => {
+  it.each([
+    [12_000_000, 0, "UNPAID"],
+    [12_000_000, 1, "PARTIAL"],
+    [12_000_000, 11_999_999, "PARTIAL"],
+    [12_000_000, 12_000_000, "PAID"],
+    [0, 0, "UNPAID"],
+  ] as const)("%d with %d paid is %s", (value, paid, expected) => {
+    expect(paymentStatusOf(value, paid)).toBe(expected);
+  });
+});
+
+describe("customerContractStatus (D-040)", () => {
+  const today = day("2026-10-13");
+  const active = (end: string) => ({ status: "ACTIVE" as const, endDate: day(end) });
+
+  it("is no contract without an approved one, whatever else the customer has", () => {
+    expect(customerContractStatus([], today, 30)).toBe("NO_CONTRACT");
+    expect(
+      customerContractStatus(
+        [
+          { status: "DRAFT", endDate: day("2030-01-01") },
+          { status: "REJECTED", endDate: day("2030-01-01") },
+          { status: "CANCELLED", endDate: day("2030-01-01") },
+        ],
+        today,
+        30,
+      ),
+    ).toBe("NO_CONTRACT");
+  });
+
+  it("is training while one runs, expiring soon when the longest ends within the window, expired when all ended", () => {
+    expect(customerContractStatus([active("2027-01-01")], today, 30)).toBe("TRAINING");
+    expect(customerContractStatus([active("2026-11-12")], today, 30)).toBe("EXPIRING_SOON");
+    expect(customerContractStatus([active("2026-11-13")], today, 30)).toBe("TRAINING");
+    expect(customerContractStatus([active("2026-10-13")], today, 30)).toBe("EXPIRING_SOON");
+    expect(customerContractStatus([active("2026-10-12")], today, 30)).toBe("EXPIRED");
+    // A longer contract after a short one keeps the customer training.
+    expect(customerContractStatus([active("2026-10-20"), active("2027-06-01")], today, 30)).toBe("TRAINING");
+    expect(customerContractStatus([active("2026-01-01"), active("2026-10-20")], today, 30)).toBe("EXPIRING_SOON");
   });
 });

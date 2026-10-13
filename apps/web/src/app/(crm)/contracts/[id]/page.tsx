@@ -21,7 +21,7 @@ import type { CurrentUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
 import { canActivate, canCancel, canUnapprove, isEditable } from "@flow/shared/contracts";
-import { getContract, getContractHistory } from "@/lib/api/contracts";
+import { getContract, getContractHistory, listContractStaff } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
@@ -63,6 +63,8 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     ? await Promise.all([listBookings({ contractId: contract.id, order: "desc", pageSize: 100 }), bookingContext(user)])
     : [null, null];
   const packageHistory = await getContractHistory(contract.id);
+  // The receipt can be credited to any active employee of the contract's branch (brief §8.1).
+  const salespeople = can(user, "contract.create") ? await listContractStaff(contract.branch.id) : [];
   const payments = can(user, "payment.view") ? await listPayments({ contractId: contract.id, pageSize: 100 }) : null;
   // OQ-003 and OQ-013 interim: nothing more to collect once paid in full, or once cancelled.
   const canRecordPayment = can(user, "payment.record") && contract.status !== "CANCELLED" && contract.debt > 0;
@@ -121,6 +123,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
       : []),
     { label: f("fields.paidAmount"), value: <Money amount={contract.paidAmount} /> },
     { label: f("fields.debt"), value: <Money amount={contract.debt} />, strong: true },
+    { label: f("fields.paymentStatus"), value: t(`paymentStatuses.${contract.paymentStatus}`) },
   ];
 
   return (
@@ -280,11 +283,12 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
                 <h2 id="payment-history" className="text-lg font-semibold">
                   {t("paymentHistory")}
                 </h2>
-                {canRecordPayment && <RecordPaymentButton contract={contract} />}
+                {canRecordPayment && <RecordPaymentButton contract={contract} salespeople={salespeople} />}
               </div>
               <PaymentsTable
                 payments={payments.items}
                 canDelete={can(user, "payment.delete")}
+                canEditDate={can(user, "payment.editDate")}
                 label={t("paymentHistory")}
                 hide={{ contract: true, customer: true }}
                 empty={<EmptyState icon={BanknoteIcon} title={t("paymentHistoryEmpty")} />}

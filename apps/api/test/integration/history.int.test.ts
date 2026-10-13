@@ -54,7 +54,7 @@ describe("the trash (FR-TRASH-002, D-035)", () => {
       entityType: "payment",
       entityId: payment.id,
       branch: { id: DEFAULT_BRANCH_ID },
-      title: `${contract.contractCode} · Nguyễn Văn An`,
+      title: `${payment.receiptNumber} · ${contract.contractCode} · Nguyễn Văn An`,
       amount: 5_000_000,
       deletedBy: "ADMIN test user",
       reason: { id: OTHER_REASON, labelVi: "Khác", note: "Trùng" },

@@ -57,6 +57,30 @@ export function canCancel(status: EffectiveContractStatus): boolean {
   return status === "DRAFT" || status === "ACTIVE";
 }
 
+/** A customer's standing, derived from their contracts (D-040, brief §4.2). On hold arrives with freezes (M4.6). */
+export const CUSTOMER_CONTRACT_STATUSES = ["NO_CONTRACT", "TRAINING", "EXPIRING_SOON", "EXPIRED", "ON_HOLD"] as const;
+export type CustomerContractStatus = (typeof CUSTOMER_CONTRACT_STATUSES)[number];
+
+const DAY_MS = 86_400_000;
+
+/**
+ * Training while an approved contract runs, expiring soon when the one that runs longest ends within `soonDays`,
+ * expired when every approved contract has ended, and no contract when none was ever approved (D-040, A-131).
+ * Pending, rejected, and cancelled contracts do not count. `today` is the gym's day at UTC midnight.
+ */
+export function customerContractStatus(
+  contracts: readonly { status: ContractStatus; endDate: Date }[],
+  today: Date,
+  soonDays: number,
+): CustomerContractStatus {
+  const approved = contracts.filter((contract) => contract.status === "ACTIVE");
+  if (approved.length === 0) return "NO_CONTRACT";
+  const running = approved.filter((contract) => contract.endDate.getTime() >= today.getTime());
+  if (running.length === 0) return "EXPIRED";
+  const lastEnd = Math.max(...running.map((contract) => contract.endDate.getTime()));
+  return lastEnd - today.getTime() <= soonDays * DAY_MS ? "EXPIRING_SOON" : "TRAINING";
+}
+
 /** How much of a contract is paid (brief §5.3 filter): nothing, part of it, or all of it. */
 export const PAYMENT_STATUSES = ["UNPAID", "PARTIAL", "PAID"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];

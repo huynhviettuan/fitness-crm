@@ -24,6 +24,14 @@ const STATUS_VARIANTS = {
   stepTiming: { ON_TIME: "success", LATE: "destructive" },
   user: { ACTIVE: "success", DISABLED: "muted" },
   contract: { DRAFT: "warning", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted", REJECTED: "destructive" },
+  // D-040: a customer's standing, derived from their contracts.
+  customerContract: {
+    NO_CONTRACT: "muted",
+    TRAINING: "success",
+    EXPIRING_SOON: "warning",
+    EXPIRED: "destructive",
+    ON_HOLD: "info",
+  },
   employee: { ACTIVE: "success", INACTIVE: "muted" },
   booking: { BOOKED: "info", CHECKED_IN: "warning", COMPLETED: "success", CANCELLED: "muted", NO_SHOW: "destructive" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },

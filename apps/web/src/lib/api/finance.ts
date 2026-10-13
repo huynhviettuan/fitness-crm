@@ -42,6 +42,14 @@ export async function recordPayment(contractId: string, input: PaymentInput, ide
   );
 }
 
+/** Edits a receipt's date: its own permission, always logged (D-034). */
+export async function updateReceiptDate(id: string, input: { paidOn: string }) {
+  return read(
+    paymentSchema,
+    (await api()).PATCH("/api/v1/payments/{id}/date", { params: { path: { id } }, body: input }),
+  );
+}
+
 /** D-035: moves the payment to the trash; true when the deletion waits for approval (D-018). */
 export async function deletePayment(id: string, input: DeleteInput) {
   return submittedOrDone((await api()).DELETE("/api/v1/payments/{id}", { params: { path: { id } }, body: input }));

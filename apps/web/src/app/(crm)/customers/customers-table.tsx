@@ -21,6 +21,7 @@ export type CustomerRow = {
   staffInCharge: { id: string; name: string } | null;
   branch: { id: string; name: string };
   status: "ACTIVE" | "INACTIVE";
+  contractStatus: "NO_CONTRACT" | "TRAINING" | "EXPIRING_SOON" | "EXPIRED" | "ON_HOLD";
   createdAt: Date;
 };
 
@@ -79,6 +80,11 @@ export function CustomersTable({ customers, empty, footer }: CustomersTableProps
       id: "status",
       header: t("fields.status"),
       cell: ({ row }) => <StatusBadge entity="customer" status={row.original.status} />,
+    },
+    {
+      id: "contractStatus",
+      header: t("fields.contractStatus"),
+      cell: ({ row }) => <StatusBadge entity="customerContract" status={row.original.contractStatus} />,
     },
     {
       id: "createdAt",

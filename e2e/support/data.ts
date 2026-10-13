@@ -178,7 +178,12 @@ export async function recordPaymentViaApi(
   });
   if (![201, 202].includes(response.status()))
     throw new Error(`Payment setup failed: ${response.status()} ${await response.text()}`);
-  const payment = (await response.json()) as { id: string; amount: number; approvalStatus: string };
+  const payment = (await response.json()) as {
+    id: string;
+    receiptNumber: string;
+    amount: number;
+    approvalStatus: string;
+  };
   if (options.approver && payment.approvalStatus === "PENDING")
     await approvePendingViaApi(options.approver, payment.id);
   return payment;

@@ -21,10 +21,11 @@ test.describe("approvals as a Fitness Manager", () => {
     const manager = await apiAs("FITNESS_MANAGER");
     const customer = await createCustomerViaApi(reception, testTag);
     const contract = await createContractViaApi(manager, customer.id, { activateWith: await apiAs("ADMIN") });
-    const title = `${contract.contractCode} · ${customer.fullName}`;
-    await recordPaymentViaApi(reception, contract.id, "2.000.000");
+    const receipt = await recordPaymentViaApi(reception, contract.id, "2.000.000");
+    const title = `${receipt.receiptNumber} · ${contract.contractCode} · ${customer.fullName}`;
     // The manager's own receipt is not theirs to approve.
-    await recordPaymentViaApi(manager, contract.id, "1.000.000");
+    const own = await recordPaymentViaApi(manager, contract.id, "1.000.000");
+    const ownTitle = `${own.receiptNumber} · ${contract.contractCode} · ${customer.fullName}`;
 
     await approvalsPage.goto("toDecide");
     const rows = approvalsPage.row(title);
@@ -36,10 +37,8 @@ test.describe("approvals as a Fitness Manager", () => {
     await expect(approvalsPage.row(title)).toHaveCount(0);
 
     await approvalsPage.goto("mine");
-    // The contract's own approval is in the list too: this is the receipt's.
-    const receipt = approvalsPage.row(title).filter({ hasText: a.actions.payment_create });
-    await expect(receipt).toContainText(labels.status.approval.PENDING);
-    await expect(approvalsPage.approveButton(title)).toHaveCount(0);
+    await expect(approvalsPage.row(ownTitle)).toContainText(labels.status.approval.PENDING);
+    await expect(approvalsPage.approveButton(ownTitle)).toHaveCount(0);
 
     await contractDetailPage.goto(contract.id);
     await expect(contractDetailPage.figure(cf.paidAmount)).toHaveText(/2\.000\.000/);
@@ -51,8 +50,8 @@ test.describe("approvals as a Fitness Manager", () => {
     const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
       activateWith: await apiAs("ADMIN"),
     });
-    const title = `${contract.contractCode} · ${customer.fullName}`;
-    await recordPaymentViaApi(reception, contract.id, "3.000.000");
+    const receipt = await recordPaymentViaApi(reception, contract.id, "3.000.000");
+    const title = `${receipt.receiptNumber} · ${contract.contractCode} · ${customer.fullName}`;
 
     await approvalsPage.goto("toDecide");
     await approvalsPage.reject(title, `Sai số tiền ${testTag}`, OTHER_OPTION_LABEL);

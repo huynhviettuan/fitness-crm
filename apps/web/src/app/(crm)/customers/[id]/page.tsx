@@ -141,6 +141,10 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
       value: customer.dataConsentAt && <DateTime value={customer.dataConsentAt} format="dateTime" />,
     },
     { label: t("fields.status"), value: <StatusBadge entity="customer" status={customer.status} /> },
+    {
+      label: t("fields.contractStatus"),
+      value: <StatusBadge entity="customerContract" status={customer.contractStatus} />,
+    },
     { label: t("fields.createdAt"), value: <DateTime value={customer.createdAt} format="dateTime" /> },
     {
       label: t("fields.notes"),
@@ -262,6 +266,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
             <PaymentsTable
               payments={payments.items}
               canDelete={can(user, "payment.delete")}
+              canEditDate={can(user, "payment.editDate")}
               label={t("tabs.payments")}
               hide={{ customer: true }}
               empty={<EmptyState icon={BanknoteIcon} title={tc("paymentHistoryEmpty")} />}

@@ -355,6 +355,8 @@ async function seed(prisma: typeof client) {
       {
         type,
         categoryId: await option(type === "INCOME" ? "incomeCategories" : "expenseTypes", category),
+        methodId: await option("paymentMethods", "Tiền mặt"),
+        payee: type === "EXPENSE" ? "Nhà cung cấp" : "",
         amount,
         occurredOn: day(offset),
         reference,

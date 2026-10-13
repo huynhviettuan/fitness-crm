@@ -213,7 +213,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** what "Hủy duyệt" (unapprove) is allowed to do on a contract with receipts or sessions (proposed: only with none; it returns to Pending). This is permission-sensitive, so it goes to the owner as an OQ.
 - **Depends on:** M4.3.
 
-### M4.5 Receipts, expense vouchers, deletion order
+### M4.5 Receipts, expense vouchers, deletion order (done 2026-10-14 except the transfer proof image: A-129 to A-132, OQ-044)
 
 - **Builds:**
   - **Receipts** replace payments: approval, method, collector, salesperson, a transfer proof image, and a date edit that needs its own permission.

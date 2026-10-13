@@ -126,6 +126,13 @@
       "QUEUED": "Đang chờ gửi",
       "SENT": "Đã gửi",
       "FAILED": "Gửi lỗi"
+    },
+    "customerContract": {
+      "NO_CONTRACT": "Chưa có hợp đồng",
+      "TRAINING": "Đang tập",
+      "EXPIRING_SOON": "Sắp hết hạn",
+      "EXPIRED": "Hết hạn",
+      "ON_HOLD": "Đang bảo lưu"
     }
   },
   "common": {
@@ -386,7 +393,8 @@
       "emergencyContactName": "Tên người liên hệ khẩn cấp",
       "emergencyContactPhone": "SĐT người liên hệ khẩn cấp",
       "customerGroup": "Nhóm khách hàng",
-      "staffInCharge": "Nhân viên phụ trách"
+      "staffInCharge": "Nhân viên phụ trách",
+      "contractStatus": "Tình trạng hợp đồng"
     },
     "dateOfBirthPlaceholder": "dd/mm/yyyy",
     "phonePlaceholder": "0909 123 456",
@@ -705,7 +713,8 @@
       "approval": "Duyệt",
       "phone": "Số điện thoại",
       "branch": "Chi nhánh",
-      "usedSessions": "Đã tập"
+      "usedSessions": "Đã tập",
+      "paymentStatus": "Thanh toán"
     },
     "cancelBookingsList": "{count, plural, other {# lịch hẹn sau sẽ bị hủy:}}",
     "sessionHistory": "Lịch sử buổi tập",
@@ -1072,7 +1081,14 @@
       "reference": "Số chứng từ",
       "description": "Diễn giải",
       "branch": "Chi nhánh",
-      "approvalStatus": "Phê duyệt"
+      "approvalStatus": "Phê duyệt",
+      "receiptNumber": "Số phiếu thu",
+      "number": "Số phiếu",
+      "saleEmployee": "Nhân viên sale",
+      "note": "Ghi chú",
+      "collector": "Người thu",
+      "payee": "Người nhận",
+      "collectorOrPayer": "Người thu / chi"
     },
     "delete": "Xóa",
     "deletePaymentTitle": "Xóa khoản thanh toán {amount}?",
@@ -1080,7 +1096,12 @@
     "deleteCashTitle": "Xóa khoản {amount}?",
     "deleteCashBody": "Khoản này chuyển vào thùng rác và không còn được tính vào tổng thu chi. Không thể khôi phục; ghi nhận lại nếu cần.",
     "deleted": "Đã xóa và chuyển vào thùng rác",
-    "deleteReason": "Lý do xóa"
+    "deleteReason": "Lý do xóa",
+    "editDate": "Sửa ngày",
+    "editDateTitle": "Sửa ngày phiếu thu {number}",
+    "editDateBody": "Chỉ người có quyền này mới sửa được. Ngày cũ và ngày mới được ghi vào nhật ký.",
+    "dateChanged": "Đã sửa ngày thu",
+    "saleDefault": "Nhân viên sale chính của hợp đồng"
   },
   "permissions": {
     "groups": {
@@ -1142,7 +1163,8 @@
         "view": "Xem thanh toán và công nợ",
         "record": "Ghi nhận thanh toán",
         "delete": "Xóa phiếu thu (vào thùng rác)",
-        "export": "Xuất danh sách phiếu thu"
+        "export": "Xuất danh sách phiếu thu",
+        "editDate": "Sửa ngày phiếu thu"
       },
       "cash": {
         "manage": "Thu chi khác (xem, ghi)",
@@ -1349,7 +1371,10 @@
       "consultingWindowEnd": "Khung tư vấn: đến",
       "stepGraceMinutes": "Gia hạn bước tư vấn (phút)",
       "taskReminderHours": "Mốc nhắc việc chung (giờ trước hạn)",
-      "receptionDepartmentId": "Phòng ban nhận việc khi email gửi lỗi"
+      "receptionDepartmentId": "Phòng ban nhận việc khi email gửi lỗi",
+      "receiptCodePrefix": "Số phiếu thu",
+      "expenseCodePrefix": "Số phiếu chi",
+      "expiringSoonDays": "Sắp hết hạn trong (ngày)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",

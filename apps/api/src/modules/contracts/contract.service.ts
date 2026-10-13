@@ -856,6 +856,14 @@ function toView(
   approval: repo.ApprovalState | undefined,
   actor?: Pick<Actor, "masks">,
 ): ContractView {
+  const figures = contractFigures({
+    totalSessions: entitledSessions(contract.totalSessions, contract.bonusSessions),
+    openingSessionsUsed: contract.openingSessionsUsed,
+    completedSessions: contract._count.bookings,
+    contractValue: Number(contract.contractValue),
+    openingPaidAmount: Number(contract.openingPaidAmount),
+    confirmedPaidAmount,
+  });
   return {
     id: contract.id,
     contractCode: contract.contractCode,
@@ -909,14 +917,8 @@ function toView(
         ? { by: approval.rejected.by, at: approval.rejected.at, reason: approval.rejected.reason }
         : null,
     approvalPending: contract.status === "DRAFT" && Boolean(approval?.pending),
-    ...contractFigures({
-      totalSessions: entitledSessions(contract.totalSessions, contract.bonusSessions),
-      openingSessionsUsed: contract.openingSessionsUsed,
-      completedSessions: contract._count.bookings,
-      contractValue: Number(contract.contractValue),
-      openingPaidAmount: Number(contract.openingPaidAmount),
-      confirmedPaidAmount,
-    }),
+    ...figures,
+    paymentStatus: paymentStatusOf(figures.contractValue, figures.paidAmount),
   };
 }
 

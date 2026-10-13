@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { labels } from "../support/labels";
+import { OTHER_OPTION_LABEL } from "../support/options";
 import { AppShell } from "./app-shell";
 
 const f = labels.finance.fields;
@@ -46,10 +47,21 @@ export class CashDialog {
     readonly root: Locator,
   ) {}
 
-  async fill(input: { type: string; category: string; amount: string; reference?: string }): Promise<void> {
+  /** The method is "Khác" with a note unless given; an expense names its payee (D-034). */
+  async fill(input: {
+    type: string;
+    category: string;
+    amount: string;
+    reference?: string;
+    method?: string;
+    payee?: string;
+  }): Promise<void> {
     await choose(this.page, this.root, f.type, input.type);
     // The category list follows the type (D-034).
     await choose(this.page, this.root, f.category, input.category);
+    await choose(this.page, this.root, f.method, input.method ?? OTHER_OPTION_LABEL);
+    if (input.method === undefined) await this.root.getByLabel(labels.options.otherNote, { exact: true }).fill("E2E");
+    if (input.payee) await this.root.getByLabel(f.payee, { exact: true }).fill(input.payee);
     await this.root.getByLabel(f.amount, { exact: true }).fill(input.amount);
     if (input.reference) await this.root.getByLabel(f.reference, { exact: true }).fill(input.reference);
   }
@@ -74,6 +86,17 @@ export class PaymentsTable {
 
   deleteButton(...rowTexts: string[]): Locator {
     return this.row(...rowTexts).getByRole("button", { name: labels.finance.delete, exact: true });
+  }
+
+  /** Edits a receipt's date (its own permission, D-034) and waits for the dialog to close. */
+  async editDate(day: string, ...rowTexts: string[]): Promise<void> {
+    await this.row(...rowTexts)
+      .getByRole("button", { name: labels.finance.editDate, exact: true })
+      .click();
+    const dialog = this.page.getByRole("dialog");
+    await dialog.getByLabel(f.paidOn, { exact: true }).fill(day);
+    await dialog.getByRole("button", { name: labels.common.save, exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
   }
 
   /** Opens the delete dialog of a row. */

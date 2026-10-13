@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { instantAt } from "@flow/shared/validation";
+import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
+import { customerContractStatus, type CustomerContractStatus } from "@flow/shared/contracts";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma, type Db } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
@@ -62,8 +64,12 @@ export async function listCustomers(actor: Actor, rawQuery: unknown): Promise<Cu
     prisma,
     items.map((c) => c.id),
   );
+  const statuses = await contractStatuses(
+    prisma,
+    items.map((c) => c.id),
+  );
   return {
-    items: items.map((c) => present(actor, c, pending.get(c.id))),
+    items: items.map((c) => present(actor, c, pending.get(c.id), statuses.get(c.id))),
     total,
     page: query.page,
     pageSize: query.pageSize,
@@ -90,7 +96,12 @@ export async function getCustomer(actor: Actor, id: string): Promise<Customer> {
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
   const customer = await repo.findCustomer(prisma, id, visibleTo(actor));
   if (!customer) throw new AppError("NOT_FOUND");
-  return present(actor, customer, (await pendingIdentities(prisma, [id])).get(id));
+  return present(
+    actor,
+    customer,
+    (await pendingIdentities(prisma, [id])).get(id),
+    (await contractStatuses(prisma, [id])).get(id),
+  );
 }
 
 /** The customer goes to the chosen branch, or the actor's only branch (D-014). */
@@ -181,7 +192,15 @@ export async function updateCustomer(
             payload: identity,
           })
         : null;
-      return { customer: present(actor, after, (await pendingIdentities(tx, [id])).get(id)), approval };
+      return {
+        customer: present(
+          actor,
+          after,
+          (await pendingIdentities(tx, [id])).get(id),
+          (await contractStatuses(tx, [id])).get(id),
+        ),
+        approval,
+      };
     }),
   );
 }
@@ -304,8 +323,36 @@ export function visibleTo(actor: Actor): Prisma.CustomerWhereInput {
   };
 }
 
+/** The standing of each customer, derived from their approved contracts (D-040, A-131). */
+async function contractStatuses(db: Db, ids: string[]): Promise<Map<string, CustomerContractStatus>> {
+  if (ids.length === 0) return new Map();
+  const [rows, soonDays] = await Promise.all([
+    db.contract.findMany({
+      where: { customerId: { in: ids }, deletedAt: null, status: "ACTIVE" },
+      select: { customerId: true, status: true, endDate: true },
+    }),
+    readParameter(db, "expiringSoonDays"),
+  ]);
+  const today = calendarDateInTimeZone(env.GYM_TIMEZONE);
+  return new Map(
+    ids.map((id) => [
+      id,
+      customerContractStatus(
+        rows.filter((row) => row.customerId === id),
+        today,
+        Number(soonDays),
+      ),
+    ]),
+  );
+}
+
 /** The customer as this actor may see it: masked fields are null and listed (D-017). */
-function present(actor: Actor, customer: repo.CustomerRecord, pending?: PendingIdentity): Customer {
+function present(
+  actor: Actor,
+  customer: repo.CustomerRecord,
+  pending?: PendingIdentity,
+  contractStatus: CustomerContractStatus = "NO_CONTRACT",
+): Customer {
   const maskedFields: Customer["maskedFields"] = [];
   if (isMasked(actor, "customer.phone")) maskedFields.push("phone");
   if (isMasked(actor, "customer.email")) maskedFields.push("email");
@@ -322,6 +369,7 @@ function present(actor: Actor, customer: repo.CustomerRecord, pending?: PendingI
     email: maskedFields.includes("email") ? null : customer.email,
     dateOfBirth: customer.dateOfBirth,
     status: customer.status,
+    contractStatus,
     idDocumentType: customer.idDocumentType,
     // Decrypted only for someone who may see it (D-042).
     idDocumentNumber: maskedFields.includes("idDocument") ? null : unseal(customer.idDocumentNumber),

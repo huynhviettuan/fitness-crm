@@ -10,13 +10,19 @@ import { RECORD_APPROVAL_STATUSES } from "../approvals/approval.schema.js";
 export const paymentSchema = z
   .object({
     id: z.uuid(),
+    /** The receipt number (D-034), e.g. PT000012; never reused. */
+    receiptNumber: z.string(),
     amount: z.int(),
     method: chosenOptionSchema,
+    /** The salesperson the receipt is credited to. */
+    saleEmployee: z.object({ id: z.uuid(), employeeCode: z.string(), fullName: z.string() }).nullable(),
+    note: z.string().nullable(),
     /** The gym day the money was received (T-039). */
     paidOn: instant,
     /** Counts toward the paid amount only when APPROVED (D-018, D-034). */
     approvalStatus: z.enum(RECORD_APPROVAL_STATUSES),
     createdAt: instant,
+    /** The collector: who recorded the receipt. */
     createdBy: z.string(),
     contract: z.object({ id: z.uuid(), contractCode: z.string(), packageName: z.string() }),
     customer: customerRefSchema,
@@ -37,9 +43,16 @@ export const debtPageSchema = pageOf(contractSchema).meta({ id: "DebtPage" });
 export const cashTransactionSchema = z
   .object({
     id: z.uuid(),
+    /** PT… for a receipt without a contract, PC… for an expense voucher (D-034). */
+    number: z.string(),
     branch: branchRefSchema,
     type: z.enum(CASH_TRANSACTION_TYPES),
     category: chosenOptionSchema,
+    method: chosenOptionSchema,
+    /** Who an expense voucher is paid to. */
+    payee: z.string().nullable(),
+    /** The contract a refund belongs to. */
+    contract: z.object({ id: z.uuid(), contractCode: z.string() }).nullable(),
     amount: z.int(),
     description: z.string().nullable(),
     reference: z.string().nullable(),
@@ -48,6 +61,7 @@ export const cashTransactionSchema = z
     /** Counts toward the totals only when APPROVED (D-018, D-034). */
     approvalStatus: z.enum(RECORD_APPROVAL_STATUSES),
     createdAt: instant,
+    /** The payer (expense) or collector (income): who recorded it. */
     createdBy: z.string(),
   })
   .meta({ id: "CashTransaction" });

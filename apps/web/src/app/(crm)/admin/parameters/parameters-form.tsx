@@ -85,6 +85,8 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
           {field("leadCodePrefix")}
           {field("customerCodePrefix")}
           {field("contractCodePrefix")}
+          {field("receiptCodePrefix")}
+          {field("expenseCodePrefix")}
           {field("employeeCodePrefix")}
         </CardContent>
       </Card>
@@ -109,6 +111,7 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           {field("recareDays", "numeric")}
+          {field("expiringSoonDays", "numeric")}
           {field("reclaimMinutes", "numeric")}
           {field("consultingWindowStart", "numeric")}
           {field("consultingWindowEnd", "numeric")}
