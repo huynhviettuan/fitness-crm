@@ -1,6 +1,7 @@
 import "server-only";
 import {
   bookingListSchema,
+  completeDayResultSchema,
   bookingPageSchema,
   bookingSchema,
   sessionCompletionSchema,
@@ -11,7 +12,8 @@ import {
   type RescheduleInput,
   type SessionStatusInput,
 } from "@flow/shared/bookings";
-import { api, query, read } from "./client";
+import { api, query, read, submittedOrDone } from "./client";
+import type { DeleteInput } from "@flow/shared/trash";
 
 export type BookingQuery = {
   /** First and last gym day, inclusive (dd/MM/yyyy). */
@@ -73,6 +75,16 @@ export async function completeSession(id: string) {
     sessionCompletionSchema,
     (await api()).POST("/api/v1/bookings/{id}/complete", { params: { path: { id } } }),
   );
+}
+
+/** Xóa: moves a Booked session to the trash; true never (no approval is involved). */
+export async function deleteBooking(id: string, input: DeleteInput) {
+  return submittedOrDone((await api()).DELETE("/api/v1/bookings/{id}", { params: { path: { id } }, body: input }));
+}
+
+/** Bulk "Đã tập" for a day: one result per session. */
+export async function completeDay(bookingIds: string[]) {
+  return read(completeDayResultSchema, (await api()).POST("/api/v1/bookings/complete-day", { body: { bookingIds } }));
 }
 
 /** The session statuses and their rules (brief §6.2, D-025). */

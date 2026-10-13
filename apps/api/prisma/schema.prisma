@@ -1187,6 +1187,8 @@ model Session {
   completedAt   DateTime? @map("completed_at") @db.Timestamptz(3)
   completedById String?   @map("completed_by") @db.Uuid
   completedBy   User?     @relation("SessionCompletedBy", fields: [completedById], references: [id], onDelete: Restrict)
+  // MANUAL (an admin confirmed it) or DEVICE (a paired scan, M5.3b); one event either way (D-069).
+  confirmationMethod String @default("MANUAL") @map("confirmation_method")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 

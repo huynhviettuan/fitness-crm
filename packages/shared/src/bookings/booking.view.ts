@@ -65,6 +65,8 @@ export const bookingSchema = z
         checkedInBy: z.string(),
         completedAt: instant.nullable(),
         completedBy: z.string().nullable(),
+        /** How the session was confirmed: by hand, or by a paired device scan (D-069). */
+        confirmationMethod: z.enum(["MANUAL", "DEVICE"]),
       })
       .nullable(),
   })
@@ -80,6 +82,15 @@ export const sessionCompletionSchema = z
   .object({ booking: bookingSchema, contract: contractSchema })
   .meta({ id: "SessionCompletion" });
 
+/** Bulk "Đã tập": one result per session, so a refused one does not hide the others. */
+export const completeDayResultSchema = z
+  .object({
+    completed: z.int(),
+    items: z.array(z.object({ bookingId: z.uuid(), ok: z.boolean(), code: z.string().nullable() })),
+  })
+  .meta({ id: "CompleteDayResult" });
+
+export type CompleteDayResult = z.output<typeof completeDayResultSchema>;
 export type Booking = z.output<typeof bookingSchema>;
 export type SessionStatus = z.output<typeof sessionStatusSchema>;
 export type BookingPage = z.output<typeof bookingPageSchema>;

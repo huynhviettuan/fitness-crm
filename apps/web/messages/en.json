@@ -1066,7 +1066,8 @@
       "checkedIn": "Checked in",
       "completed": "Completed",
       "remainingSessions": "Remaining sessions",
-      "branch": "Branch"
+      "branch": "Branch",
+      "confirmation": "Confirmed"
     },
     "checkedInBadge": "Checked in",
     "calendarViews": {
@@ -1083,7 +1084,28 @@
     "customerFilter": "Customer: {name}",
     "clearCustomer": "Show all customers",
     "customerFilterLabel": "Filter by customer",
-    "customerFilterPlaceholder": "Customer…"
+    "customerFilterPlaceholder": "Customer…",
+    "delete": "Delete",
+    "deleteTitle": "Delete this session?",
+    "deleteBody": "The session was booked by mistake. It moves to the trash, the time is freed, and no session is used. This only works while it is Booked and not checked in.",
+    "deleted": "Session deleted",
+    "confirmation": {
+      "MANUAL": "By hand",
+      "DEVICE": "By device"
+    },
+    "completeDay": {
+      "button": "Complete a day",
+      "title": "Complete the sessions of a day",
+      "body": "Marks the Booked sessions you keep ticked as Trained. Each one uses a session of its contract and credits the PT.",
+      "date": "Day",
+      "load": "Show sessions",
+      "none": "No Booked sessions on that day.",
+      "selected": "{count} selected",
+      "submit": "Complete {count}",
+      "done": "{count} sessions completed",
+      "someFailed": "{failed} could not be completed:",
+      "item": "{time} · {customer} · {trainer}"
+    }
   },
   "finance": {
     "title": "Finance",
@@ -1206,7 +1228,8 @@
       },
       "booking": {
         "view": "View the PT calendar and sessions",
-        "manage": "Book, reschedule, cancel, mark no-show"
+        "manage": "Book, reschedule, cancel, mark no-show",
+        "delete": "Delete a booked session"
       },
       "session": {
         "checkIn": "Check in sessions",
@@ -1476,7 +1499,8 @@
       "payment": "Receipt",
       "cash_transaction": "Income or expense",
       "person": "Merged record",
-      "contract": "Contract"
+      "contract": "Contract",
+      "booking": "Session"
     },
     "fields": {
       "type": "Kind",

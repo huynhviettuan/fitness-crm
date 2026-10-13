@@ -43,7 +43,7 @@ export const PERMISSION_GROUPS = {
     "contract.deactivate",
     "contract.reactivate",
   ],
-  schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
+  schedule: ["booking.view", "booking.manage", "booking.delete", "session.checkIn", "session.complete"],
   // Employee profiles and working schedules (brief §8.4).
   employees: ["employee.view", "employee.manage"],
   // Giao việc (brief §8.2): every default role works and assigns tasks (09_RBAC.md).

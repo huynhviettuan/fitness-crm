@@ -51,6 +51,11 @@ export const listBookingsSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 
+/** Bulk "Đã tập" for a day (M5.3): the sessions the admin confirmed in the list. */
+export const completeDaySchema = z.object({
+  bookingIds: z.array(z.uuid()).min(1, { error: "required" }).max(200),
+});
+
 export const dayBookingsSchema = z.object({
   date: calendarDate,
   /** 1 for the day view, 7 for the week view starting at `date` (M5.2). */
@@ -60,6 +65,7 @@ export const dayBookingsSchema = z.object({
   branchId: z.uuid().optional(),
 });
 
+export type CompleteDayInput = z.input<typeof completeDaySchema>;
 export type BookingInput = z.input<typeof bookingInputSchema>;
 export type BookingData = z.output<typeof bookingInputSchema>;
 export type RescheduleInput = z.input<typeof rescheduleSchema>;

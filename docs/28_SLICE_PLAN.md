@@ -278,7 +278,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Tests:** INT-003, INT-007, INT-009; E2E on a phone: book, then get refused for an overlap.
 - **Depends on:** M5.1.
 
-### M5.3 Session detail, check-in, bulk "Đã tập"
+### M5.3 Session detail, check-in, bulk "Đã tập" (done 2026-10-16: A-150 to A-152)
 
 - **Builds:**
   - **Session dialog** with Đã tập (its own permission, admin by default, locked after), Hủy lịch, Khách không đến, Xóa (a booked session only; to the trash with a reason), and Close.

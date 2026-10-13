@@ -5,7 +5,7 @@
  * The statuses the system itself knows (D-025, M5.1). Their rules (consumes, credits the PT, color) are configuration
  * in `session_statuses`; the database holds the codes, so a status added later is a row, not a migration.
  */
-export const BOOKING_STATUSES = ["BOOKED", "TRAINED", "CANCELLED", "NO_SHOW"] as const;
+export const BOOKING_STATUSES = ["BOOKED", "TRAINED", "CANCELLED", "NO_SHOW", "DELETED"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
 /** OQ-008 interim: bookings that will still use one of the contract's sessions. */
@@ -31,9 +31,14 @@ export function canCheckIn({ status, checkedIn }: BookingFacts): boolean {
   return status === "BOOKED" && !checkedIn;
 }
 
-/** Only after check-in until OQ-002 decides whether a Booked session may be completed directly. */
-export function canComplete({ status, checkedIn }: BookingFacts): boolean {
-  return status === "BOOKED" && checkedIn;
+/** D-026: there is no separate check-in step, so a Booked session is completed directly, checked in or not. */
+export function canComplete({ status }: BookingFacts): boolean {
+  return status === "BOOKED";
+}
+
+/** Xóa: a session booked by mistake, still Booked and not checked in (M5.3). */
+export function canDeleteBooking({ status, checkedIn }: BookingFacts): boolean {
+  return status === "BOOKED" && !checkedIn;
 }
 
 /** A checked-in session may still be cancelled: the exceptional cancel. */

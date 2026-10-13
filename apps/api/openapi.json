@@ -8930,6 +8930,118 @@
           "bookings"
         ],
         "x-permission": "booking.manage"
+      },
+      "delete": {
+        "operationId": "BookingsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "bookings"
+        ],
+        "x-permission": "booking.delete"
+      }
+    },
+    "/api/v1/bookings/complete-day": {
+      "post": {
+        "operationId": "BookingsController_completeDay",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingIds": {
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "bookingIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteDayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "bookings"
+        ],
+        "x-permission": "session.complete"
       }
     },
     "/api/v1/bookings/{id}/cancel": {
@@ -10526,6 +10638,7 @@
                             "contract.reactivate",
                             "booking.view",
                             "booking.manage",
+                            "booking.delete",
                             "session.checkIn",
                             "session.complete",
                             "employee.view",
@@ -10950,6 +11063,7 @@
                         "contract.reactivate",
                         "booking.view",
                         "booking.manage",
+                        "booking.delete",
                         "session.checkIn",
                         "session.complete",
                         "employee.view",
@@ -11222,6 +11336,7 @@
                         "contract.reactivate",
                         "booking.view",
                         "booking.manage",
+                        "booking.delete",
                         "session.checkIn",
                         "session.complete",
                         "employee.view",
@@ -13796,6 +13911,7 @@
                 "contract.reactivate",
                 "booking.view",
                 "booking.manage",
+                "booking.delete",
                 "session.checkIn",
                 "session.complete",
                 "employee.view",
@@ -19221,13 +19337,21 @@
               "completedBy": {
                 "nullable": true,
                 "type": "string"
+              },
+              "confirmationMethod": {
+                "type": "string",
+                "enum": [
+                  "MANUAL",
+                  "DEVICE"
+                ]
               }
             },
             "required": [
               "checkedInAt",
               "checkedInBy",
               "completedAt",
-              "completedBy"
+              "completedBy",
+              "confirmationMethod"
             ]
           }
         },
@@ -19246,6 +19370,42 @@
           "contract",
           "trainer",
           "session"
+        ]
+      },
+      "CompleteDayResult": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "bookingId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "code": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "bookingId",
+                "ok",
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "completed",
+          "items"
         ]
       },
       "SessionCompletion": {
@@ -19666,6 +19826,7 @@
                     "contract.reactivate",
                     "booking.view",
                     "booking.manage",
+                    "booking.delete",
                     "session.checkIn",
                     "session.complete",
                     "employee.view",
@@ -19931,6 +20092,7 @@
                 "contract.reactivate",
                 "booking.view",
                 "booking.manage",
+                "booking.delete",
                 "session.checkIn",
                 "session.complete",
                 "employee.view",
@@ -20326,7 +20488,8 @@
               "payment",
               "cash_transaction",
               "person",
-              "contract"
+              "contract",
+              "booking"
             ]
           },
           "entityId": {

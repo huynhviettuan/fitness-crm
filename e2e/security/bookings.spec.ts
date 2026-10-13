@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
 import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi } from "../support/data";
 import type { Role } from "../support/db";
+import { otherOptionId } from "../support/options";
 
 const SLOT = { date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" };
 
@@ -42,6 +43,78 @@ test.describe("A01 trainer, booking, and session roles (docs/09, A-016)", () => 
       expect(response.status()).toBe(status);
     });
   }
+
+  const deleteExpectations: [Role, number][] = [
+    ["ADMIN", 204],
+    ["FITNESS_MANAGER", 204],
+    ["RECEPTIONIST", 403],
+    ["PT", 403],
+    ["ACCOUNTANT", 403],
+  ];
+  for (const [role, status] of deleteExpectations) {
+    test(`${role} deleting a booked session gets ${status}`, async ({ apiAs, testTag }) => {
+      const { refs } = await bookingSetup(apiAs, testTag);
+      const booking = await createBookingViaApi(await apiAs("RECEPTIONIST"), refs, SLOT);
+      const reasonId = await otherOptionId(await apiAs("ADMIN"), "deleteReasons");
+
+      const response = await (
+        await apiAs(role)
+      ).delete(`/api/v1/bookings/${booking.id}`, {
+        data: { reasonId, reasonNote: "Đặt nhầm" },
+      });
+      expect(response.status()).toBe(status);
+    });
+  }
+
+  test("a deleted session needs a reason, disappears, and is refused once trained or checked in", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const { refs } = await bookingSetup(apiAs, testTag);
+    const manager = await apiAs("FITNESS_MANAGER");
+    const booking = await createBookingViaApi(manager, refs, SLOT);
+    const reason = { reasonId: await otherOptionId(await apiAs("ADMIN"), "deleteReasons"), reasonNote: "Đặt nhầm" };
+
+    expect((await manager.delete(`/api/v1/bookings/${booking.id}`, { data: {} })).status()).toBe(400);
+    expect((await manager.delete(`/api/v1/bookings/${booking.id}`, { data: reason })).status()).toBe(204);
+    expect((await manager.get(`/api/v1/bookings/${booking.id}`)).status()).toBe(404);
+    // A second delete finds nothing; a checked-in session cannot be deleted.
+    expect((await manager.delete(`/api/v1/bookings/${booking.id}`, { data: reason })).status()).toBe(404);
+    const second = await createBookingViaApi(manager, refs, { ...SLOT, startTime: "20:00", endTime: "21:00" });
+    await manager.post(`/api/v1/bookings/${second.id}/check-in`);
+    expect((await manager.delete(`/api/v1/bookings/${second.id}`, { data: reason })).status()).toBe(409);
+  });
+
+  test("bulk completion is for the roles that complete, validates its list, and cannot reach another trainer's sessions", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const { refs } = await bookingSetup(apiAs, testTag);
+    const booking = await createBookingViaApi(await apiAs("RECEPTIONIST"), refs, SLOT);
+
+    expect(
+      (
+        await (
+          await apiAs("RECEPTIONIST")
+        ).post("/api/v1/bookings/complete-day", { data: { bookingIds: [booking.id] } })
+      ).status(),
+    ).toBe(403);
+    const manager = await apiAs("FITNESS_MANAGER");
+    for (const data of [{}, { bookingIds: [] }, { bookingIds: ["x"] }, { bookingIds: Array(201).fill(booking.id) }]) {
+      expect(
+        (await manager.post("/api/v1/bookings/complete-day", { data })).status(),
+        JSON.stringify(data).slice(0, 30),
+      ).toBe(400);
+    }
+    // A PT reaches only their own sessions (A-007): another trainer's comes back NOT_FOUND, untouched.
+    const pt = await (await apiAs("PT")).post("/api/v1/bookings/complete-day", { data: { bookingIds: [booking.id] } });
+    expect(pt.status()).toBe(200);
+    expect(await pt.json()).toMatchObject({ completed: 0, items: [{ ok: false, code: "NOT_FOUND" }] });
+    expect((await (await manager.get(`/api/v1/bookings/${booking.id}`)).json()).status).toBe("BOOKED");
+    expect((await manager.post("/api/v1/bookings/complete-day", { data: { bookingIds: [booking.id] } })).status()).toBe(
+      200,
+    );
+  });
 
   test("an accountant can read bookings but not check in, cancel, or mark no-show", async ({ apiAs, testTag }) => {
     const { refs } = await bookingSetup(apiAs, testTag);
@@ -214,10 +287,12 @@ test.describe("A10 booking input errors", () => {
     expect(outside.status()).toBe(422);
     expect(await outside.json()).toMatchObject({ code: "BOOKING_OUTSIDE_CONTRACT_PERIOD" });
 
+    // A cancelled session cannot be completed (D-025).
     const booking = await createBookingViaApi(reception, refs, SLOT);
-    const early = await (await apiAs("FITNESS_MANAGER")).post(`/api/v1/bookings/${booking.id}/complete`);
-    expect(early.status()).toBe(409);
-    expect(await early.json()).toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
+    await reception.post(`/api/v1/bookings/${booking.id}/cancel`);
+    const refused = await (await apiAs("FITNESS_MANAGER")).post(`/api/v1/bookings/${booking.id}/complete`);
+    expect(refused.status()).toBe(409);
+    expect(await refused.json()).toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
   test("unknown or malformed booking ids are 404 for every action", async ({ apiAs }) => {

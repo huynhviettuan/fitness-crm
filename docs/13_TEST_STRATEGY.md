@@ -44,7 +44,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-161 | Admin unapproves an approved contract, and deletes one: a receipt blocks it and is listed, a second Admin approves the deletion, and it is gone | A-124, A-125 |
 | E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash (receipts part: `e2e/history.spec.ts`, M1 slice 4; contracts in M4) | AC-12, AC-13 |
 | E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |
-| E2E-108 | Đã tập and no-show consume 1 and credit PT; Hủy lịch and delete do not; colors | AC-15 |
+| E2E-108 | Đã tập and no-show consume 1 and credit PT; Hủy lịch and delete do not; colors. (Built M5.3: `e2e/session-ops.spec.ts` for Đã tập from the dialog without check-in and its lock, Xóa from the dialog, bulk Đã tập for a day; `e2e/security/bookings.spec.ts` for the delete and bulk roles, input errors, and own-scope; `sessions.int.test.ts` and `bookings.int.test.ts` for direct completion, bulk with a refused item, and delete) | AC-15 |
 | E2E-109 | Đã tập locked; delete from history → refund 1, credit −1, email sent, adjustment in next period | AC-16, AC-17 |
 | E2E-110 | Two receipts → paid and debt; cash book balance | AC-19 |
 | E2E-111 | Session log on phone: plan and actual per row; cardio fields; escalation reaches manager and Master | AC-20, AC-21, AC-23 |

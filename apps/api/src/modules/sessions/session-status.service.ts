@@ -34,6 +34,10 @@ export async function updateSessionStatus(actor: Actor, code: string, rawInput: 
     if (code === "BOOKED" && (input.consumes || input.creditsPt || input.locksOnSet)) {
       throw new AppError("VALIDATION_FAILED", { fieldErrors: { consumes: ["bookedNeverConsumes"] } });
     }
+    // Xóa frees the time and uses nothing, whatever the labels say (D-025).
+    if (code === "DELETED" && (input.consumes || input.creditsPt || !input.locksOnSet)) {
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { consumes: ["bookedNeverConsumes"] } });
+    }
     const after = await tx.sessionStatus.update({ where: { code }, data: input });
     const changes = diffFields(before, after, [...AUDITED]);
     if (changes) {

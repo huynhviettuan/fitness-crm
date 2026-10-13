@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import {
@@ -6,6 +6,8 @@ import {
   bookingListSchema,
   bookingPageSchema,
   bookingSchema,
+  completeDayResultSchema,
+  completeDaySchema,
   rescheduleSchema,
   sessionCompletionSchema,
 } from "@flow/shared/bookings";
@@ -14,12 +16,14 @@ import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
-import { checkIn, completeSession } from "../sessions/session.service.js";
+import { checkIn, completeSession, completeSessions } from "../sessions/session.service.js";
 import { trainersOfDay } from "../employees/employee.service.js";
 import { trainerDayListSchema } from "@flow/shared/employees";
+import { deleteSchema } from "@flow/shared/trash";
 import {
   cancelBooking,
   createBooking,
+  deleteBooking,
   getBooking,
   listBookings,
   listDayBookings,
@@ -80,6 +84,27 @@ export class BookingsController {
     @Body({ schema: rescheduleSchema }) body: unknown,
   ) {
     return encode(bookingSchema, await rescheduleBooking(actor, id, body));
+  }
+
+  /** Bulk "Đã tập" for a day: one result per session (M5.3). */
+  @Post("complete-day")
+  @RequirePermission("session.complete")
+  @HttpCode(200)
+  @ApiResult(completeDayResultSchema)
+  async completeDay(@CurrentActor() actor: CurrentUser, @Body({ schema: completeDaySchema }) body: unknown) {
+    return encode(completeDayResultSchema, await completeSessions(actor, body));
+  }
+
+  /** Xóa: a Booked session booked by mistake goes to the trash with a reason (M5.3). */
+  @Delete(":id")
+  @RequirePermission("booking.delete")
+  @HttpCode(204)
+  async remove(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: deleteSchema }) body: unknown,
+  ) {
+    await deleteBooking(actor, id, body);
   }
 
   @Post(":id/cancel")

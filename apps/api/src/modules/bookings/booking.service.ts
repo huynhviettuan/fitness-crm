@@ -7,6 +7,10 @@ import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
 import { assertCan, forbidden } from "../../platform/permissions/assert.js";
+import { resolveChoice } from "../../platform/options/option.service.js";
+import { moveToTrash } from "../../platform/trash/trash.service.js";
+import { encode } from "../../platform/http/encode.js";
+import { deleteSchema } from "@flow/shared/trash";
 import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import { readParameter } from "../../platform/parameters/parameter.service.js";
@@ -20,7 +24,9 @@ import { isoWeekday, minutesOfTime } from "@flow/shared/employees";
 import * as repo from "./booking.repository.js";
 import {
   OPEN_BOOKING_STATUSES,
+  bookingSchema,
   canCancelBooking,
+  canDeleteBooking,
   canMarkNoShow,
   canReschedule,
   hasSessionForNewBooking,
@@ -55,7 +61,13 @@ export type BookingView = {
   contract: { id: string; contractCode: string; packageName: string; remainingSessions: number; frozen: boolean };
   trainer: { id: string; employeeCode: string; fullName: string };
   /** Fulfillment facts, from check-in on (T-011). */
-  session: { checkedInAt: Date; checkedInBy: string; completedAt: Date | null; completedBy: string | null } | null;
+  session: {
+    checkedInAt: Date;
+    checkedInBy: string;
+    completedAt: Date | null;
+    completedBy: string | null;
+    confirmationMethod: "MANUAL" | "DEVICE";
+  } | null;
 };
 
 export type BookingPage = { items: BookingView[]; total: number; page: number; pageSize: number };
@@ -217,6 +229,37 @@ export async function cancelBooking(actor: Actor, id: string): Promise<BookingVi
   });
 }
 
+/**
+ * Xóa (M5.3, D-025): a session booked by mistake. Only a Booked session the customer has not checked in to; it goes to
+ * the trash with a reason, frees the time, and uses nothing. Đã tập is corrected by the check-in history, not here.
+ */
+export async function deleteBooking(actor: Actor, id: string, input: unknown): Promise<void> {
+  assertCan(actor, "booking.delete");
+  const { reasonId, reasonNote } = parseInput(deleteSchema, input);
+  await changeLockedBooking(actor, id, async (tx, booking) => {
+    if (!canDeleteBooking(factsOf(booking))) throw new AppError("INVALID_STATUS_TRANSITION");
+    const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+    const rule = await repo.findStatusRule(tx, "DELETED");
+    if (!rule) throw new AppError("INTERNAL_ERROR");
+    const snapshot = toBookingView(booking);
+    if ((await repo.setStatus(tx, id, "BOOKED", rule, actor.id)) !== 1) throw new AppError("INVALID_STATUS_TRANSITION");
+    await moveToTrash(
+      tx,
+      actor,
+      {
+        entityType: "booking",
+        entityId: id,
+        branchId: booking.branchId,
+        title: `${booking.customer.fullName} · ${booking.contract.contractCode}`,
+        amount: null,
+        snapshot: encode(bookingSchema, snapshot) as Record<string, unknown>,
+      },
+      reason,
+      new Date(),
+    );
+  });
+}
+
 /** Khách không đến: a Booked session not yet checked in (A-006). Consumes and credits the PT by its rule (D-025). */
 export async function markNoShow(actor: Actor, id: string): Promise<BookingView> {
   assertCan(actor, "booking.manage");
@@ -301,7 +344,8 @@ export function bookingsVisibleTo(actor: Actor): Prisma.BookingWhereInput {
   const own: Prisma.BookingWhereInput = {
     OR: [...(actor.employeeId ? [{ trainerId: actor.employeeId }] : []), { customer: { createdById: actor.id } }],
   };
-  return { AND: [inBranches(actor), isOwnOnly(actor, "schedule") ? own : {}] };
+  // A deleted session (Xóa) is in the trash, not in any list.
+  return { AND: [inBranches(actor), { status: { not: "DELETED" } }, isOwnOnly(actor, "schedule") ? own : {}] };
 }
 
 /** The gym day a booking falls on (A-001). */
@@ -443,6 +487,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
       checkedInBy: session.checkedInBy.name,
       completedAt: session.completedAt,
       completedBy: session.completedBy?.name ?? null,
+      confirmationMethod: session.confirmationMethod as "MANUAL" | "DEVICE",
     },
   };
 }

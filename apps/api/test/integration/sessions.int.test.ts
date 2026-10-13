@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { getContract } from "../../src/modules/contracts/contract.service.js";
 import { cancelBooking, markNoShow } from "../../src/modules/bookings/booking.service.js";
-import { checkIn, completeSession } from "../../src/modules/sessions/session.service.js";
+import { checkIn, completeSession, completeSessions } from "../../src/modules/sessions/session.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestUser, DEFAULT_BRANCH_ID } from "../support/factories.js";
 import { book, bookingScenario, linkedTrainer } from "../support/bookings.js";
@@ -147,22 +148,66 @@ describe("completeSession", () => {
     expect((await remaining(scenario)).remainingSessions).toBe(0);
   });
 
-  it("completes only a checked-in booking (OQ-002 interim)", async () => {
+  it("completes a Booked session directly, checked in or not, and never a no-show or a cancelled one (D-026)", async () => {
     const scenario = await bookingScenario();
     const booked = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
     const noShow = await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
     const cancelled = await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" });
     await markNoShow(scenario.manager, noShow.id);
-    await checkIn(scenario.manager, cancelled.id);
     await cancelBooking(scenario.manager, cancelled.id);
 
-    for (const booking of [booked, noShow, cancelled]) {
+    for (const booking of [noShow, cancelled]) {
       await expect(completeSession(scenario.manager, booking.id)).rejects.toMatchObject({
         code: "INVALID_STATUS_TRANSITION",
       });
     }
-    // Only the no-show used a session (D-025).
-    expect(await remaining(scenario)).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
+    const done = await completeSession(scenario.manager, booked.id);
+
+    // Completing records the check-in too, and how the session was confirmed (D-069).
+    expect(done.booking).toMatchObject({
+      status: "TRAINED",
+      checkedIn: true,
+      session: { confirmationMethod: "MANUAL", completedBy: "FITNESS_MANAGER test user" },
+    });
+    // The no-show used a session (D-025), and so did this one.
+    expect(await remaining(scenario)).toMatchObject({ completedSessions: 2, remainingSessions: 22 });
+  });
+
+  it("completes a day in bulk: each session on its own, a refused one reported, a repeat consuming nothing", async () => {
+    const scenario = await bookingScenario({ sessions: 2 });
+    const first = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
+    const second = await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
+    const cancelled = await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" }).catch(
+      () => null,
+    );
+    expect(cancelled).toBeNull(); // only two sessions: the third booking is refused
+
+    const result = await completeSessions(scenario.manager, {
+      bookingIds: [first.id, second.id, first.id, randomUUID()],
+    });
+
+    expect(result.completed).toBe(2);
+    expect(result.items.map((item) => item.ok)).toEqual([true, true, false]);
+    expect(result.items[2]).toMatchObject({ code: "NOT_FOUND" });
+    expect(await remaining(scenario)).toMatchObject({ completedSessions: 2, remainingSessions: 0 });
+    const again = await completeSessions(scenario.manager, { bookingIds: [first.id, second.id] });
+    expect(again.completed).toBe(2);
+    expect(await remaining(scenario)).toMatchObject({ completedSessions: 2, remainingSessions: 0 });
+  });
+
+  it("refuses bulk completion without permission, with an empty or oversized list", async () => {
+    const scenario = await bookingScenario();
+    const { actor: reception } = await createTestUser("RECEPTIONIST");
+
+    await expect(completeSessions(reception, { bookingIds: [randomUUID()] })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(completeSessions(scenario.manager, { bookingIds: [] })).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+    await expect(
+      completeSessions(scenario.manager, { bookingIds: Array.from({ length: 201 }, () => randomUUID()) }),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
   });
 
   it("a receptionist cannot complete (OQ-011, T-024)", async () => {

@@ -123,7 +123,7 @@ function StatusDialog({ status, onClose }: { status: SessionStatus; onClose: () 
     },
   });
   // Booking itself never consumes, credits, or locks (D-025).
-  const fixed = status.code === "BOOKED";
+  const fixed = status.code === "BOOKED" || status.code === "DELETED";
 
   const onSubmit = form.handleSubmit((values) =>
     run(

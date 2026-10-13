@@ -15,6 +15,7 @@ import {
 } from "../../src/modules/employees/employee.service.js";
 import {
   cancelBooking,
+  deleteBooking,
   getBooking,
   listBookings,
   listDayBookings,
@@ -23,7 +24,7 @@ import {
 } from "../../src/modules/bookings/booking.service.js";
 import { checkIn, completeSession } from "../../src/modules/sessions/session.service.js";
 import { resetDatabase } from "../support/database.js";
-import { createTestUser, DEFAULT_BRANCH_ID } from "../support/factories.js";
+import { createTestUser, DEFAULT_BRANCH_ID, optionId } from "../support/factories.js";
 import {
   activeContract,
   book,
@@ -592,6 +593,53 @@ describe("listing", () => {
     ).toEqual([b.id, a.id]);
     await expect(listBookings(scenario.manager, { status: "DONE" })).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
+    });
+  });
+});
+
+describe("deleteBooking (Xóa, M5.3)", () => {
+  it("moves a Booked session to the trash with a reason, frees the time, and uses nothing", async () => {
+    const scenario = await bookingScenario();
+    const other = await createTrainer(scenario.manager, { fullName: "PT Lan" });
+    const booking = await book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" });
+
+    await deleteBooking(scenario.manager, booking.id, {
+      reasonId: await optionId("deleteReasons", "Khác"),
+      reasonNote: "Đặt nhầm",
+    });
+
+    expect((await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe("DELETED");
+    expect(await prisma.trashEntry.findFirst({ where: { entityType: "booking", entityId: booking.id } })).toMatchObject(
+      {
+        reasonNote: "Đặt nhầm",
+      },
+    );
+    await expect(getBooking(scenario.manager, booking.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect((await listBookings(scenario.manager, {})).items).toHaveLength(0);
+    expect(await listDayBookings(scenario.manager, { date: "15/10/2026" })).toHaveLength(0);
+    expect(await getContract(scenario.manager, scenario.contract.id)).toMatchObject({ remainingSessions: 24 });
+    // The time is free again for the same customer and trainer, and the contract can be deleted around it.
+    await expect(
+      book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" }, other.id),
+    ).resolves.toBeDefined();
+  });
+
+  it("needs a reason, the permission, and a Booked session that nobody checked in to", async () => {
+    const scenario = await bookingScenario();
+    const { actor: reception } = await createTestUser("RECEPTIONIST");
+    const booking = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
+    const reason = { reasonId: await optionId("deleteReasons", "Khác"), reasonNote: "Đặt nhầm" };
+
+    await expect(deleteBooking(scenario.manager, booking.id, {})).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    await expect(deleteBooking(reception, booking.id, reason)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await checkIn(scenario.manager, booking.id);
+    await expect(deleteBooking(scenario.manager, booking.id, reason)).rejects.toMatchObject({
+      code: "INVALID_STATUS_TRANSITION",
+    });
+    const trained = await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" });
+    await completeSession(scenario.manager, trained.id);
+    await expect(deleteBooking(scenario.manager, trained.id, reason)).rejects.toMatchObject({
+      code: "INVALID_STATUS_TRANSITION",
     });
   });
 });

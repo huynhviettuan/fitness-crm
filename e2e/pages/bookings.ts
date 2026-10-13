@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { fill, labels } from "../support/labels";
+import { OTHER_OPTION_LABEL } from "../support/options";
 import { AppShell } from "./app-shell";
 
 const f = labels.bookings.fields;
@@ -86,6 +87,17 @@ export class BookingSheet {
       .locator("dt")
       .filter({ hasText: new RegExp(`^${label}$`) })
       .locator("xpath=following-sibling::dd[1]");
+  }
+
+  /** Xóa: the action, a reason ("Khác") with a note, and the dialog's own delete button. */
+  async deleteWithReason(note: string): Promise<void> {
+    await this.action(labels.bookings.delete).click();
+    const dialog = this.page.getByRole("alertdialog");
+    await dialog.getByRole("combobox", { name: labels.finance.deleteReason, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
+    await dialog.getByRole("button", { name: labels.finance.delete, exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
   }
 
   async openReschedule(): Promise<BookingFormDialog> {
@@ -181,6 +193,15 @@ export class SessionsPage {
 
   async goto(): Promise<void> {
     await this.page.goto("/sessions");
+  }
+
+  /** Bulk "Đã tập": opens the dialog, loads `day` (dd/MM/yyyy), and returns it. */
+  async openCompleteDay(day: string): Promise<Locator> {
+    await this.shell.main.getByRole("button", { name: labels.bookings.completeDay.button, exact: true }).click();
+    const dialog = this.page.getByRole("dialog", { name: labels.bookings.completeDay.title });
+    await dialog.getByLabel(labels.bookings.completeDay.date, { exact: true }).fill(day);
+    await dialog.getByRole("button", { name: labels.bookings.completeDay.load, exact: true }).click();
+    return dialog;
   }
 
   async showView(name: string): Promise<void> {

@@ -28,6 +28,7 @@ export async function bookingContext(
 ): Promise<BookingContext> {
   const permissions: BookingPermissions = {
     manage: can(user, "booking.manage"),
+    delete: can(user, "booking.delete"),
     checkIn: can(user, "session.checkIn"),
     complete: can(user, "session.complete"),
   };

@@ -23,6 +23,7 @@ const bookingInclude = {
     select: {
       checkedInAt: true,
       completedAt: true,
+      confirmationMethod: true,
       checkedInBy: { select: { name: true } },
       completedBy: { select: { name: true } },
     },

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTimeZone, useTranslations } from "next-intl";
-import { BanIcon, CalendarClockIcon, CheckCheckIcon, LogInIcon, UserXIcon } from "lucide-react";
+import { BanIcon, CalendarClockIcon, CheckCheckIcon, LogInIcon, TrashIcon, UserXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -15,8 +15,22 @@ import { SessionStatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
 import { formatDate, formatTime } from "@/lib/format";
-import { canCancelBooking, canCheckIn, canComplete, canMarkNoShow, canReschedule } from "@flow/shared/bookings";
-import { cancelBookingAction, checkInAction, completeSessionAction, markNoShowAction } from "./actions";
+import {
+  canCancelBooking,
+  canCheckIn,
+  canComplete,
+  canDeleteBooking,
+  canMarkNoShow,
+  canReschedule,
+} from "@flow/shared/bookings";
+import { DeleteDialog } from "../finance/delete-dialog";
+import {
+  cancelBookingAction,
+  checkInAction,
+  completeSessionAction,
+  deleteBookingAction,
+  markNoShowAction,
+} from "./actions";
 import { BookingFormDialog } from "./booking-form";
 import type { BookingPermissions, BookingRow, TrainerOption } from "./booking-types";
 
@@ -104,7 +118,10 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
       ? [{ label: f("fields.checkedIn"), value: by(booking.session.checkedInAt, booking.session.checkedInBy) }]
       : []),
     ...(booking.session?.completedAt && booking.session.completedBy
-      ? [{ label: f("fields.completed"), value: by(booking.session.completedAt, booking.session.completedBy) }]
+      ? [
+          { label: f("fields.completed"), value: by(booking.session.completedAt, booking.session.completedBy) },
+          { label: f("fields.confirmation"), value: t(`confirmation.${booking.session.confirmationMethod}`) },
+        ]
       : []),
   ];
 
@@ -120,7 +137,7 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
   );
 }
 
-type Confirm = "complete" | "cancel" | "noShow" | null;
+type Confirm = "complete" | "cancel" | "noShow" | "delete" | null;
 
 function BookingActions({
   booking,
@@ -166,6 +183,12 @@ function BookingActions({
         <Button variant="outline" onClick={() => setConfirm("cancel")}>
           <BanIcon />
           {t("cancel")}
+        </Button>
+      )}
+      {permissions.delete && canDeleteBooking(facts) && (
+        <Button variant="outline" onClick={() => setConfirm("delete")}>
+          <TrashIcon />
+          {t("delete")}
         </Button>
       )}
       {permissions.checkIn && canCheckIn(facts) && (
@@ -232,6 +255,18 @@ function BookingActions({
             () => t("markedNoShow"),
           )
         }
+      />
+      <DeleteDialog
+        open={confirm === "delete"}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        title={t("deleteTitle")}
+        description={t("deleteBody")}
+        onDelete={(input) => deleteBookingAction(booking.id, input)}
+        onDeleted={() => {
+          setConfirm(null);
+          notify.success(t("deleted"));
+          router.refresh();
+        }}
       />
       <BookingFormDialog
         open={rescheduling}

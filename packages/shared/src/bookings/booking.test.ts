@@ -5,6 +5,7 @@ import {
   canCancelBooking,
   canCheckIn,
   canComplete,
+  canDeleteBooking,
   canMarkNoShow,
   canReschedule,
   hasSessionForNewBooking,
@@ -22,8 +23,9 @@ describe("allowed actions (A-006, D-025, D-026)", () => {
   it("matches the state machine: check-in is a fact on a Booked session, not a status", () => {
     expect(allowed(canReschedule)).toEqual(["BOOKED"]);
     expect(allowed(canCheckIn)).toEqual(["BOOKED"]);
-    // OQ-002 interim: never straight from Booked without a check-in.
-    expect(allowed(canComplete)).toEqual(["BOOKED+in"]);
+    // D-026: no separate check-in step before Đã tập.
+    expect(allowed(canComplete)).toEqual(["BOOKED", "BOOKED+in"]);
+    expect(allowed(canDeleteBooking)).toEqual(["BOOKED"]);
     expect(allowed(canCancelBooking)).toEqual(["BOOKED", "BOOKED+in"]);
     expect(allowed(canMarkNoShow)).toEqual(["BOOKED"]);
   });

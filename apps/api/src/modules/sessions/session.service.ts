@@ -5,7 +5,14 @@ import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { findContract } from "../contracts/contract.repository.js";
 import { contractView, type ContractView } from "../contracts/contract.service.js";
 import { findStatusRule, setStatus } from "../bookings/booking.repository.js";
-import { canCheckIn, canComplete, isWithinContractPeriod } from "@flow/shared/bookings";
+import {
+  canCheckIn,
+  canComplete,
+  completeDaySchema,
+  isWithinContractPeriod,
+  type CompleteDayResult,
+} from "@flow/shared/bookings";
+import { parseInput } from "../../platform/validation/parse.js";
 import { entitledSessions } from "@flow/shared/contracts";
 import {
   bookingView,
@@ -44,7 +51,7 @@ export async function checkIn(actor: Actor, bookingId: string): Promise<BookingV
 }
 
 /**
- * Completes a checked-in session: it becomes Đã tập and consumes exactly one session of its contract by the rule of
+ * Completes a Booked session: it becomes Đã tập and consumes exactly one session of its contract by the rule of
  * that status (BR-006, D-025). The locked transaction from docs/22 §7 (T-013) makes this safe when it is repeated or
  * sent many times at once (BR-007), and when the last sessions of a contract are completed together (BR-009).
  */
@@ -82,7 +89,10 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
     if ((await setStatus(tx, bookingId, "BOOKED", rule, actor.id)) !== 1) {
       throw new AppError("INVALID_STATUS_TRANSITION");
     }
-    await recordCompletion(tx, bookingId, new Date(), actor.id);
+    // D-026: there is no separate check-in step; completing a session nobody checked in to records both at once.
+    const now = new Date();
+    if (!booking.session) await createSession(tx, { bookingId, checkedInAt: now, checkedInById: actor.id });
+    await recordCompletion(tx, bookingId, now, actor.id);
     await recordAudit(tx, {
       actorUserId: actor.id,
       entityType: "booking",
@@ -94,4 +104,24 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
     });
     return result();
   });
+}
+
+/**
+ * Bulk "Đã tập" for a day (M5.3): each session goes through the same single path as one by one, in its own
+ * transaction, so one that cannot be completed (no sessions left, frozen) does not stop or undo the others.
+ */
+export async function completeSessions(actor: Actor, rawInput: unknown): Promise<CompleteDayResult> {
+  assertCan(actor, "session.complete");
+  const { bookingIds } = parseInput(completeDaySchema, rawInput);
+  const items: CompleteDayResult["items"] = [];
+  for (const bookingId of new Set(bookingIds)) {
+    try {
+      await completeSession(actor, bookingId);
+      items.push({ bookingId, ok: true, code: null });
+    } catch (error) {
+      if (!(error instanceof AppError)) throw error;
+      items.push({ bookingId, ok: false, code: error.code });
+    }
+  }
+  return { completed: items.filter((item) => item.ok).length, items };
 }

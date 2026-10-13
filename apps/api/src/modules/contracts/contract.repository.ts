@@ -198,7 +198,7 @@ export async function findDependents(db: Db, contractId: string) {
       take: 20,
     }),
     db.booking.findMany({
-      where: { contractId, status: { not: "CANCELLED" } },
+      where: { contractId, status: { notIn: ["CANCELLED", "DELETED"] } },
       select: { id: true, scheduledStart: true, status: true },
       orderBy: { scheduledStart: "asc" },
       take: 20,

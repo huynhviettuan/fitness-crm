@@ -41,6 +41,7 @@ describe("the session statuses (brief §6.2, D-025)", () => {
       ["TRAINED", true, true, true, "info"],
       ["CANCELLED", false, false, false, "muted"],
       ["NO_SHOW", true, true, true, "warning"],
+      ["DELETED", false, false, false, "muted"],
     ]);
   });
 

@@ -1066,7 +1066,8 @@
       "checkedIn": "Check-in",
       "completed": "Hoàn thành",
       "remainingSessions": "Buổi còn lại",
-      "branch": "Chi nhánh"
+      "branch": "Chi nhánh",
+      "confirmation": "Xác nhận"
     },
     "checkedInBadge": "Đã check-in",
     "calendarViews": {
@@ -1083,7 +1084,28 @@
     "customerFilter": "Khách: {name}",
     "clearCustomer": "Bỏ lọc khách",
     "customerFilterLabel": "Lọc theo khách",
-    "customerFilterPlaceholder": "Khách hàng…"
+    "customerFilterPlaceholder": "Khách hàng…",
+    "delete": "Xóa",
+    "deleteTitle": "Xóa buổi tập này?",
+    "deleteBody": "Buổi tập đặt nhầm. Buổi tập vào thùng rác, giờ được giải phóng và không trừ buổi nào. Chỉ làm được khi buổi còn ở trạng thái Booked và chưa check-in.",
+    "deleted": "Đã xóa buổi tập",
+    "confirmation": {
+      "MANUAL": "Thủ công",
+      "DEVICE": "Bằng máy"
+    },
+    "completeDay": {
+      "button": "Đã tập cho cả ngày",
+      "title": "Xác nhận Đã tập cho các buổi trong ngày",
+      "body": "Chuyển các buổi Booked đang được chọn sang Đã tập. Mỗi buổi trừ một buổi của hợp đồng và tính cho PT.",
+      "date": "Ngày",
+      "load": "Xem các buổi",
+      "none": "Ngày này không có buổi Booked nào.",
+      "selected": "Đã chọn {count}",
+      "submit": "Xác nhận {count} buổi",
+      "done": "Đã xác nhận {count} buổi",
+      "someFailed": "{failed} buổi không xác nhận được:",
+      "item": "{time} · {customer} · {trainer}"
+    }
   },
   "finance": {
     "title": "Tài chính",
@@ -1206,7 +1228,8 @@
       },
       "booking": {
         "view": "Xem lịch PT và buổi tập",
-        "manage": "Đặt, đổi giờ, hủy lịch, đánh dấu vắng"
+        "manage": "Đặt, đổi giờ, hủy lịch, đánh dấu vắng",
+        "delete": "Xóa buổi tập đã đặt"
       },
       "session": {
         "checkIn": "Check-in buổi tập",
@@ -1476,7 +1499,8 @@
       "payment": "Phiếu thu",
       "cash_transaction": "Khoản thu chi",
       "person": "Hồ sơ đã gộp",
-      "contract": "Hợp đồng"
+      "contract": "Hợp đồng",
+      "booking": "Buổi tập"
     },
     "fields": {
       "type": "Loại",

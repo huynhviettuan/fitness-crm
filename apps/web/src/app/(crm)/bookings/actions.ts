@@ -3,13 +3,16 @@
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import {
   cancelBooking,
+  completeDay,
   createBooking,
+  deleteBooking,
   markNoShow,
   rescheduleBooking,
   checkIn,
   completeSession,
 } from "@/lib/api/bookings";
-import type { BookingInput, RescheduleInput } from "@flow/shared/bookings";
+import type { BookingInput, CompleteDayResult, RescheduleInput } from "@flow/shared/bookings";
+import type { DeleteInput } from "@flow/shared/trash";
 
 export async function createBookingAction(input: BookingInput): Promise<ActionResult> {
   return runAction(async () => {
@@ -47,4 +50,19 @@ export async function completeSessionAction(id: string): Promise<ActionResult<{ 
     const { contract } = await completeSession(id);
     return { remainingSessions: contract.remainingSessions };
   });
+}
+
+export async function deleteBookingAction(
+  id: string,
+  input: DeleteInput,
+): Promise<ActionResult<{ submitted: boolean }>> {
+  return runAction(async () => {
+    await deleteBooking(id, input);
+    return { submitted: false };
+  });
+}
+
+/** Bulk "Đã tập" for a day (M5.3): the sessions the admin confirmed in the list. */
+export async function completeDayAction(bookingIds: string[]): Promise<ActionResult<CompleteDayResult>> {
+  return runAction(() => completeDay(bookingIds));
 }

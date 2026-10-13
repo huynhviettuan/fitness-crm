@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-16 — M5.3: session dialog, delete, bulk Đã tập
+
+- **Đã tập straight from Booked** (A-150): no separate check-in step; check-in stays an optional fact. How a session was confirmed is kept.
+- **Xóa** (A-151): a Booked session booked by mistake goes to the trash with a reason and frees the time.
+- **Bulk Đã tập for a day** (A-152): a result per session.
+- Docs 04, 07, 09, 13, 16, 18, 28.
+
 ## 2026-10-16 — M5.2: PT grid and booking
 
 - **Any time bookable** (A-149, D-058): shifts and days off only tint the grid; the old "outside working hours" refusal is gone.

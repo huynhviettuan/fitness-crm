@@ -311,9 +311,15 @@ describe("working schedule (D-030)", () => {
 
     // 15/10/2026 is a Thursday.
     expect(await trainersOfDay(reception, { date: "15/10/2026" })).toEqual([
-      { trainer: { id: lan.id, employeeCode: lan.employeeCode, fullName: "PT Lan" }, dayOff: true, workingHours: [] },
+      {
+        trainer: { id: lan.id, employeeCode: lan.employeeCode, fullName: "PT Lan" },
+        branchId: lan.branch.id,
+        dayOff: true,
+        workingHours: [],
+      },
       {
         trainer: { id: linh.id, employeeCode: linh.employeeCode, fullName: "PT Linh" },
+        branchId: linh.branch.id,
         dayOff: false,
         workingHours: [
           { start: "08:00", end: "14:00" },
