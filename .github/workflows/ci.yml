@@ -56,8 +56,8 @@ jobs:
         run: pnpm db:deploy
       - run: pnpm --filter e2e exec playwright install --with-deps chromium
       # Builds the apps, then runs the smoke cases of the main features (tests tagged @smoke) and the OWASP security
-      # suite (the "A01" to "A10" describes of e2e/security, API-only and fast). The full E2E suite runs nightly and
-      # on demand (full-e2e.yml).
+      # suite (the "A01" to "A10" describes of e2e/security, API-only and fast). The full E2E suite runs only when started
+      # by hand (full-e2e.yml).
       - name: E2E smoke cases and OWASP security suite
         run: pnpm test:e2e:smoke
       - uses: actions/upload-artifact@v4
