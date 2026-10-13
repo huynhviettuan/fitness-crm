@@ -702,7 +702,10 @@
       "notes": "Ghi chú",
       "imported": "Hợp đồng chuyển từ hệ thống cũ",
       "createdBy": "Người tạo",
-      "approval": "Duyệt"
+      "approval": "Duyệt",
+      "phone": "Số điện thoại",
+      "branch": "Chi nhánh",
+      "usedSessions": "Đã tập"
     },
     "cancelBookingsList": "{count, plural, other {# lịch hẹn sau sẽ bị hủy:}}",
     "sessionHistory": "Lịch sử buổi tập",
@@ -811,7 +814,54 @@
     "deleteBody": "Hợp đồng chuyển vào thùng rác và biến khỏi mọi danh sách, báo cáo. Phải xóa phiếu thu và buổi tập trước.",
     "approvalPending": "Đang chờ người duyệt",
     "approvalApproved": "Đã duyệt bởi {name}",
-    "approvalRejected": "Bị từ chối bởi {name}"
+    "approvalRejected": "Bị từ chối bởi {name}",
+    "filters": "Bộ lọc",
+    "apply": "Lọc",
+    "allBranches": "Tất cả chi nhánh",
+    "allTypes": "Tất cả loại",
+    "dateFrom": "Ngày hợp đồng từ",
+    "dateTo": "Ngày hợp đồng đến",
+    "allServices": "Tất cả dịch vụ",
+    "filterPt": "PT",
+    "allPts": "Tất cả PT",
+    "allPromotions": "Tất cả khuyến mãi",
+    "filterPayment": "Thanh toán",
+    "allPayments": "Tất cả",
+    "paymentStatuses": {
+      "UNPAID": "Chưa thanh toán",
+      "PARTIAL": "Thanh toán một phần",
+      "PAID": "Đã thanh toán đủ"
+    },
+    "filterSigned": "Chữ ký",
+    "allSigned": "Tất cả",
+    "signedYes": "Đã ký",
+    "signedNo": "Chưa ký",
+    "filterApproval": "Duyệt",
+    "allStatuses": "Tất cả",
+    "statuses": {
+      "DRAFT": "Chờ duyệt",
+      "ACTIVE": "Đã duyệt",
+      "EXPIRED": "Hết hạn",
+      "CANCELLED": "Đã hủy",
+      "REJECTED": "Đã từ chối"
+    },
+    "totalsLabel": "Tổng của các hợp đồng trong danh sách",
+    "noResultsFilters": "Không có hợp đồng nào khớp bộ lọc.",
+    "tabs": {
+      "info": "Thông tin",
+      "checkins": "Lịch sử check-in",
+      "history": "Lịch sử gói tập"
+    },
+    "packageHistoryEmpty": "Hợp đồng này chưa có thay đổi nào.",
+    "print": "In",
+    "printTitle": "Hợp đồng",
+    "printNow": "In",
+    "printCustomerSign": "Khách hàng",
+    "printStaffSign": "Nhân viên",
+    "updateNote": "Cập nhật ghi chú",
+    "noteTitle": "Ghi chú hợp đồng {code}",
+    "noteBody": "Ghi chú sửa được sau khi duyệt. Gói tập, giá và ngày thì không.",
+    "noteSaved": "Đã lưu ghi chú"
   },
   "employees": {
     "title": "Nhân viên",
@@ -1072,7 +1122,9 @@
         "cancel": "Hủy hợp đồng",
         "export": "Xuất danh sách hợp đồng",
         "unapprove": "Đưa hợp đồng đã duyệt về chờ duyệt",
-        "delete": "Xóa hợp đồng"
+        "delete": "Xóa hợp đồng",
+        "print": "In hợp đồng",
+        "note": "Cập nhật ghi chú hợp đồng"
       },
       "booking": {
         "view": "Xem lịch PT và buổi tập",
@@ -1413,7 +1465,9 @@
       "step_completed": "Hoàn thành bước tư vấn",
       "converted": "Chuyển thành khách hàng",
       "note_added": "Đã thêm ghi chú",
-      "downloaded": "Đã xuất file"
+      "downloaded": "Đã xuất file",
+      "unapproved": "Đưa về chờ duyệt",
+      "note_updated": "Cập nhật ghi chú"
     },
     "fields": {
       "at": "Thời điểm",

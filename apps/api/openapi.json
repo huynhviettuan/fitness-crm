@@ -5538,6 +5538,86 @@
             }
           },
           {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contractType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ptId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promotionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signed",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -5596,6 +5676,86 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contractType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serviceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ptId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promotionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signed",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
             "required": false,
             "in": "query",
             "schema": {
@@ -6196,6 +6356,107 @@
           "contracts"
         ],
         "x-permission": "contract.delete"
+      }
+    },
+    "/api/v1/contracts/{id}/history": {
+      "get": {
+        "operationId": "ContractsController_history",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractHistory"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.view"
+      }
+    },
+    "/api/v1/contracts/{id}/note": {
+      "patch": {
+        "operationId": "ContractsController_note",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "notes"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.note"
       }
     },
     "/api/v1/contracts/{id}/activate": {
@@ -8911,6 +9172,8 @@
                             "contract.cancel",
                             "contract.unapprove",
                             "contract.delete",
+                            "contract.print",
+                            "contract.note",
                             "booking.view",
                             "booking.manage",
                             "session.checkIn",
@@ -9320,6 +9583,8 @@
                         "contract.cancel",
                         "contract.unapprove",
                         "contract.delete",
+                        "contract.print",
+                        "contract.note",
                         "booking.view",
                         "booking.manage",
                         "session.checkIn",
@@ -9577,6 +9842,8 @@
                         "contract.cancel",
                         "contract.unapprove",
                         "contract.delete",
+                        "contract.print",
+                        "contract.note",
                         "booking.view",
                         "booking.manage",
                         "session.checkIn",
@@ -12086,6 +12353,8 @@
                 "contract.cancel",
                 "contract.unapprove",
                 "contract.delete",
+                "contract.print",
+                "contract.note",
                 "booking.view",
                 "booking.manage",
                 "session.checkIn",
@@ -15582,13 +15851,22 @@
           },
           "pageSize": {
             "type": "integer"
+          },
+          "totals": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContractTotals"
+              }
+            ]
           }
         },
         "required": [
           "items",
           "total",
           "page",
-          "pageSize"
+          "pageSize",
+          "totals"
         ]
       },
       "Contract": {
@@ -15603,6 +15881,13 @@
           },
           "customer": {
             "$ref": "#/components/schemas/CustomerRef"
+          },
+          "customerPhone": {
+            "nullable": true,
+            "type": "string"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
           },
           "packageName": {
             "type": "string"
@@ -15955,6 +16240,8 @@
           "id",
           "contractCode",
           "customer",
+          "customerPhone",
+          "branch",
           "packageName",
           "service",
           "contractType",
@@ -16024,6 +16311,25 @@
           "id",
           "customerCode",
           "fullName"
+        ]
+      },
+      "ContractTotals": {
+        "type": "object",
+        "properties": {
+          "contractValue": {
+            "type": "integer"
+          },
+          "paidAmount": {
+            "type": "integer"
+          },
+          "debt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contractValue",
+          "paidAmount",
+          "debt"
         ]
       },
       "EmailMessagePage": {
@@ -16155,6 +16461,85 @@
           "employeeCode",
           "fullName",
           "isTrainer"
+        ]
+      },
+      "ContractHistory": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AuditEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "before": {
+            "nullable": true,
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "after": {
+            "nullable": true,
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "actor",
+          "entityType",
+          "entityId",
+          "action",
+          "before",
+          "after",
+          "context"
         ]
       },
       "SubmittedForApproval": {
@@ -17044,6 +17429,8 @@
                     "contract.cancel",
                     "contract.unapprove",
                     "contract.delete",
+                    "contract.print",
+                    "contract.note",
                     "booking.view",
                     "booking.manage",
                     "session.checkIn",
@@ -17294,6 +17681,8 @@
                 "contract.cancel",
                 "contract.unapprove",
                 "contract.delete",
+                "contract.print",
+                "contract.note",
                 "booking.view",
                 "booking.manage",
                 "session.checkIn",
@@ -17609,71 +17998,6 @@
           "total",
           "page",
           "pageSize"
-        ]
-      },
-      "AuditEvent": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "actor": {
-            "nullable": true,
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "name"
-            ]
-          },
-          "entityType": {
-            "type": "string"
-          },
-          "entityId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "action": {
-            "type": "string"
-          },
-          "before": {
-            "nullable": true,
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "after": {
-            "nullable": true,
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "context": {
-            "type": "object",
-            "additionalProperties": {}
-          }
-        },
-        "required": [
-          "id",
-          "at",
-          "actor",
-          "entityType",
-          "entityId",
-          "action",
-          "before",
-          "after",
-          "context"
         ]
       },
       "TrashPage": {

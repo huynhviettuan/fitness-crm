@@ -25,7 +25,7 @@ export function AppHeader({ user, showSearch, approvals, notifications }: Header
   const ta = useTranslations("approvals");
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-1 border-b bg-background/95 px-4 backdrop-blur sm:gap-3">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-1 border-b bg-background/95 px-4 backdrop-blur sm:gap-3 print:hidden">
       <SidebarTrigger aria-label={t("toggleSidebar")} />
       <Separator orientation="vertical" className="h-5!" />
       {/* min-w-0: on a phone the search shrinks so the bar never overflows (AC-23). */}

@@ -2,7 +2,9 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, Res }
 import { ApiNoContentResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import {
+  contractHistorySchema,
   contractInputSchema,
+  contractNoteSchema,
   contractPageSchema,
   contractSchema,
   contractStaffListSchema,
@@ -24,16 +26,18 @@ import {
 } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
 import { exportList } from "../../platform/export/export.service.js";
-import { contractsExport, CONTRACT_EXPORT_QUERY } from "./contract.export.js";
+import { contractsExport, CONTRACT_EXPORT_QUERY, CONTRACT_LIST_QUERY } from "./contract.export.js";
 import { listPayments, recordPayment } from "../finance/payment.service.js";
 import {
   cancelContract,
   deleteContract,
+  contractHistory,
   getContract,
   listContracts,
   staffChoices,
   unapproveContract,
   updateContract,
+  updateContractNote,
 } from "./contract.service.js";
 import { activateContract, rejectContract } from "./contract-approval.service.js";
 
@@ -44,13 +48,10 @@ export class ContractsController {
   /** Search by contract code, package, or customer. */
   @Get()
   @RequirePermission("contract.view")
-  @ApiOptionalQuery("q", "customerId", "page", "pageSize")
+  @ApiOptionalQuery(...CONTRACT_LIST_QUERY)
   @ApiResult(contractPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
-    return encode(
-      contractPageSchema,
-      await listContracts(actor, queryOf(request, ["q", "customerId", "page", "pageSize"])),
-    );
+    return encode(contractPageSchema, await listContracts(actor, queryOf(request, CONTRACT_LIST_QUERY)));
   }
 
   /**
@@ -79,6 +80,26 @@ export class ContractsController {
   @ApiResult(contractSchema)
   async get(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
     return encode(contractSchema, await getContract(actor, id));
+  }
+
+  /** The package history tab: the contract's recorded changes, newest first (brief §5.3). */
+  @Get(":id/history")
+  @RequirePermission("contract.view")
+  @ApiResult(contractHistorySchema)
+  async history(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(contractHistorySchema, { items: await contractHistory(actor, id) });
+  }
+
+  /** The note can change on any contract, approved ones too (A-127). */
+  @Patch(":id/note")
+  @RequirePermission("contract.note")
+  @ApiResult(contractSchema)
+  async note(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: contractNoteSchema }) body: unknown,
+  ) {
+    return encode(contractSchema, await updateContractNote(actor, id, body));
   }
 
   /** Drafts only; all entered fields are sent (OQ-015 interim). */

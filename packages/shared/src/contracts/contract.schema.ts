@@ -2,13 +2,14 @@ import { z } from "zod";
 import { optionChoice, optionNote } from "../options/option.schema.js";
 import { paymentInputSchema } from "../finance/finance.schema.js";
 import {
+  calendarDate,
   hasNoControlCharacters,
   optionalCalendarDate,
   percentNumber,
   vndAmount,
   wholeNumber,
 } from "../validation/index.js";
-import { CONTRACT_TYPES } from "./contract.domain.js";
+import { CONTRACT_TYPES, LIST_STATUSES, PAYMENT_STATUSES } from "./contract.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Forms send "" for an empty optional field; it is stored as null.
@@ -118,13 +119,34 @@ export const idempotencyKeySchema = z.uuid();
 /** Sending an approved contract back to pending approval needs a reason from `unapproveReasons` (A-124). */
 export const unapproveSchema = z.object({ reasonId: optionChoice, reasonNote: optionNote });
 
+/** A filter left empty by a form is no filter. */
+const filter = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+
+/** Updating the note of a contract, also an approved one (brief §5.3, A-127). */
+export const contractNoteSchema = z.object({ notes: optionalText(2000) });
+
+/** The list's filters (brief §5.3): branch, type, contract date, service, PT, promotion, payment, signature, approval. */
 export const listContractsSchema = z.object({
   q: z.string().trim().max(100).refine(hasNoControlCharacters).optional().default(""),
   customerId: z.uuid().optional(),
+  branchId: filter(z.uuid({ error: "invalidChoice" })),
+  contractType: filter(z.enum(CONTRACT_TYPES, { error: "invalidChoice" })),
+  /** The contract date, from and to, dd/MM/yyyy, inclusive. */
+  from: filter(calendarDate),
+  to: filter(calendarDate),
+  serviceId: filter(z.uuid({ error: "invalidChoice" })),
+  ptId: filter(z.uuid({ error: "invalidChoice" })),
+  promotionId: filter(z.uuid({ error: "invalidChoice" })),
+  paymentStatus: filter(z.enum(PAYMENT_STATUSES, { error: "invalidChoice" })),
+  signed: filter(z.enum(["true", "false"], { error: "invalidChoice" }).transform((value) => value === "true")),
+  /** The approval status: pending (DRAFT), approved (ACTIVE), rejected, cancelled, or expired. */
+  status: filter(z.enum(LIST_STATUSES, { error: "invalidChoice" })),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 
 export type ContractInput = z.input<typeof contractInputSchema>;
 export type ContractData = z.output<typeof contractInputSchema>;
+export type ContractNoteInput = z.input<typeof contractNoteSchema>;
 export type UnapproveInput = z.input<typeof unapproveSchema>;

@@ -29,8 +29,10 @@ test.describe("bookings as a receptionist", () => {
     await expect(toasts.getByText(b.created)).toBeVisible();
     await expect(contractDetailPage.bookings.row("18:00")).toContainText(status.BOOKED);
     // E2E-002: booking does not consume.
+    await contractDetailPage.openInfo();
     await expect(contractDetailPage.figure(cf.remainingSessions)).toHaveText("24");
 
+    await contractDetailPage.openCheckins();
     const sheet = await contractDetailPage.bookings.open("18:00");
     await sheet.action(b.checkIn).click();
     await expect(sheet.detail(b.fields.status)).toHaveText(status.CHECKED_IN);
@@ -39,6 +41,7 @@ test.describe("bookings as a receptionist", () => {
     await sheet.close();
 
     // E2E-003: check-in does not consume.
+    await contractDetailPage.openInfo();
     await expect(contractDetailPage.figure(cf.remainingSessions)).toHaveText("24");
     await expect(contractDetailPage.figure(cf.completedSessions)).toHaveText("0");
   });
@@ -114,6 +117,7 @@ test.describe("sessions as a manager", () => {
     await manager.post(`/api/v1/bookings/${booking.id}/check-in`);
 
     await contractDetailPage.goto(contract.id);
+    await contractDetailPage.openCheckins();
     const sheet = await contractDetailPage.bookings.open("07:00");
     const confirmation = await sheet.openConfirmation(b.complete);
     // The effect is stated before confirming (docs/23 §7).
@@ -125,6 +129,7 @@ test.describe("sessions as a manager", () => {
     ).toBeVisible();
     await sheet.close();
     // E2E-004
+    await contractDetailPage.openInfo();
     await expect(contractDetailPage.figure(cf.completedSessions)).toHaveText("1");
     await expect(contractDetailPage.figure(cf.remainingSessions)).toHaveText("23");
 
@@ -165,6 +170,7 @@ test.describe("sessions as a manager", () => {
         .getByText(labels.errors.CONTRACT_NO_REMAINING_SESSIONS),
     ).toBeVisible();
     await form.cancel();
+    await contractDetailPage.openInfo();
     await expect(contractDetailPage.figure(cf.remainingSessions)).toHaveText("0");
   });
 

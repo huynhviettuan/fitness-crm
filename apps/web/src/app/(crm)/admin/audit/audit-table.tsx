@@ -8,27 +8,25 @@ import { DateTime } from "@/components/date-time";
 import type { AuditEvent } from "@flow/shared/audit";
 
 /** Changes newest first, each with its values before and after (FR-PLT-008). */
-export function AuditTable({ events, empty, footer }: { events: AuditEvent[]; empty: ReactNode; footer?: ReactNode }) {
+export function AuditTable({
+  events,
+  empty,
+  footer,
+  hideRecord = false,
+}: {
+  events: AuditEvent[];
+  empty: ReactNode;
+  footer?: ReactNode;
+  /** On a record's own page every row is about that record. */
+  hideRecord?: boolean;
+}) {
   const t = useTranslations("audit");
 
   const columns: DataTableColumn<AuditEvent>[] = [
     { id: "at", header: t("fields.at"), cell: ({ row }) => <DateTime value={row.original.at} format="dateTime" /> },
     { id: "actor", header: t("fields.actor"), cell: ({ row }) => row.original.actor?.name ?? t("system") },
     { id: "action", header: t("fields.action"), cell: ({ row }) => <ActionLabel event={row.original} /> },
-    {
-      id: "record",
-      header: t("fields.record"),
-      cell: ({ row }) => (
-        <Link
-          href={`/admin/audit?record=${row.original.entityId}`}
-          className="font-mono text-xs hover:underline"
-          title={t("copyId")}
-          aria-label={`${t("copyId")}: ${row.original.entityId}`}
-        >
-          {row.original.entityId.slice(0, 8)}
-        </Link>
-      ),
-    },
+    ...(hideRecord ? [] : [recordColumn(t)]),
     { id: "changes", header: t("fields.changes"), cell: ({ row }) => <Changes event={row.original} /> },
   ];
 
@@ -42,6 +40,23 @@ export function AuditTable({ events, empty, footer }: { events: AuditEvent[]; em
       getRowId={(row) => row.id}
     />
   );
+}
+
+function recordColumn(t: ReturnType<typeof useTranslations<"audit">>): DataTableColumn<AuditEvent> {
+  return {
+    id: "record",
+    header: t("fields.record"),
+    cell: ({ row }) => (
+      <Link
+        href={`/admin/audit?record=${row.original.entityId}`}
+        className="font-mono text-xs hover:underline"
+        title={t("copyId")}
+        aria-label={`${t("copyId")}: ${row.original.entityId}`}
+      >
+        {row.original.entityId.slice(0, 8)}
+      </Link>
+    ),
+  };
 }
 
 /** "Receipt · Deleted": the kind of record and what happened, in the user's language. */

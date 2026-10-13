@@ -9,6 +9,7 @@ import {
   rejectContract,
   unapproveContract,
   updateContract,
+  updateContractNote,
 } from "@/lib/api/contracts";
 import type { RejectInput } from "@flow/shared/approvals";
 import type { UnapproveInput } from "@flow/shared/contracts";
@@ -61,4 +62,10 @@ export async function deleteContractAction(
   input: DeleteInput,
 ): Promise<ActionResult<{ submitted: boolean }>> {
   return runAction(async () => ({ submitted: await deleteContract(id, input) }));
+}
+
+export async function updateContractNoteAction(id: string, input: { notes: string }): Promise<ActionResult> {
+  return runAction(async () => {
+    await updateContractNote(id, input);
+  });
 }

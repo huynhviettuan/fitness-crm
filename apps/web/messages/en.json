@@ -702,7 +702,10 @@
       "notes": "Notes",
       "imported": "Brought over from the old system",
       "createdBy": "Created by",
-      "approval": "Approval"
+      "approval": "Approval",
+      "phone": "Phone",
+      "branch": "Branch",
+      "usedSessions": "Used"
     },
     "cancelBookingsList": "{count, plural, one {This booking will be cancelled:} other {These # bookings will be cancelled:}}",
     "sessionHistory": "Session history",
@@ -811,7 +814,54 @@
     "deleteBody": "The contract moves to the trash and leaves every list and report. Receipts and sessions must be deleted first.",
     "approvalPending": "Waiting for an approver",
     "approvalApproved": "Approved by {name}",
-    "approvalRejected": "Rejected by {name}"
+    "approvalRejected": "Rejected by {name}",
+    "filters": "Filters",
+    "apply": "Apply",
+    "allBranches": "All branches",
+    "allTypes": "All types",
+    "dateFrom": "Contract date from",
+    "dateTo": "Contract date to",
+    "allServices": "All services",
+    "filterPt": "PT",
+    "allPts": "All PTs",
+    "allPromotions": "All promotions",
+    "filterPayment": "Payment",
+    "allPayments": "All",
+    "paymentStatuses": {
+      "UNPAID": "Unpaid",
+      "PARTIAL": "Partly paid",
+      "PAID": "Paid in full"
+    },
+    "filterSigned": "Signature",
+    "allSigned": "All",
+    "signedYes": "Signed",
+    "signedNo": "Not signed",
+    "filterApproval": "Approval",
+    "allStatuses": "All",
+    "statuses": {
+      "DRAFT": "Pending approval",
+      "ACTIVE": "Approved",
+      "EXPIRED": "Expired",
+      "CANCELLED": "Cancelled",
+      "REJECTED": "Rejected"
+    },
+    "totalsLabel": "Totals of the contracts listed",
+    "noResultsFilters": "No contracts match these filters.",
+    "tabs": {
+      "info": "Information",
+      "checkins": "Check-in history",
+      "history": "Package history"
+    },
+    "packageHistoryEmpty": "Nothing has changed on this contract yet.",
+    "print": "Print",
+    "printTitle": "Contract",
+    "printNow": "Print",
+    "printCustomerSign": "Customer",
+    "printStaffSign": "Staff",
+    "updateNote": "Update note",
+    "noteTitle": "Note of contract {code}",
+    "noteBody": "The note can change after approval. The package, price, and dates can't.",
+    "noteSaved": "Note saved"
   },
   "employees": {
     "title": "Employees",
@@ -1072,7 +1122,9 @@
         "cancel": "Cancel contracts",
         "export": "Export the contracts",
         "unapprove": "Send an approved contract back to pending",
-        "delete": "Delete contracts"
+        "delete": "Delete contracts",
+        "print": "Print contracts",
+        "note": "Update a contract's note"
       },
       "booking": {
         "view": "View the PT calendar and sessions",
@@ -1413,7 +1465,9 @@
       "step_completed": "Consulting step completed",
       "converted": "Converted to customer",
       "note_added": "Note added",
-      "downloaded": "Exported"
+      "downloaded": "Exported",
+      "unapproved": "Sent back to pending",
+      "note_updated": "Note updated"
     },
     "fields": {
       "at": "When",

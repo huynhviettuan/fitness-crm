@@ -1,11 +1,34 @@
 import "server-only";
-import { contractPageSchema, contractSchema, contractStaffListSchema } from "@flow/shared/contracts";
+import {
+  contractHistorySchema,
+  contractPageSchema,
+  contractSchema,
+  contractStaffListSchema,
+} from "@flow/shared/contracts";
 import type { DeleteInput } from "@flow/shared/trash";
 import type { RejectInput } from "@flow/shared/approvals";
 import type { UnapproveInput } from "@flow/shared/contracts";
 import { api, query, read, submittedOrDone } from "./client";
 
-export async function listContracts(params: { q?: string; customerId?: string; page?: number; pageSize?: number }) {
+/** The list's filters (brief §5.3); a value left out is no filter. */
+export type ContractListParams = {
+  q?: string;
+  customerId?: string;
+  branchId?: string;
+  contractType?: string;
+  from?: string;
+  to?: string;
+  serviceId?: string;
+  ptId?: string;
+  promotionId?: string;
+  paymentStatus?: string;
+  signed?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function listContracts(params: ContractListParams) {
   return read(contractPageSchema, (await api()).GET("/api/v1/contracts", { params: { query: query(params) } }));
 }
 
@@ -67,4 +90,21 @@ export async function unapproveContract(id: string, input: UnapproveInput) {
 /** A-125: moves the contract to the trash; true when the deletion waits for approval (D-018). */
 export async function deleteContract(id: string, input: DeleteInput) {
   return submittedOrDone((await api()).DELETE("/api/v1/contracts/{id}", { params: { path: { id } }, body: input }));
+}
+
+/** The package history tab: the contract's recorded changes, newest first. */
+export async function getContractHistory(id: string) {
+  const { items } = await read(
+    contractHistorySchema,
+    (await api()).GET("/api/v1/contracts/{id}/history", { params: { path: { id } } }),
+  );
+  return items;
+}
+
+/** The note can change after approval (A-127). */
+export async function updateContractNote(id: string, input: { notes: string }) {
+  return read(
+    contractSchema,
+    (await api()).PATCH("/api/v1/contracts/{id}/note", { params: { path: { id } }, body: input }),
+  );
 }

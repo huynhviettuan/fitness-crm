@@ -216,4 +216,31 @@ test.describe("A10 contract input errors", () => {
       404,
     );
   });
+
+  test("the note is for whoever may create contracts, the list refuses a wrong filter, and a stranger gets no history (M4.4b)", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const seller = await apiAs("FITNESS_MANAGER");
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const contract = await createContractViaApi(seller, customer.id, { activateWith: await apiAs("ADMIN") });
+
+    // Approved, and the note still changes — for those who create contracts, not for the others.
+    expect((await seller.patch(`/api/v1/contracts/${contract.id}/note`, { data: { notes: "Ghi chú" } })).status()).toBe(
+      200,
+    );
+    for (const role of ["RECEPTIONIST", "PT", "ACCOUNTANT"] as const) {
+      const api = await apiAs(role);
+      expect((await api.patch(`/api/v1/contracts/${contract.id}/note`, { data: { notes: "x" } })).status()).toBe(403);
+    }
+    expect((await seller.patch(`/api/v1/contracts/${contract.id}/note`, { data: { notes: "a b" } })).status()).toBe(400);
+
+    const wrong = await seller.get("/api/v1/contracts?status=NOPE");
+    expect(wrong.status()).toBe(400);
+    expect(await wrong.json()).toMatchObject({ code: "VALIDATION_FAILED" });
+
+    // The history is the contract's: a trainer who cannot open the contract cannot read its history either.
+    expect((await (await apiAs("PT")).get(`/api/v1/contracts/${contract.id}/history`)).status()).toBe(404);
+    expect((await seller.get(`/api/v1/contracts/${contract.id}/history`)).status()).toBe(200);
+  });
 });

@@ -144,7 +144,17 @@ export class ContractDetailPage {
     return new PaymentDialog(this.page, this.page.getByRole("dialog", { name: labels.finance.recordPayment }));
   }
 
+  async openInfo(): Promise<void> {
+    await this.shell.main.getByRole("tab", { name: labels.contracts.tabs.info }).click();
+  }
+
+  /** The sessions of the contract are on the Check-in history tab (brief §5.3). */
+  async openCheckins(): Promise<void> {
+    await this.shell.main.getByRole("tab", { name: labels.contracts.tabs.checkins }).click();
+  }
+
   async openAddBooking(): Promise<BookingFormDialog> {
+    await this.openCheckins();
     await this.sessionHistory.getByRole("button", { name: labels.bookings.create, exact: true }).click();
     return bookingForm(this.page);
   }
@@ -179,5 +189,45 @@ export class CustomerContractsTab {
 
   get table(): Locator {
     return this.panel.getByRole("table", { name: labels.contracts.title });
+  }
+}
+
+/** The contract list (brief §5.3): filters on the left, the totals of the filter, and the table. */
+export class ContractListPage {
+  private readonly shell: AppShell;
+
+  constructor(private readonly page: Page) {
+    this.shell = new AppShell(page);
+  }
+
+  async goto(query: Record<string, string> = {}): Promise<void> {
+    await this.page.goto(`/contracts?${new URLSearchParams(query)}`);
+  }
+
+  private get filters(): Locator {
+    return this.shell.main.getByRole("complementary", { name: labels.contracts.filters });
+  }
+
+  /** Chooses a filter's value, applies the filters, and waits for the page they lead to. */
+  async filter(label: string, option: string, query: { param: string; value: string }): Promise<void> {
+    await this.filters.getByRole("combobox", { name: label, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: option, exact: true }).click();
+    await this.filters.getByRole("button", { name: labels.contracts.apply, exact: true }).click();
+    await this.page.waitForURL((url) => url.searchParams.get(query.param) === query.value);
+  }
+
+  row(text: string): Locator {
+    return this.shell.main
+      .getByRole("table", { name: labels.contracts.title })
+      .getByRole("row")
+      .filter({ hasText: text });
+  }
+
+  /** The figure of one of the totals above the table (value, paid, debt). */
+  total(label: string): Locator {
+    return this.shell.main
+      .getByRole("region", { name: labels.contracts.totalsLabel })
+      .locator('[data-slot="card"]')
+      .filter({ has: this.page.getByRole("heading", { name: label, exact: true }) });
   }
 }

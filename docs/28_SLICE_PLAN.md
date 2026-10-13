@@ -200,7 +200,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 ### M4.4 Approval, lock, contract list and detail (built as M4.4a and M4.4b)
 
 - **M4.4a (done 2026-10-14, A-120 to A-125, OQ-041, OQ-042):** the approval, rejection, lead status, the lock (service and database trigger), unapprove, and delete.
-- **M4.4b (next):** the list with every §5.3 column, the totals row and the filters, the detail tabs, Print, and Update note.
+- **M4.4b (done 2026-10-14, A-126 to A-128, OQ-043):** the list with every §5.3 column, the totals of the filter and the filters, the detail tabs (Information, Check-in history, Package history), Print, and Update note.
 
 - **Builds:**
   - **Approval:** approve or reject with a reason through the approval engine, and the creator can't approve. An approved contract is locked: an edit is refused in the service and by a database trigger, even for admin.

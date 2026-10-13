@@ -18,7 +18,7 @@ import { PromotionsPage } from "./pages/promotions";
 import { ServiceDetailPage, ServicesPage } from "./pages/services";
 import { LeadAuditPage } from "./pages/lead-audit";
 import { LeadReceiversPage } from "./pages/lead-receivers";
-import { ContractDetailPage, CustomerContractsTab } from "./pages/contracts";
+import { ContractDetailPage, ContractListPage, CustomerContractsTab } from "./pages/contracts";
 import { FinancePage } from "./pages/finance";
 import { CustomerDetailPage, CustomersPage } from "./pages/customers";
 import { LoginPage } from "./pages/login-page";
@@ -32,6 +32,7 @@ type Fixtures = {
   customerDetailPage: CustomerDetailPage;
   customerContractsTab: CustomerContractsTab;
   contractDetailPage: ContractDetailPage;
+  contractListPage: ContractListPage;
   customerBookingsTab: CustomerBookingsTab;
   calendarPage: CalendarPage;
   sessionsPage: SessionsPage;
@@ -98,6 +99,7 @@ export const test = base.extend<Fixtures>({
   customerDetailPage: async ({ page }, use) => use(new CustomerDetailPage(page)),
   customerContractsTab: async ({ page }, use) => use(new CustomerContractsTab(page)),
   contractDetailPage: async ({ page }, use) => use(new ContractDetailPage(page)),
+  contractListPage: async ({ page }, use) => use(new ContractListPage(page)),
   customerBookingsTab: async ({ page }, use) => use(new CustomerBookingsTab(page)),
   calendarPage: async ({ page }, use) => use(new CalendarPage(page)),
   sessionsPage: async ({ page }, use) => use(new SessionsPage(page)),

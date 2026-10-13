@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-14 — M4.4b: contract list and detail
+
+- **The list** (brief §5.3, A-126): every column, nine filters (branch, type, contract date, service, PT, promotion, payment, signature, approval), the totals of value, paid, and debt over the whole filter, and the same filters in the Excel export.
+- **The detail** (A-127, A-128): Information, Check-in history, and Package history tabs; Print (its own permission) opens a sheet; Update note (its own permission) works on approved contracts and is audited.
+- **Open**: OQ-043 (the "hết hạn" column and the print template). Docs 07, 08, 09, 13, 16, 18, 28; E2E-162, E2E-163.
+
 ## 2026-10-14 — M4.4a: contract approval, lock, unapprove, delete
 
 - **Approval through the engine** (D-018, A-120, A-121): a new contract is a request in the approval inbox (matrix action `contract.create`: Fitness Manager and Admin); approving makes it active, rejecting needs a reason and moves it to Rejected. Nobody approves their own; the approver's discount limit is checked (A-112). The contract page has Approve and Reject.

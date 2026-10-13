@@ -322,4 +322,71 @@ test.describe("contracts as an admin", () => {
     expect(approved.status()).toBeLessThan(300);
     expect((await admin.get(`/api/v1/contracts/${plain.id}`)).status()).toBe(404);
   });
+
+  test("E2E-162: the list filters by approval and payment, and totals what the filter matches (brief §5.3)", async ({
+    page,
+    apiAs,
+    testTag,
+    contractListPage,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const manager = await apiAs("FITNESS_MANAGER");
+    const customer = await createCustomerViaApi(reception, testTag);
+    const pending = await createContractViaApi(manager, customer.id);
+    const paid = await createContractViaApi(manager, customer.id, { activateWith: await apiAs("ADMIN") });
+    await recordPaymentViaApi(reception, paid.id, "12.000.000", { approver: manager });
+
+    // Both belong to the customer the search names: 24,000,000 sold, 12,000,000 paid.
+    await contractListPage.goto({ q: customer.fullName });
+    await expect(contractListPage.row(pending.contractCode)).toBeVisible();
+    await expect(contractListPage.row(paid.contractCode)).toBeVisible();
+    await expect(contractListPage.total(labels.contracts.fields.contractValue)).toContainText("24.000.000");
+    await expect(contractListPage.total(labels.contracts.fields.paidAmount)).toContainText("12.000.000");
+    await expect(contractListPage.total(labels.contracts.fields.debt)).toContainText("12.000.000");
+
+    await contractListPage.filter(labels.contracts.filterApproval, labels.contracts.statuses.DRAFT, {
+      param: "status",
+      value: "DRAFT",
+    });
+    await expect(contractListPage.row(pending.contractCode)).toBeVisible();
+    await expect(contractListPage.row(paid.contractCode)).toHaveCount(0);
+    await expect(contractListPage.total(labels.contracts.fields.paidAmount)).toContainText("0");
+
+    await contractListPage.goto({ q: customer.fullName, payment: "PAID" });
+    await expect(contractListPage.row(paid.contractCode)).toBeVisible();
+    await expect(contractListPage.row(pending.contractCode)).toHaveCount(0);
+    await expect(page).toHaveURL(/payment=PAID/);
+  });
+
+  test("E2E-163: the detail has Information, Check-in, and Package history tabs; the note can change after approval; Print opens a sheet (brief §5.3)", async ({
+    page,
+    apiAs,
+    testTag,
+    contractDetailPage,
+  }) => {
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: await apiAs("ADMIN"),
+    });
+
+    await contractDetailPage.goto(contract.id);
+    await page.getByRole("tab", { name: labels.contracts.tabs.history }).click();
+    const history = page.getByRole("table", { name: labels.audit.title });
+    await expect(history.getByRole("row").filter({ hasText: labels.audit.verbs.activated })).toBeVisible();
+    await expect(history.getByRole("row").filter({ hasText: labels.audit.verbs.created })).toBeVisible();
+    await page.getByRole("tab", { name: labels.contracts.tabs.info }).click();
+
+    // The contract is approved, and its note still changes.
+    await contractDetailPage.action(labels.contracts.updateNote).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(f.notes, { exact: true }).fill(`Giữ chỗ ${testTag}`);
+    await dialog.getByRole("button", { name: labels.common.save, exact: true }).click();
+    await expect(contractDetailPage.figure(f.notes)).toHaveText(`Giữ chỗ ${testTag}`);
+    await expect(contractDetailPage.action(labels.contracts.edit)).toHaveCount(0);
+
+    await page.getByRole("link", { name: labels.contracts.print, exact: true }).click();
+    await expect(page).toHaveURL(/\/contracts\/[0-9a-f-]{36}\/print$/);
+    await expect(contractDetailPage.heading(`${contract.contractCode} · ${PT24.packageName}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: labels.contracts.printNow, exact: true })).toBeVisible();
+  });
 });

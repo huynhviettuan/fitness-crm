@@ -33,6 +33,8 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-159 | An agreed price is an exception with a reason; it shows against the tier price, and a role whose discount limit it exceeds cannot activate it, Admin can | AC-10, A-112, A-113 |
 | E2E-105 | Approved contract cannot be edited by admin: no Edit button, `409 CONTRACT_NOT_EDITABLE`, and the database trigger (`apps/api/test/integration/contract-approval.int.test.ts`, INT-010) | AC-11 |
 | E2E-160 | The approver approves or rejects from the contract page; a rejection takes a reason and shows it | D-018, A-121 |
+| E2E-162 | The contract list filters by approval and payment and totals what the filter matches (`apps/api/test/integration/contract-list.int.test.ts` for every filter) | brief §5.3, A-126 |
+| E2E-163 | The detail's three tabs; the note changes after approval; Print opens the sheet | brief §5.3, A-127, A-128 |
 | E2E-161 | Admin unapproves an approved contract, and deletes one: a receipt blocks it and is listed, a second Admin approves the deletion, and it is gone | A-124, A-125 |
 | E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash (receipts part: `e2e/history.spec.ts`, M1 slice 4; contracts in M4) | AC-12, AC-13 |
 | E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |

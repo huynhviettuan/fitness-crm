@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { auditEventSchema } from "../audit/audit.schema.js";
+import { branchRefSchema } from "../branches/branch.schema.js";
 import { customerRefSchema } from "../customers/customer.view.js";
 import { chosenOptionSchema } from "../options/option.schema.js";
 import { instant, listOf, pageOf } from "../validation/index.js";
@@ -17,6 +19,9 @@ export const contractSchema = z
     id: z.uuid(),
     contractCode: z.string(),
     customer: customerRefSchema,
+    /** Null when the role cannot see customers' phones (D-017). */
+    customerPhone: z.string().nullable(),
+    branch: branchRefSchema,
     /** The display name: the service and the real session count, e.g. "Hybrid Training 30 buổi" (D-021). */
     packageName: z.string(),
     service: z.object({ id: z.uuid(), name: z.string(), kind: z.enum(["PT", "CLASS", "MEMBER"]) }).nullable(),
@@ -87,7 +92,17 @@ export const contractStaffSchema = z
 export const contractStaffListSchema = listOf(contractStaffSchema).meta({ id: "ContractStaffList" });
 export type ContractStaff = z.output<typeof contractStaffSchema>;
 
-export const contractPageSchema = pageOf(contractSchema).meta({ id: "ContractPage" });
+/** The list's money over everything it filters, not only the page (brief §5.3); null when receipt totals are hidden. */
+export const contractTotalsSchema = z
+  .object({ contractValue: z.int(), paidAmount: z.int(), debt: z.int() })
+  .meta({ id: "ContractTotals" });
+
+export const contractPageSchema = pageOf(contractSchema)
+  .extend({ totals: contractTotalsSchema.nullable() })
+  .meta({ id: "ContractPage" });
+
+/** The package history tab (brief §5.3): what happened to the contract, newest first. */
+export const contractHistorySchema = listOf(auditEventSchema).meta({ id: "ContractHistory" });
 
 export type Contract = z.output<typeof contractSchema>;
 export type ContractPage = z.output<typeof contractPageSchema>;

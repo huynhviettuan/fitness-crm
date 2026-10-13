@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { BanknoteIcon, CalendarIcon } from "lucide-react";
+import { BanknoteIcon, CalendarIcon, HistoryIcon, PrinterIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
@@ -19,7 +21,7 @@ import type { CurrentUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
 import { canActivate, canCancel, canUnapprove, isEditable } from "@flow/shared/contracts";
-import { getContract } from "@/lib/api/contracts";
+import { getContract, getContractHistory } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
@@ -27,6 +29,8 @@ import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
 import { PaymentsTable, RecordPaymentButton } from "../../finance/payments";
 import { ActivateContractButton, CancelContractButton, EditContractButton } from "../contract-buttons";
 import { DeleteContractButton, RejectContractButton, UnapproveContractButton } from "../contract-decisions";
+import { UpdateNoteButton } from "../contract-note";
+import { AuditTable } from "../../admin/audit/audit-table";
 
 async function loadContract(user: CurrentUser, id: string) {
   try {
@@ -58,6 +62,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
   const [history, context] = canSeeBookings
     ? await Promise.all([listBookings({ contractId: contract.id, order: "desc", pageSize: 100 }), bookingContext(user)])
     : [null, null];
+  const packageHistory = await getContractHistory(contract.id);
   const payments = can(user, "payment.view") ? await listPayments({ contractId: contract.id, pageSize: 100 }) : null;
   // OQ-003 and OQ-013 interim: nothing more to collect once paid in full, or once cancelled.
   const canRecordPayment = can(user, "payment.record") && contract.status !== "CANCELLED" && contract.debt > 0;
@@ -81,6 +86,15 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
           about={{ type: "contract", id: contract.id, label: `${contract.contractCode} · ${contract.packageName}` }}
         />
       )}
+      {can(user, "contract.print") && (
+        <Button asChild variant="outline">
+          <Link href={`/contracts/${contract.id}/print`}>
+            <PrinterIcon />
+            {t("print")}
+          </Link>
+        </Button>
+      )}
+      {can(user, "contract.note") && <UpdateNoteButton contract={contract} />}
       {can(user, "contract.create") && isEditable(contract.status) && <EditContractButton contract={contract} />}
       {cancellable && <CancelContractButton contract={contract} bookings={toCancel} />}
       {canDecide && <ActivateContractButton contract={contract} />}
@@ -116,180 +130,212 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
         description={`${contract.contractCode} · ${contract.customer.fullName}`}
         actions={actions}
       />
-      <div className="grid max-w-5xl gap-4 lg:grid-cols-3">
-        <FigureCard title={t("sessions")} rows={sessions} />
-        <FigureCard title={t("money")} rows={money} />
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2>{t("details")}</h2>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="space-y-3">
-              <Detail label={f("fields.status")} value={<StatusBadge entity="contract" status={contract.status} />} />
-              <Detail
-                label={f("fields.customer")}
-                value={
-                  <Link href={`/customers/${contract.customer.id}`} className="hover:underline">
-                    {contract.customer.customerCode} · {contract.customer.fullName}
-                  </Link>
-                }
-              />
-              <Detail label={f("fields.startDate")} value={<DateTime value={contract.startDate} format="dateOnly" />} />
-              <Detail label={f("fields.endDate")} value={<DateTime value={contract.endDate} format="dateOnly" />} />
-              <Detail label={f("fields.createdAt")} value={<DateTime value={contract.createdAt} format="dateTime" />} />
-              <Detail label={f("fields.createdBy")} value={contract.createdBy.name} />
-              <Detail label={f("fields.approval")} value={<ApprovalLine contract={contract} />} />
-            </dl>
-          </CardContent>
-        </Card>
-      </div>
-      <Card className="mt-4 max-w-5xl">
-        <CardHeader>
-          <CardTitle>
-            <h2>{t("priceAndStaff")}</h2>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Detail label={f("fields.service")} value={contract.service?.name ?? f("fields.imported")} />
-            <Detail label={f("fields.contractType")} value={t(`types.${contract.contractType}`)} />
-            {contract.previousContract && (
-              <Detail
-                label={f("fields.previousContract")}
-                value={
-                  <Link href={`/contracts/${contract.previousContract.id}`} className="hover:underline">
-                    {contract.previousContract.contractCode}
-                  </Link>
-                }
-              />
-            )}
-            <Detail
-              label={f("fields.contractDate")}
-              value={<DateTime value={contract.contractDate} format="dateOnly" />}
-            />
-            {contract.activationDeadline && (
-              <Detail
-                label={f("fields.activationDeadline")}
-                value={<DateTime value={contract.activationDeadline} format="dateOnly" />}
-              />
-            )}
-            <Detail label={f("fields.sessionsBought")} value={contract.sessionsBought} />
-            {contract.bonusSessions + contract.bonusMonths + contract.bonusDays > 0 && (
-              <Detail
-                label={f("fields.bonus")}
-                value={t("bonusLine", {
-                  sessions: contract.bonusSessions,
-                  months: contract.bonusMonths,
-                  days: contract.bonusDays,
-                })}
-              />
-            )}
-            {contract.tierUnitPrice !== null && (
-              <Detail label={f("fields.tierUnitPrice")} value={<Money amount={contract.tierUnitPrice} />} />
-            )}
-            <Detail label={f("fields.approvedUnitPrice")} value={<Money amount={contract.approvedUnitPrice} />} />
-            {contract.isExceptionPrice && !contract.isImported && contract.exceptionReason && (
-              <Detail
-                label={f("fields.exceptionReason")}
-                value={<ChosenOptionText option={contract.exceptionReason} />}
-              />
-            )}
-            {contract.promotion && <Detail label={f("fields.promotion")} value={contract.promotion.name} />}
-            {contract.voucher && <Detail label={f("fields.voucher")} value={contract.voucher.name} />}
-            {contract.promotionDiscount + contract.voucherDiscount > 0 && (
-              <Detail
-                label={f("fields.discount")}
-                value={<Money amount={contract.promotionDiscount + contract.voucherDiscount} />}
-              />
-            )}
-            {contract.vatAmount > 0 && (
-              <Detail
-                label={`${f("fields.vat")} ${contract.vatPercent}%`}
-                value={<Money amount={contract.vatAmount} />}
-              />
-            )}
-            {(["PT", "SALE"] as const).map((role) => {
-              const rows = contract.shares.filter((share) => share.role === role);
-              return rows.length > 0 ? (
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">{t("tabs.info")}</TabsTrigger>
+          {history && context && <TabsTrigger value="checkins">{t("tabs.checkins")}</TabsTrigger>}
+          <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="info">
+          <div className="grid max-w-5xl gap-4 lg:grid-cols-3">
+            <FigureCard title={t("sessions")} rows={sessions} />
+            <FigureCard title={t("money")} rows={money} />
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <h2>{t("details")}</h2>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-3">
+                  <Detail
+                    label={f("fields.status")}
+                    value={<StatusBadge entity="contract" status={contract.status} />}
+                  />
+                  <Detail
+                    label={f("fields.customer")}
+                    value={
+                      <Link href={`/customers/${contract.customer.id}`} className="hover:underline">
+                        {contract.customer.customerCode} · {contract.customer.fullName}
+                      </Link>
+                    }
+                  />
+                  <Detail
+                    label={f("fields.startDate")}
+                    value={<DateTime value={contract.startDate} format="dateOnly" />}
+                  />
+                  <Detail label={f("fields.endDate")} value={<DateTime value={contract.endDate} format="dateOnly" />} />
+                  <Detail
+                    label={f("fields.createdAt")}
+                    value={<DateTime value={contract.createdAt} format="dateTime" />}
+                  />
+                  <Detail label={f("fields.createdBy")} value={contract.createdBy.name} />
+                  <Detail label={f("fields.approval")} value={<ApprovalLine contract={contract} />} />
+                </dl>
+              </CardContent>
+            </Card>
+          </div>
+          <Card className="mt-4 max-w-5xl">
+            <CardHeader>
+              <CardTitle>
+                <h2>{t("priceAndStaff")}</h2>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Detail label={f("fields.service")} value={contract.service?.name ?? f("fields.imported")} />
+                <Detail label={f("fields.contractType")} value={t(`types.${contract.contractType}`)} />
+                {contract.previousContract && (
+                  <Detail
+                    label={f("fields.previousContract")}
+                    value={
+                      <Link href={`/contracts/${contract.previousContract.id}`} className="hover:underline">
+                        {contract.previousContract.contractCode}
+                      </Link>
+                    }
+                  />
+                )}
                 <Detail
-                  key={role}
-                  label={`${f("fields.shares")}: ${t(`roles.${role}`)}`}
-                  value={rows.map((row) => `${row.employee.fullName} ${row.percent}%`).join(", ")}
+                  label={f("fields.contractDate")}
+                  value={<DateTime value={contract.contractDate} format="dateOnly" />}
                 />
-              ) : null;
-            })}
-            {contract.companions.length > 0 && (
-              <Detail
-                label={f("fields.companions")}
-                value={contract.companions.map((companion) => companion.fullName).join(", ")}
+                {contract.activationDeadline && (
+                  <Detail
+                    label={f("fields.activationDeadline")}
+                    value={<DateTime value={contract.activationDeadline} format="dateOnly" />}
+                  />
+                )}
+                <Detail label={f("fields.sessionsBought")} value={contract.sessionsBought} />
+                {contract.bonusSessions + contract.bonusMonths + contract.bonusDays > 0 && (
+                  <Detail
+                    label={f("fields.bonus")}
+                    value={t("bonusLine", {
+                      sessions: contract.bonusSessions,
+                      months: contract.bonusMonths,
+                      days: contract.bonusDays,
+                    })}
+                  />
+                )}
+                {contract.tierUnitPrice !== null && (
+                  <Detail label={f("fields.tierUnitPrice")} value={<Money amount={contract.tierUnitPrice} />} />
+                )}
+                <Detail label={f("fields.approvedUnitPrice")} value={<Money amount={contract.approvedUnitPrice} />} />
+                {contract.isExceptionPrice && !contract.isImported && contract.exceptionReason && (
+                  <Detail
+                    label={f("fields.exceptionReason")}
+                    value={<ChosenOptionText option={contract.exceptionReason} />}
+                  />
+                )}
+                {contract.promotion && <Detail label={f("fields.promotion")} value={contract.promotion.name} />}
+                {contract.voucher && <Detail label={f("fields.voucher")} value={contract.voucher.name} />}
+                {contract.promotionDiscount + contract.voucherDiscount > 0 && (
+                  <Detail
+                    label={f("fields.discount")}
+                    value={<Money amount={contract.promotionDiscount + contract.voucherDiscount} />}
+                  />
+                )}
+                {contract.vatAmount > 0 && (
+                  <Detail
+                    label={`${f("fields.vat")} ${contract.vatPercent}%`}
+                    value={<Money amount={contract.vatAmount} />}
+                  />
+                )}
+                {(["PT", "SALE"] as const).map((role) => {
+                  const rows = contract.shares.filter((share) => share.role === role);
+                  return rows.length > 0 ? (
+                    <Detail
+                      key={role}
+                      label={`${f("fields.shares")}: ${t(`roles.${role}`)}`}
+                      value={rows.map((row) => `${row.employee.fullName} ${row.percent}%`).join(", ")}
+                    />
+                  ) : null;
+                })}
+                {contract.companions.length > 0 && (
+                  <Detail
+                    label={f("fields.companions")}
+                    value={contract.companions.map((companion) => companion.fullName).join(", ")}
+                  />
+                )}
+                <Detail
+                  label={f("fields.signature")}
+                  value={
+                    contract.signed && contract.signedOn
+                      ? t("signedLine", { on: formatDateOnly(contract.signedOn), by: contract.signedBy ?? "" })
+                      : t("notSigned")
+                  }
+                />
+                {contract.paymentDueOn && (
+                  <Detail
+                    label={f("fields.paymentDueOn")}
+                    value={<DateTime value={contract.paymentDueOn} format="dateOnly" />}
+                  />
+                )}
+                {contract.notes && <Detail label={f("fields.notes")} value={contract.notes} />}
+              </dl>
+            </CardContent>
+          </Card>
+          {payments && (
+            <section aria-labelledby="payment-history" className="mt-8 max-w-5xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h2 id="payment-history" className="text-lg font-semibold">
+                  {t("paymentHistory")}
+                </h2>
+                {canRecordPayment && <RecordPaymentButton contract={contract} />}
+              </div>
+              <PaymentsTable
+                payments={payments.items}
+                canDelete={can(user, "payment.delete")}
+                label={t("paymentHistory")}
+                hide={{ contract: true, customer: true }}
+                empty={<EmptyState icon={BanknoteIcon} title={t("paymentHistoryEmpty")} />}
               />
-            )}
-            <Detail
-              label={f("fields.signature")}
-              value={
-                contract.signed && contract.signedOn
-                  ? t("signedLine", { on: formatDateOnly(contract.signedOn), by: contract.signedBy ?? "" })
-                  : t("notSigned")
-              }
-            />
-            {contract.paymentDueOn && (
-              <Detail
-                label={f("fields.paymentDueOn")}
-                value={<DateTime value={contract.paymentDueOn} format="dateOnly" />}
-              />
-            )}
-            {contract.notes && <Detail label={f("fields.notes")} value={contract.notes} />}
-          </dl>
-        </CardContent>
-      </Card>
-      {payments && (
-        <section aria-labelledby="payment-history" className="mt-8 max-w-5xl space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="payment-history" className="text-lg font-semibold">
-              {t("paymentHistory")}
-            </h2>
-            {canRecordPayment && <RecordPaymentButton contract={contract} />}
-          </div>
-          <PaymentsTable
-            payments={payments.items}
-            canDelete={can(user, "payment.delete")}
-            label={t("paymentHistory")}
-            hide={{ contract: true, customer: true }}
-            empty={<EmptyState icon={BanknoteIcon} title={t("paymentHistoryEmpty")} />}
-          />
-        </section>
-      )}
-      {history && context && (
-        <section aria-labelledby="session-history" className="mt-8 max-w-5xl space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="session-history" className="text-lg font-semibold">
-              {t("sessionHistory")}
-            </h2>
-            {context.permissions.manage && contract.status === "ACTIVE" && context.trainers.length > 0 && (
-              <AddBookingButton
+            </section>
+          )}
+        </TabsContent>
+        <TabsContent value="checkins">
+          {history && context && (
+            <section aria-labelledby="session-history" className="mt-8 max-w-5xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h2 id="session-history" className="text-lg font-semibold">
+                  {t("sessionHistory")}
+                </h2>
+                {context.permissions.manage && contract.status === "ACTIVE" && context.trainers.length > 0 && (
+                  <AddBookingButton
+                    trainers={context.trainers}
+                    preset={{
+                      customer: {
+                        id: contract.customer.id,
+                        label: `${contract.customer.customerCode} · ${contract.customer.fullName}`,
+                      },
+                      contract: { id: contract.id, label: `${contract.contractCode} · ${contract.packageName}` },
+                    }}
+                  />
+                )}
+              </div>
+              <BookingsTable
+                bookings={history.items}
+                permissions={context.permissions}
                 trainers={context.trainers}
-                preset={{
-                  customer: {
-                    id: contract.customer.id,
-                    label: `${contract.customer.customerCode} · ${contract.customer.fullName}`,
-                  },
-                  contract: { id: contract.id, label: `${contract.contractCode} · ${contract.packageName}` },
-                }}
+                label={t("sessionHistory")}
+                hide={{ customer: true, contract: true }}
+                empty={<EmptyState icon={CalendarIcon} title={t("sessionHistoryEmpty")} />}
               />
-            )}
-          </div>
-          <BookingsTable
-            bookings={history.items}
-            permissions={context.permissions}
-            trainers={context.trainers}
-            label={t("sessionHistory")}
-            hide={{ customer: true, contract: true }}
-            empty={<EmptyState icon={CalendarIcon} title={t("sessionHistoryEmpty")} />}
-          />
-        </section>
-      )}
+            </section>
+          )}
+        </TabsContent>
+        <TabsContent value="history">
+          <section aria-labelledby="package-history" className="max-w-5xl space-y-4">
+            <h2 id="package-history" className="text-lg font-semibold">
+              {t("tabs.history")}
+            </h2>
+            <AuditTable
+              events={packageHistory}
+              hideRecord
+              empty={<EmptyState icon={HistoryIcon} title={t("packageHistoryEmpty")} />}
+            />
+          </section>
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

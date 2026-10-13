@@ -57,6 +57,18 @@ export function canCancel(status: EffectiveContractStatus): boolean {
   return status === "DRAFT" || status === "ACTIVE";
 }
 
+/** How much of a contract is paid (brief §5.3 filter): nothing, part of it, or all of it. */
+export const PAYMENT_STATUSES = ["UNPAID", "PARTIAL", "PAID"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export function paymentStatusOf(contractValue: number, paidAmount: number): PaymentStatus {
+  if (paidAmount <= 0) return "UNPAID";
+  return paidAmount >= contractValue ? "PAID" : "PARTIAL";
+}
+
+/** The statuses the list can be filtered by: the stored ones and the derived EXPIRED. */
+export const LIST_STATUSES = [...CONTRACT_STATUSES, "EXPIRED"] as const;
+
 /** The sessions a contract entitles: the ones bought and the bonus ones, kept apart on the contract (brief §5.1). */
 export function entitledSessions(bought: number, bonus: number): number {
   return bought + bonus;

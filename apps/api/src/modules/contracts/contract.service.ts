@@ -16,7 +16,7 @@ import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { assertCan } from "../../platform/permissions/assert.js";
-import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
+import { inBranches, isMasked, isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
@@ -36,6 +36,7 @@ import {
   contractEndDate,
   contractFigures,
   contractInputSchema,
+  contractNoteSchema,
   contractSchema,
   contractStaffQuerySchema,
   effectiveStatus,
@@ -43,6 +44,7 @@ import {
   idempotencyKeySchema,
   isEditable,
   listContractsSchema,
+  paymentStatusOf,
   ptSharesRequired,
   sharesProblems,
   unapproveSchema,
@@ -51,6 +53,7 @@ import {
   type ContractData,
   type Share,
 } from "@flow/shared/contracts";
+import type { AuditEvent } from "@flow/shared/audit";
 import { displayNameOf } from "@flow/shared/services";
 import { deleteSchema } from "@flow/shared/trash";
 import { discountPercentOf, priceBreakdown } from "@flow/shared/promotions";
@@ -70,14 +73,44 @@ const AUDITED_FIELDS = [
 ] as const;
 
 export type { ContractView };
-export type ContractPage = { items: ContractView[]; total: number; page: number; pageSize: number };
+export type ContractPage = {
+  items: ContractView[];
+  total: number;
+  page: number;
+  pageSize: number;
+  /** Value, paid, and debt over everything the filters match; null when receipt totals are hidden (D-017). */
+  totals: { contractValue: number; paidAmount: number; debt: number } | null;
+};
 
 export async function listContracts(actor: Actor, rawQuery: unknown): Promise<ContractPage> {
   assertCan(actor, "contract.view");
-  const query = parseInput(listContractsSchema, rawQuery);
+  const { page, pageSize, paymentStatus, ...filters } = parseInput(listContractsSchema, rawQuery);
   const today = gymToday();
-  const { items, total } = await repo.listContracts(prisma, query, contractsVisibleTo(actor));
-  return { items: await present(prisma, items, today), total, page: query.page, pageSize: query.pageSize };
+  let where: Prisma.ContractWhereInput = {
+    AND: [contractsVisibleTo(actor), repo.filterWhere(filters, today)],
+  };
+  // The payment status is derived from valid receipts (BR-013), so the matching contracts are found first.
+  const money = await repo.moneyOf(prisma, where);
+  const paid = await validPaidByContract(
+    prisma,
+    money.map((row) => row.id),
+  );
+  const paidOf = (row: (typeof money)[number]) => Number(row.openingPaidAmount) + (paid.get(row.id) ?? 0);
+  const matching = paymentStatus
+    ? money.filter((row) => paymentStatusOf(Number(row.contractValue), paidOf(row)) === paymentStatus)
+    : money;
+  if (paymentStatus) where = { AND: [where, { id: { in: matching.map((row) => row.id) } }] };
+
+  const { items, total } = await repo.listContracts(prisma, where, { page, pageSize });
+  const contractValue = matching.reduce((sum, row) => sum + Number(row.contractValue), 0);
+  const paidAmount = matching.reduce((sum, row) => sum + paidOf(row), 0);
+  return {
+    items: await present(prisma, items, today, actor),
+    total,
+    page,
+    pageSize,
+    totals: isMasked(actor, "receipts.totals") ? null : { contractValue, paidAmount, debt: contractValue - paidAmount },
+  };
 }
 
 export async function getContract(actor: Actor, id: string): Promise<ContractView> {
@@ -90,12 +123,12 @@ export async function contractViewsByIds(actor: Actor, ids: string[]): Promise<C
   assertCan(actor, "contract.view");
   const byId = new Map((await repo.findContracts(prisma, ids, contractsVisibleTo(actor))).map((c) => [c.id, c]));
   const ordered = ids.flatMap((id) => byId.get(id) ?? []);
-  return present(prisma, ordered, gymToday());
+  return present(prisma, ordered, gymToday(), actor);
 }
 
 /** The contract as `actor` sees it, read with `db` (e.g. inside a booking transaction). */
 export async function contractView(db: Db, actor: Actor, id: string): Promise<ContractView> {
-  return presentOne(db, await getOrThrow(db, actor, id), gymToday());
+  return presentOne(db, await getOrThrow(db, actor, id), gymToday(), actor);
 }
 
 /**
@@ -192,7 +225,7 @@ export async function createContract(
       return contract.id;
     }, LOCKING_TRANSACTION);
     return {
-      contract: await presentOne(prisma, await getOrThrow(prisma, actor, created), gymToday()),
+      contract: await presentOne(prisma, await getOrThrow(prisma, actor, created), gymToday(), actor),
       replayed: false,
     };
   } catch (error) {
@@ -245,7 +278,7 @@ export async function updateContract(actor: Actor, id: string, input: unknown): 
         after: { ...changes?.after, ...(shareChange ? { shares: sharesKey(after.shares) } : {}) },
       });
     }
-    return presentOne(tx, after, today);
+    return presentOne(tx, after, today, actor);
   });
 }
 
@@ -327,6 +360,56 @@ export async function pendingApprovalOf(
 }
 
 /**
+ * Updates the contract's note, also after approval: notes are not part of what was sold (A-122, A-127). Its own
+ * permission, and audited with the old and the new text.
+ */
+export async function updateContractNote(actor: Actor, id: string, input: unknown): Promise<ContractView> {
+  assertCan(actor, "contract.note");
+  const { notes } = parseInput(contractNoteSchema, input);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+  return prisma.$transaction(async (tx) => {
+    const before = await getOrThrow(tx, actor, id);
+    if (before.notes !== notes) {
+      await tx.contract.update({ where: { id }, data: { notes } });
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "contract",
+        entityId: id,
+        action: "contract.note_updated",
+        before: { notes: before.notes },
+        after: { notes },
+      });
+    }
+    return presentOne(tx, await getOrThrow(tx, actor, id), gymToday(), actor);
+  });
+}
+
+/** The package history tab (brief §5.3): every recorded change of the contract, newest first. */
+export async function contractHistory(actor: Actor, id: string): Promise<AuditEvent[]> {
+  assertCan(actor, "contract.view");
+  await getOrThrow(prisma, actor, id);
+  const rows = await prisma.auditEvent.findMany({
+    where: { entityType: "contract", entityId: id },
+    include: { actor: { select: { id: true, name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+  const values = (json: Prisma.JsonValue | null) =>
+    json && typeof json === "object" && !Array.isArray(json) ? (json as Record<string, unknown>) : null;
+  return rows.map((row) => ({
+    id: row.id,
+    at: row.createdAt,
+    actor: row.actor,
+    entityType: row.entityType,
+    entityId: row.entityId,
+    action: row.action,
+    before: values(row.before),
+    after: values(row.after),
+    context: (row.metadata ?? {}) as Record<string, unknown>,
+  }));
+}
+
+/**
  * A-124: sends an approved contract back to pending approval, with a reason, when nothing depends on it: no receipts
  * that count and no recorded sessions. The new request is in the creator's name, so the creator cannot approve it
  * again (D-018). Admin only.
@@ -369,7 +452,7 @@ export async function unapproveContract(actor: Actor, id: string, input: unknown
           payload: { contractCode: before.contractCode, unapproved: true },
         },
       );
-      return presentOne(tx, await getOrThrow(tx, actor, id), today);
+      return presentOne(tx, await getOrThrow(tx, actor, id), today, actor);
     }, LOCKING_TRANSACTION),
   );
 }
@@ -487,7 +570,7 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
   return prisma.$transaction(async (tx) => {
     if (!(await repo.lockContract(tx, id))) throw new AppError("NOT_FOUND");
     const before = await getOrThrow(tx, actor, id);
-    if (before.status === "CANCELLED") return presentOne(tx, before, today);
+    if (before.status === "CANCELLED") return presentOne(tx, before, today, actor);
     const from = effectiveStatus(before, today);
     if (!canCancel(from)) throw new AppError("INVALID_STATUS_TRANSITION");
     if ((await bookingRepo.countBookingsOfContract(tx, id, ["CHECKED_IN"])) > 0) {
@@ -516,7 +599,7 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
       after: { status: "CANCELLED" },
       context: { cancelledBookings: cancelledBookingIds.length },
     });
-    return presentOne(tx, await getOrThrow(tx, actor, id), today);
+    return presentOne(tx, await getOrThrow(tx, actor, id), today, actor);
   }, LOCKING_TRANSACTION);
 }
 
@@ -731,7 +814,7 @@ async function replayOf(
     existing.createdById === actor.id &&
     existing.requestFingerprint === fingerprint;
   if (!same) throw new AppError("IDEMPOTENCY_KEY_REUSED");
-  return presentOne(prisma, existing, gymToday());
+  return presentOne(prisma, existing, gymToday(), actor);
 }
 
 async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.ContractRecord> {
@@ -742,14 +825,27 @@ async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.Contra
 }
 
 /** Contract views with their confirmed payments (BR-013), read with `db`. */
-async function present(db: Db, contracts: repo.ContractRecord[], today: Date): Promise<ContractView[]> {
+/** `actor` decides what is masked (D-017); without one the customer's phone is left out. */
+async function present(
+  db: Db,
+  contracts: repo.ContractRecord[],
+  today: Date,
+  actor?: Pick<Actor, "masks">,
+): Promise<ContractView[]> {
   const ids = contracts.map((c) => c.id);
   const [paid, approvals] = await Promise.all([validPaidByContract(db, ids), repo.approvalsOf(db, ids)]);
-  return contracts.map((contract) => toView(contract, today, paid.get(contract.id) ?? 0, approvals.get(contract.id)));
+  return contracts.map((contract) =>
+    toView(contract, today, paid.get(contract.id) ?? 0, approvals.get(contract.id), actor),
+  );
 }
 
-async function presentOne(db: Db, contract: repo.ContractRecord, today: Date): Promise<ContractView> {
-  const [view] = await present(db, [contract], today);
+async function presentOne(
+  db: Db,
+  contract: repo.ContractRecord,
+  today: Date,
+  actor?: Pick<Actor, "masks">,
+): Promise<ContractView> {
+  const [view] = await present(db, [contract], today, actor);
   return view;
 }
 
@@ -758,11 +854,14 @@ function toView(
   today: Date,
   confirmedPaidAmount: number,
   approval: repo.ApprovalState | undefined,
+  actor?: Pick<Actor, "masks">,
 ): ContractView {
   return {
     id: contract.id,
     contractCode: contract.contractCode,
     customer: customerRef(contract.customer),
+    customerPhone: actor && !isMasked(actor, "customer.phone") ? contract.customer.phone : null,
+    branch: contract.branch,
     packageName: contract.packageName,
     service: contract.service,
     contractType: contract.contractType,

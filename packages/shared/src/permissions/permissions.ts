@@ -28,7 +28,8 @@ export const PERMISSION_GROUPS = {
   services: ["service.view", "service.manage"],
   // Promotions and vouchers (brief §5.1, A-110): Admin creates them; selling staff see those on offer through service.view.
   promotions: ["promotion.manage"],
-  // Unapproving and deleting a contract are Admin's (brief §5.3, A-124, A-125).
+  // Unapproving and deleting a contract are Admin's (brief §5.3, A-124, A-125); printing and updating the note are
+  // their own permissions (A-127).
   contracts: [
     "contract.view",
     "contract.create",
@@ -36,6 +37,8 @@ export const PERMISSION_GROUPS = {
     "contract.cancel",
     "contract.unapprove",
     "contract.delete",
+    "contract.print",
+    "contract.note",
   ],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
   // Employee profiles and working schedules (brief §8.4).

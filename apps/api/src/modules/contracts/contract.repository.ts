@@ -7,7 +7,8 @@ import { chosen, chosenSelect } from "../../platform/options/option.service.js";
 import { readParameter } from "../../platform/parameters/parameter.service.js";
 
 const withRefs = {
-  customer: { select: { id: true, customerCode: true, fullName: true } },
+  customer: { select: { id: true, customerCode: true, fullName: true, phone: true } },
+  branch: { select: { id: true, name: true } },
   // T-012: completed sessions are the contract's bookings in COMPLETED.
   _count: { select: { bookings: { where: { status: "COMPLETED" } } } },
   service: { select: { id: true, name: true, kind: true } },
@@ -209,21 +210,64 @@ export async function moveStatus(db: Db, id: string, from: ContractStatus, to: C
   return count;
 }
 
+/** What the list can be filtered by, but the payment status, which is derived and resolved by the service. */
+export type ContractFilters = {
+  q: string;
+  customerId?: string;
+  branchId?: string;
+  contractType?: "NEW" | "RENEW";
+  from?: Date;
+  to?: Date;
+  serviceId?: string;
+  ptId?: string;
+  promotionId?: string;
+  signed?: boolean;
+  status?: ContractStatus | "EXPIRED";
+};
+
+export function filterWhere(filters: ContractFilters, today: Date): Prisma.ContractWhereInput {
+  // EXPIRED is an active contract past its end date (T-018); ACTIVE is one not past it.
+  const status: Prisma.ContractWhereInput =
+    filters.status === "EXPIRED"
+      ? { status: "ACTIVE", endDate: { lt: today } }
+      : filters.status === "ACTIVE"
+        ? { status: "ACTIVE", endDate: { gte: today } }
+        : filters.status
+          ? { status: filters.status }
+          : {};
+  return {
+    AND: [
+      filters.customerId ? { customerId: filters.customerId } : {},
+      filters.branchId ? { branchId: filters.branchId } : {},
+      filters.contractType ? { contractType: filters.contractType } : {},
+      filters.from || filters.to ? { contractDate: { gte: filters.from, lte: filters.to } } : {},
+      filters.serviceId ? { serviceId: filters.serviceId } : {},
+      filters.ptId ? { shares: { some: { role: "PT", employeeId: filters.ptId } } } : {},
+      filters.promotionId ? { OR: [{ promotionId: filters.promotionId }, { voucherId: filters.promotionId }] } : {},
+      filters.signed === undefined ? {} : { signed: filters.signed },
+      status,
+      searchWhere(filters.q),
+    ],
+  };
+}
+
+/** The money of the contracts a filter matches, to derive their payment status and totals. */
+export function moneyOf(db: Db, where: Prisma.ContractWhereInput) {
+  return db.contract.findMany({ where, select: { id: true, contractValue: true, openingPaidAmount: true } });
+}
+
 export async function listContracts(
   db: Db,
-  query: { q: string; customerId?: string; page: number; pageSize: number },
-  visibility: Prisma.ContractWhereInput,
+  where: Prisma.ContractWhereInput,
+  page: { page: number; pageSize: number },
 ) {
-  const where: Prisma.ContractWhereInput = {
-    AND: [visibility, query.customerId ? { customerId: query.customerId } : {}, searchWhere(query.q)],
-  };
   const [items, total] = await Promise.all([
     db.contract.findMany({
       where,
       include: withRefs,
       orderBy: { createdAt: "desc" },
-      skip: (query.page - 1) * query.pageSize,
-      take: query.pageSize,
+      skip: (page.page - 1) * page.pageSize,
+      take: page.pageSize,
     }),
     db.contract.count({ where }),
   ]);

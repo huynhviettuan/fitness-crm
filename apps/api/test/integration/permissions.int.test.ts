@@ -252,6 +252,21 @@ describe("field masking (D-017, AC-01)", () => {
       expense: null,
     });
   });
+
+  it("hidden receipt totals and phones leave the contract list's totals and phone empty (D-017)", async () => {
+    const { actor: seller } = await createTestUser("FITNESS_MANAGER");
+    const customer = await createCustomer(seller, { fullName: "Khách", phone: "0909000009" });
+    await createContract(seller, customer.id, await contractInput(), randomUUID());
+    const { actor } = await userWithRole({
+      permissions: ["contract.view"],
+      fieldMasks: ["receipts.totals", "customer.phone"],
+    });
+
+    const page = await listContracts(actor, {});
+
+    expect(page.totals).toBeNull();
+    expect(page.items[0]).toMatchObject({ customerPhone: null });
+  });
 });
 
 describe("branches (D-014, FR-PLT-004)", () => {
