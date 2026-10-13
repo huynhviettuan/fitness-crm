@@ -13,7 +13,14 @@ export const bookingSchema = z
     scheduledEnd: instant,
     createdAt: instant,
     customer: customerRefSchema,
-    contract: z.object({ id: z.uuid(), contractCode: z.string(), packageName: z.string(), remainingSessions: z.int() }),
+    contract: z.object({
+      id: z.uuid(),
+      contractCode: z.string(),
+      packageName: z.string(),
+      remainingSessions: z.int(),
+      /** A booked session of a deactivated contract is highlighted for admin to deal with (D-023). */
+      frozen: z.boolean(),
+    }),
     /** The employee who teaches the session (D-030). */
     trainer: employeeRefSchema,
     /** Fulfillment facts, from check-in on (T-011). */

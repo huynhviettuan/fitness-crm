@@ -58,7 +58,8 @@
       "ACTIVE": "Đang hiệu lực",
       "EXPIRED": "Hết hạn",
       "CANCELLED": "Đã hủy",
-      "REJECTED": "Đã từ chối"
+      "REJECTED": "Đã từ chối",
+      "FROZEN": "Tạm vô hiệu"
     },
     "booking": {
       "BOOKED": "Đã đặt",
@@ -567,7 +568,8 @@
     "EXPORT_TOO_LARGE": "Danh sách quá dài để xuất. Hãy lọc bớt trước.",
     "STEP_LOCKED": "Bước này đã quá hạn và hết thời gian gia hạn, nên đã khóa là Không thực hiện.",
     "DISCOUNT_ABOVE_LIMIT": "Mức giảm giá vượt ngưỡng vai trò của bạn được duyệt. Cần người có ngưỡng cao hơn duyệt.",
-    "CONTRACT_HAS_DEPENDENTS": "Hợp đồng còn phiếu thu hoặc buổi tập. Hãy xóa chúng trước."
+    "CONTRACT_HAS_DEPENDENTS": "Hợp đồng còn phiếu thu hoặc buổi tập. Hãy xóa chúng trước.",
+    "CONTRACT_FROZEN": "Hợp đồng đang bị khóa. Hãy kích hoạt lại trước."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -714,7 +716,8 @@
       "phone": "Số điện thoại",
       "branch": "Chi nhánh",
       "usedSessions": "Đã tập",
-      "paymentStatus": "Thanh toán"
+      "paymentStatus": "Thanh toán",
+      "deactivation": "Tạm vô hiệu"
     },
     "cancelBookingsList": "{count, plural, other {# lịch hẹn sau sẽ bị hủy:}}",
     "sessionHistory": "Lịch sử buổi tập",
@@ -852,7 +855,8 @@
       "ACTIVE": "Đã duyệt",
       "EXPIRED": "Hết hạn",
       "CANCELLED": "Đã hủy",
-      "REJECTED": "Đã từ chối"
+      "REJECTED": "Đã từ chối",
+      "FROZEN": "Tạm vô hiệu"
     },
     "totalsLabel": "Tổng của các hợp đồng trong danh sách",
     "noResultsFilters": "Không có hợp đồng nào khớp bộ lọc.",
@@ -870,7 +874,28 @@
     "updateNote": "Cập nhật ghi chú",
     "noteTitle": "Ghi chú hợp đồng {code}",
     "noteBody": "Ghi chú sửa được sau khi duyệt. Gói tập, giá và ngày thì không.",
-    "noteSaved": "Đã lưu ghi chú"
+    "noteSaved": "Đã lưu ghi chú",
+    "deactivate": "Hủy kích hoạt",
+    "deactivateTitle": "Hủy kích hoạt hợp đồng {code}?",
+    "deactivateBody": "Hợp đồng không đặt lịch, không check-in và không trừ buổi được, cũng không hết hạn, cho đến khi kích hoạt lại. Các lịch đã đặt trong tương lai được giữ và làm nổi.",
+    "deactivateReason": "Lý do",
+    "deactivated": "Đã hủy kích hoạt hợp đồng {code}",
+    "reactivate": "Kích hoạt lại",
+    "reactivateTitle": "Kích hoạt lại hợp đồng {code}?",
+    "reactivateBody": "Hợp đồng đã bị khóa {days} ngày, từ ngày",
+    "oldEndDate": "Hạn hiện tại",
+    "newEndDate": "Hạn mới",
+    "extension": "Số ngày đã khóa",
+    "extensions": {
+      "ALL": "Cộng đủ {days} ngày",
+      "CUSTOM": "Cộng số ngày khác",
+      "NONE": "Không cộng"
+    },
+    "extensionDays": "Số ngày cộng",
+    "reactivateReason": "Lý do",
+    "reactivated": "Đã kích hoạt lại hợp đồng {code}",
+    "deactivatedSince": "Bị khóa bởi {name} từ ngày",
+    "frozenBooking": "Hợp đồng đang bị khóa"
   },
   "employees": {
     "title": "Nhân viên",
@@ -1145,7 +1170,9 @@
         "unapprove": "Đưa hợp đồng đã duyệt về chờ duyệt",
         "delete": "Xóa hợp đồng",
         "print": "In hợp đồng",
-        "note": "Cập nhật ghi chú hợp đồng"
+        "note": "Cập nhật ghi chú hợp đồng",
+        "deactivate": "Hủy kích hoạt hợp đồng",
+        "reactivate": "Kích hoạt lại hợp đồng"
       },
       "booking": {
         "view": "Xem lịch PT và buổi tập",
@@ -1313,7 +1340,9 @@
       "needDetails": "Chi tiết nhu cầu (có mã số)",
       "stepReopenReasons": "Lý do gỡ tick",
       "exceptionPriceReasons": "Lý do giá ngoại lệ",
-      "unapproveReasons": "Lý do hủy duyệt hợp đồng"
+      "unapproveReasons": "Lý do hủy duyệt hợp đồng",
+      "freezeReasons": "Lý do hủy kích hoạt hợp đồng",
+      "unfreezeReasons": "Lý do kích hoạt lại hợp đồng"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -1374,7 +1403,9 @@
       "receptionDepartmentId": "Phòng ban nhận việc khi email gửi lỗi",
       "receiptCodePrefix": "Số phiếu thu",
       "expenseCodePrefix": "Số phiếu chi",
-      "expiringSoonDays": "Sắp hết hạn trong (ngày)"
+      "expiringSoonDays": "Sắp hết hạn trong (ngày)",
+      "freezeReminderDays": "Nhắc quản lý sau (ngày bị khóa)",
+      "managerDepartmentId": "Phòng ban quản lý (việc nhắc hợp đồng bị khóa)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1386,7 +1417,9 @@
     "exports": "Xuất Excel",
     "exportsHint": "Danh sách có nhiều dòng hơn mức này phải được lọc bớt mới xuất được.",
     "mail": "Email",
-    "mailHint": "Email gửi cho khách không đi được (khách chưa có email, hoặc nhà cung cấp từ chối nhiều lần) tạo việc cho phòng ban này trong Giao việc để báo khách bằng cách khác. Chưa chọn thì không tạo việc, email vẫn hiện là gửi lỗi."
+    "mailHint": "Email gửi cho khách không đi được (khách chưa có email, hoặc nhà cung cấp từ chối nhiều lần) tạo việc cho phòng ban này trong Giao việc để báo khách bằng cách khác. Chưa chọn thì không tạo việc, email vẫn hiện là gửi lỗi.",
+    "contractsCard": "Hợp đồng",
+    "contractsHint": "Khi nào khách được coi là sắp hết hạn, và khi nào hợp đồng bị khóa lâu nhắc quản lý."
   },
   "trash": {
     "title": "Thùng rác",
@@ -1492,7 +1525,9 @@
       "note_added": "Đã thêm ghi chú",
       "downloaded": "Đã xuất file",
       "unapproved": "Đưa về chờ duyệt",
-      "note_updated": "Cập nhật ghi chú"
+      "note_updated": "Cập nhật ghi chú",
+      "deactivated": "Hủy kích hoạt",
+      "reactivated": "Kích hoạt lại"
     },
     "fields": {
       "at": "Thời điểm",
@@ -1698,7 +1733,8 @@
       "leadRecare": "Lead {code} · {name} cần tái chăm sóc",
       "leadInquiry": "{name} ({code}) vừa liên hệ lại",
       "personMerged": "Hồ sơ {mergedCode} đã được gộp vào {code} · {name}",
-      "leadReclaimed": "Lead {code} · {name} đã chuyển cho người khác vì {minutes} phút chưa được chăm sóc"
+      "leadReclaimed": "Lead {code} · {name} đã chuyển cho người khác vì {minutes} phút chưa được chăm sóc",
+      "contractFrozenLong": "Hợp đồng {code} của {name} đã bị khóa quá {days} ngày."
     }
   },
   "checklist": {

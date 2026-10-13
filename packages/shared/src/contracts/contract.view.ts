@@ -70,6 +70,17 @@ export const contractSchema = z
     rejection: z
       .object({ by: z.object({ id: z.uuid(), name: z.string() }), at: instant, reason: chosenOptionSchema })
       .nullable(),
+    /** The deactivation that lasts, with what reactivating would do (D-023); null unless the status is FROZEN. */
+    freeze: z
+      .object({
+        frozenOn: instant,
+        frozenBy: z.object({ id: z.uuid(), name: z.string() }),
+        reason: chosenOptionSchema,
+        /** Days frozen as of today, and the end date if all of them were added. */
+        frozenDays: z.int(),
+        proposedEndDate: instant,
+      })
+      .nullable(),
     /** Whether a request waits for an approver (A-120). */
     approvalPending: z.boolean(),
     // Derived figures (T-012, BR-013, D-011). `totalSessions` is bought plus bonus.

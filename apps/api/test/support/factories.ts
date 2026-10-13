@@ -210,6 +210,8 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   { id: "c0000000-0000-4000-8000-000000000020", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000021", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000022", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000023", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000024", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   ...[
     ["c0000000-0000-4000-8000-000000000201", "Ban điều hành", "Executive board"],
     ["c0000000-0000-4000-8000-000000000202", "Studio", "Studio"],

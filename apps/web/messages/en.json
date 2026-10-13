@@ -58,7 +58,8 @@
       "ACTIVE": "Active",
       "EXPIRED": "Expired",
       "CANCELLED": "Cancelled",
-      "REJECTED": "Rejected"
+      "REJECTED": "Rejected",
+      "FROZEN": "Deactivated"
     },
     "booking": {
       "BOOKED": "Booked",
@@ -567,7 +568,8 @@
     "EXPORT_TOO_LARGE": "The list is too long to export. Narrow the filters first.",
     "STEP_LOCKED": "This step is past its deadline and grace period, so it is locked as Not done.",
     "DISCOUNT_ABOVE_LIMIT": "The discount is above what your role may approve. A role with a higher limit must approve it.",
-    "CONTRACT_HAS_DEPENDENTS": "The contract has receipts or sessions. Delete them first."
+    "CONTRACT_HAS_DEPENDENTS": "The contract has receipts or sessions. Delete them first.",
+    "CONTRACT_FROZEN": "The contract is deactivated. Reactivate it first."
   },
   "validation": {
     "required": "Required.",
@@ -714,7 +716,8 @@
       "phone": "Phone",
       "branch": "Branch",
       "usedSessions": "Used",
-      "paymentStatus": "Payment"
+      "paymentStatus": "Payment",
+      "deactivation": "Deactivation"
     },
     "cancelBookingsList": "{count, plural, one {This booking will be cancelled:} other {These # bookings will be cancelled:}}",
     "sessionHistory": "Session history",
@@ -852,7 +855,8 @@
       "ACTIVE": "Approved",
       "EXPIRED": "Expired",
       "CANCELLED": "Cancelled",
-      "REJECTED": "Rejected"
+      "REJECTED": "Rejected",
+      "FROZEN": "Deactivated"
     },
     "totalsLabel": "Totals of the contracts listed",
     "noResultsFilters": "No contracts match these filters.",
@@ -870,7 +874,28 @@
     "updateNote": "Update note",
     "noteTitle": "Note of contract {code}",
     "noteBody": "The note can change after approval. The package, price, and dates can't.",
-    "noteSaved": "Note saved"
+    "noteSaved": "Note saved",
+    "deactivate": "Deactivate",
+    "deactivateTitle": "Deactivate contract {code}?",
+    "deactivateBody": "The contract can't be booked, checked in, or used up, and doesn't expire, until it is reactivated. Its future bookings stay and are highlighted.",
+    "deactivateReason": "Reason",
+    "deactivated": "Contract {code} deactivated",
+    "reactivate": "Reactivate",
+    "reactivateTitle": "Reactivate contract {code}?",
+    "reactivateBody": "The contract has been deactivated for {days} days, since",
+    "oldEndDate": "Current end date",
+    "newEndDate": "New end date",
+    "extension": "Frozen days",
+    "extensions": {
+      "ALL": "Add all {days} days",
+      "CUSTOM": "Add a number of days",
+      "NONE": "Add none"
+    },
+    "extensionDays": "Days to add",
+    "reactivateReason": "Reason",
+    "reactivated": "Contract {code} reactivated",
+    "deactivatedSince": "Deactivated by {name} on",
+    "frozenBooking": "Contract deactivated"
   },
   "employees": {
     "title": "Employees",
@@ -1145,7 +1170,9 @@
         "unapprove": "Send an approved contract back to pending",
         "delete": "Delete contracts",
         "print": "Print contracts",
-        "note": "Update a contract's note"
+        "note": "Update a contract's note",
+        "deactivate": "Deactivate a contract",
+        "reactivate": "Reactivate a contract"
       },
       "booking": {
         "view": "View the PT calendar and sessions",
@@ -1313,7 +1340,9 @@
       "needDetails": "Need details (coded)",
       "stepReopenReasons": "Reasons to remove a tick",
       "exceptionPriceReasons": "Exception price reasons",
-      "unapproveReasons": "Reasons to unapprove a contract"
+      "unapproveReasons": "Reasons to unapprove a contract",
+      "freezeReasons": "Reasons to deactivate a contract",
+      "unfreezeReasons": "Reasons to reactivate a contract"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -1374,7 +1403,9 @@
       "receptionDepartmentId": "Department told when an email fails",
       "receiptCodePrefix": "Receipt number",
       "expenseCodePrefix": "Expense voucher number",
-      "expiringSoonDays": "Expiring soon within (days)"
+      "expiringSoonDays": "Expiring soon within (days)",
+      "freezeReminderDays": "Remind the manager after (days frozen)",
+      "managerDepartmentId": "Manager department (freeze reminders)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1386,7 +1417,9 @@
     "exports": "Excel exports",
     "exportsHint": "A list with more rows than this cannot be exported until its filters are narrowed.",
     "mail": "Email",
-    "mailHint": "An email to a customer that cannot go out (the customer has no email, or the provider refused it several times) creates a task for this department in Tasks, so the customer is told another way. With none chosen, no task is made and the email still shows as failed."
+    "mailHint": "An email to a customer that cannot go out (the customer has no email, or the provider refused it several times) creates a task for this department in Tasks, so the customer is told another way. With none chosen, no task is made and the email still shows as failed.",
+    "contractsCard": "Contracts",
+    "contractsHint": "When a customer counts as expiring soon, and when a long deactivation reminds the manager."
   },
   "trash": {
     "title": "Trash",
@@ -1492,7 +1525,9 @@
       "note_added": "Note added",
       "downloaded": "Exported",
       "unapproved": "Sent back to pending",
-      "note_updated": "Note updated"
+      "note_updated": "Note updated",
+      "deactivated": "Deactivated",
+      "reactivated": "Reactivated"
     },
     "fields": {
       "at": "When",
@@ -1698,7 +1733,8 @@
       "leadRecare": "Lead {code} · {name} is due for re-care",
       "leadInquiry": "{name} ({code}) got in touch again",
       "personMerged": "Record {mergedCode} was merged into {code} · {name}",
-      "leadReclaimed": "Lead {code} · {name} was moved to someone else after {minutes} minutes without care"
+      "leadReclaimed": "Lead {code} · {name} was moved to someone else after {minutes} minutes without care",
+      "contractFrozenLong": "Contract {code} of {name} has been deactivated for more than {days} days."
     }
   },
   "checklist": {

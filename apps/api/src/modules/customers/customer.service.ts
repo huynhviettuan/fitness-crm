@@ -328,7 +328,7 @@ async function contractStatuses(db: Db, ids: string[]): Promise<Map<string, Cust
   if (ids.length === 0) return new Map();
   const [rows, soonDays] = await Promise.all([
     db.contract.findMany({
-      where: { customerId: { in: ids }, deletedAt: null, status: "ACTIVE" },
+      where: { customerId: { in: ids }, deletedAt: null, status: { in: ["ACTIVE", "FROZEN"] } },
       select: { customerId: true, status: true, endDate: true },
     }),
     readParameter(db, "expiringSoonDays"),

@@ -23,7 +23,7 @@ const reportInclude = {
     },
   },
   // An approved contract is an active one (A-089).
-  contracts: { where: { status: "ACTIVE", deletedAt: null }, select: { id: true }, take: 1 },
+  contracts: { where: { status: { in: ["ACTIVE", "FROZEN"] }, deletedAt: null }, select: { id: true }, take: 1 },
 } satisfies Prisma.CustomerInclude;
 export type ReportPerson = Prisma.CustomerGetPayload<{ include: typeof reportInclude }>;
 

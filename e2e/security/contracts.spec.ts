@@ -243,4 +243,31 @@ test.describe("A10 contract input errors", () => {
     expect((await (await apiAs("PT")).get(`/api/v1/contracts/${contract.id}/history`)).status()).toBe(404);
     expect((await seller.get(`/api/v1/contracts/${contract.id}/history`)).status()).toBe(200);
   });
+
+  test("deactivating and reactivating are Admin's, need a reason, and refuse a wrong choice (M4.6, D-023)", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const admin = await apiAs("ADMIN");
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: admin,
+    });
+    const body = { reasonId: randomUUID(), reasonNote: "x", extension: "NONE" };
+
+    for (const role of ["FITNESS_MANAGER", "RECEPTIONIST", "PT", "ACCOUNTANT", "CONSULTING"] as const) {
+      const api = await apiAs(role);
+      expect((await api.post(`/api/v1/contracts/${contract.id}/deactivate`, { data: body })).status()).toBe(403);
+      expect((await api.post(`/api/v1/contracts/${contract.id}/reactivate`, { data: body })).status()).toBe(403);
+    }
+    for (const path of ["deactivate", "reactivate"]) {
+      const response = await admin.post(`/api/v1/contracts/${contract.id}/${path}`, { data: {} });
+      expect(response.status()).toBe(400);
+    }
+    const wrongChoice = await admin.post(`/api/v1/contracts/${contract.id}/reactivate`, {
+      data: { ...body, extension: "SOME" },
+    });
+    expect(wrongChoice.status()).toBe(400);
+    expect((await admin.post(`/api/v1/contracts/${randomUUID()}/deactivate`, { data: body })).status()).toBe(404);
+  });
 });

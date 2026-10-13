@@ -5,14 +5,16 @@ import {
   activateContract,
   cancelContract,
   createContract,
+  deactivateContract,
   deleteContract,
+  reactivateContract,
   rejectContract,
   unapproveContract,
   updateContract,
   updateContractNote,
 } from "@/lib/api/contracts";
 import type { RejectInput } from "@flow/shared/approvals";
-import type { UnapproveInput } from "@flow/shared/contracts";
+import type { DeactivateInput, ReactivateInput, UnapproveInput } from "@flow/shared/contracts";
 import type { DeleteInput } from "@flow/shared/trash";
 
 /** `idempotencyKey` is generated when the form opens, so a double submit reuses it (T-015). */
@@ -67,5 +69,17 @@ export async function deleteContractAction(
 export async function updateContractNoteAction(id: string, input: { notes: string }): Promise<ActionResult> {
   return runAction(async () => {
     await updateContractNote(id, input);
+  });
+}
+
+export async function deactivateContractAction(id: string, input: DeactivateInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await deactivateContract(id, input);
+  });
+}
+
+export async function reactivateContractAction(id: string, input: ReactivateInput): Promise<ActionResult> {
+  return runAction(async () => {
+    await reactivateContract(id, input);
   });
 }

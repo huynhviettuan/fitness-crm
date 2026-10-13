@@ -55,6 +55,8 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
     // Cannot happen while D-010 holds (a contract with a checked-in booking cannot be
     // cancelled); kept so a session is never consumed from a cancelled contract.
     if (contract.status === "CANCELLED") throw new AppError("CONTRACT_NOT_ACTIVE");
+    // No session is consumed while the contract is deactivated (D-023).
+    if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
     if (!isWithinContractPeriod(sessionDay(booking.scheduledStart), contract)) {
       throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
     }

@@ -269,3 +269,24 @@ export async function rememberAuditCriteria(): Promise<() => Promise<void>> {
     await prisma.$disconnect();
   }
 }
+
+/**
+ * Setup for the reactivation: the clock cannot be moved, so a freeze that began today is made to have begun `days` ago
+ * (the frozen days the dialog proposes to add, brief §5.5).
+ */
+export async function backdateFreeze(contractId: string, days: number): Promise<void> {
+  const prisma = connect();
+  try {
+    const open = await prisma.contractFreeze.findFirstOrThrow({ where: { contractId, endedAt: null } });
+    const shift = days * 86_400_000;
+    await prisma.contractFreeze.update({
+      where: { id: open.id },
+      data: {
+        frozenOn: new Date(open.frozenOn.getTime() - shift),
+        frozenAt: new Date(open.frozenAt.getTime() - shift),
+      },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}

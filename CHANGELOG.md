@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-14 — M4.6: deactivation and reactivation
+
+- **Deactivate** (D-023, A-133): Admin locks a running contract for review, with a reason; nothing is booked, checked in, marked no-show, or completed on it, it does not expire, and its booked sessions are highlighted.
+- **Reactivate** (A-134): the dialog shows the frozen days and the proposed end date; Admin adds all, some, or none, with a reason; the end date changes once per freeze, also under concurrent requests.
+- **Expiry** (A-135): stays derived, so a frozen contract never shows as expired; no nightly job was needed.
+- **Reminder** (A-136): a freeze older than 10 days (a parameter) tells the managers and makes a task for the manager department.
+- **Open**: OQ-045 (who else may deactivate, receipts and emails during a freeze). Docs 04, 07, 09, 13, 16, 18, 28; E2E-107, INT-008, INT-012.
+
 ## 2026-10-14 — M4.5: receipts and expense vouchers
 
 - **Numbers** (D-034, A-129): every receipt and voucher has a number from a sequence, never reused; receipts (with or without a contract) are PT…, expense vouchers PC…; the prefixes are parameters.

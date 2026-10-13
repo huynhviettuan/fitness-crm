@@ -19,7 +19,7 @@ export type ContractRow = {
   contractDate: Date;
   service: { id: string; name: string } | null;
   packageName: string;
-  status: "DRAFT" | "ACTIVE" | "EXPIRED" | "CANCELLED" | "REJECTED";
+  status: "DRAFT" | "ACTIVE" | "EXPIRED" | "CANCELLED" | "REJECTED" | "FROZEN";
   approvedUnitPrice: number;
   startDate: Date;
   endDate: Date;

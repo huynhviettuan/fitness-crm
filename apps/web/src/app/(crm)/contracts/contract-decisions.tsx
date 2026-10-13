@@ -41,7 +41,7 @@ type ReasonDialogProps = {
 };
 
 /** A reason from an option list, then the action: rejecting a contract, sending it back to pending approval. */
-function ReasonDialog({
+export function ReasonDialog({
   title,
   body,
   reasonLabel,

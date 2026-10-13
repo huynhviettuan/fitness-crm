@@ -10,6 +10,7 @@ const bookingInclude = {
       id: true,
       contractCode: true,
       packageName: true,
+      status: true,
       totalSessions: true,
       bonusSessions: true,
       openingSessionsUsed: true,

@@ -13,7 +13,7 @@ export type BookingRow = {
   scheduledStart: Date;
   scheduledEnd: Date;
   customer: { id: string; customerCode: string; fullName: string };
-  contract: { id: string; contractCode: string; packageName: string; remainingSessions: number };
+  contract: { id: string; contractCode: string; packageName: string; remainingSessions: number; frozen: boolean };
   trainer: TrainerOption;
   session: { checkedInAt: Date; checkedInBy: string; completedAt: Date | null; completedBy: string | null } | null;
 };

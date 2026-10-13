@@ -35,6 +35,8 @@ import {
   canUnapprove,
   contractEndDate,
   contractFigures,
+  endDateAfterFreeze,
+  frozenDaysBetween,
   contractInputSchema,
   contractNoteSchema,
   contractSchema,
@@ -577,6 +579,24 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
       throw new AppError("CONTRACT_HAS_CHECKED_IN_BOOKING");
     }
 
+    // A cancelled contract is no longer deactivated: its freeze ends without adding days (D-023).
+    if (from === "FROZEN") {
+      const open = await repo.findOpenFreeze(tx, id);
+      if (open) {
+        await tx.contractFreeze.update({
+          where: { id: open.id },
+          data: {
+            endedAt: new Date(),
+            endedOn: today,
+            endedById: actor.id,
+            frozenDays: frozenDaysBetween(open.frozenOn, today),
+            addedDays: 0,
+            previousEndDate: before.endDate,
+            newEndDate: before.endDate,
+          },
+        });
+      }
+    }
     const cancelledBookingIds = await bookingRepo.cancelBookedBookingsOfContract(tx, id);
     for (const bookingId of cancelledBookingIds) {
       await recordAudit(tx, {
@@ -817,7 +837,7 @@ async function replayOf(
   return presentOne(prisma, existing, gymToday(), actor);
 }
 
-async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.ContractRecord> {
+export async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.ContractRecord> {
   if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
   const contract = await repo.findContract(db, id, contractsVisibleTo(actor));
   if (!contract) throw new AppError("NOT_FOUND");
@@ -839,7 +859,7 @@ async function present(
   );
 }
 
-async function presentOne(
+export async function presentOne(
   db: Db,
   contract: repo.ContractRecord,
   today: Date,
@@ -847,6 +867,20 @@ async function presentOne(
 ): Promise<ContractView> {
   const [view] = await present(db, [contract], today, actor);
   return view;
+}
+
+/** The deactivation that lasts and what reactivating today would do (D-023); null for a contract that is not frozen. */
+function freezeOf(contract: repo.ContractRecord, today: Date): ContractView["freeze"] {
+  const open = contract.status === "FROZEN" ? contract.freezes[0] : undefined;
+  if (!open) return null;
+  const frozenDays = frozenDaysBetween(open.frozenOn, today);
+  return {
+    frozenOn: open.frozenOn,
+    frozenBy: open.frozenBy,
+    reason: chosen(open.reason, open.reasonNote),
+    frozenDays,
+    proposedEndDate: endDateAfterFreeze(contract.endDate, frozenDays),
+  };
 }
 
 function toView(
@@ -917,12 +951,13 @@ function toView(
         ? { by: approval.rejected.by, at: approval.rejected.at, reason: approval.rejected.reason }
         : null,
     approvalPending: contract.status === "DRAFT" && Boolean(approval?.pending),
+    freeze: freezeOf(contract, today),
     ...figures,
     paymentStatus: paymentStatusOf(figures.contractValue, figures.paidAmount),
   };
 }
 
-function gymToday(): Date {
+export function gymToday(): Date {
   return calendarDateInTimeZone(env.GYM_TIMEZONE);
 }
 

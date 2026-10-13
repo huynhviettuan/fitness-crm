@@ -702,3 +702,51 @@ export async function createMailFailureTask(
   });
   return task.id;
 }
+
+/**
+ * The reminder task of a contract deactivated for a long time (D-023, brief §5.5): it goes to the manager department
+ * set in the parameter `managerDepartmentId`, about the contract. Without one no task is made; the managers are told
+ * by notification anyway. Returns the task's id.
+ */
+export async function createContractFreezeTask(
+  db: Db,
+  input: {
+    contract: { id: string; branchId: string; contractCode: string };
+    customerName: string;
+    by: string;
+    days: number;
+    dueAt: Date;
+  },
+): Promise<string | null> {
+  const departmentId = await readParameter(db, "managerDepartmentId");
+  const department = departmentId ? await repo.findDepartment(db, departmentId) : null;
+  if (!department?.active || department.isOther) return null;
+  const task = await repo.createTask(db, {
+    branchId: input.contract.branchId,
+    assignerId: input.by,
+    title: `${input.contract.contractCode} · ${input.customerName}`,
+    description: `Contract ${input.contract.contractCode} has been deactivated for more than ${input.days} days.`,
+    assigneeUserId: null,
+    assigneeDepartmentId: department.id,
+    dueAt: input.dueAt,
+    priority: "NORMAL",
+    reminderMinutes: [],
+    entityType: "contract",
+    entityId: input.contract.id,
+    source: "contractFrozen",
+  });
+  await recordAudit(db, {
+    actorUserId: input.by,
+    entityType: "task",
+    entityId: task.id,
+    action: "task.created",
+    after: { ...pick(task, AUDITED_FIELDS), entityType: "contract", entityId: input.contract.id },
+    context: { source: "contractFrozen" },
+  });
+  await notifyAssignees(db, task, input.by, {
+    kind: "taskAssigned",
+    params: { title: task.title, by: task.assigner.name },
+    link: link(task),
+  });
+  return task.id;
+}

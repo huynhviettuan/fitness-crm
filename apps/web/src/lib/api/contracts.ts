@@ -7,7 +7,7 @@ import {
 } from "@flow/shared/contracts";
 import type { DeleteInput } from "@flow/shared/trash";
 import type { RejectInput } from "@flow/shared/approvals";
-import type { UnapproveInput } from "@flow/shared/contracts";
+import type { DeactivateInput, ReactivateInput, UnapproveInput } from "@flow/shared/contracts";
 import { api, query, read, submittedOrDone } from "./client";
 
 /** The list's filters (brief §5.3); a value left out is no filter. */
@@ -106,5 +106,21 @@ export async function updateContractNote(id: string, input: { notes: string }) {
   return read(
     contractSchema,
     (await api()).PATCH("/api/v1/contracts/{id}/note", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** D-023: a temporary lock for review, with a reason. */
+export async function deactivateContract(id: string, input: DeactivateInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/deactivate", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** D-023: ends the lock with a reason and the choice about the frozen days. */
+export async function reactivateContract(id: string, input: ReactivateInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/reactivate", { params: { path: { id } }, body: input }),
   );
 }

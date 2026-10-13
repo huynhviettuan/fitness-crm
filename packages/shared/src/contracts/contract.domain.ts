@@ -5,9 +5,9 @@ import { endDateOf } from "../services/service.domain.js";
 
 /**
  * Stored statuses; EXPIRED is derived from the end date (T-018). Matches the database enum. DRAFT is "pending approval"
- * (A-120); REJECTED is a contract the approver turned down (A-121).
+ * (A-120); REJECTED is a contract the approver turned down (A-121); FROZEN is one deactivated for review (D-023).
  */
-export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "CANCELLED", "REJECTED"] as const;
+export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "CANCELLED", "REJECTED", "FROZEN"] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 
 export type EffectiveContractStatus = ContractStatus | "EXPIRED";
@@ -54,8 +54,34 @@ export function canUnapprove(status: EffectiveContractStatus): boolean {
 
 /** An expired contract is not cancelled; it has already ended (docs/05 state diagram). */
 export function canCancel(status: EffectiveContractStatus): boolean {
-  return status === "DRAFT" || status === "ACTIVE";
+  return status === "DRAFT" || status === "ACTIVE" || status === "FROZEN";
 }
+
+/** Only a running contract is deactivated (D-023); an expired one has ended. */
+export function canDeactivate(status: EffectiveContractStatus): boolean {
+  return status === "ACTIVE";
+}
+
+export function canReactivate(status: EffectiveContractStatus): boolean {
+  return status === "FROZEN";
+}
+
+/**
+ * The days a contract was frozen (D-023, brief §5.5): from the day it was deactivated to the day it is reactivated.
+ * Frozen on 1 November and reactivated on 11 November is 10 days.
+ */
+export function frozenDaysBetween(frozenOn: Date, reactivatedOn: Date): number {
+  return Math.max(0, Math.round((reactivatedOn.getTime() - frozenOn.getTime()) / DAY_MS));
+}
+
+/** The end date once `days` frozen days are added back (brief §5.5: ending 04/01/2027 after 10 days is 14/01/2027). */
+export function endDateAfterFreeze(endDate: Date, days: number): Date {
+  return new Date(endDate.getTime() + days * DAY_MS);
+}
+
+/** How a reactivation treats the frozen days: add them all, a number of days chosen, or none (D-023). */
+export const EXTENSION_CHOICES = ["ALL", "CUSTOM", "NONE"] as const;
+export type ExtensionChoice = (typeof EXTENSION_CHOICES)[number];
 
 /** A customer's standing, derived from their contracts (D-040, brief §4.2). On hold arrives with freezes (M4.6). */
 export const CUSTOMER_CONTRACT_STATUSES = ["NO_CONTRACT", "TRAINING", "EXPIRING_SOON", "EXPIRED", "ON_HOLD"] as const;
@@ -73,8 +99,10 @@ export function customerContractStatus(
   today: Date,
   soonDays: number,
 ): CustomerContractStatus {
-  const approved = contracts.filter((contract) => contract.status === "ACTIVE");
+  const approved = contracts.filter((contract) => contract.status === "ACTIVE" || contract.status === "FROZEN");
   if (approved.length === 0) return "NO_CONTRACT";
+  // A frozen contract does not expire while it lasts (D-023), so the customer is still training.
+  if (approved.some((contract) => contract.status === "FROZEN")) return "TRAINING";
   const running = approved.filter((contract) => contract.endDate.getTime() >= today.getTime());
   if (running.length === 0) return "EXPIRED";
   const lastEnd = Math.max(...running.map((contract) => contract.endDate.getTime()));

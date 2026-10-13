@@ -20,7 +20,7 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
-import { canActivate, canCancel, canUnapprove, isEditable } from "@flow/shared/contracts";
+import { canActivate, canCancel, canDeactivate, canReactivate, canUnapprove, isEditable } from "@flow/shared/contracts";
 import { getContract, getContractHistory, listContractStaff } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
@@ -30,6 +30,7 @@ import { PaymentsTable, RecordPaymentButton } from "../../finance/payments";
 import { ActivateContractButton, CancelContractButton, EditContractButton } from "../contract-buttons";
 import { DeleteContractButton, RejectContractButton, UnapproveContractButton } from "../contract-decisions";
 import { UpdateNoteButton } from "../contract-note";
+import { DeactivateContractButton, ReactivateContractButton } from "../contract-freeze";
 import { AuditTable } from "../../admin/audit/audit-table";
 
 async function loadContract(user: CurrentUser, id: string) {
@@ -101,6 +102,12 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
       {cancellable && <CancelContractButton contract={contract} bookings={toCancel} />}
       {canDecide && <ActivateContractButton contract={contract} />}
       {canDecide && <RejectContractButton contract={contract} />}
+      {can(user, "contract.deactivate") && canDeactivate(contract.status) && (
+        <DeactivateContractButton contract={contract} />
+      )}
+      {can(user, "contract.reactivate") && canReactivate(contract.status) && contract.freeze && (
+        <ReactivateContractButton contract={{ ...contract, freeze: contract.freeze }} />
+      )}
       {can(user, "contract.unapprove") && canUnapprove(contract.status) && (
         <UnapproveContractButton contract={contract} />
       )}
@@ -174,6 +181,19 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
                   />
                   <Detail label={f("fields.createdBy")} value={contract.createdBy.name} />
                   <Detail label={f("fields.approval")} value={<ApprovalLine contract={contract} />} />
+                  {contract.freeze && (
+                    <Detail
+                      label={f("fields.deactivation")}
+                      value={
+                        <span>
+                          {t("deactivatedSince", { name: contract.freeze.frozenBy.name })}{" "}
+                          <DateTime value={contract.freeze.frozenOn} format="dateOnly" />
+                          {": "}
+                          <ChosenOptionText option={contract.freeze.reason} />
+                        </span>
+                      }
+                    />
+                  )}
                 </dl>
               </CardContent>
             </Card>

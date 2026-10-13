@@ -41,7 +41,7 @@ export type BookingView = {
   scheduledEnd: Date;
   createdAt: Date;
   customer: { id: string; customerCode: string; fullName: string };
-  contract: { id: string; contractCode: string; packageName: string; remainingSessions: number };
+  contract: { id: string; contractCode: string; packageName: string; remainingSessions: number; frozen: boolean };
   trainer: { id: string; employeeCode: string; fullName: string };
   /** Fulfillment facts, from check-in on (T-011). */
   session: { checkedInAt: Date; checkedInBy: string; completedAt: Date | null; completedBy: string | null } | null;
@@ -211,6 +211,8 @@ export async function transitionBooking(
   return changeLockedBooking(actor, id, async (tx, before) => {
     if (before.status === options.to) return toBookingView(before);
     if (!options.allowed(before.status)) throw new AppError("INVALID_STATUS_TRANSITION");
+    // Cancelling stays possible, so admin can deal with the bookings of a deactivated contract (D-023).
+    if (options.to !== "CANCELLED" && before.contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
     if ((await repo.moveStatus(tx, id, before.status, options.to)) === 0)
       throw new AppError("INVALID_STATUS_TRANSITION");
     await options.apply?.(tx);
@@ -279,6 +281,7 @@ async function assertBookable(
   slot: repo.BookingSlot,
   excludeBookingId?: string,
 ): Promise<void> {
+  if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
   if (effectiveStatus(contract, gymToday()) !== "ACTIVE") throw new AppError("CONTRACT_NOT_ACTIVE");
   if (!isWithinContractPeriod(sessionDay(slot.scheduledStart), contract)) {
     throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
@@ -335,6 +338,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
         entitledSessions(contract.totalSessions, contract.bonusSessions) -
         contract.openingSessionsUsed -
         contract._count.bookings,
+      frozen: contract.status === "FROZEN",
     },
     trainer: booking.trainer,
     session: session && {

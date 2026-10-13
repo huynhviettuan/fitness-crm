@@ -39,6 +39,9 @@ export const PERMISSION_GROUPS = {
     "contract.delete",
     "contract.print",
     "contract.note",
+    // Deactivating (Tạm vô hiệu) and reactivating a contract are Admin's (D-023).
+    "contract.deactivate",
+    "contract.reactivate",
   ],
   schedule: ["booking.view", "booking.manage", "session.checkIn", "session.complete"],
   // Employee profiles and working schedules (brief §8.4).

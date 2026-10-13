@@ -1,14 +1,18 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { createUserViaApi, roleIdOf } from "./support/admin";
 import {
+  BOOKING_DAY,
   PT24,
+  bookingSetup,
   contractPayload,
   createContractViaApi,
+  createBookingViaApi,
   createCustomerViaApi,
   gymDay,
   recordPaymentViaApi,
 } from "./support/data";
-import { E2E_SALESPERSON_NAME, E2E_SERVICE_NAME, E2E_USERS } from "./support/db";
+import { E2E_SALESPERSON_NAME, E2E_SERVICE_NAME, E2E_USERS, backdateFreeze } from "./support/db";
+import { OTHER_OPTION_LABEL, otherOptionId } from "./support/options";
 import { fill, labels } from "./support/labels";
 
 const f = labels.contracts.fields;
@@ -421,5 +425,70 @@ test.describe("contracts as an admin", () => {
 
     await page.goto(`/customers/${customer.id}`);
     await expect(page.getByText(labels.status.customerContract.TRAINING, { exact: true }).first()).toBeVisible();
+  });
+
+  test("E2E-107: a deactivated contract is not booked or checked in; reactivating shows the frozen days and extends the end date once (D-023, AC-14)", async ({
+    page,
+    apiAs,
+    testTag,
+    contractDetailPage,
+  }) => {
+    const { contract, refs } = await bookingSetup(apiAs, testTag);
+    const manager = await apiAs("FITNESS_MANAGER");
+    const admin = await apiAs("ADMIN");
+    const booking = await createBookingViaApi(manager, refs, {
+      date: BOOKING_DAY.date,
+      startTime: "07:00",
+      endTime: "08:00",
+    });
+    const endBefore = new Date(
+      ((await (await admin.get(`/api/v1/contracts/${contract.id}`)).json()) as { endDate: string }).endDate,
+    );
+    const dayAfter = (days: number) => {
+      const date = new Date(endBefore.getTime() + days * 86_400_000);
+      const two = (n: number) => String(n).padStart(2, "0");
+      return `${two(date.getUTCDate())}/${two(date.getUTCMonth() + 1)}/${date.getUTCFullYear()}`;
+    };
+
+    await contractDetailPage.goto(contract.id);
+    await contractDetailPage.actWithReason(
+      labels.contracts.deactivate,
+      labels.contracts.deactivateReason,
+      `Nghi sai phạm ${testTag}`,
+    );
+    await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.FROZEN);
+    await expect(contractDetailPage.figure(f.deactivation)).toContainText(`Nghi sai phạm ${testTag}`);
+
+    // No new booking and no check-in; the booked session stays, highlighted.
+    const refused = await manager.post("/api/v1/bookings", {
+      data: { ...refs, date: BOOKING_DAY.date, startTime: "09:00", endTime: "10:00" },
+    });
+    expect(refused.status()).toBe(409);
+    expect(await refused.json()).toMatchObject({ code: "CONTRACT_FROZEN" });
+    expect((await manager.post(`/api/v1/bookings/${booking.id}/check-in`)).status()).toBe(409);
+    await contractDetailPage.openCheckins();
+    await expect(contractDetailPage.bookings.row("07:00")).toContainText(labels.contracts.frozenBooking);
+
+    // Ten days later: the dialog proposes adding all ten, and the end date moves once.
+    await backdateFreeze(contract.id, 10);
+    await page.reload();
+    await contractDetailPage.action(labels.contracts.reactivate).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByTestId("new-end-date")).toHaveText(dayAfter(10));
+    await dialog.getByRole("combobox", { name: labels.contracts.reactivateReason, exact: true }).click();
+    await page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.getByLabel(labels.options.otherNote, { exact: true }).fill(`Đã xác minh ${testTag}`);
+    await dialog.getByRole("button", { name: labels.contracts.reactivate, exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+
+    await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.ACTIVE);
+    await expect(contractDetailPage.figure(f.endDate)).toHaveText(dayAfter(10));
+    const again = await admin.post(`/api/v1/contracts/${contract.id}/reactivate`, {
+      data: { reasonId: await otherOptionId(admin, "unfreezeReasons"), reasonNote: "Lần hai", extension: "ALL" },
+    });
+    expect(again.status(), await again.text()).toBe(200);
+    expect(((await again.json()) as { endDate: string }).endDate.slice(0, 10)).toBe(
+      dayAfter(10).split("/").reverse().join("-"),
+    );
   });
 });

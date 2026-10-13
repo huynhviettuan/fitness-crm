@@ -6619,6 +6619,165 @@
         "x-permission": "contract.approve"
       }
     },
+    "/api/v1/contracts/{id}/deactivate": {
+      "post": {
+        "operationId": "ContractsController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.deactivate"
+      }
+    },
+    "/api/v1/contracts/{id}/reactivate": {
+      "post": {
+        "operationId": "ContractsController_reactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "extension": {
+                    "type": "string",
+                    "enum": [
+                      "ALL",
+                      "CUSTOM",
+                      "NONE"
+                    ]
+                  },
+                  "days": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "reasonId",
+                  "extension"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.reactivate"
+      }
+    },
     "/api/v1/contracts/{id}/unapprove": {
       "post": {
         "operationId": "ContractsController_unapprove",
@@ -9352,6 +9511,8 @@
                             "contract.delete",
                             "contract.print",
                             "contract.note",
+                            "contract.deactivate",
+                            "contract.reactivate",
                             "booking.view",
                             "booking.manage",
                             "session.checkIn",
@@ -9764,6 +9925,8 @@
                         "contract.delete",
                         "contract.print",
                         "contract.note",
+                        "contract.deactivate",
+                        "contract.reactivate",
                         "booking.view",
                         "booking.manage",
                         "session.checkIn",
@@ -10024,6 +10187,8 @@
                         "contract.delete",
                         "contract.print",
                         "contract.note",
+                        "contract.deactivate",
+                        "contract.reactivate",
                         "booking.view",
                         "booking.manage",
                         "session.checkIn",
@@ -10813,6 +10978,24 @@
                       }
                     ]
                   },
+                  "freezeReminderDays": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
+                  },
+                  "managerDepartmentId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    ]
+                  },
                   "exportRowLimit": {
                     "type": "string",
                     "pattern": "^\\d{1,6}$"
@@ -10850,6 +11033,8 @@
                   "expiringSoonDays",
                   "studioDepartmentId",
                   "receptionDepartmentId",
+                  "freezeReminderDays",
+                  "managerDepartmentId",
                   "exportRowLimit",
                   "reclaimMinutes",
                   "consultingWindowStart",
@@ -12371,6 +12556,7 @@
               "CONTRACT_HAS_DEPENDENTS",
               "DISCOUNT_ABOVE_LIMIT",
               "CONTRACT_NOT_ACTIVE",
+              "CONTRACT_FROZEN",
               "CONTRACT_NO_REMAINING_SESSIONS",
               "CONTRACT_HAS_CHECKED_IN_BOOKING",
               "PAYMENT_CONTRACT_CANCELLED",
@@ -12551,6 +12737,8 @@
                 "contract.delete",
                 "contract.print",
                 "contract.note",
+                "contract.deactivate",
+                "contract.reactivate",
                 "booking.view",
                 "booking.manage",
                 "session.checkIn",
@@ -16174,6 +16362,7 @@
               "ACTIVE",
               "CANCELLED",
               "REJECTED",
+              "FROZEN",
               "EXPIRED"
             ]
           },
@@ -16413,6 +16602,49 @@
               "reason"
             ]
           },
+          "freeze": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "frozenOn": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "frozenBy": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              },
+              "reason": {
+                "$ref": "#/components/schemas/ChosenOption"
+              },
+              "frozenDays": {
+                "type": "integer"
+              },
+              "proposedEndDate": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "frozenOn",
+              "frozenBy",
+              "reason",
+              "frozenDays",
+              "proposedEndDate"
+            ]
+          },
           "approvalPending": {
             "type": "boolean"
           },
@@ -16497,6 +16729,7 @@
           "approvedBy",
           "approvedAt",
           "rejection",
+          "freeze",
           "approvalPending",
           "totalSessions",
           "openingSessionsUsed",
@@ -17248,13 +17481,17 @@
               },
               "remainingSessions": {
                 "type": "integer"
+              },
+              "frozen": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "contractCode",
               "packageName",
-              "remainingSessions"
+              "remainingSessions",
+              "frozen"
             ]
           },
           "trainer": {
@@ -17710,6 +17947,8 @@
                     "contract.delete",
                     "contract.print",
                     "contract.note",
+                    "contract.deactivate",
+                    "contract.reactivate",
                     "booking.view",
                     "booking.manage",
                     "session.checkIn",
@@ -17963,6 +18202,8 @@
                 "contract.delete",
                 "contract.print",
                 "contract.note",
+                "contract.deactivate",
+                "contract.reactivate",
                 "booking.view",
                 "booking.manage",
                 "session.checkIn",
@@ -18123,7 +18364,9 @@
               "auditFailReasons",
               "stepReopenReasons",
               "exceptionPriceReasons",
-              "unapproveReasons"
+              "unapproveReasons",
+              "freezeReasons",
+              "unfreezeReasons"
             ]
           },
           "labelVi": {
@@ -18230,6 +18473,12 @@
           "receptionDepartmentId": {
             "type": "string"
           },
+          "freezeReminderDays": {
+            "type": "string"
+          },
+          "managerDepartmentId": {
+            "type": "string"
+          },
           "exportRowLimit": {
             "type": "string"
           },
@@ -18260,6 +18509,8 @@
           "expiringSoonDays",
           "studioDepartmentId",
           "receptionDepartmentId",
+          "freezeReminderDays",
+          "managerDepartmentId",
           "exportRowLimit",
           "reclaimMinutes",
           "consultingWindowStart",
@@ -19180,7 +19431,8 @@
               "leadStepDue",
               "leadRecare",
               "leadInquiry",
-              "personMerged"
+              "personMerged",
+              "contractFrozenLong"
             ]
           },
           "params": {

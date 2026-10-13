@@ -23,7 +23,14 @@ const STATUS_VARIANTS = {
   leadStep: { WAITING: "muted", OPEN: "info", DONE: "success", NOT_DONE: "destructive" },
   stepTiming: { ON_TIME: "success", LATE: "destructive" },
   user: { ACTIVE: "success", DISABLED: "muted" },
-  contract: { DRAFT: "warning", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted", REJECTED: "destructive" },
+  contract: {
+    DRAFT: "warning",
+    ACTIVE: "success",
+    EXPIRED: "warning",
+    CANCELLED: "muted",
+    REJECTED: "destructive",
+    FROZEN: "info",
+  },
   // D-040: a customer's standing, derived from their contracts.
   customerContract: {
     NO_CONTRACT: "muted",

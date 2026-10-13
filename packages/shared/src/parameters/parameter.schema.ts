@@ -32,6 +32,10 @@ export const PARAMETER_DEFAULTS = {
   studioDepartmentId: "",
   /** The department whose task an email that could not be sent creates (FR-MAIL-003); "" for none yet. */
   receptionDepartmentId: "",
+  /** A contract deactivated for more than this many days reminds the manager (D-023, M4.6). */
+  freezeReminderDays: "10",
+  /** The department whose task that reminder creates; "" for none yet. */
+  managerDepartmentId: "",
   /** The most rows one Excel export holds; a longer list must be narrowed first (A-078). */
   exportRowLimit: "50000",
   /** Working minutes an untouched lead waits before it moves to the next consultant; 0 switches it off (D-052). */
@@ -109,6 +113,8 @@ export const parametersInputSchema = z
     expiringSoonDays: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
+    freezeReminderDays: days,
+    managerDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     exportRowLimit: rows,
     reclaimMinutes: minutes,
     consultingWindowStart: timeOfDay,
@@ -139,6 +145,8 @@ export const parametersSchema = z
     expiringSoonDays: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),
+    freezeReminderDays: z.string(),
+    managerDepartmentId: z.string(),
     exportRowLimit: z.string(),
     reclaimMinutes: z.string(),
     consultingWindowStart: z.string(),

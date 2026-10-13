@@ -15,6 +15,17 @@ const withRefs = {
   previousContract: { select: { id: true, contractCode: true } },
   createdBy: { select: { id: true, name: true } },
   approvedBy: { select: { id: true, name: true } },
+  // The deactivation that lasts, if any (D-023): at most one is open.
+  freezes: {
+    where: { endedAt: null },
+    take: 1,
+    select: {
+      frozenOn: true,
+      frozenBy: { select: { id: true, name: true } },
+      reason: { select: chosenSelect },
+      reasonNote: true,
+    },
+  },
   exceptionReason: { select: chosenSelect },
   promotion: { select: { id: true, name: true } },
   voucher: { select: { id: true, name: true } },
@@ -202,6 +213,64 @@ export async function markDeleted(
 ): Promise<number> {
   const { count } = await db.contract.updateMany({ where: { id, deletedAt: null }, data });
   return count;
+}
+
+/** Starts a deactivation (D-023) and moves the contract to FROZEN only if it is still ACTIVE. */
+export async function deactivate(
+  db: Db,
+  id: string,
+  freeze: { frozenOn: Date; frozenById: string; reasonId: string; reasonNote: string | null },
+): Promise<boolean> {
+  const { count } = await db.contract.updateMany({ where: { id, status: "ACTIVE" }, data: { status: "FROZEN" } });
+  if (count === 0) return false;
+  await db.contractFreeze.create({ data: { contractId: id, ...freeze } });
+  return true;
+}
+
+/** The deactivation that lasts, with what it needs to end (D-023). */
+export function findOpenFreeze(db: Db, contractId: string) {
+  return db.contractFreeze.findFirst({ where: { contractId, endedAt: null } });
+}
+
+/**
+ * Ends the open deactivation and moves the contract back to ACTIVE with its new end date (D-023), only if it is still
+ * FROZEN: so the end date changes once per freeze, whatever is sent at once.
+ */
+export async function reactivate(
+  db: Db,
+  contractId: string,
+  end: {
+    freezeId: string;
+    endedOn: Date;
+    endedById: string;
+    endReasonId: string | null;
+    endReasonNote: string | null;
+    frozenDays: number;
+    addedDays: number;
+    previousEndDate: Date;
+    newEndDate: Date;
+  },
+): Promise<boolean> {
+  const { count } = await db.contract.updateMany({
+    where: { id: contractId, status: "FROZEN" },
+    data: { status: "ACTIVE", endDate: end.newEndDate },
+  });
+  if (count === 0) return false;
+  await db.contractFreeze.update({
+    where: { id: end.freezeId },
+    data: {
+      endedAt: new Date(),
+      endedOn: end.endedOn,
+      endedById: end.endedById,
+      endReasonId: end.endReasonId,
+      endReasonNote: end.endReasonNote,
+      frozenDays: end.frozenDays,
+      addedDays: end.addedDays,
+      previousEndDate: end.previousEndDate,
+      newEndDate: end.newEndDate,
+    },
+  });
+  return true;
 }
 
 /** Moves the status only if it is still `from`, so concurrent requests cannot both win. */

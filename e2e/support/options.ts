@@ -10,7 +10,8 @@ export type OptionListKey =
   | "auditFailReasons"
   | "needDetails"
   | "stepReopenReasons"
-  | "leadChannels";
+  | "leadChannels"
+  | "unfreezeReasons";
 
 type Option = { id: string; labelVi: string; active: boolean; isOther: boolean };
 

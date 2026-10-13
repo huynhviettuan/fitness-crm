@@ -226,7 +226,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** do voided payments migrate as deleted receipts with their reason (gap analysis: yes)?
 - **Depends on:** M4.4.
 
-### M4.6 Freeze and reactivation; expiry
+### M4.6 Freeze and reactivation; expiry (done 2026-10-14: A-133 to A-137, OQ-045; expiry stays derived, so no nightly job)
 
 - **Builds:**
   - **Deactivate** with a reason. While frozen, the contract can't be booked or checked in, and its future bookings are highlighted.

@@ -38,6 +38,8 @@ enum ContractStatus {
   ACTIVE
   CANCELLED
   REJECTED
+  // Deactivated for review (D-023): no booking, no check-in, and no expiry while it lasts.
+  FROZEN
 }
 
 // D-019: one record per person; a lead becomes a customer at Show.
@@ -181,6 +183,8 @@ model User {
   contractsCreated   Contract[]               @relation("ContractCreatedBy")
   contractsApproved  Contract[]               @relation("ContractApprovedBy")
   contractsDeleted   Contract[]               @relation("ContractDeletedBy")
+  freezesStarted     ContractFreeze[]         @relation("FreezeStartedBy")
+  freezesEnded       ContractFreeze[]         @relation("FreezeEndedBy")
   // Brief §8.4: the employee this login belongs to, at most one.
   employee           Employee?
   sessionsCheckedIn  Session[]                @relation("SessionCheckedInBy")
@@ -404,6 +408,8 @@ model Option {
   personMerges         PersonMerge[]
   contractExceptions   Contract[]                 @relation("ContractExceptionReason")
   contractsDeletedFor  Contract[]                 @relation("ContractDeleteReason")
+  freezeReasons        ContractFreeze[]           @relation("FreezeReason")
+  freezeEndReasons     ContractFreeze[]           @relation("FreezeEndReason")
 
   @@unique([listKey, labelVi])
   @@unique([listKey, code])
@@ -1008,6 +1014,7 @@ model Contract {
   deleteReasonNote    String?        @map("delete_reason_note")
 
   bookings   Booking[]
+  freezes    ContractFreeze[]
   payments   Payment[]
   cashTransactions CashTransaction[]
   shares     ContractStaffShare[]
@@ -1608,4 +1615,36 @@ model PromotionService {
   @@id([promotionId, serviceId])
   @@index([serviceId])
   @@map("promotion_services")
+}
+
+// One deactivation of a contract and how it ended (D-023, brief §5.5). Each freeze is its own record and extends the
+// end date at most once, when it ends.
+model ContractFreeze {
+  id              String    @id @default(uuid()) @db.Uuid
+  contractId      String    @map("contract_id") @db.Uuid
+  contract        Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  frozenOn        DateTime  @map("frozen_on") @db.Date
+  frozenAt        DateTime  @default(now()) @map("frozen_at") @db.Timestamptz(3)
+  frozenById      String    @map("frozen_by") @db.Uuid
+  frozenBy        User      @relation("FreezeStartedBy", fields: [frozenById], references: [id], onDelete: Restrict)
+  reasonId        String    @map("reason_option_id") @db.Uuid
+  reason          Option    @relation("FreezeReason", fields: [reasonId], references: [id], onDelete: Restrict)
+  reasonNote      String?   @map("reason_note")
+  // How it ended: null while it lasts.
+  endedAt         DateTime? @map("ended_at") @db.Timestamptz(3)
+  endedOn         DateTime? @map("ended_on") @db.Date
+  endedById       String?   @map("ended_by") @db.Uuid
+  endedBy         User?     @relation("FreezeEndedBy", fields: [endedById], references: [id], onDelete: Restrict)
+  endReasonId     String?   @map("end_reason_option_id") @db.Uuid
+  endReason       Option?   @relation("FreezeEndReason", fields: [endReasonId], references: [id], onDelete: Restrict)
+  endReasonNote   String?   @map("end_reason_note")
+  frozenDays      Int?      @map("frozen_days")
+  addedDays       Int?      @map("added_days")
+  previousEndDate DateTime? @map("previous_end_date") @db.Date
+  newEndDate      DateTime? @map("new_end_date") @db.Date
+  // When the manager was reminded that it lasted long (brief §5.5).
+  remindedAt      DateTime? @map("reminded_at") @db.Timestamptz(3)
+
+  @@index([contractId])
+  @@map("contract_freezes")
 }

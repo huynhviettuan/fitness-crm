@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CalendarPlusIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
@@ -35,6 +36,7 @@ export function BookingsTable({
   footer,
 }: BookingsTableProps) {
   const t = useTranslations("bookings");
+  const contractsT = useTranslations("contracts");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Looked up on every render, so the sheet shows the refreshed booking after an action.
   const selected = bookings.find((b) => b.id === selectedId) ?? null;
@@ -81,7 +83,15 @@ export function BookingsTable({
     {
       id: "status",
       header: t("fields.status"),
-      cell: ({ row }) => <StatusBadge entity="booking" status={row.original.status} />,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap items-center gap-1">
+          <StatusBadge entity="booking" status={row.original.status} />
+          {/* A booked session of a deactivated contract is for admin to deal with (D-023). */}
+          {row.original.contract.frozen && row.original.status === "BOOKED" && (
+            <Badge variant="warning">{contractsT("frozenBooking")}</Badge>
+          )}
+        </div>
+      ),
     },
     {
       id: "actions",

@@ -29,6 +29,8 @@ export const ERROR_HTTP_STATUS = {
   // A-112: the total discount is above what the approver's role may approve itself.
   DISCOUNT_ABOVE_LIMIT: 409,
   CONTRACT_NOT_ACTIVE: 409,
+  // D-023: a deactivated contract is not booked, checked in, or completed until it is reactivated.
+  CONTRACT_FROZEN: 409,
   CONTRACT_NO_REMAINING_SESSIONS: 409,
   CONTRACT_HAS_CHECKED_IN_BOOKING: 409,
   PAYMENT_CONTRACT_CANCELLED: 409,

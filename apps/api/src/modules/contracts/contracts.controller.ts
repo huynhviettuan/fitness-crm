@@ -4,6 +4,8 @@ import type { Request, Response } from "express";
 import {
   contractHistorySchema,
   contractInputSchema,
+  deactivateSchema,
+  reactivateSchema,
   contractNoteSchema,
   contractPageSchema,
   contractSchema,
@@ -39,6 +41,7 @@ import {
   updateContract,
   updateContractNote,
 } from "./contract.service.js";
+import { deactivateContract, reactivateContract } from "./contract-freeze.service.js";
 import { activateContract, rejectContract } from "./contract-approval.service.js";
 
 @ApiTags("contracts")
@@ -134,6 +137,32 @@ export class ContractsController {
     @Body({ schema: rejectSchema }) body: unknown,
   ) {
     return encode(contractSchema, await rejectContract(actor, id, body));
+  }
+
+  /** A temporary lock for review, with a reason (D-023): no booking, no check-in, no expiry while it lasts. */
+  @Post(":id/deactivate")
+  @RequirePermission("contract.deactivate")
+  @HttpCode(200)
+  @ApiResult(contractSchema)
+  async deactivate(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: deactivateSchema }) body: unknown,
+  ) {
+    return encode(contractSchema, await deactivateContract(actor, id, body));
+  }
+
+  /** Ends the lock with a reason and the choice about the frozen days; the end date moves once (D-023). */
+  @Post(":id/reactivate")
+  @RequirePermission("contract.reactivate")
+  @HttpCode(200)
+  @ApiResult(contractSchema)
+  async reactivate(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: reactivateSchema }) body: unknown,
+  ) {
+    return encode(contractSchema, await reactivateContract(actor, id, body));
   }
 
   /** Sends an approved contract back to pending approval when no receipts or sessions depend on it (A-124). */

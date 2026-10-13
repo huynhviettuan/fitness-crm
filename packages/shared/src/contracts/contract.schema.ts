@@ -9,7 +9,7 @@ import {
   vndAmount,
   wholeNumber,
 } from "../validation/index.js";
-import { CONTRACT_TYPES, LIST_STATUSES, PAYMENT_STATUSES } from "./contract.domain.js";
+import { CONTRACT_TYPES, EXTENSION_CHOICES, LIST_STATUSES, PAYMENT_STATUSES } from "./contract.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Forms send "" for an empty optional field; it is stored as null.
@@ -127,6 +127,29 @@ const filter = <T extends z.ZodType>(schema: T) =>
 export const contractNoteSchema = z.object({ notes: optionalText(2000) });
 
 /** The list's filters (brief §5.3): branch, type, contract date, service, PT, promotion, payment, signature, approval. */
+/** Deactivating a contract needs a reason from `freezeReasons` (D-023). */
+export const deactivateSchema = z.object({ reasonId: optionChoice, reasonNote: optionNote });
+
+/**
+ * Reactivating needs a reason from `unfreezeReasons` and the choice the dialog offers (D-023, brief §5.5): add all the
+ * frozen days, a number of days, or none. The days are only read for CUSTOM.
+ */
+export const reactivateSchema = z
+  .object({
+    reasonId: optionChoice,
+    reasonNote: optionNote,
+    extension: z.enum(EXTENSION_CHOICES, { error: "invalidChoice" }),
+    days: z
+      .union([z.literal(""), wholeNumber(0, 3650)])
+      .optional()
+      .transform((value) => (value === "" ? undefined : value)),
+  })
+  .superRefine((value, ctx) => {
+    if (value.extension === "CUSTOM" && value.days === undefined) {
+      ctx.addIssue({ code: "custom", path: ["days"], message: "required" });
+    }
+  });
+
 export const listContractsSchema = z.object({
   q: z.string().trim().max(100).refine(hasNoControlCharacters).optional().default(""),
   customerId: z.uuid().optional(),
@@ -149,4 +172,6 @@ export const listContractsSchema = z.object({
 export type ContractInput = z.input<typeof contractInputSchema>;
 export type ContractData = z.output<typeof contractInputSchema>;
 export type ContractNoteInput = z.input<typeof contractNoteSchema>;
+export type DeactivateInput = z.input<typeof deactivateSchema>;
+export type ReactivateInput = z.input<typeof reactivateSchema>;
 export type UnapproveInput = z.input<typeof unapproveSchema>;

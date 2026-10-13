@@ -42,6 +42,9 @@ export const OPTION_LISTS = [
   "exceptionPriceReasons",
   // Why admin sent an approved contract back to pending approval (A-124), M4.4.
   "unapproveReasons",
+  // Why a contract was deactivated and reactivated (D-023), M4.6.
+  "freezeReasons",
+  "unfreezeReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

@@ -36,6 +36,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-164 | A receipt shows its number and salesperson; only Admin edits its date; the customer shows as training (`apps/api/test/integration/receipts.int.test.ts` for numbers, vouchers, and standing) | D-034, D-040, A-129 to A-132 |
 | E2E-162 | The contract list filters by approval and payment and totals what the filter matches (`apps/api/test/integration/contract-list.int.test.ts` for every filter) | brief §5.3, A-126 |
 | E2E-163 | The detail's three tabs; the note changes after approval; Print opens the sheet | brief §5.3, A-127, A-128 |
+| E2E-107 | (built M4.6, `e2e/contracts.spec.ts`) Deactivate with a reason → booking and check-in refused, the booked session highlighted → ten days later reactivate: the dialog proposes the extension → confirmed once (`apps/api/test/integration/contract-freeze.int.test.ts` for INT-008, INT-012, and the reminder) | AC-14, D-023 |
 | E2E-161 | Admin unapproves an approved contract, and deletes one: a receipt blocks it and is listed, a second Admin approves the deletion, and it is gone | A-124, A-125 |
 | E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash (receipts part: `e2e/history.spec.ts`, M1 slice 4; contracts in M4) | AC-12, AC-13 |
 | E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |

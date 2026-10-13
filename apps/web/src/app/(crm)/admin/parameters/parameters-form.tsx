@@ -19,6 +19,7 @@ function withoutNoOption(values: Parameters): Parameters {
     ...values,
     studioDepartmentId: values.studioDepartmentId === NO_OPTION ? "" : values.studioDepartmentId,
     receptionDepartmentId: values.receptionDepartmentId === NO_OPTION ? "" : values.receptionDepartmentId,
+    managerDepartmentId: values.managerDepartmentId === NO_OPTION ? "" : values.managerDepartmentId,
   };
 }
 
@@ -40,6 +41,7 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
       ...parameters,
       studioDepartmentId: parameters.studioDepartmentId || NO_OPTION,
       receptionDepartmentId: parameters.receptionDepartmentId || NO_OPTION,
+      managerDepartmentId: parameters.managerDepartmentId || NO_OPTION,
     },
   });
 
@@ -111,7 +113,6 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           {field("recareDays", "numeric")}
-          {field("expiringSoonDays", "numeric")}
           {field("reclaimMinutes", "numeric")}
           {field("consultingWindowStart", "numeric")}
           {field("consultingWindowEnd", "numeric")}
@@ -145,6 +146,27 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
               ...departments.map((department) => ({ value: department.id, label: optionLabel(department, locale) })),
             ]}
           />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("parameters.contractsCard")}</CardTitle>
+          <CardDescription>{t("parameters.contractsHint")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          {field("freezeReminderDays", "numeric")}
+          {field("expiringSoonDays", "numeric")}
+          <div className="sm:col-span-2">
+            <SelectField
+              control={form.control}
+              name="managerDepartmentId"
+              label={t("parameters.fields.managerDepartmentId")}
+              options={[
+                { value: NO_OPTION, label: t("parameters.noDepartment") },
+                ...departments.map((department) => ({ value: department.id, label: optionLabel(department, locale) })),
+              ]}
+            />
+          </div>
         </CardContent>
       </Card>
       <div className="flex justify-end">

@@ -28,6 +28,8 @@ export const NOTIFICATION_KINDS = [
   "leadInquiry",
   // Two records of one person were merged (A-064): the person in charge of the survivor hears of it.
   "personMerged",
+  // A contract has been deactivated for more than the reminder days (D-023).
+  "contractFrozenLong",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
