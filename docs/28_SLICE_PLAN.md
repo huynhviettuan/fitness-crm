@@ -250,7 +250,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** the opening balance of the first day (proposed: an admin entry per method and branch, audited).
 - **Depends on:** M4.6.
 
-**M4 close:** AC-02, AC-05, AC-09 to AC-14, and AC-19 on staging.
+**M4 close (local checks done 2026-10-15: 875 E2E and security tests pass, the one failure being the known "ADMIN can give a task" flake; dependency audit passes; staging still needs the R2 keys, OQ-047):** AC-02, AC-05, AC-09 to AC-14, and AC-19 on staging.
 
 ## M5 — PT schedule, classes, sessions
 
