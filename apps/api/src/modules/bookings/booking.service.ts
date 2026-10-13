@@ -63,7 +63,7 @@ export type BookingView = {
   /** Fulfillment facts, from check-in on (T-011). */
   session: {
     checkedInAt: Date;
-    checkedInBy: string;
+    checkedInBy: string | null;
     completedAt: Date | null;
     completedBy: string | null;
     confirmationMethod: "MANUAL" | "DEVICE";
@@ -484,7 +484,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
     trainer: booking.trainer,
     session: session && {
       checkedInAt: session.checkedInAt,
-      checkedInBy: session.checkedInBy.name,
+      checkedInBy: session.checkedInBy?.name ?? null,
       completedAt: session.completedAt,
       completedBy: session.completedBy?.name ?? null,
       confirmationMethod: session.confirmationMethod as "MANUAL" | "DEVICE",

@@ -76,9 +76,9 @@ export function BookingSheet({ booking, onClose, permissions, trainers }: Bookin
 function BookingDetails({ booking }: { booking: BookingRow }) {
   const t = useTranslations("bookings");
   const f = (key: Parameters<typeof t>[0]) => t(key);
-  const by = (time: Date, name: string) => (
+  const by = (time: Date, name: string | null) => (
     <>
-      <DateTime value={time} format="time" />, {name}
+      <DateTime value={time} format="time" />, {name ?? t("confirmation.DEVICE")}
     </>
   );
 
@@ -117,7 +117,7 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
     ...(booking.session
       ? [{ label: f("fields.checkedIn"), value: by(booking.session.checkedInAt, booking.session.checkedInBy) }]
       : []),
-    ...(booking.session?.completedAt && booking.session.completedBy
+    ...(booking.session?.completedAt
       ? [
           { label: f("fields.completed"), value: by(booking.session.completedAt, booking.session.completedBy) },
           { label: f("fields.confirmation"), value: t(`confirmation.${booking.session.confirmationMethod}`) },

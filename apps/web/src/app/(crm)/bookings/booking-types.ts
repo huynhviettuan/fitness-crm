@@ -20,7 +20,7 @@ export type BookingRow = {
   trainer: TrainerOption;
   session: {
     checkedInAt: Date;
-    checkedInBy: string;
+    checkedInBy: string | null;
     completedAt: Date | null;
     completedBy: string | null;
     confirmationMethod: "MANUAL" | "DEVICE";

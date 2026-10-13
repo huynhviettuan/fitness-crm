@@ -750,3 +750,53 @@ export async function createContractFreezeTask(
   });
   return task.id;
 }
+
+/**
+ * The task of a session that still hangs after the escalation hours (D-071): it goes to the Studio Manager's
+ * department, set in the parameter `studioDepartmentId`, about the customer. Without one no task is made; the
+ * reviewers are told by notification anyway. Returns the task's id.
+ */
+export async function createHangingSessionTask(
+  db: Db,
+  input: {
+    booking: { id: string; branchId: string };
+    customerId: string;
+    customerName: string;
+    trainerName: string;
+    by: string;
+    hours: number;
+    dueAt: Date;
+  },
+): Promise<string | null> {
+  const departmentId = await readParameter(db, "studioDepartmentId");
+  const department = departmentId ? await repo.findDepartment(db, departmentId) : null;
+  if (!department?.active || department.isOther) return null;
+  const task = await repo.createTask(db, {
+    branchId: input.booking.branchId,
+    assignerId: input.by,
+    title: `${input.customerName} · ${input.trainerName}`,
+    description: `A session of ${input.customerName} with ${input.trainerName} still lacks a full check-in after ${input.hours} hours.`,
+    assigneeUserId: null,
+    assigneeDepartmentId: department.id,
+    dueAt: input.dueAt,
+    priority: "NORMAL",
+    reminderMinutes: [],
+    entityType: "customer",
+    entityId: input.customerId,
+    source: "sessionHanging",
+  });
+  await recordAudit(db, {
+    actorUserId: input.by,
+    entityType: "task",
+    entityId: task.id,
+    action: "task.created",
+    after: { ...pick(task, AUDITED_FIELDS), entityType: "customer", entityId: input.customerId },
+    context: { source: "sessionHanging", bookingId: input.booking.id },
+  });
+  await notifyAssignees(db, task, input.by, {
+    kind: "taskAssigned",
+    params: { title: task.title, by: task.assigner.name },
+    link: link(task),
+  });
+  return task.id;
+}

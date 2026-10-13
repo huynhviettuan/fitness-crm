@@ -18,6 +18,7 @@ export const AUDIT_ENTITY_TYPES = [
   "cash_opening_balance",
   "file",
   "session_status",
+  "checkin_device",
   "approval_request",
   "approval_rule",
   "task",

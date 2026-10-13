@@ -100,6 +100,7 @@ Hideable customer fields so far: phone, email, ID document, health note, and (M2
 | Deactivation (M4.6) | `contract.deactivate` and `contract.reactivate` (Admin only, with a reason each) |
 | Receipts (M4.5) | `payment.editDate` (edit a receipt's date, Admin only, always logged) besides `payment.view`, `payment.record`, and `payment.delete` |
 | Contract operations | `contract.view`, `contract.create`, `contract.approve` (and the matrix action `contract.create` decides who may), `contract.cancel`, `contract.unapprove` and `contract.delete` (Admin only, M4.4a), `contract.print` and `contract.note` (M4.4b: held by every role that sees contracts, and by every role that creates them) |
+| Check-in | `checkin.review` (Admin, Fitness Manager), `checkin.devices` (Admin), `report.manualConfirmations` (Admin, Fitness Manager) |
 | PT schedule | `booking.view`, `booking.manage`, `booking.delete` (Admin, Fitness Manager), `session.checkIn`, `session.complete` |
 | Employees | `employee.view`, `employee.manage` (profiles and working schedules, M1 slice 6; were `trainer.*`) |
 | Cash book | `payment.view`, `payment.record`, `payment.delete`, `cash.manage`, `cash.delete` |

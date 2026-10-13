@@ -30,6 +30,16 @@ export const PARAMETER_DEFAULTS = {
   expiringSoonDays: "30",
   /** A session cannot be cancelled (Hủy lịch) closer to its start than this many hours; 0 switches the limit off (D-029, BR-410). */
   cancelCutoffHours: "0",
+  /** Minutes a scan waits for the other side of its pair (D-070). */
+  scanPairWaitMinutes: "15",
+  /** A pair counts for a booked session from this many minutes before its start to this many after its end (D-070). */
+  scanWindowMinutes: "60",
+  /** A second scan of the same person within this many seconds counts once (D-070). */
+  scanRepeatSeconds: "10",
+  /** A machine whose clock differs from the server by more than this many seconds raises a warning (D-072). */
+  scanClockToleranceSeconds: "120",
+  /** A session still hanging after this many hours is reported to the Studio Manager with a task (D-071). */
+  hangingEscalationHours: "24",
   /** A running contract with this many sessions left or fewer is "running out" in the contract report (A-023, M4.7). */
   runningOutSessions: "3",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
@@ -102,6 +112,14 @@ const minutes = z
   .refine((value) => Number(value) <= 1440, { error: "minutesOutOfRange" })
   .transform((value) => String(Number(value)));
 
+/** Whole seconds, 1 to 3600. */
+const seconds = z
+  .string()
+  .trim()
+  .regex(/^\d{1,4}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) >= 1 && Number(value) <= 3600, { error: "secondsOutOfRange" })
+  .transform((value) => String(Number(value)));
+
 /** Whole hours, 0 to 720; 0 switches the limit off. */
 const hours = z
   .string()
@@ -124,6 +142,11 @@ export const parametersInputSchema = z
     recareDays: days,
     expiringSoonDays: days,
     cancelCutoffHours: hours,
+    scanPairWaitMinutes: minutes,
+    scanWindowMinutes: minutes,
+    scanRepeatSeconds: seconds,
+    scanClockToleranceSeconds: seconds,
+    hangingEscalationHours: hours,
     runningOutSessions: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
@@ -158,6 +181,11 @@ export const parametersSchema = z
     recareDays: z.string(),
     expiringSoonDays: z.string(),
     cancelCutoffHours: z.string(),
+    scanPairWaitMinutes: z.string(),
+    scanWindowMinutes: z.string(),
+    scanRepeatSeconds: z.string(),
+    scanClockToleranceSeconds: z.string(),
+    hangingEscalationHours: z.string(),
     runningOutSessions: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),

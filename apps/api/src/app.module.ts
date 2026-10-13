@@ -13,6 +13,7 @@ import { ApprovalRulesController, ApprovalsController } from "./modules/approval
 import { ErrorFilter } from "./platform/http/error.filter.js";
 import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
+import { CheckinController, CheckinDevicesController } from "./modules/checkin/checkin.controller.js";
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
 import { CustomersController } from "./modules/customers/customers.controller.js";
 import { LeadsController } from "./modules/leads/leads.controller.js";
@@ -60,6 +61,8 @@ import { NotificationsController } from "./platform/notifications/notifications.
     EmployeesController,
     BookingsController,
     ScheduleController,
+    CheckinController,
+    CheckinDevicesController,
     PaymentsController,
     DebtsController,
     CashTransactionsController,

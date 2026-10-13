@@ -9322,6 +9322,558 @@
         "x-permission": "booking.view"
       }
     },
+    "/api/v1/checkin/scans": {
+      "post": {
+        "operationId": "CheckinController_receive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sentAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "scans": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "userCode": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "scannedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "userCode",
+                        "scannedAt"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "scans"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinScansAnswer"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "device-key"
+      },
+      "get": {
+        "operationId": "CheckinController_scans",
+        "parameters": [
+          {
+            "name": "result",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinScanPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.review"
+      }
+    },
+    "/api/v1/checkin/hanging": {
+      "get": {
+        "operationId": "CheckinController_hanging",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HangingSessionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "booking.view"
+      }
+    },
+    "/api/v1/checkin/hanging/{bookingId}/request": {
+      "post": {
+        "operationId": "CheckinController_request",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "booking.manage"
+      }
+    },
+    "/api/v1/checkin/manual-confirmations": {
+      "get": {
+        "operationId": "CheckinController_manual",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManualConfirmationReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "report.manualConfirmations"
+      }
+    },
+    "/api/v1/checkin/machine-codes/{subject}/{id}": {
+      "get": {
+        "operationId": "CheckinController_machineCode",
+        "parameters": [
+          {
+            "name": "subject",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineCode"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.devices"
+      },
+      "put": {
+        "operationId": "CheckinController_setMachineCode",
+        "parameters": [
+          {
+            "name": "subject",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachineCode"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.devices"
+      }
+    },
+    "/api/v1/checkin/devices": {
+      "get": {
+        "operationId": "CheckinDevicesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinDeviceList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.devices"
+      },
+      "post": {
+        "operationId": "CheckinDevicesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branchId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "branchId",
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinDeviceCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.devices"
+      }
+    },
+    "/api/v1/checkin/devices/{id}": {
+      "patch": {
+        "operationId": "CheckinDevicesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "active"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinDevice"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.devices"
+      }
+    },
+    "/api/v1/checkin/devices/{id}/key": {
+      "post": {
+        "operationId": "CheckinDevicesController_rotate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinDeviceCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "checkin.devices"
+      }
+    },
     "/api/v1/payments": {
       "get": {
         "operationId": "PaymentsController_list",
@@ -10641,6 +11193,8 @@
                             "booking.delete",
                             "session.checkIn",
                             "session.complete",
+                            "checkin.review",
+                            "checkin.devices",
                             "employee.view",
                             "employee.manage",
                             "task.view",
@@ -10667,6 +11221,7 @@
                             "report.contractsExport",
                             "report.exceptionPrices",
                             "report.exceptionPricesExport",
+                            "report.manualConfirmations",
                             "payment.view",
                             "payment.record",
                             "payment.delete",
@@ -11066,6 +11621,8 @@
                         "booking.delete",
                         "session.checkIn",
                         "session.complete",
+                        "checkin.review",
+                        "checkin.devices",
                         "employee.view",
                         "employee.manage",
                         "task.view",
@@ -11092,6 +11649,7 @@
                         "report.contractsExport",
                         "report.exceptionPrices",
                         "report.exceptionPricesExport",
+                        "report.manualConfirmations",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -11339,6 +11897,8 @@
                         "booking.delete",
                         "session.checkIn",
                         "session.complete",
+                        "checkin.review",
+                        "checkin.devices",
                         "employee.view",
                         "employee.manage",
                         "task.view",
@@ -11365,6 +11925,7 @@
                         "report.contractsExport",
                         "report.exceptionPrices",
                         "report.exceptionPricesExport",
+                        "report.manualConfirmations",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
@@ -12110,6 +12671,26 @@
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
                   },
+                  "scanPairWaitMinutes": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}$"
+                  },
+                  "scanWindowMinutes": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}$"
+                  },
+                  "scanRepeatSeconds": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}$"
+                  },
+                  "scanClockToleranceSeconds": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}$"
+                  },
+                  "hangingEscalationHours": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
+                  },
                   "runningOutSessions": {
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
@@ -12196,6 +12777,11 @@
                   "recareDays",
                   "expiringSoonDays",
                   "cancelCutoffHours",
+                  "scanPairWaitMinutes",
+                  "scanWindowMinutes",
+                  "scanRepeatSeconds",
+                  "scanClockToleranceSeconds",
+                  "hangingEscalationHours",
                   "runningOutSessions",
                   "studioDepartmentId",
                   "receptionDepartmentId",
@@ -13914,6 +14500,8 @@
                 "booking.delete",
                 "session.checkIn",
                 "session.complete",
+                "checkin.review",
+                "checkin.devices",
                 "employee.view",
                 "employee.manage",
                 "task.view",
@@ -13940,6 +14528,7 @@
                 "report.contractsExport",
                 "report.exceptionPrices",
                 "report.exceptionPricesExport",
+                "report.manualConfirmations",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -19327,6 +19916,7 @@
                 "format": "date-time"
               },
               "checkedInBy": {
+                "nullable": true,
                 "type": "string"
               },
               "completedAt": {
@@ -19488,6 +20078,360 @@
           "branchId",
           "workingHours",
           "dayOff"
+        ]
+      },
+      "CheckinScansAnswer": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckinScanAnswer"
+            }
+          },
+          "clockOff": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "clockOff"
+        ]
+      },
+      "CheckinScanAnswer": {
+        "type": "object",
+        "properties": {
+          "userCode": {
+            "type": "string"
+          },
+          "scannedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "PAIRED",
+              "ERROR",
+              "REPEAT"
+            ]
+          },
+          "errorCode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "bookingId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "userCode",
+          "scannedAt",
+          "result",
+          "errorCode",
+          "bookingId"
+        ]
+      },
+      "CheckinScanPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckinScan"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "CheckinScan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scannedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "device": {
+            "type": "string"
+          },
+          "userCode": {
+            "type": "string"
+          },
+          "subject": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "CUSTOMER",
+                  "EMPLOYEE"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "name"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "PAIRED",
+              "ERROR",
+              "REPEAT"
+            ]
+          },
+          "errorCode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "bookingId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "scannedAt",
+          "receivedAt",
+          "device",
+          "userCode",
+          "subject",
+          "result",
+          "errorCode",
+          "bookingId"
+        ]
+      },
+      "HangingSessionList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HangingSession"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "HangingSession": {
+        "type": "object",
+        "properties": {
+          "booking": {
+            "$ref": "#/components/schemas/Booking"
+          },
+          "reason": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "PT_MISSING",
+              "CUSTOMER_MISSING"
+            ]
+          },
+          "firstScanAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "requested": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "booking",
+          "reason",
+          "firstScanAt",
+          "requested"
+        ]
+      },
+      "ManualConfirmationReport": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "perTrainer": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "sessions": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "sessions"
+              ]
+            }
+          },
+          "perCustomer": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "sessions": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "sessions"
+              ]
+            }
+          }
+        },
+        "required": [
+          "total",
+          "perTrainer",
+          "perCustomer"
+        ]
+      },
+      "MachineCode": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "CheckinDeviceList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckinDevice"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CheckinDevice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branch": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "lastSeenAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "clockOffsetSeconds": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "clockOff": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "branch",
+          "name",
+          "active",
+          "lastSeenAt",
+          "clockOffsetSeconds",
+          "clockOff"
+        ]
+      },
+      "CheckinDeviceCreated": {
+        "type": "object",
+        "properties": {
+          "device": {
+            "$ref": "#/components/schemas/CheckinDevice"
+          },
+          "key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "device",
+          "key"
         ]
       },
       "Collected": {
@@ -19829,6 +20773,8 @@
                     "booking.delete",
                     "session.checkIn",
                     "session.complete",
+                    "checkin.review",
+                    "checkin.devices",
                     "employee.view",
                     "employee.manage",
                     "task.view",
@@ -19855,6 +20801,7 @@
                     "report.contractsExport",
                     "report.exceptionPrices",
                     "report.exceptionPricesExport",
+                    "report.manualConfirmations",
                     "payment.view",
                     "payment.record",
                     "payment.delete",
@@ -20095,6 +21042,8 @@
                 "booking.delete",
                 "session.checkIn",
                 "session.complete",
+                "checkin.review",
+                "checkin.devices",
                 "employee.view",
                 "employee.manage",
                 "task.view",
@@ -20121,6 +21070,7 @@
                 "report.contractsExport",
                 "report.exceptionPrices",
                 "report.exceptionPricesExport",
+                "report.manualConfirmations",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
@@ -20367,6 +21317,21 @@
           "cancelCutoffHours": {
             "type": "string"
           },
+          "scanPairWaitMinutes": {
+            "type": "string"
+          },
+          "scanWindowMinutes": {
+            "type": "string"
+          },
+          "scanRepeatSeconds": {
+            "type": "string"
+          },
+          "scanClockToleranceSeconds": {
+            "type": "string"
+          },
+          "hangingEscalationHours": {
+            "type": "string"
+          },
           "runningOutSessions": {
             "type": "string"
           },
@@ -20411,6 +21376,11 @@
           "recareDays",
           "expiringSoonDays",
           "cancelCutoffHours",
+          "scanPairWaitMinutes",
+          "scanWindowMinutes",
+          "scanRepeatSeconds",
+          "scanClockToleranceSeconds",
+          "hangingEscalationHours",
           "runningOutSessions",
           "studioDepartmentId",
           "receptionDepartmentId",
@@ -21338,7 +22308,8 @@
               "leadRecare",
               "leadInquiry",
               "personMerged",
-              "contractFrozenLong"
+              "contractFrozenLong",
+              "sessionHanging"
             ]
           },
           "params": {

@@ -30,6 +30,8 @@ export const NOTIFICATION_KINDS = [
   "personMerged",
   // A contract has been deactivated for more than the reminder days (D-023).
   "contractFrozenLong",
+  // A session still lacks a full check-in after the escalation hours (D-071).
+  "sessionHanging",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

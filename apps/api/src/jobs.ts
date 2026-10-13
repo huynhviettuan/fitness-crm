@@ -6,6 +6,7 @@ import { lockOverdueSteps, remindDueSteps } from "./modules/leads/checklist.serv
 import { reclaimLeads } from "./modules/leads/lead-reclaim.service.js";
 import { sendDueEmails } from "./modules/mail/mail.service.js";
 import { remindLongFreezes } from "./modules/contracts/contract-freeze.service.js";
+import { escalateHangingSessions } from "./modules/checkin/checkin.service.js";
 
 // Background work (T-045, T-059): pg-boss queues in PostgreSQL, no Redis. The same code
 // runs inside the API (RUN_JOBS=true, the default for development) or in the worker
@@ -27,6 +28,8 @@ export async function sendReminders(now: Date = new Date()): Promise<void> {
   await reclaimLeads(now);
   // A contract deactivated for long reminds the managers (D-023).
   await remindLongFreezes(now);
+  // A session that still lacks a full check-in after a day is reported to the reviewers (D-071).
+  await escalateHangingSessions(now);
 }
 
 export type Jobs = { stop(): Promise<void> };

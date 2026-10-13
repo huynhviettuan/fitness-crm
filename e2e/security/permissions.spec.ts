@@ -34,7 +34,10 @@ test.describe("A01 permissions on every endpoint (T-046)", () => {
         const response = await api.fetch(route.path, { method, data: method === "GET" ? undefined : {} });
         // Endpoints for any signed-in user (own profile, option lists, parameters) answer;
         // with the random ids of the walk, that may be a 404.
-        const expected = route.permissions[method] === "authenticated" ? [200, 204, 400, 404] : [403];
+        // A check-in machine's route wants its key, which a user session is not (M5.3b): 401.
+        const declared = route.permissions[method];
+        const expected =
+          declared === "authenticated" ? [200, 204, 400, 404] : declared === "device-key" ? [401] : [403];
         expect(expected, `${method} ${route.template} answered ${response.status()}`).toContain(response.status());
       }
     }

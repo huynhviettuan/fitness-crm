@@ -16,6 +16,7 @@ import { getEmployee, getWorkSchedule, listEmployeeLogins } from "@/lib/api/empl
 import type { ChosenOption } from "@flow/shared/options";
 import { EditEmployeeButton } from "../employee-form";
 import { DaysOff, ShiftsEditor } from "./work-schedule";
+import { MachineCodeSection } from "../../checkin/machine-code-section";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
 export const instant = false;
@@ -108,6 +109,7 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
           </CardContent>
         </Card>
         <div className="flex min-w-0 flex-col gap-6">
+          <MachineCodeSection user={user} subject="employee" id={employee.id} />
           <Card>
             <CardHeader>
               <CardTitle>{t("schedule.title")}</CardTitle>

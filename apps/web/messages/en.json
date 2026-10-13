@@ -47,7 +47,8 @@
     "incomeExpenseReport": "Income and expense",
     "contractReport": "Contract report",
     "exceptionPriceReport": "Exception prices",
-    "sessionStatuses": "Session statuses"
+    "sessionStatuses": "Session statuses",
+    "checkin": "Check-in"
   },
   "status": {
     "customer": {
@@ -651,7 +652,9 @@
     "notAnImage": "Only PNG, JPEG, or WebP pictures are accepted.",
     "fileInUse": "This picture is already used elsewhere.",
     "hoursOutOfRange": "The hours must be between 0 and 720.",
-    "bookedNeverConsumes": "Booking never uses a session."
+    "bookedNeverConsumes": "Booking never uses a session.",
+    "secondsOutOfRange": "The seconds must be between 1 and 3600.",
+    "machineCodeTaken": "This code already belongs to someone else."
   },
   "contracts": {
     "title": "Contracts",
@@ -1195,7 +1198,8 @@
       "exports": "Export to Excel",
       "reports": "Reports",
       "services": "Services and price tiers",
-      "promotions": "Promotions and vouchers"
+      "promotions": "Promotions and vouchers",
+      "checkin": "Check-in machines"
     },
     "labels": {
       "user": {
@@ -1298,7 +1302,8 @@
         "contracts": "See the contract report",
         "contractsExport": "Export the contract report",
         "exceptionPrices": "See the exception-price report",
-        "exceptionPricesExport": "Export the exception-price report"
+        "exceptionPricesExport": "Export the exception-price report",
+        "manualConfirmations": "Report of sessions confirmed by hand"
       },
       "service": {
         "view": "View services and price tiers",
@@ -1306,6 +1311,10 @@
       },
       "promotion": {
         "manage": "Manage promotions and vouchers"
+      },
+      "checkin": {
+        "review": "Review hanging sessions and scan errors",
+        "devices": "Manage check-in machines and user codes"
       }
     },
     "resources": {
@@ -1470,7 +1479,12 @@
       "freezeReminderDays": "Remind the manager after (days frozen)",
       "managerDepartmentId": "Manager department (freeze reminders)",
       "runningOutSessions": "Running out at (sessions left)",
-      "cancelCutoffHours": "Cancel at least this long before (hours, 0 = off)"
+      "cancelCutoffHours": "Cancel at least this long before (hours, 0 = off)",
+      "scanPairWaitMinutes": "Minutes a scan waits for the other side",
+      "scanWindowMinutes": "Pairing window around the session (minutes)",
+      "scanRepeatSeconds": "Repeat scans counted once within (seconds)",
+      "scanClockToleranceSeconds": "Machine clock tolerance (seconds)",
+      "hangingEscalationHours": "Hours before a hanging session is escalated (0 = off)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1484,7 +1498,9 @@
     "mail": "Email",
     "mailHint": "An email to a customer that cannot go out (the customer has no email, or the provider refused it several times) creates a task for this department in Tasks, so the customer is told another way. With none chosen, no task is made and the email still shows as failed.",
     "contractsCard": "Contracts",
-    "contractsHint": "When a customer counts as expiring soon, and when a long deactivation reminds the manager."
+    "contractsHint": "When a customer counts as expiring soon, and when a long deactivation reminds the manager.",
+    "checkinCard": "Check-in machines",
+    "checkinHint": "How scans from the fingerprint machines are paired with booked sessions (D-070 to D-072)."
   },
   "trash": {
     "title": "Trash",
@@ -1557,7 +1573,8 @@
       "promotion": "Promotions and vouchers",
       "cash_opening_balance": "Opening cash balance",
       "file": "File",
-      "session_status": "Session status"
+      "session_status": "Session status",
+      "checkin_device": "Check-in device"
     },
     "verbs": {
       "created": "Created",
@@ -1803,7 +1820,8 @@
       "leadInquiry": "{name} ({code}) got in touch again",
       "personMerged": "Record {mergedCode} was merged into {code} · {name}",
       "leadReclaimed": "Lead {code} · {name} was moved to someone else after {minutes} minutes without care",
-      "contractFrozenLong": "Contract {code} of {name} has been deactivated for more than {days} days."
+      "contractFrozenLong": "Contract {code} of {name} has been deactivated for more than {days} days.",
+      "sessionHanging": "Session of {customer} with {trainer} still lacks a full check-in after {hours} hours."
     }
   },
   "checklist": {
@@ -2481,5 +2499,85 @@
       "muted": "Gray",
       "destructive": "Red"
     }
+  },
+  "checkin": {
+    "title": "Check-in",
+    "description": "Sessions that lack a full check-in, scans that could not serve a session, and the check-in machines.",
+    "views": {
+      "hanging": "Hanging sessions",
+      "errors": "Scan errors",
+      "scans": "All scans",
+      "manual": "Confirmed by hand",
+      "devices": "Machines"
+    },
+    "fields": {
+      "time": "Time",
+      "customer": "Customer",
+      "trainer": "Trainer",
+      "reason": "Status",
+      "actions": "Actions",
+      "device": "Machine",
+      "branch": "Branch",
+      "status": "Status",
+      "lastSeen": "Last seen",
+      "code": "User code",
+      "person": "Person",
+      "result": "Result"
+    },
+    "reasons": {
+      "PT_MISSING": "PT's check-in is missing",
+      "CUSTOMER_MISSING": "Customer's check-in is missing"
+    },
+    "requested": "PT says the customer trained",
+    "hangingEmpty": "No session is waiting for a check-in.",
+    "actions": {
+      "complete": "Confirm Trained",
+      "forgotScan": "Trained, forgot to scan",
+      "noShow": "Did not come (no-show)",
+      "cancel": "Did not come (cancelled)"
+    },
+    "completed": "Session confirmed",
+    "requestSent": "Request sent to the admin",
+    "markedNoShow": "Marked as no-show",
+    "cancelled": "Booking cancelled",
+    "results": {
+      "WAITING": "Waiting",
+      "PAIRED": "Paired",
+      "ERROR": "Error",
+      "REPEAT": "Repeat"
+    },
+    "scanErrors": {
+      "UNKNOWN_USER": "No customer or employee has this user code",
+      "NO_BOOKING": "No booked session fits this scan",
+      "PAIR_TOO_LATE": "The other side scanned too long ago",
+      "CONTRACT_NOT_ACTIVE": "The contract is not active or has expired",
+      "CONTRACT_FROZEN": "The contract is on hold",
+      "CONTRACT_NO_REMAINING_SESSIONS": "The contract has no sessions left",
+      "BOOKING_OUTSIDE_CONTRACT_PERIOD": "The session is outside the contract's dates"
+    },
+    "scansEmpty": "No scans yet.",
+    "manualIntro": "Sessions confirmed by hand from {from} to {to}: {total}.",
+    "manualPerTrainer": "Per PT",
+    "manualPerCustomer": "Per customer",
+    "manualEmpty": "None.",
+    "addDevice": "Add machine",
+    "addDeviceBody": "Each machine belongs to one branch and has its own key.",
+    "register": "Register",
+    "devicesEmpty": "No machine is registered. Machines are attached later; the scan API is ready.",
+    "devicesNote": "A machine sends its scans to POST /api/v1/checkin/scans with its key in the x-device-key header. The CRM never stores a fingerprint or a face image.",
+    "deviceActive": "Active",
+    "deviceInactive": "Off",
+    "clockOff": "Clock is off",
+    "newKey": "New key",
+    "activate": "Switch on",
+    "deactivate": "Switch off",
+    "keyTitle": "The machine's key",
+    "keyBody": "Copy it into the machine now. It is shown only once; a lost key is replaced with a new one.",
+    "keyDone": "I copied it",
+    "machineCode": "User code on the machine",
+    "machineCodeHint": "The code the fingerprint machine knows this person by. Only the code is stored.",
+    "save": "Save",
+    "codeSaved": "Code saved",
+    "codeTaken": "This code already belongs to someone else."
   }
 }

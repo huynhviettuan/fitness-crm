@@ -289,7 +289,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Tests:** E2E-108; INT-001, INT-002.
 - **Depends on:** M5.2.
 
-### M5.3b Fingerprint-ready check-in (scan API and pairing)
+### M5.3b Fingerprint-ready check-in (scan API and pairing) (done 2026-10-17: A-153 to A-156, OQ-050)
 
 - **Builds:**
   - **One event:** "session confirmed" is the only path to *Đã tập*; the admin's manual confirmation, bulk "Đã tập", and a paired scan all raise it, and it takes the session off the contract, credits the PT, emails the customer, and writes the log (D-069).

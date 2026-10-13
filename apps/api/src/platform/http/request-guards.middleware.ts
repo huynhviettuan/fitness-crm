@@ -19,7 +19,13 @@ export function requestGuards(request: Request, response: Response, next: NextFu
   if (SAFE_METHODS.has(request.method)) return next();
 
   const origin = request.headers.origin ?? null;
-  if (origin !== appOrigin) {
+  // A check-in machine is not a browser and sends no Origin; it proves itself with its device key, which its guard
+  // checks (D-072). Only that one route is open this way.
+  const isMachine =
+    request.method === "POST" &&
+    /\/checkin\/scans\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
+    typeof request.headers["x-device-key"] === "string";
+  if (origin !== appOrigin && !isMachine) {
     logSecurityEvent("request.cross_origin_rejected", {
       method: request.method,
       path: request.path,

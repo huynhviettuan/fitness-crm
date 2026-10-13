@@ -76,7 +76,13 @@ export function listStatusRules(db: Db): Promise<StatusRule[]> {
  * Sets the status only if it is still `from`, and keeps the flags of the rule applied now (T-050), with when and by
  * whom. Returns rows changed.
  */
-export async function setStatus(db: Db, id: string, from: string, rule: StatusRule, actorId: string): Promise<number> {
+export async function setStatus(
+  db: Db,
+  id: string,
+  from: string,
+  rule: StatusRule,
+  actorId: string | null,
+): Promise<number> {
   const { count } = await db.booking.updateMany({
     where: { id, status: from },
     data: {

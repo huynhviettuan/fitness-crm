@@ -47,7 +47,8 @@
     "incomeExpenseReport": "Thu chi",
     "contractReport": "Báo cáo hợp đồng",
     "exceptionPriceReport": "Giá ngoại lệ",
-    "sessionStatuses": "Trạng thái buổi tập"
+    "sessionStatuses": "Trạng thái buổi tập",
+    "checkin": "Check-in"
   },
   "status": {
     "customer": {
@@ -651,7 +652,9 @@
     "notAnImage": "Chỉ nhận ảnh PNG, JPEG hoặc WebP.",
     "fileInUse": "Ảnh này đã được dùng ở nơi khác.",
     "hoursOutOfRange": "Số giờ từ 0 đến 720.",
-    "bookedNeverConsumes": "Đặt lịch không bao giờ trừ buổi."
+    "bookedNeverConsumes": "Đặt lịch không bao giờ trừ buổi.",
+    "secondsOutOfRange": "Số giây phải từ 1 đến 3600.",
+    "machineCodeTaken": "Mã này đã thuộc về người khác."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1195,7 +1198,8 @@
       "exports": "Xuất Excel",
       "reports": "Báo cáo",
       "services": "Dịch vụ và bậc giá",
-      "promotions": "Khuyến mãi và voucher"
+      "promotions": "Khuyến mãi và voucher",
+      "checkin": "Máy chấm công"
     },
     "labels": {
       "user": {
@@ -1298,7 +1302,8 @@
         "contracts": "Xem báo cáo hợp đồng",
         "contractsExport": "Xuất báo cáo hợp đồng",
         "exceptionPrices": "Xem báo cáo giá ngoại lệ",
-        "exceptionPricesExport": "Xuất báo cáo giá ngoại lệ"
+        "exceptionPricesExport": "Xuất báo cáo giá ngoại lệ",
+        "manualConfirmations": "Báo cáo buổi xác nhận thủ công"
       },
       "service": {
         "view": "Xem dịch vụ và bậc giá",
@@ -1306,6 +1311,10 @@
       },
       "promotion": {
         "manage": "Quản lý khuyến mãi và voucher"
+      },
+      "checkin": {
+        "review": "Xem buổi thiếu check-in và lỗi quét",
+        "devices": "Quản lý máy chấm công và mã người dùng"
       }
     },
     "resources": {
@@ -1470,7 +1479,12 @@
       "freezeReminderDays": "Nhắc quản lý sau (ngày bị khóa)",
       "managerDepartmentId": "Phòng ban quản lý (việc nhắc hợp đồng bị khóa)",
       "runningOutSessions": "Sắp hết buổi khi còn (buổi)",
-      "cancelCutoffHours": "Hủy lịch trước giờ tập tối thiểu (giờ, 0 = tắt)"
+      "cancelCutoffHours": "Hủy lịch trước giờ tập tối thiểu (giờ, 0 = tắt)",
+      "scanPairWaitMinutes": "Số phút một lần quét chờ bên còn lại",
+      "scanWindowMinutes": "Khung ghép cặp quanh buổi tập (phút)",
+      "scanRepeatSeconds": "Quét lặp tính một lần trong (giây)",
+      "scanClockToleranceSeconds": "Sai lệch đồng hồ máy cho phép (giây)",
+      "hangingEscalationHours": "Số giờ trước khi báo buổi treo (0 = tắt)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1484,7 +1498,9 @@
     "mail": "Email",
     "mailHint": "Email gửi cho khách không đi được (khách chưa có email, hoặc nhà cung cấp từ chối nhiều lần) tạo việc cho phòng ban này trong Giao việc để báo khách bằng cách khác. Chưa chọn thì không tạo việc, email vẫn hiện là gửi lỗi.",
     "contractsCard": "Hợp đồng",
-    "contractsHint": "Khi nào khách được coi là sắp hết hạn, và khi nào hợp đồng bị khóa lâu nhắc quản lý."
+    "contractsHint": "Khi nào khách được coi là sắp hết hạn, và khi nào hợp đồng bị khóa lâu nhắc quản lý.",
+    "checkinCard": "Máy chấm công",
+    "checkinHint": "Cách ghép lần quét từ máy vân tay với buổi tập đã đặt (D-070 đến D-072)."
   },
   "trash": {
     "title": "Thùng rác",
@@ -1557,7 +1573,8 @@
       "promotion": "Khuyến mãi và voucher",
       "cash_opening_balance": "Số dư quỹ đầu kỳ",
       "file": "Tệp",
-      "session_status": "Trạng thái buổi tập"
+      "session_status": "Trạng thái buổi tập",
+      "checkin_device": "Máy chấm công"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1803,7 +1820,8 @@
       "leadInquiry": "{name} ({code}) vừa liên hệ lại",
       "personMerged": "Hồ sơ {mergedCode} đã được gộp vào {code} · {name}",
       "leadReclaimed": "Lead {code} · {name} đã chuyển cho người khác vì {minutes} phút chưa được chăm sóc",
-      "contractFrozenLong": "Hợp đồng {code} của {name} đã bị khóa quá {days} ngày."
+      "contractFrozenLong": "Hợp đồng {code} của {name} đã bị khóa quá {days} ngày.",
+      "sessionHanging": "Buổi tập của {customer} với {trainer} vẫn thiếu check-in sau {hours} giờ."
     }
   },
   "checklist": {
@@ -2481,5 +2499,85 @@
       "muted": "Xám",
       "destructive": "Đỏ"
     }
+  },
+  "checkin": {
+    "title": "Check-in",
+    "description": "Các buổi thiếu check-in, lần quét không gắn được vào buổi nào, và các máy chấm công.",
+    "views": {
+      "hanging": "Buổi đang treo",
+      "errors": "Lỗi quét",
+      "scans": "Tất cả lần quét",
+      "manual": "Xác nhận thủ công",
+      "devices": "Máy chấm công"
+    },
+    "fields": {
+      "time": "Giờ",
+      "customer": "Khách",
+      "trainer": "PT",
+      "reason": "Trạng thái",
+      "actions": "Thao tác",
+      "device": "Máy",
+      "branch": "Chi nhánh",
+      "status": "Trạng thái",
+      "lastSeen": "Lần cuối thấy",
+      "code": "Mã người dùng",
+      "person": "Người",
+      "result": "Kết quả"
+    },
+    "reasons": {
+      "PT_MISSING": "Thiếu check-in của PT",
+      "CUSTOMER_MISSING": "Thiếu check-in của khách"
+    },
+    "requested": "PT báo khách có tập",
+    "hangingEmpty": "Không có buổi nào đang chờ check-in.",
+    "actions": {
+      "complete": "Xác nhận Đã tập",
+      "forgotScan": "Khách có tập nhưng quên quét",
+      "noShow": "Khách không lên tập (không đến)",
+      "cancel": "Khách không lên tập (hủy lịch)"
+    },
+    "completed": "Đã xác nhận buổi tập",
+    "requestSent": "Đã gửi yêu cầu cho quản trị",
+    "markedNoShow": "Đã đánh dấu khách không đến",
+    "cancelled": "Đã hủy lịch",
+    "results": {
+      "WAITING": "Đang chờ",
+      "PAIRED": "Đã ghép",
+      "ERROR": "Lỗi",
+      "REPEAT": "Quét lặp"
+    },
+    "scanErrors": {
+      "UNKNOWN_USER": "Không có khách hay nhân viên nào dùng mã này",
+      "NO_BOOKING": "Không có buổi đặt nào khớp lần quét này",
+      "PAIR_TOO_LATE": "Bên còn lại đã quét quá lâu trước đó",
+      "CONTRACT_NOT_ACTIVE": "Hợp đồng chưa hiệu lực hoặc đã hết hạn",
+      "CONTRACT_FROZEN": "Hợp đồng đang bảo lưu",
+      "CONTRACT_NO_REMAINING_SESSIONS": "Hợp đồng đã hết buổi",
+      "BOOKING_OUTSIDE_CONTRACT_PERIOD": "Buổi tập nằm ngoài thời hạn hợp đồng"
+    },
+    "scansEmpty": "Chưa có lần quét nào.",
+    "manualIntro": "Số buổi xác nhận thủ công từ {from} đến {to}: {total}.",
+    "manualPerTrainer": "Theo PT",
+    "manualPerCustomer": "Theo khách",
+    "manualEmpty": "Không có.",
+    "addDevice": "Thêm máy",
+    "addDeviceBody": "Mỗi máy thuộc một chi nhánh và có khóa riêng.",
+    "register": "Đăng ký",
+    "devicesEmpty": "Chưa đăng ký máy nào. Máy được gắn sau; API nhận lần quét đã sẵn sàng.",
+    "devicesNote": "Máy gửi các lần quét tới POST /api/v1/checkin/scans, khóa đặt trong header x-device-key. CRM không bao giờ lưu vân tay hay ảnh khuôn mặt.",
+    "deviceActive": "Đang bật",
+    "deviceInactive": "Đã tắt",
+    "clockOff": "Đồng hồ lệch",
+    "newKey": "Khóa mới",
+    "activate": "Bật",
+    "deactivate": "Tắt",
+    "keyTitle": "Khóa của máy",
+    "keyBody": "Hãy chép vào máy ngay. Khóa chỉ hiện một lần; mất khóa thì đổi sang khóa mới.",
+    "keyDone": "Tôi đã chép",
+    "machineCode": "Mã người dùng trên máy",
+    "machineCodeHint": "Mã mà máy vân tay dùng để nhận ra người này. Chỉ lưu mã.",
+    "save": "Lưu",
+    "codeSaved": "Đã lưu mã",
+    "codeTaken": "Mã này đã thuộc về người khác."
   }
 }

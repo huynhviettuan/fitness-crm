@@ -62,7 +62,8 @@ export const bookingSchema = z
     session: z
       .object({
         checkedInAt: instant,
-        checkedInBy: z.string(),
+        /** Null when a paired device scan confirmed the session (M5.3b). */
+        checkedInBy: z.string().nullable(),
         completedAt: instant.nullable(),
         completedBy: z.string().nullable(),
         /** How the session was confirmed: by hand, or by a paired device scan (D-069). */

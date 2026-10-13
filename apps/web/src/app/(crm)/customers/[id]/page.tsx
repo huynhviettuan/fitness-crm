@@ -33,6 +33,7 @@ import { EditCustomerButton } from "../customer-sheets";
 import { LeadTimeline } from "../../leads/lead-timeline";
 import { ChecklistSteps } from "../../leads/lead-checklist";
 import { MergePersonButton } from "../../leads/merge-person";
+import { MachineCodeSection } from "../../checkin/machine-code-section";
 
 async function loadCustomer(user: CurrentUser, id: string) {
   try {
@@ -208,7 +209,8 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           {consulting && <TabsTrigger value="consulting">{t("tabs.consulting")}</TabsTrigger>}
           <TabsTrigger value="emails">{t("tabs.emails")}</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-6">
+          <MachineCodeSection user={user} subject="customer" id={customer.id} />
           <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>

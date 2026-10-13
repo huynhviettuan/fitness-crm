@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-17 — M5.3b: fingerprint-ready check-in
+
+- **Machines and scans** (A-153): a key per machine, the scan API, raw scans, machine user codes; no fingerprint is stored. The Origin check has one documented exception for the machine route (doc 24).
+- **Pairing** (A-154) by the rules of D-070, into the one event "session confirmed" (A-155).
+- **Hanging sessions, the PT's answers, the escalation, and the report of confirmations by hand** (A-156).
+- **Open**: OQ-050. Docs 04, 07, 09, 13, 16, 18, 24, 28; E2E-169.
+
 ## 2026-10-16 — M5.3: session dialog, delete, bulk Đã tập
 
 - **Đã tập straight from Booked** (A-150): no separate check-in step; check-in stays an optional fact. How a session was confirmed is kept.

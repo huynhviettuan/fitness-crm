@@ -28,6 +28,14 @@ export function RequirePermission(...permissions: [Permission, ...Permission[]])
   );
 }
 
+/** Declared by the endpoint a registered check-in machine calls with its own key instead of a session (M5.3b, D-072). */
+export const DEVICE_KEY = "device-key";
+
+/** The endpoint is called by a machine; `DeviceGuard` checks its key, and no user session is needed. */
+export function DeviceKeyEndpoint() {
+  return applyDecorators(SetMetadata(PERMISSION_METADATA, DEVICE_KEY), ApiExtension("x-permission", DEVICE_KEY));
+}
+
 /** For endpoints about the signed-in user themselves. */
 export function AnySignedInUser() {
   return applyDecorators(
@@ -46,6 +54,8 @@ export function AnySignedInUser() {
 export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    // A machine endpoint is guarded by its own guard, which checks the device key (D-072).
+    if (Reflect.getMetadata(PERMISSION_METADATA, context.getHandler()) === DEVICE_KEY) return true;
     const headers = fromNodeHeaders(request.headers);
     const user = await getSessionUser(headers);
     if (!user) {

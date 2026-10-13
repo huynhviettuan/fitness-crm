@@ -238,6 +238,7 @@ model Branch {
   contracts        Contract[]
   employees        Employee[]
   bookings         Booking[]
+  checkinDevices   CheckinDevice[]
   payments         Payment[]
   cashTransactions CashTransaction[]
   cashOpenings     CashOpeningBalance[]
@@ -605,6 +606,8 @@ model Customer {
   leadCode              String?              @unique @map("lead_code")
   // From customer_code_seq (T-019), given at Show. Never updated.
   customerCode          String?              @unique @map("customer_code")
+  // The user code on the fingerprint machine (M5.3b, D-072); never a fingerprint.
+  machineUserCode       String?              @unique @map("machine_user_code")
   // The lead journey (D-020); null for customers who never were leads.
   leadStatus            LeadStatus?          @map("lead_status")
   fullName              String               @map("full_name")
@@ -1070,6 +1073,7 @@ model Employee {
   branch         Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
   // Generated from the employee_code_seq sequence (T-019, D-038). Never updated.
   employeeCode   String         @unique @map("employee_code")
+  machineUserCode String?       @unique @map("machine_user_code")
   fullName       String         @map("full_name")
   // fullName lowercased without Vietnamese diacritics, for accent-insensitive search.
   searchName     String         @map("search_name")
@@ -1167,6 +1171,18 @@ model Booking {
 
   session Session?
 
+  // The pairing of a customer's scan and the PT's scan with this booking (M5.3b, D-070). Both set, in time: confirmed.
+  customerScanId String?      @map("customer_scan_id") @db.Uuid
+  customerScan   CheckinScan? @relation("BookingCustomerScan", fields: [customerScanId], references: [id], onDelete: Restrict)
+  ptScanId       String?      @map("pt_scan_id") @db.Uuid
+  ptScan         CheckinScan? @relation("BookingPtScan", fields: [ptScanId], references: [id], onDelete: Restrict)
+  // The PT said the customer trained but forgot to scan: a request to admin to confirm (D-071).
+  scanRequestedAt DateTime? @map("scan_requested_at") @db.Timestamptz(3)
+  scanRequestedById String? @map("scan_requested_by") @db.Uuid
+  // The Studio Manager was told that this session still hangs after the escalation hours (D-071).
+  hangingEscalatedAt DateTime? @map("hanging_escalated_at") @db.Timestamptz(3)
+  scans CheckinScan[] @relation("ScanBooking")
+
   @@index([contractId, status])
   @@index([customerId])
   @@index([trainerId, scheduledStart])
@@ -1182,8 +1198,9 @@ model Session {
   bookingId     String    @unique @map("booking_id") @db.Uuid
   booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
   checkedInAt   DateTime  @map("checked_in_at") @db.Timestamptz(3)
-  checkedInById String    @map("checked_in_by") @db.Uuid
-  checkedInBy   User      @relation("SessionCheckedInBy", fields: [checkedInById], references: [id], onDelete: Restrict)
+  // Null when a paired device scan confirmed the session (M5.3b).
+  checkedInById String?   @map("checked_in_by") @db.Uuid
+  checkedInBy   User?     @relation("SessionCheckedInBy", fields: [checkedInById], references: [id], onDelete: Restrict)
   completedAt   DateTime? @map("completed_at") @db.Timestamptz(3)
   completedById String?   @map("completed_by") @db.Uuid
   completedBy   User?     @relation("SessionCompletedBy", fields: [completedById], references: [id], onDelete: Restrict)
@@ -1718,4 +1735,53 @@ model SessionStatus {
   bookings Booking[]
 
   @@map("session_statuses")
+}
+
+// ---------------------------------------------------------------------------
+// Fingerprint-ready check-in (M5.3b, D-069 to D-072). The CRM stores only the machine's user code, never a
+// fingerprint or face image. A machine belongs to one branch and has its own secret key (only its hash is kept).
+// ---------------------------------------------------------------------------
+
+model CheckinDevice {
+  id                 String   @id @default(uuid()) @db.Uuid
+  branchId           String   @map("branch_id") @db.Uuid
+  branch             Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  name               String
+  keyHash            String   @unique @map("key_hash")
+  active             Boolean  @default(true)
+  lastSeenAt         DateTime? @map("last_seen_at") @db.Timestamptz(3)
+  // Machine clock minus server clock at its last report; a large value raises a warning (D-072).
+  clockOffsetSeconds Int?     @map("clock_offset_seconds")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  scans CheckinScan[]
+
+  @@map("checkin_devices")
+}
+
+// Every scan received, kept raw for reconciliation (D-072). Result: WAITING (attached, the other side missing),
+// PAIRED (confirmed the session), ERROR (see errorCode), REPEAT (counted once).
+model CheckinScan {
+  id              String        @id @default(uuid()) @db.Uuid
+  deviceId        String        @map("device_id") @db.Uuid
+  device          CheckinDevice @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  branchId        String        @map("branch_id") @db.Uuid
+  machineUserCode String        @map("machine_user_code")
+  scannedAt       DateTime      @map("scanned_at") @db.Timestamptz(3)
+  receivedAt      DateTime      @default(now()) @map("received_at") @db.Timestamptz(3)
+  subjectType     String?       @map("subject_type")
+  customerId      String?       @map("customer_id") @db.Uuid
+  employeeId      String?       @map("employee_id") @db.Uuid
+  result          String
+  errorCode       String?       @map("error_code")
+  bookingId       String?       @map("booking_id") @db.Uuid
+  booking         Booking?      @relation("ScanBooking", fields: [bookingId], references: [id], onDelete: Restrict)
+
+  asCustomerScan Booking[] @relation("BookingCustomerScan")
+  asPtScan       Booking[] @relation("BookingPtScan")
+
+  @@unique([deviceId, machineUserCode, scannedAt])
+  @@index([result, scannedAt])
+  @@map("checkin_scans")
 }

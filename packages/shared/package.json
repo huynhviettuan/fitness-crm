@@ -13,6 +13,10 @@
       "types": "./dist/audit/index.d.ts",
       "default": "./dist/audit/index.js"
     },
+    "./checkin": {
+      "types": "./dist/checkin/index.d.ts",
+      "default": "./dist/checkin/index.js"
+    },
     "./bookings": {
       "types": "./dist/bookings/index.d.ts",
       "default": "./dist/bookings/index.js"

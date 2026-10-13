@@ -44,6 +44,8 @@ export const PERMISSION_GROUPS = {
     "contract.reactivate",
   ],
   schedule: ["booking.view", "booking.manage", "booking.delete", "session.checkIn", "session.complete"],
+  // Fingerprint-ready check-in (M5.3b, D-069 to D-072): the machines are Admin's; reviewing scans is Admin's and Fitness Manager's.
+  checkin: ["checkin.review", "checkin.devices"],
   // Employee profiles and working schedules (brief §8.4).
   employees: ["employee.view", "employee.manage"],
   // Giao việc (brief §8.2): every default role works and assigns tasks (09_RBAC.md).
@@ -75,6 +77,7 @@ export const PERMISSION_GROUPS = {
     "report.contractsExport",
     "report.exceptionPrices",
     "report.exceptionPricesExport",
+    "report.manualConfirmations",
   ],
   // Deleting vouchers is its own permission (09_RBAC.md, D-035).
   // Editing a receipt's date is its own permission, always logged (D-034).
