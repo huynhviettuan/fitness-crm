@@ -42,7 +42,11 @@
     "leadAnalysis": "Phân tích lead",
     "leadReceivers": "Nhận lead",
     "services": "Dịch vụ và bậc giá",
-    "promotions": "Khuyến mãi và voucher"
+    "promotions": "Khuyến mãi và voucher",
+    "cashBookReport": "Sổ quỹ",
+    "incomeExpenseReport": "Thu chi",
+    "contractReport": "Báo cáo hợp đồng",
+    "exceptionPriceReport": "Giá ngoại lệ"
   },
   "status": {
     "customer": {
@@ -643,7 +647,8 @@
     "companionsNotAllowed": "Chỉ gói nhóm mới có người đi cùng.",
     "tooManyCompanions": "Vượt quá số hội viên tối đa của gói.",
     "serviceNotOnSale": "Dịch vụ này không bán tại chi nhánh hoặc vào ngày này.",
-    "onlyOnCreate": "Chỉ nhập khoản thanh toán đầu khi tạo hợp đồng."
+    "onlyOnCreate": "Chỉ nhập khoản thanh toán đầu khi tạo hợp đồng.",
+    "periodTooLong": "Khoảng thời gian quá dài."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1196,7 +1201,8 @@
       "cash": {
         "manage": "Thu chi khác (xem, ghi)",
         "delete": "Xóa khoản thu chi (vào thùng rác)",
-        "export": "Xuất thu chi"
+        "export": "Xuất thu chi",
+        "opening": "Đặt số dư quỹ đầu kỳ"
       },
       "config": {
         "manage": "Quản lý danh mục lựa chọn và tham số hệ thống"
@@ -1235,7 +1241,16 @@
         "consulting": "Xem dashboard tư vấn",
         "consultingExport": "Xuất dashboard tư vấn",
         "leadAnalysis": "Xem phân tích lead",
-        "leadAnalysisExport": "Xuất phân tích lead"
+        "leadAnalysisExport": "Xuất phân tích lead",
+        "cashBook": "Xem sổ quỹ",
+        "cashBookExport": "Xuất sổ quỹ",
+        "incomeExpense": "Xem báo cáo thu chi",
+        "incomeExpenseExport": "Xuất báo cáo thu chi",
+        "memberDebtExport": "Xuất công nợ hội viên",
+        "contracts": "Xem báo cáo hợp đồng",
+        "contractsExport": "Xuất báo cáo hợp đồng",
+        "exceptionPrices": "Xem báo cáo giá ngoại lệ",
+        "exceptionPricesExport": "Xuất báo cáo giá ngoại lệ"
       },
       "service": {
         "view": "Xem dịch vụ và bậc giá",
@@ -1405,7 +1420,8 @@
       "expenseCodePrefix": "Số phiếu chi",
       "expiringSoonDays": "Sắp hết hạn trong (ngày)",
       "freezeReminderDays": "Nhắc quản lý sau (ngày bị khóa)",
-      "managerDepartmentId": "Phòng ban quản lý (việc nhắc hợp đồng bị khóa)"
+      "managerDepartmentId": "Phòng ban quản lý (việc nhắc hợp đồng bị khóa)",
+      "runningOutSessions": "Sắp hết buổi khi còn (buổi)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1488,7 +1504,8 @@
       "audit_criterion": "Tiêu chí audit",
       "service": "Dịch vụ",
       "price_tier_version": "Phiên bản bậc giá",
-      "promotion": "Khuyến mãi và voucher"
+      "promotion": "Khuyến mãi và voucher",
+      "cash_opening_balance": "Số dư quỹ đầu kỳ"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2286,5 +2303,92 @@
     },
     "allServices": "Mọi dịch vụ",
     "noEnd": "Không giới hạn"
+  },
+  "cashBook": {
+    "title": "Sổ quỹ",
+    "description": "Đầu kỳ, thu, chi và cuối kỳ của từng chi nhánh theo hình thức thanh toán, và theo từng ngày.",
+    "empty": "Chưa có khoản thu chi nào trong kỳ này.",
+    "totals": "Tổng của kỳ",
+    "byMethod": "Theo chi nhánh và hình thức",
+    "byDay": "Theo ngày",
+    "note": "Cuối kỳ = đầu kỳ + thu − chi. Chỉ tính phiếu thu và phiếu chi đã duyệt, chưa xóa; số dư đầu kỳ do quản trị đặt cho từng chi nhánh và hình thức, và quỹ chỉ tính từ ngày bắt đầu đó.",
+    "fields": {
+      "branch": "Chi nhánh",
+      "method": "Hình thức",
+      "day": "Ngày",
+      "opening": "Đầu kỳ",
+      "inflow": "Thu",
+      "outflow": "Chi",
+      "closing": "Cuối kỳ"
+    },
+    "opening": {
+      "button": "Số dư đầu kỳ",
+      "title": "Số dư quỹ đầu kỳ",
+      "body": "Số tiền chi nhánh đang giữ theo hình thức này khi bắt đầu dùng sổ quỹ. Thay đổi sẽ làm đổi mọi số dư cuối kỳ sau đó và được ghi lại.",
+      "branch": "Chi nhánh",
+      "method": "Hình thức thanh toán",
+      "effectiveOn": "Tính từ ngày",
+      "amount": "Số tiền",
+      "datePlaceholder": "dd/MM/yyyy",
+      "amountPlaceholder": "0",
+      "saved": "Đã lưu số dư đầu kỳ."
+    }
+  },
+  "incomeExpense": {
+    "title": "Thu chi",
+    "description": "Thu từ hợp đồng, thu khác và chi theo từng danh mục trong kỳ.",
+    "empty": "Chưa có khoản thu chi nào trong kỳ này.",
+    "totals": "Tổng của kỳ",
+    "lines": "Chi tiết theo danh mục",
+    "kinds": {
+      "CONTRACT_PAYMENT": "Thu hợp đồng",
+      "INCOME": "Thu khác",
+      "EXPENSE": "Chi"
+    },
+    "fields": {
+      "kind": "Loại",
+      "category": "Danh mục",
+      "count": "Số phiếu",
+      "amount": "Số tiền",
+      "income": "Tổng thu",
+      "expense": "Tổng chi",
+      "net": "Chênh lệch"
+    }
+  },
+  "contractReport": {
+    "title": "Báo cáo hợp đồng",
+    "description": "Doanh thu, công nợ, hợp đồng mới và tái ký, hợp đồng sắp hết hạn hoặc sắp hết buổi, theo dịch vụ và nhóm số buổi.",
+    "empty": "Chưa có hợp đồng nào trong kỳ này.",
+    "totals": "Tổng của kỳ",
+    "byService": "Theo dịch vụ và nhóm số buổi",
+    "noService": "Chưa có dịch vụ",
+    "note": "Hợp đồng mới, tái ký, giá trị và công nợ tính theo hợp đồng đã duyệt có ngày trong kỳ; doanh thu là tiền đã thu trong kỳ; sắp hết hạn và sắp hết buổi tính tại hôm nay theo ngưỡng trong Tham số.",
+    "fields": {
+      "service": "Dịch vụ",
+      "band": "Nhóm số buổi",
+      "newContracts": "Hợp đồng mới",
+      "renewedContracts": "Tái ký",
+      "value": "Giá trị",
+      "revenue": "Doanh thu",
+      "debt": "Công nợ",
+      "expiringSoon": "Sắp hết hạn",
+      "runningOut": "Sắp hết buổi"
+    }
+  },
+  "exceptionPrices": {
+    "title": "Giá ngoại lệ",
+    "description": "Tỷ lệ hợp đồng có giá ngoại lệ và chênh lệch so với giá bậc, theo người tạo và người duyệt.",
+    "empty": "Chưa có hợp đồng nào trong kỳ này.",
+    "totals": "Tổng của kỳ",
+    "byCreator": "Theo người tạo",
+    "byApprover": "Theo người duyệt",
+    "note": "Chênh lệch = (giá bậc − giá đã duyệt) × số buổi mua, trên các hợp đồng đã duyệt có giá ngoại lệ. Hợp đồng chuyển từ hệ thống cũ không có giá bậc nên không tính.",
+    "fields": {
+      "person": "Nhân viên",
+      "contracts": "Hợp đồng",
+      "exceptions": "Giá ngoại lệ",
+      "share": "Tỷ lệ",
+      "difference": "Chênh lệch"
+    }
   }
 }

@@ -42,7 +42,11 @@
     "leadAnalysis": "Lead analysis",
     "leadReceivers": "Lead receiving",
     "services": "Services and price tiers",
-    "promotions": "Promotions and vouchers"
+    "promotions": "Promotions and vouchers",
+    "cashBookReport": "Cash book",
+    "incomeExpenseReport": "Income and expense",
+    "contractReport": "Contract report",
+    "exceptionPriceReport": "Exception prices"
   },
   "status": {
     "customer": {
@@ -643,7 +647,8 @@
     "companionsNotAllowed": "Only a group package has companions.",
     "tooManyCompanions": "More than the package's maximum members.",
     "serviceNotOnSale": "This service is not sold in this branch or on this day.",
-    "onlyOnCreate": "The first payment is entered only when the contract is created."
+    "onlyOnCreate": "The first payment is entered only when the contract is created.",
+    "periodTooLong": "The period is too long."
   },
   "contracts": {
     "title": "Contracts",
@@ -1196,7 +1201,8 @@
       "cash": {
         "manage": "Other income and expenses (view, record)",
         "delete": "Delete income and expenses (to the trash)",
-        "export": "Export income and expenses"
+        "export": "Export income and expenses",
+        "opening": "Set the opening cash balance"
       },
       "config": {
         "manage": "Manage option lists and system parameters"
@@ -1235,7 +1241,16 @@
         "consulting": "See the consulting dashboard",
         "consultingExport": "Export the consulting dashboard",
         "leadAnalysis": "See the lead analysis",
-        "leadAnalysisExport": "Export the lead analysis"
+        "leadAnalysisExport": "Export the lead analysis",
+        "cashBook": "See the cash book",
+        "cashBookExport": "Export the cash book",
+        "incomeExpense": "See the income and expense report",
+        "incomeExpenseExport": "Export the income and expense report",
+        "memberDebtExport": "Export the member debt",
+        "contracts": "See the contract report",
+        "contractsExport": "Export the contract report",
+        "exceptionPrices": "See the exception-price report",
+        "exceptionPricesExport": "Export the exception-price report"
       },
       "service": {
         "view": "View services and price tiers",
@@ -1405,7 +1420,8 @@
       "expenseCodePrefix": "Expense voucher number",
       "expiringSoonDays": "Expiring soon within (days)",
       "freezeReminderDays": "Remind the manager after (days frozen)",
-      "managerDepartmentId": "Manager department (freeze reminders)"
+      "managerDepartmentId": "Manager department (freeze reminders)",
+      "runningOutSessions": "Running out at (sessions left)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1488,7 +1504,8 @@
       "audit_criterion": "Audit criterion",
       "service": "Service",
       "price_tier_version": "Price tier version",
-      "promotion": "Promotions and vouchers"
+      "promotion": "Promotions and vouchers",
+      "cash_opening_balance": "Opening cash balance"
     },
     "verbs": {
       "created": "Created",
@@ -2286,5 +2303,92 @@
     },
     "allServices": "Every service",
     "noEnd": "No limit"
+  },
+  "cashBook": {
+    "title": "Cash book",
+    "description": "Opening, in, out, and closing of each branch by payment method, and day by day.",
+    "empty": "No income or expense in this period.",
+    "totals": "Totals of the period",
+    "byMethod": "By branch and method",
+    "byDay": "By day",
+    "note": "Closing = opening + in − out. Only approved, undeleted receipts and vouchers count; Admin sets the opening balance of each branch and method, and the books count only from that day.",
+    "fields": {
+      "branch": "Branch",
+      "method": "Method",
+      "day": "Day",
+      "opening": "Opening",
+      "inflow": "In",
+      "outflow": "Out",
+      "closing": "Closing"
+    },
+    "opening": {
+      "button": "Opening balance",
+      "title": "Opening cash balance",
+      "body": "The cash the branch held in this method when it began using the cash book. Changing it moves every closing balance after it and is logged.",
+      "branch": "Branch",
+      "method": "Payment method",
+      "effectiveOn": "Counted from",
+      "amount": "Amount",
+      "datePlaceholder": "dd/MM/yyyy",
+      "amountPlaceholder": "0",
+      "saved": "Opening balance saved."
+    }
+  },
+  "incomeExpense": {
+    "title": "Income and expense",
+    "description": "Contract payments, other income, and expenses by category in the period.",
+    "empty": "No income or expense in this period.",
+    "totals": "Totals of the period",
+    "lines": "By category",
+    "kinds": {
+      "CONTRACT_PAYMENT": "Contract payments",
+      "INCOME": "Other income",
+      "EXPENSE": "Expense"
+    },
+    "fields": {
+      "kind": "Kind",
+      "category": "Category",
+      "count": "Vouchers",
+      "amount": "Amount",
+      "income": "Total income",
+      "expense": "Total expense",
+      "net": "Net"
+    }
+  },
+  "contractReport": {
+    "title": "Contract report",
+    "description": "Revenue, debt, new and renewed contracts, and contracts expiring or running out, by service and session band.",
+    "empty": "No contracts in this period.",
+    "totals": "Totals of the period",
+    "byService": "By service and session band",
+    "noService": "No service",
+    "note": "New, renewed, value and debt count approved contracts dated in the period; revenue is the money received in the period; expiring and running out are as of today, by the thresholds in Parameters.",
+    "fields": {
+      "service": "Service",
+      "band": "Session band",
+      "newContracts": "New contracts",
+      "renewedContracts": "Renewed",
+      "value": "Value",
+      "revenue": "Revenue",
+      "debt": "Debt",
+      "expiringSoon": "Expiring soon",
+      "runningOut": "Running out"
+    }
+  },
+  "exceptionPrices": {
+    "title": "Exception prices",
+    "description": "The share of contracts with an exception price and the difference from the tier price, by creator and approver.",
+    "empty": "No contracts in this period.",
+    "totals": "Totals of the period",
+    "byCreator": "By creator",
+    "byApprover": "By approver",
+    "note": "Difference = (tier price − approved price) × sessions bought, over approved contracts with an exception price. Contracts brought over from the old system have no tier price and are left out.",
+    "fields": {
+      "person": "Person",
+      "contracts": "Contracts",
+      "exceptions": "Exception prices",
+      "share": "Share",
+      "difference": "Difference"
+    }
   }
 }

@@ -237,7 +237,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Tests:** E2E-107; INT-008; INT-012; the reminder job at a fixed clock.
 - **Depends on:** M4.5.
 
-### M4.7 Cash book and contract reports
+### M4.7 Cash book and contract reports (done 2026-10-15: A-138 to A-142, OQ-046; PT payout vouchers come with M5)
 
 - **Builds:**
   - **Cash book** per day and per period: opening, in, out, and closing, per method and branch.

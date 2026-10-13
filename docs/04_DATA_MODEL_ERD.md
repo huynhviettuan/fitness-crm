@@ -113,6 +113,7 @@ erDiagram
 | `promotions` | name, kind (PERCENT, AMOUNT), value, from, to, voucher_code |
 | `contracts` (M4.4a additions) | approved_by, approved_at, deleted_at, deleted_by, delete_reason_option_id, delete_reason_note; status gains REJECTED; the triggers `contracts_lock`, `contract_staff_shares_lock`, and `contract_companions_lock` refuse changes to an approved contract's commercial columns and parts (A-122) |
 | `payments` and `cash_transactions` (M4.5) | `payments` gains receipt_number (unique, from receipt_seq), sale_employee_id, and note; `cash_transactions` gains number (unique: receipt_seq for income, expense_voucher_seq for an expense), payee, method_option_id, method_note, and contract_id (a refund); a payee or contract only on an expense |
+| `cash_opening_balances` (M4.7) | branch_id, method_option_id (unique together), effective_on, amount (≥ 0), updated_by, updated_at; the cash a branch held in a method when its books begin (A-138) |
 | `contract_freezes` (M4.6) | contract_id, frozen_on, frozen_at, frozen_by, reason; how it ended (ended_at, ended_on, ended_by, end reason, frozen_days, added_days, previous_end_date, new_end_date); reminded_at; at most one open per contract (partial unique index). `contracts.status` gains FROZEN |
 | `contract_staff_shares` | contract_id, role (PT, SALE), employee_id, percent (A-115) |
 | `contract_companions` | contract_id, customer_id (group packages, A-116) |

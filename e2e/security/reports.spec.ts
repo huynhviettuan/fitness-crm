@@ -7,11 +7,29 @@ import { expect, test } from "../fixtures";
 import { createUserViaApi, roleIdOf } from "../support/admin";
 import { createLeadViaApi, uniquePhone } from "../support/data";
 import type { Role } from "../support/db";
-import { otherOptionId } from "../support/options";
+import { createOptionViaApi, otherOptionId } from "../support/options";
 import { readBody } from "../support/xlsx";
 
 const ROLES: Role[] = ["ADMIN", "FITNESS_MANAGER", "RECEPTIONIST", "CONSULTING", "PT", "ACCOUNTANT"];
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/** The money reports of M4.7 (A-138, A-139) and the roles that hold them by default; the debt export needs payment.view too. */
+const MONEY_ROLES: Role[] = ["ADMIN", "FITNESS_MANAGER", "ACCOUNTANT"];
+const MONEY_REPORTS = [
+  "reports/cash-book",
+  "reports/cash-book/export",
+  "reports/cash-book/openings",
+  "reports/income-expense",
+  "reports/income-expense/export",
+  "debts/export",
+];
+/** The contract and exception-price reports (A-140, A-141). */
+const CONTRACT_REPORTS = [
+  "reports/contracts",
+  "reports/contracts/export",
+  "reports/exception-prices",
+  "reports/exception-prices/export",
+];
 
 /** Who holds each report permission by default (A-093); Marketing is signed in separately. */
 const REPORTS: { path: string; allowed: Role[]; marketing: boolean }[] = [
@@ -19,6 +37,8 @@ const REPORTS: { path: string; allowed: Role[]; marketing: boolean }[] = [
   { path: "reports/consulting/export", allowed: ["ADMIN", "FITNESS_MANAGER"], marketing: false },
   { path: "reports/lead-analysis", allowed: ["ADMIN", "FITNESS_MANAGER"], marketing: true },
   { path: "reports/lead-analysis/export", allowed: ["ADMIN", "FITNESS_MANAGER"], marketing: true },
+  ...MONEY_REPORTS.map((path) => ({ path, allowed: MONEY_ROLES, marketing: false })),
+  ...CONTRACT_REPORTS.map((path) => ({ path, allowed: ["ADMIN", "FITNESS_MANAGER"] as Role[], marketing: false })),
 ];
 
 async function marketing(
@@ -65,7 +85,12 @@ test.describe("A01 who sees which report (A-093)", () => {
   test("an export is an Excel file, and the answer to a refusal is JSON", async ({ apiAs }) => {
     const manager = await apiAs("FITNESS_MANAGER");
 
-    for (const path of ["reports/consulting/export", "reports/lead-analysis/export"]) {
+    for (const path of [
+      "reports/consulting/export",
+      "reports/lead-analysis/export",
+      ...MONEY_REPORTS.filter((entry) => entry.endsWith("/export")),
+      ...CONTRACT_REPORTS.filter((entry) => entry.endsWith("/export")),
+    ]) {
       const response = await manager.get(`/api/v1/${path}`);
       expect(response.headers()["content-type"], path).toBe(XLSX);
       expect(response.headers()["content-disposition"], path).toMatch(/^attachment; filename="[a-z-]+-\d{8}\.xlsx"$/);
@@ -178,6 +203,84 @@ test.describe("A10 report input errors", () => {
     for (const method of ["post", "put", "patch", "delete"] as const) {
       const response = await admin[method]("/api/v1/reports/consulting", { data: {} });
       expect([404, 405], method).toContain(response.status());
+    }
+  });
+});
+
+test.describe("A01 and A10 the opening balance and the period (A-138)", () => {
+  async function opening(admin: APIRequestContext, tag: string, overrides: Record<string, unknown> = {}) {
+    const { items } = (await (await admin.get("/api/v1/branches")).json()) as { items: { id: string }[] };
+    return {
+      branchId: items[0]!.id,
+      methodId: await createOptionViaApi(admin, "paymentMethods", `Quỹ ${tag}`),
+      effectiveOn: "01/01/2020",
+      amount: "1.000.000",
+      ...overrides,
+    };
+  }
+
+  for (const role of ROLES.filter((entry) => entry !== "ADMIN")) {
+    test(`${role} setting an opening balance gets 403`, async ({ apiAs, testTag }) => {
+      const body = await opening(await apiAs("ADMIN"), testTag);
+
+      const response = await (await apiAs(role)).put("/api/v1/reports/cash-book/openings", { data: body });
+
+      expect(response.status()).toBe(403);
+      expect(await response.json()).toMatchObject({ code: "FORBIDDEN" });
+    });
+  }
+
+  test("an anonymous opening balance gets 401", async ({ apiAs }) => {
+    expect((await (await apiAs(null)).put("/api/v1/reports/cash-book/openings", { data: {} })).status()).toBe(401);
+  });
+
+  test("Admin sets it, a second request replaces it, and it is the only one for the method", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const admin = await apiAs("ADMIN");
+    const body = await opening(admin, testTag);
+
+    expect((await admin.put("/api/v1/reports/cash-book/openings", { data: body })).status()).toBe(200);
+    const again = await admin.put("/api/v1/reports/cash-book/openings", { data: { ...body, amount: "2.000.000" } });
+    expect(await again.json()).toMatchObject({ amount: 2_000_000 });
+
+    const { items } = (await (await admin.get("/api/v1/reports/cash-book/openings")).json()) as {
+      items: { method: { id: string }; amount: number }[];
+    };
+    expect(items.filter((item) => item.method.id === body.methodId)).toHaveLength(1);
+  });
+
+  test("bad input is a 400 with the field named: another list's option, a negative amount, a bad date, an unknown branch", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const admin = await apiAs("ADMIN");
+    const body = await opening(admin, testTag);
+    const put = async (data: Record<string, unknown>) => admin.put("/api/v1/reports/cash-book/openings", { data });
+
+    const wrongList = await put({ ...body, methodId: await otherOptionId(admin, "deleteReasons") });
+    expect(wrongList.status()).toBe(400);
+    expect(await wrongList.json()).toMatchObject({ details: { fieldErrors: { methodId: ["invalidChoice"] } } });
+    expect((await put({ ...body, amount: "-5" })).status()).toBe(400);
+    expect((await put({ ...body, effectiveOn: "31/02/2026" })).status()).toBe(400);
+    expect((await put({ ...body, branchId: "00000000-0000-4000-8000-00000000dead" })).status()).toBe(400);
+    expect((await put({ ...body, methodId: "not-a-uuid" })).status()).toBe(400);
+  });
+
+  test("a bad period is a 400, not a server error", async ({ apiAs }) => {
+    const manager = await apiAs("FITNESS_MANAGER");
+
+    for (const path of [
+      "reports/cash-book",
+      "reports/income-expense",
+      "reports/contracts",
+      "reports/exception-prices",
+    ]) {
+      for (const query of ["from=31/02/2026", "from=2026-10-01", "from=10/10/2026&to=01/10/2026", "branchId=nope"]) {
+        const response = await manager.get(`/api/v1/${path}?${query}`);
+        expect(response.status(), `${path}?${query}`).toBe(400);
+      }
     }
   });
 });

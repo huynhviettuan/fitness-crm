@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { CircleCheckIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { ForbiddenState } from "@/components/forbidden-state";
+import { ExportButton } from "@/components/export-button";
 import { PageHeader } from "@/components/page-header";
 import { TablePagination } from "@/components/table-pagination";
 import { requirePageUser } from "@/lib/auth/current-user";
@@ -32,7 +33,11 @@ export default async function DebtPage({ searchParams }: PageProps<"/finance/deb
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={can(user, "report.memberDebtExport") && <ExportButton path="/api/v1/debts/export" query={{}} />}
+      />
       <FinanceTabs active="debt" showCash={can(user, "cash.manage")} />
       <p className="mb-4 text-sm text-muted-foreground">{t("debtDescription")}</p>
       <ContractsTable

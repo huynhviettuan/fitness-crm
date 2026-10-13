@@ -4473,6 +4473,568 @@
         "x-permission": "report.leadAnalysisExport"
       }
     },
+    "/api/v1/reports/cash-book": {
+      "get": {
+        "operationId": "ReportsController_cashBook",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashBook"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.cashBook"
+      }
+    },
+    "/api/v1/reports/cash-book/export": {
+      "get": {
+        "operationId": "ReportsController_exportCashBook",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.cashBookExport"
+      }
+    },
+    "/api/v1/reports/cash-book/openings": {
+      "get": {
+        "operationId": "ReportsController_openings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashOpeningList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.cashBook"
+      },
+      "put": {
+        "operationId": "ReportsController_setOpening",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branchId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "methodId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "effectiveOn": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "amount": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "branchId",
+                  "methodId",
+                  "effectiveOn",
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashOpening"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "cash.opening"
+      }
+    },
+    "/api/v1/reports/income-expense": {
+      "get": {
+        "operationId": "ReportsController_incomeExpense",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeExpense"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.incomeExpense"
+      }
+    },
+    "/api/v1/reports/income-expense/export": {
+      "get": {
+        "operationId": "ReportsController_exportIncomeExpense",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.incomeExpenseExport"
+      }
+    },
+    "/api/v1/reports/contracts": {
+      "get": {
+        "operationId": "ReportsController_contracts",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.contracts"
+      }
+    },
+    "/api/v1/reports/contracts/export": {
+      "get": {
+        "operationId": "ReportsController_exportContracts",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.contractsExport"
+      }
+    },
+    "/api/v1/reports/exception-prices": {
+      "get": {
+        "operationId": "ReportsController_exceptionPrices",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionPriceReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.exceptionPrices"
+      }
+    },
+    "/api/v1/reports/exception-prices/export": {
+      "get": {
+        "operationId": "ReportsController_exportExceptionPrices",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.exceptionPricesExport"
+      }
+    },
     "/api/v1/customers": {
       "get": {
         "operationId": "CustomersController_list",
@@ -8666,6 +9228,39 @@
         "x-permission": "payment.view"
       }
     },
+    "/api/v1/debts/export": {
+      "get": {
+        "operationId": "DebtsController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "finance"
+        ],
+        "x-permission": "report.memberDebtExport"
+      }
+    },
     "/api/v1/cash-transactions": {
       "get": {
         "operationId": "CashTransactionsController_list",
@@ -9534,12 +10129,22 @@
                             "report.consultingExport",
                             "report.leadAnalysis",
                             "report.leadAnalysisExport",
+                            "report.cashBook",
+                            "report.cashBookExport",
+                            "report.incomeExpense",
+                            "report.incomeExpenseExport",
+                            "report.memberDebtExport",
+                            "report.contracts",
+                            "report.contractsExport",
+                            "report.exceptionPrices",
+                            "report.exceptionPricesExport",
                             "payment.view",
                             "payment.record",
                             "payment.delete",
                             "payment.editDate",
                             "cash.manage",
-                            "cash.delete"
+                            "cash.delete",
+                            "cash.opening"
                           ]
                         },
                         "granted": {
@@ -9948,12 +10553,22 @@
                         "report.consultingExport",
                         "report.leadAnalysis",
                         "report.leadAnalysisExport",
+                        "report.cashBook",
+                        "report.cashBookExport",
+                        "report.incomeExpense",
+                        "report.incomeExpenseExport",
+                        "report.memberDebtExport",
+                        "report.contracts",
+                        "report.contractsExport",
+                        "report.exceptionPrices",
+                        "report.exceptionPricesExport",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
                         "payment.editDate",
                         "cash.manage",
-                        "cash.delete"
+                        "cash.delete",
+                        "cash.opening"
                       ]
                     }
                   },
@@ -10210,12 +10825,22 @@
                         "report.consultingExport",
                         "report.leadAnalysis",
                         "report.leadAnalysisExport",
+                        "report.cashBook",
+                        "report.cashBookExport",
+                        "report.incomeExpense",
+                        "report.incomeExpenseExport",
+                        "report.memberDebtExport",
+                        "report.contracts",
+                        "report.contractsExport",
+                        "report.exceptionPrices",
+                        "report.exceptionPricesExport",
                         "payment.view",
                         "payment.record",
                         "payment.delete",
                         "payment.editDate",
                         "cash.manage",
-                        "cash.delete"
+                        "cash.delete",
+                        "cash.opening"
                       ]
                     }
                   },
@@ -10950,6 +11575,10 @@
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
                   },
+                  "runningOutSessions": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
+                  },
                   "studioDepartmentId": {
                     "anyOf": [
                       {
@@ -11031,6 +11660,7 @@
                   "taskReminderHours",
                   "recareDays",
                   "expiringSoonDays",
+                  "runningOutSessions",
                   "studioDepartmentId",
                   "receptionDepartmentId",
                   "freezeReminderDays",
@@ -12760,12 +13390,22 @@
                 "report.consultingExport",
                 "report.leadAnalysis",
                 "report.leadAnalysisExport",
+                "report.cashBook",
+                "report.cashBookExport",
+                "report.incomeExpense",
+                "report.incomeExpenseExport",
+                "report.memberDebtExport",
+                "report.contracts",
+                "report.contractsExport",
+                "report.exceptionPrices",
+                "report.exceptionPricesExport",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
                 "payment.editDate",
                 "cash.manage",
-                "cash.delete"
+                "cash.delete",
+                "cash.opening"
               ]
             }
           },
@@ -15987,6 +16627,475 @@
           "notes"
         ]
       },
+      "CashBook": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "branch": {
+                  "$ref": "#/components/schemas/BranchRef"
+                },
+                "method": {
+                  "$ref": "#/components/schemas/ChosenOption"
+                },
+                "opening": {
+                  "type": "integer"
+                },
+                "inflow": {
+                  "type": "integer"
+                },
+                "outflow": {
+                  "type": "integer"
+                },
+                "closing": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "branch",
+                "method",
+                "opening",
+                "inflow",
+                "outflow",
+                "closing"
+              ]
+            }
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "day": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "opening": {
+                  "type": "integer"
+                },
+                "inflow": {
+                  "type": "integer"
+                },
+                "outflow": {
+                  "type": "integer"
+                },
+                "closing": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "day",
+                "opening",
+                "inflow",
+                "outflow",
+                "closing"
+              ]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "opening": {
+                "type": "integer"
+              },
+              "inflow": {
+                "type": "integer"
+              },
+              "outflow": {
+                "type": "integer"
+              },
+              "closing": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "opening",
+              "inflow",
+              "outflow",
+              "closing"
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "rows",
+          "days",
+          "totals"
+        ]
+      },
+      "CashOpeningList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CashOpening"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CashOpening": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "method": {
+            "$ref": "#/components/schemas/ChosenOption"
+          },
+          "effectiveOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "branch",
+          "method",
+          "effectiveOn",
+          "amount"
+        ]
+      },
+      "IncomeExpense": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "CONTRACT_PAYMENT",
+                    "INCOME",
+                    "EXPENSE"
+                  ]
+                },
+                "category": {
+                  "nullable": true,
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ChosenOption"
+                    }
+                  ]
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "amount": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "kind",
+                "category",
+                "count",
+                "amount"
+              ]
+            }
+          },
+          "income": {
+            "type": "integer"
+          },
+          "expense": {
+            "type": "integer"
+          },
+          "net": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "lines",
+          "income",
+          "expense",
+          "net"
+        ]
+      },
+      "ContractReport": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "service": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "band": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "nullable": true,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ]
+                },
+                "newContracts": {
+                  "type": "integer"
+                },
+                "renewedContracts": {
+                  "type": "integer"
+                },
+                "value": {
+                  "type": "integer"
+                },
+                "revenue": {
+                  "type": "integer"
+                },
+                "debt": {
+                  "type": "integer"
+                },
+                "expiringSoon": {
+                  "type": "integer"
+                },
+                "runningOut": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "service",
+                "band",
+                "newContracts",
+                "renewedContracts",
+                "value",
+                "revenue",
+                "debt",
+                "expiringSoon",
+                "runningOut"
+              ]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "newContracts": {
+                "type": "integer"
+              },
+              "renewedContracts": {
+                "type": "integer"
+              },
+              "value": {
+                "type": "integer"
+              },
+              "revenue": {
+                "type": "integer"
+              },
+              "debt": {
+                "type": "integer"
+              },
+              "expiringSoon": {
+                "type": "integer"
+              },
+              "runningOut": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "newContracts",
+              "renewedContracts",
+              "value",
+              "revenue",
+              "debt",
+              "expiringSoon",
+              "runningOut"
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "rows",
+          "totals"
+        ]
+      },
+      "ExceptionPriceReport": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "byCreator": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "contracts": {
+                  "type": "integer"
+                },
+                "exceptions": {
+                  "type": "integer"
+                },
+                "share": {
+                  "type": "integer"
+                },
+                "difference": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "user",
+                "contracts",
+                "exceptions",
+                "share",
+                "difference"
+              ]
+            }
+          },
+          "byApprover": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "contracts": {
+                  "type": "integer"
+                },
+                "exceptions": {
+                  "type": "integer"
+                },
+                "share": {
+                  "type": "integer"
+                },
+                "difference": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "user",
+                "contracts",
+                "exceptions",
+                "share",
+                "difference"
+              ]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "contracts": {
+                "type": "integer"
+              },
+              "exceptions": {
+                "type": "integer"
+              },
+              "share": {
+                "type": "integer"
+              },
+              "difference": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "contracts",
+              "exceptions",
+              "share",
+              "difference"
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "byCreator",
+          "byApprover",
+          "totals"
+        ]
+      },
       "CustomerPage": {
         "type": "object",
         "properties": {
@@ -17970,12 +19079,22 @@
                     "report.consultingExport",
                     "report.leadAnalysis",
                     "report.leadAnalysisExport",
+                    "report.cashBook",
+                    "report.cashBookExport",
+                    "report.incomeExpense",
+                    "report.incomeExpenseExport",
+                    "report.memberDebtExport",
+                    "report.contracts",
+                    "report.contractsExport",
+                    "report.exceptionPrices",
+                    "report.exceptionPricesExport",
                     "payment.view",
                     "payment.record",
                     "payment.delete",
                     "payment.editDate",
                     "cash.manage",
-                    "cash.delete"
+                    "cash.delete",
+                    "cash.opening"
                   ]
                 },
                 "granted": {
@@ -18225,12 +19344,22 @@
                 "report.consultingExport",
                 "report.leadAnalysis",
                 "report.leadAnalysisExport",
+                "report.cashBook",
+                "report.cashBookExport",
+                "report.incomeExpense",
+                "report.incomeExpenseExport",
+                "report.memberDebtExport",
+                "report.contracts",
+                "report.contractsExport",
+                "report.exceptionPrices",
+                "report.exceptionPricesExport",
                 "payment.view",
                 "payment.record",
                 "payment.delete",
                 "payment.editDate",
                 "cash.manage",
-                "cash.delete"
+                "cash.delete",
+                "cash.opening"
               ]
             }
           },
@@ -18467,6 +19596,9 @@
           "expiringSoonDays": {
             "type": "string"
           },
+          "runningOutSessions": {
+            "type": "string"
+          },
           "studioDepartmentId": {
             "type": "string"
           },
@@ -18507,6 +19639,7 @@
           "taskReminderHours",
           "recareDays",
           "expiringSoonDays",
+          "runningOutSessions",
           "studioDepartmentId",
           "receptionDepartmentId",
           "freezeReminderDays",

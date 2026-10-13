@@ -1,4 +1,12 @@
 import "server-only";
+import { contractReportSchema, exceptionPriceReportSchema } from "@flow/shared/contracts";
+import {
+  cashBookSchema,
+  cashOpeningListSchema,
+  cashOpeningSchema,
+  incomeExpenseSchema,
+  type CashOpeningInput,
+} from "@flow/shared/finance";
 import { consultingReportSchema, leadAnalysisSchema } from "@flow/shared/leads";
 import { api, query, read } from "./client";
 
@@ -18,5 +26,44 @@ export async function getLeadAnalysis(params: ReportParams) {
   return read(
     leadAnalysisSchema,
     (await api()).GET("/api/v1/reports/lead-analysis", { params: { query: query(params) } }),
+  );
+}
+
+// The money and contract reports (brief §8.1, §9; A-138 to A-141).
+
+/** The period (dd/MM/yyyy, inclusive; this month when empty) and branch of a money report. */
+export type PeriodParams = { from?: string; to?: string; branchId?: string };
+
+export async function getCashBook(params: PeriodParams) {
+  return read(cashBookSchema, (await api()).GET("/api/v1/reports/cash-book", { params: { query: query(params) } }));
+}
+
+export async function listCashOpenings() {
+  return read(cashOpeningListSchema, (await api()).GET("/api/v1/reports/cash-book/openings"));
+}
+
+/** Sets the cash a branch held in a payment method when its books begin (Admin, audited). */
+export async function setCashOpening(input: CashOpeningInput) {
+  return read(cashOpeningSchema, (await api()).PUT("/api/v1/reports/cash-book/openings", { body: input }));
+}
+
+export async function getIncomeExpense(params: PeriodParams) {
+  return read(
+    incomeExpenseSchema,
+    (await api()).GET("/api/v1/reports/income-expense", { params: { query: query(params) } }),
+  );
+}
+
+export async function getContractReport(params: PeriodParams) {
+  return read(
+    contractReportSchema,
+    (await api()).GET("/api/v1/reports/contracts", { params: { query: query(params) } }),
+  );
+}
+
+export async function getExceptionPrices(params: PeriodParams) {
+  return read(
+    exceptionPriceReportSchema,
+    (await api()).GET("/api/v1/reports/exception-prices", { params: { query: query(params) } }),
   );
 }

@@ -28,6 +28,8 @@ export const PARAMETER_DEFAULTS = {
   recareDays: "15",
   /** A customer whose last active contract ends within this many days is "expiring soon" (D-040, M4.5). */
   expiringSoonDays: "30",
+  /** A running contract with this many sessions left or fewer is "running out" in the contract report (A-023, M4.7). */
+  runningOutSessions: "3",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
   studioDepartmentId: "",
   /** The department whose task an email that could not be sent creates (FR-MAIL-003); "" for none yet. */
@@ -111,6 +113,7 @@ export const parametersInputSchema = z
     taskReminderHours: reminderHours,
     recareDays: days,
     expiringSoonDays: days,
+    runningOutSessions: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     freezeReminderDays: days,
@@ -143,6 +146,7 @@ export const parametersSchema = z
     taskReminderHours: z.string(),
     recareDays: z.string(),
     expiringSoonDays: z.string(),
+    runningOutSessions: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),
     freezeReminderDays: z.string(),

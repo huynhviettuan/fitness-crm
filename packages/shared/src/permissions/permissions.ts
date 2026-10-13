@@ -61,10 +61,32 @@ export const PERMISSION_GROUPS = {
     "trash.export",
   ],
   // Reports (brief §9, D-041, A-093): each report and its export is its own permission.
-  reports: ["report.consulting", "report.consultingExport", "report.leadAnalysis", "report.leadAnalysisExport"],
+  reports: [
+    "report.consulting",
+    "report.consultingExport",
+    "report.leadAnalysis",
+    "report.leadAnalysisExport",
+    "report.cashBook",
+    "report.cashBookExport",
+    "report.incomeExpense",
+    "report.incomeExpenseExport",
+    "report.memberDebtExport",
+    "report.contracts",
+    "report.contractsExport",
+    "report.exceptionPrices",
+    "report.exceptionPricesExport",
+  ],
   // Deleting vouchers is its own permission (09_RBAC.md, D-035).
   // Editing a receipt's date is its own permission, always logged (D-034).
-  cashbook: ["payment.view", "payment.record", "payment.delete", "payment.editDate", "cash.manage", "cash.delete"],
+  cashbook: [
+    "payment.view",
+    "payment.record",
+    "payment.delete",
+    "payment.editDate",
+    "cash.manage",
+    "cash.delete",
+    "cash.opening",
+  ],
 } as const;
 
 export type PermissionGroup = keyof typeof PERMISSION_GROUPS;

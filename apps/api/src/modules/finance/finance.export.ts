@@ -1,8 +1,10 @@
+import type { Contract } from "@flow/shared/contracts";
 import type { CashTransaction, Payment } from "@flow/shared/finance";
 import type { ExportDefinition } from "../../platform/export/export.service.js";
 import { optionText, statusLabel } from "../../platform/export/labels.js";
 import { listCashTransactions } from "./cash.service.js";
-import { listPayments } from "./payment.service.js";
+import { contractsExport } from "../contracts/contract.export.js";
+import { listDebts, listPayments } from "./payment.service.js";
 
 /** The query keys of `GET /payments/export` and `GET /cash-transactions/export`: the list's filters, not the page. */
 export const PAYMENT_EXPORT_QUERY = ["from", "to", "contractId", "customerId"] as const;
@@ -54,4 +56,13 @@ export const cashExport: ExportDefinition<CashTransaction> = {
   ],
   fetch: (actor, filters, page, pageSize) =>
     listCashTransactions(actor, { ...filters, page: String(page), pageSize: String(pageSize) }),
+};
+
+/** The member debt report to Excel (brief §9, A-139): the contracts that still owe money, as the contract list shows them. */
+export const memberDebtExport: ExportDefinition<Contract> = {
+  ...contractsExport,
+  list: "member-debt",
+  title: { vi: "Công nợ hội viên", en: "Member debt" },
+  permission: "report.memberDebtExport",
+  fetch: (actor, _filters, page, pageSize) => listDebts(actor, { page: String(page), pageSize: String(pageSize) }),
 };

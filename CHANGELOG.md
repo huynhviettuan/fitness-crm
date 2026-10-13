@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-15 — M4.7: cash book and reports
+
+- **Cash book** (A-138, AC-19): opening, in, out and closing per branch and method and per day, chained so the last closing is the period's; only approved, undeleted receipts and vouchers count. Admin sets the opening balance of each branch and method (audited).
+- **Reports** (A-139 to A-142): income and expense by category, the contract report by service and session band (new, renewed, revenue, debt, expiring, running out), the exception-price report by creator and approver, and the member debt export. Each has Excel and its own permission; a new parameter `runningOutSessions` (3) says when a contract is running out.
+- **Fixed**: the debt list counted rejected and deleted contracts.
+- **Open**: OQ-046 (the starting cash, who else sees the cash book, bank accounts, cancelled contracts). Docs 04, 07, 09, 10, 13, 16, 18, 28; E2E-165.
+
 ## 2026-10-14 — M4.6: deactivation and reactivation
 
 - **Deactivate** (D-023, A-133): Admin locks a running contract for review, with a reason; nothing is booked, checked in, marked no-show, or completed on it, it does not expire, and its booked sessions are highlighted.

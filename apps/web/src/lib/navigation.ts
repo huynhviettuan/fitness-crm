@@ -16,7 +16,17 @@ export const NAV_SECTIONS = [
       { group: "schedule", items: ["calendar", "sessions"] },
       "tasks",
       "finance",
-      { group: "reports", items: ["consultingReport", "leadAnalysis"] },
+      {
+        group: "reports",
+        items: [
+          "consultingReport",
+          "leadAnalysis",
+          "cashBookReport",
+          "incomeExpenseReport",
+          "contractReport",
+          "exceptionPriceReport",
+        ],
+      },
     ],
   },
   {

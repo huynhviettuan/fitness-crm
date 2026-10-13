@@ -28,7 +28,13 @@ import {
 } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
 import { exportList } from "../../platform/export/export.service.js";
-import { cashExport, CASH_EXPORT_QUERY, paymentsExport, PAYMENT_EXPORT_QUERY } from "./finance.export.js";
+import {
+  cashExport,
+  CASH_EXPORT_QUERY,
+  memberDebtExport,
+  paymentsExport,
+  PAYMENT_EXPORT_QUERY,
+} from "./finance.export.js";
 import { deleteCashTransaction, financeSummary, listCashTransactions, recordCashTransaction } from "./cash.service.js";
 import { collectedBetween, deletePayment, listDebts, listPayments, updateReceiptDate } from "./payment.service.js";
 
@@ -110,6 +116,14 @@ export class DebtsController {
   @ApiResult(debtPageSchema)
   async list(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(debtPageSchema, await listDebts(actor, queryOf(request, ["page", "pageSize"])));
+  }
+
+  /** The member debt report to Excel (brief §9, A-139): the debt list, its own export permission. */
+  @Get("export")
+  @RequirePermission("report.memberDebtExport")
+  @ApiExcelFile()
+  async export(@CurrentActor() actor: CurrentUser, @Res() response: Response) {
+    await exportList(actor, response, memberDebtExport, {});
   }
 }
 

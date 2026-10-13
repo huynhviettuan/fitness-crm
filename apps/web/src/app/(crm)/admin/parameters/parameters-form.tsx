@@ -156,6 +156,7 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
         <CardContent className="grid gap-4 sm:grid-cols-2">
           {field("freezeReminderDays", "numeric")}
           {field("expiringSoonDays", "numeric")}
+          {field("runningOutSessions", "numeric")}
           <div className="sm:col-span-2">
             <SelectField
               control={form.control}

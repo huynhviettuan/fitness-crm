@@ -192,6 +192,7 @@ model User {
   paymentsRecorded   Payment[]                @relation("PaymentCreatedBy")
   paymentsDeleted    Payment[]                @relation("PaymentDeletedBy")
   cashRecorded       CashTransaction[]        @relation("CashTransactionCreatedBy")
+  cashOpeningsSet    CashOpeningBalance[]     @relation("CashOpeningUpdatedBy")
   cashDeleted        CashTransaction[]        @relation("CashTransactionDeletedBy")
   trashEntries       TrashEntry[]
   approvalsSubmitted ApprovalRequest[]        @relation("ApprovalSubmittedBy")
@@ -245,6 +246,7 @@ model Branch {
   bookings         Booking[]
   payments         Payment[]
   cashTransactions CashTransaction[]
+  cashOpenings     CashOpeningBalance[]
   trashEntries     TrashEntry[]
   approvalRequests ApprovalRequest[]
   tasks            Task[]
@@ -384,6 +386,7 @@ model Option {
 
   paymentMethods       Payment[]                  @relation("PaymentMethod")
   cashMethods          CashTransaction[]          @relation("CashMethod")
+  cashOpeningMethods   CashOpeningBalance[]       @relation("CashOpeningMethod")
   paymentDeleteReasons Payment[]                  @relation("PaymentDeleteReason")
   cashCategories       CashTransaction[]          @relation("CashCategory")
   cashDeleteReasons    CashTransaction[]          @relation("CashDeleteReason")
@@ -1234,6 +1237,24 @@ model Payment {
   @@index([paidOn])
   @@index([branchId])
   @@map("payments")
+}
+
+// The cash a branch held in one payment method when its books begin (M4.7, A-138): the cash book counts movements
+// from `effective_on`, so the closing balance is opening + in - out. Set by an admin; every change is audited.
+model CashOpeningBalance {
+  id          String   @id @default(uuid()) @db.Uuid
+  branchId    String   @map("branch_id") @db.Uuid
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  methodId    String   @map("method_option_id") @db.Uuid
+  method      Option   @relation("CashOpeningMethod", fields: [methodId], references: [id], onDelete: Restrict)
+  effectiveOn DateTime @map("effective_on") @db.Date
+  amount      Decimal  @db.Decimal(14, 0)
+  updatedById String   @map("updated_by") @db.Uuid
+  updatedBy   User     @relation("CashOpeningUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([branchId, methodId])
+  @@map("cash_opening_balances")
 }
 
 model CashTransaction {

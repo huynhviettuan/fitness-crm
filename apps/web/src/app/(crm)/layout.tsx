@@ -25,6 +25,10 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "payment.view")) items.push("finance");
   if (can(user, "report.consulting")) items.push("consultingReport");
   if (can(user, "report.leadAnalysis")) items.push("leadAnalysis");
+  if (can(user, "report.cashBook")) items.push("cashBookReport");
+  if (can(user, "report.incomeExpense")) items.push("incomeExpenseReport");
+  if (can(user, "report.contracts")) items.push("contractReport");
+  if (can(user, "report.exceptionPrices")) items.push("exceptionPriceReport");
   // A PT sees their own profile and working schedule here (staff scope "only mine").
   if (can(user, "employee.view")) items.push("employees");
   if (can(user, "user.manage")) items.push("users");

@@ -33,6 +33,7 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-159 | An agreed price is an exception with a reason; it shows against the tier price, and a role whose discount limit it exceeds cannot activate it, Admin can | AC-10, A-112, A-113 |
 | E2E-105 | Approved contract cannot be edited by admin: no Edit button, `409 CONTRACT_NOT_EDITABLE`, and the database trigger (`apps/api/test/integration/contract-approval.int.test.ts`, INT-010) | AC-11 |
 | E2E-160 | The approver approves or rejects from the contract page; a rejection takes a reason and shows it | D-018, A-121 |
+| E2E-165 | (built M4.7, `e2e/money-reports.spec.ts`) The cash book of a day closes at opening + in − out for a method; Admin sets the opening balance and the closing moves; it exports; the other reports show and export; a receptionist is refused (`apps/api/test/integration/cash-book-reports.int.test.ts` for AC-19, scope, and exclusions) | AC-19, FR-CASH-005 |
 | E2E-164 | A receipt shows its number and salesperson; only Admin edits its date; the customer shows as training (`apps/api/test/integration/receipts.int.test.ts` for numbers, vouchers, and standing) | D-034, D-040, A-129 to A-132 |
 | E2E-162 | The contract list filters by approval and payment and totals what the filter matches (`apps/api/test/integration/contract-list.int.test.ts` for every filter) | brief §5.3, A-126 |
 | E2E-163 | The detail's three tabs; the note changes after approval; Print opens the sheet | brief §5.3, A-127, A-128 |

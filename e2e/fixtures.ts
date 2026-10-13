@@ -379,6 +379,7 @@ export const test = base.extend<Fixtures>({
 
       // Options the test added, once nothing uses them.
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: taggedOptionIds } } });
+      await prisma.cashOpeningBalance.deleteMany({ where: { methodId: { in: taggedOptionIds } } });
       await prisma.option.deleteMany({ where: { id: { in: taggedOptionIds } } });
     } finally {
       await prisma.$disconnect();

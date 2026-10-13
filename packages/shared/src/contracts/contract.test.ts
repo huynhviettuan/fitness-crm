@@ -306,3 +306,13 @@ describe("customerContractStatus (D-040)", () => {
     expect(customerContractStatus([active("2026-01-01"), active("2026-10-20")], today, 30)).toBe("EXPIRING_SOON");
   });
 });
+
+describe("report helpers (M4.7)", () => {
+  it("labels a tier band, open-ended or not", async () => {
+    const { bandLabel, percentOf } = await import("./contract-report.js");
+    expect(bandLabel({ min: 10, max: 19 })).toBe("10–19");
+    expect(bandLabel({ min: 50, max: null })).toBe("50+");
+    expect(percentOf(1, 3)).toBe(33);
+    expect(percentOf(1, 0)).toBe(0);
+  });
+});

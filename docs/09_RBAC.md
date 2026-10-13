@@ -69,7 +69,7 @@ There is no default Accountant role. Cash-book work (receipts, expense vouchers,
 | Tasks: create and work | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Trash: view | ✓ | — | — | — | — | — | — |
 | Export Excel (one permission per list, A-077: `customer.export`, `lead.export`, `contract.export`, `payment.export`, `cash.export`, `task.export`; `user.export`, `audit.export`, `trash.export` for Admin only) | ✓ | ✓ (the first six) | — | — | — | — | ✓ (masked; Marketing has no list permissions yet) |
-| Reports (built so far: `report.consulting`, `report.consultingExport`, `report.leadAnalysis`, `report.leadAnalysisExport`, A-093) | all | all | workout dashboard | consulting (own) | own sessions | booking | lead analysis |
+| Reports (built so far: `report.consulting`, `report.consultingExport`, `report.leadAnalysis`, `report.leadAnalysisExport`, A-093; M4.7: `report.cashBook`, `report.incomeExpense`, `report.memberDebtExport` and their exports for Admin, Fitness Manager and Accountant; `report.contracts`, `report.exceptionPrices` and their exports for Admin and Fitness Manager; `cash.opening` for Admin only, A-138, A-139) | all | all | workout dashboard | consulting (own) | own sessions | booking | lead analysis |
 
 ## Initial approval matrix (D-018)
 

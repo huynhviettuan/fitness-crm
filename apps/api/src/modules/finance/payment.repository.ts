@@ -153,8 +153,8 @@ function debtScopeSql(scope: DebtScope): Prisma.Sql {
 }
 
 /**
- * Contracts that still owe money, largest debt first (BR-013). Drafts have not taken
- * effect and are left out (A-022); cancelled contracts keep their debt (OQ-013 interim).
+ * Contracts that still owe money, largest debt first (BR-013). Drafts, rejected and deleted contracts have not taken
+ * effect and are left out (A-022, M4.7); cancelled contracts keep their debt (OQ-013 interim).
  */
 export async function contractsWithDebt(db: Db, scope: DebtScope, options: { skip: number; take: number }) {
   const where = debtScopeSql(scope);
@@ -163,7 +163,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
       SELECT c.id
       FROM contracts c
       LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
-      WHERE c.status <> 'DRAFT' AND ${where}
+      WHERE c.status NOT IN ('DRAFT', 'REJECTED') AND c.deleted_at IS NULL AND ${where}
       GROUP BY c.id
       HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
       ORDER BY c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) DESC, c.contract_code
@@ -173,7 +173,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
         SELECT c.id
         FROM contracts c
         LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
-        WHERE c.status <> 'DRAFT' AND ${where}
+        WHERE c.status NOT IN ('DRAFT', 'REJECTED') AND c.deleted_at IS NULL AND ${where}
         GROUP BY c.id
         HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
       ) owing`,
