@@ -126,10 +126,12 @@ export class BookingsController {
 export class ScheduleController {
   @Get()
   @RequirePermission("booking.view")
-  @ApiOptionalQuery("date", "trainerId")
+  @ApiOptionalQuery("date", "days", "trainerId", "customerId", "branchId")
   @ApiResult(bookingListSchema)
   async day(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
-    return encode(bookingListSchema, { items: await listDayBookings(actor, queryOf(request, ["date", "trainerId"])) });
+    return encode(bookingListSchema, {
+      items: await listDayBookings(actor, queryOf(request, ["date", "days", "trainerId", "customerId", "branchId"])),
+    });
   }
 
   /**

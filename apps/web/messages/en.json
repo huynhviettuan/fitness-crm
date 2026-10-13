@@ -558,7 +558,6 @@
     "APPROVAL_OWN_REQUEST": "You cannot approve a request you submitted.",
     "APPROVAL_NOT_PENDING": "This request has already been decided.",
     "APPROVAL_ALREADY_PENDING": "A request for this record is already waiting for approval.",
-    "BOOKING_OUTSIDE_WORKING_HOURS": "That time is outside the trainer's working hours, or on their day off.",
     "PHONE_ALREADY_USED": "This phone number is already in the system.",
     "DUPLICATE_PHONE": "This phone number already has a record. You can merge into it.",
     "MERGE_CUSTOMERS_UNSUPPORTED": "Two customer records cannot be merged yet.",
@@ -568,7 +567,11 @@
     "DISCOUNT_ABOVE_LIMIT": "The discount is above what your role may approve. A role with a higher limit must approve it.",
     "CONTRACT_HAS_DEPENDENTS": "The contract has receipts or sessions. Delete them first.",
     "CONTRACT_FROZEN": "The contract is deactivated. Reactivate it first.",
-    "BOOKING_CANCEL_TOO_LATE": "It is too late to cancel this session."
+    "BOOKING_CANCEL_TOO_LATE": "It is too late to cancel this session.",
+    "BOOKING_CUSTOMER_OVERLAP": "The customer already has a session at that time.",
+    "BOOKING_SERVICE_DAILY_LIMIT": "The service allows no more sessions for this customer on that day.",
+    "BOOKING_SERVICE_WEEKLY_LIMIT": "The service allows no more sessions for this customer in that week.",
+    "BOOKING_OUTSIDE_SERVICE_HOURS": "That time is outside the hours this service can be used."
   },
   "validation": {
     "required": "Required.",
@@ -992,7 +995,7 @@
   },
   "bookings": {
     "calendarTitle": "PT Calendar",
-    "calendarDescription": "Bookings by trainer for one day.",
+    "calendarDescription": "Bookings by trainer for a day, or one trainer's week.",
     "sessionsTitle": "Sessions",
     "sessionsDescription": "Today's and upcoming sessions, check-ins, and results.",
     "create": "Add booking",
@@ -1062,9 +1065,25 @@
       "status": "Status",
       "checkedIn": "Checked in",
       "completed": "Completed",
-      "remainingSessions": "Remaining sessions"
+      "remainingSessions": "Remaining sessions",
+      "branch": "Branch"
     },
-    "checkedInBadge": "Checked in"
+    "checkedInBadge": "Checked in",
+    "calendarViews": {
+      "day": "Day",
+      "week": "Week"
+    },
+    "calendarView": "View",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "allBranches": "All branches",
+    "weekSchedule": "Week of {from} to {to}",
+    "sessionCount": "{count, plural, one {# session} other {# sessions}}",
+    "offDutyLegend": "Shaded: outside the trainer's on-duty shift. Every time can still be booked.",
+    "customerFilter": "Customer: {name}",
+    "clearCustomer": "Show all customers",
+    "customerFilterLabel": "Filter by customer",
+    "customerFilterPlaceholder": "Customer…"
   },
   "finance": {
     "title": "Finance",

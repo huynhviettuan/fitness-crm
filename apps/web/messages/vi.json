@@ -558,7 +558,6 @@
     "APPROVAL_OWN_REQUEST": "Bạn không thể tự duyệt yêu cầu do chính mình gửi.",
     "APPROVAL_NOT_PENDING": "Yêu cầu này đã được xử lý.",
     "APPROVAL_ALREADY_PENDING": "Đã có một yêu cầu đang chờ duyệt cho dữ liệu này.",
-    "BOOKING_OUTSIDE_WORKING_HOURS": "Ngoài giờ làm việc của huấn luyện viên, hoặc là ngày nghỉ của họ.",
     "PHONE_ALREADY_USED": "Số điện thoại này đã có trong hệ thống.",
     "DUPLICATE_PHONE": "Số điện thoại này đã có hồ sơ. Bạn có thể gộp vào hồ sơ đó.",
     "MERGE_CUSTOMERS_UNSUPPORTED": "Chưa thể gộp hai hồ sơ khách hàng.",
@@ -568,7 +567,11 @@
     "DISCOUNT_ABOVE_LIMIT": "Mức giảm giá vượt ngưỡng vai trò của bạn được duyệt. Cần người có ngưỡng cao hơn duyệt.",
     "CONTRACT_HAS_DEPENDENTS": "Hợp đồng còn phiếu thu hoặc buổi tập. Hãy xóa chúng trước.",
     "CONTRACT_FROZEN": "Hợp đồng đang bị khóa. Hãy kích hoạt lại trước.",
-    "BOOKING_CANCEL_TOO_LATE": "Đã quá hạn hủy lịch."
+    "BOOKING_CANCEL_TOO_LATE": "Đã quá hạn hủy lịch.",
+    "BOOKING_CUSTOMER_OVERLAP": "Khách đã có buổi tập khác vào giờ này.",
+    "BOOKING_SERVICE_DAILY_LIMIT": "Dịch vụ không cho thêm buổi nào cho khách trong ngày này.",
+    "BOOKING_SERVICE_WEEKLY_LIMIT": "Dịch vụ không cho thêm buổi nào cho khách trong tuần này.",
+    "BOOKING_OUTSIDE_SERVICE_HOURS": "Giờ này nằm ngoài khung giờ được dùng dịch vụ."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -992,7 +995,7 @@
   },
   "bookings": {
     "calendarTitle": "Lịch PT",
-    "calendarDescription": "Lịch hẹn theo huấn luyện viên trong một ngày.",
+    "calendarDescription": "Lịch hẹn theo huấn luyện viên trong một ngày, hoặc một tuần của một huấn luyện viên.",
     "sessionsTitle": "Buổi tập",
     "sessionsDescription": "Buổi tập hôm nay và sắp tới, check-in và kết quả.",
     "create": "Thêm lịch hẹn",
@@ -1062,9 +1065,25 @@
       "status": "Trạng thái",
       "checkedIn": "Check-in",
       "completed": "Hoàn thành",
-      "remainingSessions": "Buổi còn lại"
+      "remainingSessions": "Buổi còn lại",
+      "branch": "Chi nhánh"
     },
-    "checkedInBadge": "Đã check-in"
+    "checkedInBadge": "Đã check-in",
+    "calendarViews": {
+      "day": "Ngày",
+      "week": "Tuần"
+    },
+    "calendarView": "Chế độ xem",
+    "previousWeek": "Tuần trước",
+    "nextWeek": "Tuần sau",
+    "allBranches": "Tất cả chi nhánh",
+    "weekSchedule": "Tuần từ {from} đến {to}",
+    "sessionCount": "{count} buổi",
+    "offDutyLegend": "Ô tô xám: ngoài ca trực của huấn luyện viên. Mọi giờ vẫn đặt được.",
+    "customerFilter": "Khách: {name}",
+    "clearCustomer": "Bỏ lọc khách",
+    "customerFilterLabel": "Lọc theo khách",
+    "customerFilterPlaceholder": "Khách hàng…"
   },
   "finance": {
     "title": "Tài chính",

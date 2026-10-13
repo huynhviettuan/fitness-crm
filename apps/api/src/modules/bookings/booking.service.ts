@@ -2,7 +2,7 @@ import { z } from "zod";
 import { customerRef } from "../customers/person.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
-import { isExclusionViolation } from "../../platform/db/errors.js";
+import { isExclusionViolation, violatedConstraint } from "../../platform/db/errors.js";
 import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
@@ -15,7 +15,8 @@ import { diffFields, recordAudit } from "../../platform/audit/audit.repository.j
 import * as contractRepo from "../contracts/contract.repository.js";
 import { effectiveStatus, entitledSessions } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
-import { assertWithinWorkingHours, findBookableTrainer } from "../employees/employee.service.js";
+import { findBookableTrainer } from "../employees/employee.service.js";
+import { isoWeekday, minutesOfTime } from "@flow/shared/employees";
 import * as repo from "./booking.repository.js";
 import {
   OPEN_BOOKING_STATUSES,
@@ -89,11 +90,16 @@ export async function listBookings(actor: Actor, rawQuery: unknown): Promise<Boo
 /** Every booking starting on one gym day, in any status, for the PT calendar. */
 export async function listDayBookings(actor: Actor, rawQuery: unknown): Promise<BookingView[]> {
   assertCan(actor, "booking.view");
-  const { date, trainerId } = parseInput(dayBookingsSchema, rawQuery);
+  const { date, days, trainerId, customerId, branchId } = parseInput(dayBookingsSchema, rawQuery);
   const where: Prisma.BookingWhereInput = {
     AND: [
       bookingsVisibleTo(actor),
-      { trainerId, scheduledStart: { gte: startOfGymDay(date), lt: startOfGymDay(nextDay(date)) } },
+      {
+        trainerId,
+        customerId,
+        branchId,
+        scheduledStart: { gte: startOfGymDay(date), lt: startOfGymDay(nextDay(date, days)) },
+      },
     ],
   };
   const { items } = await repo.listBookings(prisma, where, { order: "asc", skip: 0, take: DAY_LIMIT });
@@ -304,8 +310,9 @@ export function sessionDay(scheduledStart: Date): Date {
 }
 
 /**
- * BR-003, BR-012, BR-010, D-030: the contract is active and covers the day, the trainer
- * teaches PT and still works here, the slot is inside their working hours, and they are free.
+ * BR-003, BR-012, BR-403, D-030, D-058: the contract is active and covers the day, the trainer teaches PT and
+ * still works here, the service allows the time, and neither the trainer nor the customer is busy. A shift
+ * is never a limit (D-058).
  */
 async function assertBookable(
   tx: Prisma.TransactionClient,
@@ -321,8 +328,50 @@ async function assertBookable(
   if (!(await findBookableTrainer(tx, slot.trainerId))) {
     throw new AppError("VALIDATION_FAILED", { fieldErrors: { trainerId: ["trainerUnavailable"] } });
   }
-  await assertWithinWorkingHours(tx, slot.trainerId, slot.scheduledStart, slot.scheduledEnd);
+  await assertServiceAllows(tx, contract, slot, excludeBookingId);
   if (await repo.findOverlappingBooking(tx, slot, excludeBookingId)) throw new AppError("BOOKING_TRAINER_OVERLAP");
+  if (await repo.findOverlappingCustomerBooking(tx, contract.customerId, slot, excludeBookingId)) {
+    throw new AppError("BOOKING_CUSTOMER_OVERLAP");
+  }
+}
+
+/**
+ * A-149: the service's hours of the day and its daily and weekly limits per customer. A limit counts the customer's
+ * sessions on the same service that hold their time; the week runs Monday to Sunday of the gym calendar.
+ */
+async function assertServiceAllows(
+  tx: Prisma.TransactionClient,
+  contract: contractRepo.ContractRecord,
+  slot: repo.BookingSlot,
+  excludeBookingId?: string,
+): Promise<void> {
+  const { service } = contract;
+  // A contract imported without a service has no hours or limits to apply.
+  if (!service) return;
+  const day = sessionDay(slot.scheduledStart);
+  if (service.allowedFrom && service.allowedTo) {
+    const midnight = startOfGymDay(day).getTime();
+    const from = (slot.scheduledStart.getTime() - midnight) / 60_000;
+    const to = (slot.scheduledEnd.getTime() - midnight) / 60_000;
+    if (from < minutesOfTime(service.allowedFrom) || to > minutesOfTime(service.allowedTo)) {
+      throw new AppError("BOOKING_OUTSIDE_SERVICE_HOURS");
+    }
+  }
+  const count = (from: Date, days: number) =>
+    repo.countServiceBookings(tx, {
+      customerId: contract.customerId,
+      serviceId: service.id,
+      from: startOfGymDay(from),
+      to: startOfGymDay(nextDay(from, days)),
+      excludeId: excludeBookingId,
+    });
+  if (service.maxPerDay !== null && (await count(day, 1)) >= service.maxPerDay) {
+    throw new AppError("BOOKING_SERVICE_DAILY_LIMIT");
+  }
+  if (service.maxPerWeek !== null) {
+    const monday = nextDay(day, 1 - isoWeekday(day));
+    if ((await count(monday, 7)) >= service.maxPerWeek) throw new AppError("BOOKING_SERVICE_WEEKLY_LIMIT");
+  }
 }
 
 /**
@@ -340,7 +389,13 @@ async function withOverlapMapped<T>(body: () => Promise<T>): Promise<T> {
   try {
     return await body();
   } catch (error) {
-    if (isExclusionViolation(error)) throw new AppError("BOOKING_TRAINER_OVERLAP");
+    if (isExclusionViolation(error)) {
+      throw new AppError(
+        violatedConstraint(error) === "booking_customer_no_overlap"
+          ? "BOOKING_CUSTOMER_OVERLAP"
+          : "BOOKING_TRAINER_OVERLAP",
+      );
+    }
     throw error;
   }
 }
@@ -396,8 +451,8 @@ function startOfGymDay(day: Date): Date {
   return instantAt(day, "00:00", env.GYM_TIMEZONE);
 }
 
-function nextDay(day: Date): Date {
-  return new Date(day.getTime() + 24 * 60 * 60 * 1000);
+function nextDay(day: Date, days = 1): Date {
+  return new Date(day.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
 function gymToday(): Date {

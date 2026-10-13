@@ -3,7 +3,7 @@
 // 401s are covered by the route inventory in access-control.spec.ts.
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
-import { BOOKING_DAY, bookingSetup, createBookingViaApi } from "../support/data";
+import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi } from "../support/data";
 import type { Role } from "../support/db";
 
 const SLOT = { date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" };
@@ -133,6 +133,46 @@ test.describe("A06 concurrency abuse over HTTP", () => {
     expect(responses.map((r) => r.status()).sort()).toEqual([201, 409]);
     const refused = responses.find((r) => r.status() === 409)!;
     expect(await refused.json()).toMatchObject({ code: "BOOKING_TRAINER_OVERLAP" });
+  });
+
+  test("two sessions for one customer at once with different trainers: one is created (BR-403)", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const first = await bookingSetup(apiAs, testTag);
+    const other = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), `${testTag}b`);
+    const manager = await apiAs("FITNESS_MANAGER");
+
+    const responses = await Promise.all([
+      manager.post("/api/v1/bookings", { data: { ...first.refs, ...SLOT } }),
+      manager.post("/api/v1/bookings", { data: { ...first.refs, trainerId: other.id, ...SLOT } }),
+    ]);
+
+    expect(responses.map((r) => r.status()).sort()).toEqual([201, 409]);
+    const refused = responses.find((r) => r.status() === 409)!;
+    expect(await refused.json()).toMatchObject({ code: "BOOKING_CUSTOMER_OVERLAP" });
+  });
+});
+
+test.describe("A10 PT grid query (M5.2)", () => {
+  test("the schedule refuses a bad day count and malformed ids, and a foreign branch shows nothing", async ({
+    apiAs,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const day = `date=${BOOKING_DAY.date}`;
+
+    for (const query of [
+      `${day}&days=8`,
+      `${day}&days=0`,
+      `${day}&customerId=x`,
+      `${day}&branchId=x`,
+      `${day}&trainerId=x`,
+    ]) {
+      expect((await reception.get(`/api/v1/schedule?${query}`)).status(), query).toBe(400);
+    }
+    const foreign = await reception.get(`/api/v1/schedule?${day}&branchId=${randomUUID()}`);
+    expect(foreign.status()).toBe(200);
+    expect((await foreign.json()).items).toEqual([]);
   });
 });
 

@@ -190,7 +190,7 @@ ALTER TABLE "sessions" ADD CONSTRAINT "session_pt_no_overlap"
   WHERE ("holds_slot" AND "deleted_at" IS NULL);
 ```
 
-`holds_slot` is stored with the status snapshot (A-024), because the exclusion predicate must be immutable.
+`holds_slot` is stored with the status snapshot (A-024), because the exclusion predicate must be immutable. The customer has the same constraint, `booking_customer_no_overlap` on `customer_id` (M5.2, migration `20261016010000_customer_overlap`).
 
 ## Derived values
 

@@ -10,7 +10,7 @@ const weekday = isoWeekdayOf(BOOKING_DAY.date);
 test.describe("employees as a manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-114: a manager adds a PT, gives them a shift and a day off, and the calendar books only inside the shift", async ({
+  test("E2E-114: a manager adds a PT, gives them a shift and a day off, and the calendar shades off-duty time but books any time (D-058)", async ({
     page,
     testTag,
     employeesPage,
@@ -41,9 +41,11 @@ test.describe("employees as a manager", () => {
     await calendarPage.goto(BOOKING_DAY.url);
     await expect(slot("08:00")).toBeVisible();
     await expect(slot("11:30")).toBeVisible();
-    // Before and after the shift the cells are grey, not buttons.
-    await expect(slot("07:30")).toHaveCount(0);
-    await expect(slot("12:00")).toHaveCount(0);
+    // Inside the shift the cells are plain; before and after it they are shaded, and still bookable (D-058).
+    await expect(slot("08:00")).toHaveAttribute("data-on-duty", "true");
+    await expect(slot("11:30")).toHaveAttribute("data-on-duty", "true");
+    await expect(slot("07:30")).toHaveAttribute("data-on-duty", "false");
+    await expect(slot("12:00")).toHaveAttribute("data-on-duty", "false");
 
     await page.goBack();
     await employeePage.addDayOff(BOOKING_DAY.date, "Nghỉ phép");
@@ -54,7 +56,7 @@ test.describe("employees as a manager", () => {
 
     await calendarPage.goto(BOOKING_DAY.url);
     await expect(calendarPage.column(name)).toBeVisible();
-    await expect(slot("08:00")).toHaveCount(0);
+    await expect(slot("08:00")).toHaveAttribute("data-on-duty", "false");
   });
 
   test("the list finds an employee by name without diacritics and filters PTs", async ({
@@ -97,8 +99,7 @@ test.describe("employees as a PT", () => {
 test.describe("bookings and working hours", () => {
   test.use(signedInAs("RECEPTIONIST"));
 
-  test("a booking outside the trainer's working hours is refused with the reason (D-030)", async ({
-    page,
+  test("a booking outside the trainer's on-duty shift is accepted, because a shift is not a limit (D-058)", async ({
     apiAs,
     testTag,
     contractDetailPage,
@@ -117,13 +118,6 @@ test.describe("bookings and working hours", () => {
     await form.fillSlot({ date: BOOKING_DAY.date, startTime: "18:00", endTime: "19:00" });
     await form.save();
 
-    await expect(
-      page
-        .getByRole("region", { name: labels.common.notifications })
-        .getByText(labels.errors.BOOKING_OUTSIDE_WORKING_HOURS),
-    ).toBeVisible();
-    await form.fillSlot({ startTime: "08:00", endTime: "09:00" });
-    await form.save();
-    await expect(contractDetailPage.bookings.row("08:00")).toContainText("Booked");
+    await expect(contractDetailPage.bookings.row("18:00")).toContainText("Booked");
   });
 });

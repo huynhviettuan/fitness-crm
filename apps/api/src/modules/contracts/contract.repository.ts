@@ -11,7 +11,9 @@ const withRefs = {
   branch: { select: { id: true, name: true } },
   // T-050: the sessions used are the contract's bookings whose status consumed when it was set.
   _count: { select: { bookings: { where: { consumes: true } } } },
-  service: { select: { id: true, name: true, kind: true } },
+  service: {
+    select: { id: true, name: true, kind: true, allowedFrom: true, allowedTo: true, maxPerDay: true, maxPerWeek: true },
+  },
   previousContract: { select: { id: true, contractCode: true } },
   createdBy: { select: { id: true, name: true } },
   approvedBy: { select: { id: true, name: true } },

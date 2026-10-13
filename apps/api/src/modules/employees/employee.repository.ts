@@ -185,6 +185,7 @@ export function trainersWithDay(db: Db, where: Prisma.EmployeeWhereInput, weekda
       id: true,
       employeeCode: true,
       fullName: true,
+      branchId: true,
       shifts: { where: { weekday }, select: { weekday: true, startMinute: true, endMinute: true } },
       daysOff: { where: { date }, select: { id: true } },
     },

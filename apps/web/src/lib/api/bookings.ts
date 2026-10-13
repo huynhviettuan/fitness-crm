@@ -32,8 +32,14 @@ export async function listBookings(params: BookingQuery) {
   return read(bookingPageSchema, (await api()).GET("/api/v1/bookings", { params: { query: query(params) } }));
 }
 
-/** One gym day (dd/MM/yyyy) of the PT calendar. */
-export async function listDayBookings(params: { date: string; trainerId?: string }) {
+/** One gym day (dd/MM/yyyy) of the PT calendar, or `days` days from it for the week view (M5.2). */
+export async function listDayBookings(params: {
+  date: string;
+  days?: number;
+  trainerId?: string;
+  customerId?: string;
+  branchId?: string;
+}) {
   const { items } = await read(
     bookingListSchema,
     (await api()).GET("/api/v1/schedule", { params: { query: query(params) } }),

@@ -53,7 +53,11 @@ export const listBookingsSchema = z.object({
 
 export const dayBookingsSchema = z.object({
   date: calendarDate,
+  /** 1 for the day view, 7 for the week view starting at `date` (M5.2). */
+  days: z.coerce.number().int().min(1).max(7).optional().default(1),
   trainerId: z.uuid().optional(),
+  customerId: z.uuid().optional(),
+  branchId: z.uuid().optional(),
 });
 
 export type BookingInput = z.input<typeof bookingInputSchema>;

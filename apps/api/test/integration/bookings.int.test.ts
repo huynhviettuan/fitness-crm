@@ -156,57 +156,26 @@ describe("createBooking", () => {
     });
   });
 
-  describe("working hours (D-030)", () => {
+  describe("on-duty shifts are not a limit (D-058)", () => {
     // 15/10/2026 is a Thursday (ISO weekday 4).
     const narrow = (scenario: Awaited<ReturnType<typeof bookingScenario>>) =>
       replaceShifts(scenario.manager, scenario.trainer.id, {
-        shifts: [
-          { weekday: 4, start: "08:00", end: "12:00" },
-          { weekday: 4, start: "12:00", end: "14:00" },
-          { weekday: 4, start: "17:00", end: "21:00" },
-        ],
+        shifts: [{ weekday: 4, start: "08:00", end: "12:00" }],
       });
 
-    it("books only inside the trainer's shifts of the day, across touching shifts but not a break", async () => {
+    it("books outside the shift, on a day without shifts, on a day off, and for a PT with no shifts", async () => {
       const scenario = await bookingScenario();
       await narrow(scenario);
-
-      await expect(book(scenario.manager, scenario, { startTime: "11:30", endTime: "12:30" })).resolves.toBeDefined();
-      await expect(book(scenario.manager, scenario, { startTime: "20:00", endTime: "21:00" })).resolves.toBeDefined();
-      for (const [startTime, endTime] of [
-        ["07:30", "08:30"],
-        ["13:30", "17:30"],
-        ["20:30", "21:30"],
-      ]) {
-        await expect(book(scenario.manager, scenario, { startTime, endTime })).rejects.toMatchObject({
-          code: "BOOKING_OUTSIDE_WORKING_HOURS",
-        });
-      }
-      // Friday has no shifts at all.
-      await expect(book(scenario.manager, scenario, { date: "16/10/2026" })).rejects.toMatchObject({
-        code: "BOOKING_OUTSIDE_WORKING_HOURS",
-      });
-    });
-
-    it("refuses a day off and a reschedule out of the working hours", async () => {
-      const scenario = await bookingScenario();
-      await narrow(scenario);
-      const booking = await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
       await addDayOff(scenario.manager, scenario.trainer.id, { date: "22/10/2026" });
+      const newcomer = await createEmployee(scenario.manager, { fullName: "PT Mới", isTrainer: true });
 
+      await expect(book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" })).resolves.toBeDefined();
+      await expect(book(scenario.manager, scenario, { startTime: "20:00", endTime: "21:00" })).resolves.toBeDefined();
+      await expect(book(scenario.manager, scenario, { date: "16/10/2026" })).resolves.toBeDefined();
+      await expect(book(scenario.manager, scenario, { date: "22/10/2026" })).resolves.toBeDefined();
       await expect(
-        book(scenario.manager, scenario, { date: "22/10/2026", startTime: "09:00", endTime: "10:00" }),
-      ).rejects.toMatchObject({
-        code: "BOOKING_OUTSIDE_WORKING_HOURS",
-      });
-      await expect(
-        rescheduleBooking(scenario.manager, booking.id, {
-          trainerId: scenario.trainer.id,
-          date: "15/10/2026",
-          startTime: "15:00",
-          endTime: "16:00",
-        }),
-      ).rejects.toMatchObject({ code: "BOOKING_OUTSIDE_WORKING_HOURS" });
+        book(scenario.manager, scenario, { startTime: "05:00", endTime: "06:00" }, newcomer.id),
+      ).resolves.toBeDefined();
     });
 
     it("leaves bookings already made when the shifts change (A-042)", async () => {
@@ -216,6 +185,120 @@ describe("createBooking", () => {
       await narrow(scenario);
 
       expect((await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe("BOOKED");
+    });
+  });
+
+  describe("customer overlap (D-030, BR-403)", () => {
+    it("refuses a second session at the same time with another trainer, but not a touching one", async () => {
+      const scenario = await bookingScenario();
+      const other = await createTrainer(scenario.manager, { fullName: "PT Lan" });
+      await book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" });
+
+      await expect(
+        book(scenario.manager, scenario, { startTime: "18:30", endTime: "19:30" }, other.id),
+      ).rejects.toMatchObject({ code: "BOOKING_CUSTOMER_OVERLAP" });
+      await expect(
+        book(scenario.manager, scenario, { startTime: "19:00", endTime: "20:00" }, other.id),
+      ).resolves.toBeDefined();
+    });
+
+    it("lets a cancelled session free the customer's time, and refuses a reschedule into a busy one", async () => {
+      const scenario = await bookingScenario();
+      const other = await createTrainer(scenario.manager, { fullName: "PT Lan" });
+      const first = await book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" });
+      const second = await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" }, other.id);
+
+      await expect(
+        rescheduleBooking(scenario.manager, second.id, {
+          trainerId: other.id,
+          date: "15/10/2026",
+          startTime: "18:00",
+          endTime: "19:00",
+        }),
+      ).rejects.toMatchObject({ code: "BOOKING_CUSTOMER_OVERLAP" });
+
+      await cancelBooking(scenario.manager, first.id);
+      await expect(
+        book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" }, other.id),
+      ).resolves.toBeDefined();
+    });
+
+    it("lets only one of two concurrent bookings win, and names the customer constraint", async () => {
+      const scenario = await bookingScenario();
+      const other = await createTrainer(scenario.manager, { fullName: "PT Lan" });
+
+      const results = await Promise.allSettled([
+        book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" }),
+        book(scenario.manager, scenario, { startTime: "18:00", endTime: "19:00" }, other.id),
+      ]);
+
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      const failed = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+      expect(failed.reason).toMatchObject({ code: "BOOKING_CUSTOMER_OVERLAP" });
+      expect(await prisma.booking.count()).toBe(1);
+    });
+  });
+
+  describe("service hours and limits (A-149)", () => {
+    const configure = (data: { allowedFrom?: string; allowedTo?: string; maxPerDay?: number; maxPerWeek?: number }) =>
+      prisma.service.updateMany({ where: { name: "PT" }, data });
+
+    it("refuses a session outside the service's hours of the day, edges included", async () => {
+      const scenario = await bookingScenario();
+      await configure({ allowedFrom: "06:00", allowedTo: "21:00" });
+
+      await expect(book(scenario.manager, scenario, { startTime: "06:00", endTime: "07:00" })).resolves.toBeDefined();
+      await expect(book(scenario.manager, scenario, { startTime: "20:00", endTime: "21:00" })).resolves.toBeDefined();
+      for (const [startTime, endTime] of [
+        ["05:30", "06:30"],
+        ["20:30", "21:30"],
+      ]) {
+        await expect(book(scenario.manager, scenario, { startTime, endTime })).rejects.toMatchObject({
+          code: "BOOKING_OUTSIDE_SERVICE_HOURS",
+        });
+      }
+    });
+
+    it("refuses more sessions than the daily limit, and frees a place when one is cancelled", async () => {
+      const scenario = await bookingScenario();
+      await configure({ maxPerDay: 2 });
+      const first = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
+      await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" });
+
+      await expect(book(scenario.manager, scenario, { startTime: "12:00", endTime: "13:00" })).rejects.toMatchObject({
+        code: "BOOKING_SERVICE_DAILY_LIMIT",
+      });
+      await expect(book(scenario.manager, scenario, { date: "16/10/2026" })).resolves.toBeDefined();
+      await cancelBooking(scenario.manager, first.id);
+      await expect(book(scenario.manager, scenario, { startTime: "12:00", endTime: "13:00" })).resolves.toBeDefined();
+    });
+
+    it("refuses more sessions than the weekly limit, Monday to Sunday", async () => {
+      const scenario = await bookingScenario();
+      await configure({ maxPerWeek: 2 });
+      // 12/10/2026 is a Monday and 18/10/2026 the Sunday after.
+      await book(scenario.manager, scenario, { date: "12/10/2026" });
+      await book(scenario.manager, scenario, { date: "18/10/2026" });
+
+      await expect(book(scenario.manager, scenario, { date: "14/10/2026" })).rejects.toMatchObject({
+        code: "BOOKING_SERVICE_WEEKLY_LIMIT",
+      });
+      await expect(book(scenario.manager, scenario, { date: "19/10/2026" })).resolves.toBeDefined();
+    });
+
+    it("does not count the booking being rescheduled against itself", async () => {
+      const scenario = await bookingScenario();
+      await configure({ maxPerDay: 1 });
+      const booking = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
+
+      await expect(
+        rescheduleBooking(scenario.manager, booking.id, {
+          trainerId: scenario.trainer.id,
+          date: "15/10/2026",
+          startTime: "09:00",
+          endTime: "10:00",
+        }),
+      ).resolves.toBeDefined();
     });
   });
 
@@ -258,8 +341,15 @@ describe("trainer overlap (BR-010)", () => {
     });
     // A-004: half-open ranges.
     await expect(book(scenario.manager, scenario, { startTime: "19:00", endTime: "20:00" })).resolves.toBeDefined();
+    // Another trainer is free at that time for another customer (the same customer is refused: customer overlap).
+    const neighbour = await createCustomer(scenario.manager, { fullName: "Lê Thị Hoa", phone: "0388777666" });
+    const contract = await activeContract(scenario.manager, neighbour.id);
     await expect(
-      book(scenario.manager, scenario, { startTime: "18:30", endTime: "19:30" }, other.id),
+      book(
+        scenario.manager,
+        { customer: neighbour, contract, trainer: other },
+        { startTime: "18:30", endTime: "19:30" },
+      ),
     ).resolves.toBeDefined();
   });
 

@@ -10,10 +10,9 @@ import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import { chosen, resolveChoice } from "../../platform/options/option.service.js";
-import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
+import { calendarDateInTimeZone } from "@flow/shared/validation";
 import * as repo from "./employee.repository.js";
 import {
-  coversSlot,
   dayOffInputSchema,
   employeeInputSchema,
   isoWeekday,
@@ -229,10 +228,11 @@ export async function trainersOfDay(actor: Actor, rawQuery: unknown): Promise<Tr
     AND: [inBranches(actor), isOwnOnly(actor, "schedule") ? { id: actor.employeeId ?? undefined } : {}],
   };
   const trainers = await repo.trainersWithDay(prisma, where, isoWeekday(date), date);
-  return trainers.map(({ shifts, daysOff, ...trainer }) => {
+  return trainers.map(({ shifts, daysOff, branchId, ...trainer }) => {
     const dayOff = daysOff.length > 0;
     return {
       trainer,
+      branchId,
       dayOff,
       workingHours: workingIntervals(shifts.map(toShift), isoWeekday(date), dayOff).map((interval) => ({
         start: timeOfMinutes(interval.start),
@@ -240,21 +240,6 @@ export async function trainersOfDay(actor: Actor, rawQuery: unknown): Promise<Tr
       })),
     };
   });
-}
-
-/**
- * D-030: a booking lies inside the trainer's working hours of its gym day, and that day
- * is not one of their days off. Read inside the booking's transaction.
- */
-export async function assertWithinWorkingHours(db: Db, employeeId: string, start: Date, end: Date): Promise<void> {
-  const day = calendarDateInTimeZone(env.GYM_TIMEZONE, start);
-  const midnight = instantAt(day, "00:00", env.GYM_TIMEZONE).getTime();
-  const from = (start.getTime() - midnight) / 60_000;
-  const to = (end.getTime() - midnight) / 60_000;
-  const outside =
-    (await repo.isDayOff(db, employeeId, day)) ||
-    !coversSlot(workingIntervals((await repo.findShifts(db, employeeId)).map(toShift), isoWeekday(day)), from, to);
-  if (outside) throw new AppError("BOOKING_OUTSIDE_WORKING_HOURS");
 }
 
 /** A trainer who can take a booking: teaches PT and still works here. */

@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-16 — M5.2: PT grid and booking
+
+- **Any time bookable** (A-149, D-058): shifts and days off only tint the grid; the old "outside working hours" refusal is gone.
+- **Customer overlap** is refused, also under concurrent requests (BR-403).
+- **Service hours and limits**: hours of the day, sessions per day and per week per customer.
+- **Grid**: day and week views, filters by branch, PT, and customer, a session count per column, phone width.
+- **Open**: OQ-049. Docs 05, 07, 13, 16, 18, 28; E2E-168.
+
 ## 2026-10-15 — M5.1: configurable session statuses
 
 - **Statuses** (A-145): Booked, Đã tập, Hủy lịch and Khách không đến are rules Admin edits (uses a session, credits the PT, locked once set, color); each session keeps the rule applied when its status was set.

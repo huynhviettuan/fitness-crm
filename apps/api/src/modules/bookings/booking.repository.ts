@@ -114,6 +114,36 @@ export function findOverlappingBooking(db: Db, slot: BookingSlot, excludeId?: st
   });
 }
 
+/** An active booking of the customer that overlaps the range, whoever the trainer (M5.2). */
+export function findOverlappingCustomerBooking(db: Db, customerId: string, slot: BookingSlot, excludeId?: string) {
+  return db.booking.findFirst({
+    where: {
+      customerId,
+      holdsSlot: true,
+      scheduledStart: { lt: slot.scheduledEnd },
+      scheduledEnd: { gt: slot.scheduledStart },
+      ...(excludeId && { id: { not: excludeId } }),
+    },
+    select: { id: true },
+  });
+}
+
+/** Sessions of the customer on the service that hold their time and start inside [from, to) (A-149). */
+export function countServiceBookings(
+  db: Db,
+  where: { customerId: string; serviceId: string; from: Date; to: Date; excludeId?: string },
+): Promise<number> {
+  return db.booking.count({
+    where: {
+      customerId: where.customerId,
+      holdsSlot: true,
+      contract: { serviceId: where.serviceId },
+      scheduledStart: { gte: where.from, lt: where.to },
+      ...(where.excludeId && { id: { not: where.excludeId } }),
+    },
+  });
+}
+
 export function countBookingsOfContract(db: Db, contractId: string, statuses: readonly string[]): Promise<number> {
   return db.booking.count({ where: { contractId, status: { in: [...statuses] } } });
 }

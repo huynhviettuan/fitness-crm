@@ -15,6 +15,8 @@ export type BookingContext = {
   trainers: TrainerOption[];
   /** Each trainer's working hours on `day` (D-030), by trainer id; empty on a day off. */
   workingHours: Map<string, WorkingHours>;
+  /** The branch each trainer works in, for the calendar's branch filter. */
+  branchOf: Map<string, string>;
   /** A PT login that belongs to no employee yet can see and do nothing with bookings. */
   unlinkedTrainer: boolean;
 };
@@ -35,6 +37,7 @@ export async function bookingContext(
     permissions,
     trainers: days.map((entry) => entry.trainer),
     workingHours: new Map(days.map((entry) => [entry.trainer.id, entry.workingHours])),
+    branchOf: new Map(days.map((entry) => [entry.trainer.id, entry.branchId])),
     unlinkedTrainer: user.dataScopes.schedule === "OWN" && user.employeeId === null,
   };
 }

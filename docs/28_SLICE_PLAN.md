@@ -266,7 +266,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Tests:** a changed rule affects new status changes only; the colors on the grid follow the configuration.
 - **Depends on:** M4.7.
 
-### M5.2 PT grid and booking
+### M5.2 PT grid and booking (done 2026-10-16: A-149, OQ-049)
 
 - **Builds:**
   - **Grid:** a row per PT, 30-minute cells, configurable hours, and day and week views. Filters: branch, date, PT, customer. Each PT shows a count; every cell can be booked (D-058), and cells inside the on-duty shift are colored differently from cells outside it.
@@ -486,7 +486,7 @@ Slices run in the order above. M7 can start after M5.3 (it needs sessions), in p
 Each item of the owner's list of work for the developer, with where it is built. ☐ is open; the docs part (this checklist and D-046 to D-072) is done.
 
 - ☑ M6 is "automatic email infrastructure", built at the start of M4 → M4.0 / M6.1 (P-6, D-059). Docs ☑, built ☑ 2026-10-12 (A-106); the domain waits for the owner (OQ-036).
-- ☐ PT booking is not limited by shifts; a shift is an on-duty shift for display and reports → M5.2 (D-058). Docs ☑.
+- ☑ PT booking is not limited by shifts; a shift is an on-duty shift for display and reports → M5.2 (D-058; built, A-149; the PT report's in/outside-shift count comes with M5.6).
 - ☑ A consultant's data scope is role configuration, not hard-coded → M2.7 checks it (D-061; built, A-095).
 - ☑ The lead form needs no phone → M2.7 (D-060).
 - ☑ Nationality is a list of countries, with the group and the email language derived → M2.7 (D-057).

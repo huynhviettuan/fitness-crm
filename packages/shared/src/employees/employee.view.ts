@@ -63,7 +63,9 @@ export const workScheduleSchema = z
 export const trainerDaySchema = z
   .object({
     trainer: employeeRefSchema,
-    /** Working hours of the day, HH:mm to HH:mm (24:00 is midnight); empty on a day off. */
+    /** The branch the trainer works in, for the calendar's branch filter. */
+    branchId: z.uuid(),
+    /** On-duty hours of the day, HH:mm to HH:mm (24:00 is midnight); empty on a day off. Shown, never a limit (D-058). */
     workingHours: z.array(z.object({ start: z.string(), end: z.string() })),
     dayOff: z.boolean(),
   })

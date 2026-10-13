@@ -9109,7 +9109,31 @@
             }
           },
           {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "trainerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
             "required": false,
             "in": "query",
             "schema": {
@@ -13588,6 +13612,9 @@
               "CONTRACT_HAS_CHECKED_IN_BOOKING",
               "PAYMENT_CONTRACT_CANCELLED",
               "BOOKING_TRAINER_OVERLAP",
+              "BOOKING_CUSTOMER_OVERLAP",
+              "BOOKING_SERVICE_DAILY_LIMIT",
+              "BOOKING_SERVICE_WEEKLY_LIMIT",
               "BOOKING_CANCEL_TOO_LATE",
               "IDEMPOTENCY_KEY_REUSED",
               "APPROVAL_NOT_PENDING",
@@ -13595,7 +13622,7 @@
               "UNSUPPORTED_MEDIA_TYPE",
               "BOOKING_CUSTOMER_CONTRACT_MISMATCH",
               "BOOKING_OUTSIDE_CONTRACT_PERIOD",
-              "BOOKING_OUTSIDE_WORKING_HOURS",
+              "BOOKING_OUTSIDE_SERVICE_HOURS",
               "PAYMENT_EXCEEDS_CONTRACT_VALUE",
               "EXPORT_TOO_LARGE",
               "INTERNAL_ERROR"
@@ -19270,6 +19297,10 @@
           "trainer": {
             "$ref": "#/components/schemas/EmployeeRef"
           },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "workingHours": {
             "type": "array",
             "items": {
@@ -19294,6 +19325,7 @@
         },
         "required": [
           "trainer",
+          "branchId",
           "workingHours",
           "dayOff"
         ]
