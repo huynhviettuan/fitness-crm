@@ -124,6 +124,6 @@ test.describe("bookings and working hours", () => {
     ).toBeVisible();
     await form.fillSlot({ startTime: "08:00", endTime: "09:00" });
     await form.save();
-    await expect(contractDetailPage.bookings.row("08:00")).toContainText(labels.status.booking.BOOKED);
+    await expect(contractDetailPage.bookings.row("08:00")).toContainText("Booked");
   });
 });

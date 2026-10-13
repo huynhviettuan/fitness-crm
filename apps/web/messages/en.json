@@ -46,7 +46,8 @@
     "cashBookReport": "Cash book",
     "incomeExpenseReport": "Income and expense",
     "contractReport": "Contract report",
-    "exceptionPriceReport": "Exception prices"
+    "exceptionPriceReport": "Exception prices",
+    "sessionStatuses": "Session statuses"
   },
   "status": {
     "customer": {
@@ -64,13 +65,6 @@
       "CANCELLED": "Cancelled",
       "REJECTED": "Rejected",
       "FROZEN": "Deactivated"
-    },
-    "booking": {
-      "BOOKED": "Booked",
-      "CHECKED_IN": "Checked in",
-      "COMPLETED": "Completed",
-      "CANCELLED": "Cancelled",
-      "NO_SHOW": "No-show"
     },
     "employee": {
       "ACTIVE": "Working",
@@ -573,7 +567,8 @@
     "STEP_LOCKED": "This step is past its deadline and grace period, so it is locked as Not done.",
     "DISCOUNT_ABOVE_LIMIT": "The discount is above what your role may approve. A role with a higher limit must approve it.",
     "CONTRACT_HAS_DEPENDENTS": "The contract has receipts or sessions. Delete them first.",
-    "CONTRACT_FROZEN": "The contract is deactivated. Reactivate it first."
+    "CONTRACT_FROZEN": "The contract is deactivated. Reactivate it first.",
+    "BOOKING_CANCEL_TOO_LATE": "It is too late to cancel this session."
   },
   "validation": {
     "required": "Required.",
@@ -651,7 +646,9 @@
     "periodTooLong": "The period is too long.",
     "fileTooLarge": "The picture is too large (5 MB at most).",
     "notAnImage": "Only PNG, JPEG, or WebP pictures are accepted.",
-    "fileInUse": "This picture is already used elsewhere."
+    "fileInUse": "This picture is already used elsewhere.",
+    "hoursOutOfRange": "The hours must be between 0 and 720.",
+    "bookedNeverConsumes": "Booking never uses a session."
   },
   "contracts": {
     "title": "Contracts",
@@ -903,7 +900,8 @@
     "reactivateReason": "Reason",
     "reactivated": "Contract {code} reactivated",
     "deactivatedSince": "Deactivated by {name} on",
-    "frozenBooking": "Contract deactivated"
+    "frozenBooking": "Contract deactivated",
+    "checkedInBadge": "Checked in"
   },
   "employees": {
     "title": "Employees",
@@ -1065,7 +1063,8 @@
       "checkedIn": "Checked in",
       "completed": "Completed",
       "remainingSessions": "Remaining sessions"
-    }
+    },
+    "checkedInBadge": "Checked in"
   },
   "finance": {
     "title": "Finance",
@@ -1428,7 +1427,8 @@
       "expiringSoonDays": "Expiring soon within (days)",
       "freezeReminderDays": "Remind the manager after (days frozen)",
       "managerDepartmentId": "Manager department (freeze reminders)",
-      "runningOutSessions": "Running out at (sessions left)"
+      "runningOutSessions": "Running out at (sessions left)",
+      "cancelCutoffHours": "Cancel at least this long before (hours, 0 = off)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1513,7 +1513,8 @@
       "price_tier_version": "Price tier version",
       "promotion": "Promotions and vouchers",
       "cash_opening_balance": "Opening cash balance",
-      "file": "File"
+      "file": "File",
+      "session_status": "Session status"
     },
     "verbs": {
       "created": "Created",
@@ -2408,5 +2409,34 @@
     "saved": "Picture saved.",
     "removed": "Picture removed.",
     "unavailable": "The picture could not be loaded."
+  },
+  "sessionStatuses": {
+    "title": "Session statuses",
+    "description": "Each status of a session: whether it uses one of the contract's sessions, whether it credits the PT, and its color.",
+    "note": "A change applies to the next status change only: every session keeps the rule applied when its status was set. Locked once set means it cannot be changed back (Trained). Cancelled frees the PT's time; the other statuses hold it.",
+    "edit": "Edit",
+    "rowActions": "Edit the status {name}",
+    "editTitle": "Edit the status {code}",
+    "editBody": "The labels, whether it uses a session, credits the PT, locks once set, and its color.",
+    "bookedFixed": "Booking never uses a session, credits the PT, or locks; only its labels and color can change.",
+    "saved": "Status saved.",
+    "fields": {
+      "status": "Status",
+      "code": "Code",
+      "labelVi": "Vietnamese label",
+      "labelEn": "English label",
+      "consumes": "Uses a session",
+      "creditsPt": "Credits the PT",
+      "holdsSlot": "Holds the PT's time",
+      "locksOnSet": "Locked once set",
+      "color": "Color"
+    },
+    "colors": {
+      "success": "Green",
+      "warning": "Yellow",
+      "info": "Blue",
+      "muted": "Gray",
+      "destructive": "Red"
+    }
   }
 }

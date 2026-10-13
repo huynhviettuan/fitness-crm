@@ -1,7 +1,6 @@
 import type { Db } from "../../platform/db/prisma.js";
-import type { BookingStatus, Prisma } from "../../generated/prisma/client.js";
+import type { Prisma } from "../../generated/prisma/client.js";
 import { lockContract } from "../contracts/contract.repository.js";
-import { ACTIVE_BOOKING_STATUSES } from "@flow/shared/bookings";
 
 const bookingInclude = {
   customer: { select: { id: true, customerCode: true, fullName: true } },
@@ -14,11 +13,12 @@ const bookingInclude = {
       totalSessions: true,
       bonusSessions: true,
       openingSessionsUsed: true,
-      // T-012: completed sessions are the contract's bookings in COMPLETED.
-      _count: { select: { bookings: { where: { status: "COMPLETED" } } } },
+      // T-050: the sessions used are the contract's bookings whose status consumed when it was set.
+      _count: { select: { bookings: { where: { consumes: true } } } },
     },
   },
   trainer: { select: { id: true, employeeCode: true, fullName: true } },
+  statusRule: { select: { labelVi: true, labelEn: true, color: true, locksOnSet: true } },
   session: {
     select: {
       checkedInAt: true,
@@ -60,15 +60,39 @@ export function createBooking(
   return db.booking.create({ data, include: bookingInclude });
 }
 
-/** Moves the status only if it is still `from`. Returns rows changed. */
-export async function moveStatus(db: Db, id: string, from: BookingStatus, to: BookingStatus): Promise<number> {
-  const { count } = await db.booking.updateMany({ where: { id, status: from }, data: { status: to } });
+/** A session status and its rule, as configured now. */
+export type StatusRule = Prisma.SessionStatusGetPayload<object>;
+
+export function findStatusRule(db: Db, code: string): Promise<StatusRule | null> {
+  return db.sessionStatus.findUnique({ where: { code } });
+}
+
+export function listStatusRules(db: Db): Promise<StatusRule[]> {
+  return db.sessionStatus.findMany({ orderBy: { sortOrder: "asc" } });
+}
+
+/**
+ * Sets the status only if it is still `from`, and keeps the flags of the rule applied now (T-050), with when and by
+ * whom. Returns rows changed.
+ */
+export async function setStatus(db: Db, id: string, from: string, rule: StatusRule, actorId: string): Promise<number> {
+  const { count } = await db.booking.updateMany({
+    where: { id, status: from },
+    data: {
+      status: rule.code,
+      consumes: rule.consumes,
+      creditsPt: rule.creditsPt,
+      holdsSlot: rule.holdsSlot,
+      statusSetAt: new Date(),
+      statusSetById: actorId,
+    },
+  });
   return count;
 }
 
-/** Changes trainer and time only while the booking is still BOOKED (A-006). Returns rows changed. */
+/** Changes trainer and time only while the booking is still Booked and not checked in (A-006). Returns rows changed. */
 export async function rescheduleBooked(db: Db, id: string, slot: BookingSlot): Promise<number> {
-  const { count } = await db.booking.updateMany({ where: { id, status: "BOOKED" }, data: slot });
+  const { count } = await db.booking.updateMany({ where: { id, status: "BOOKED", session: { is: null } }, data: slot });
   return count;
 }
 
@@ -81,7 +105,7 @@ export function findOverlappingBooking(db: Db, slot: BookingSlot, excludeId?: st
   return db.booking.findFirst({
     where: {
       trainerId: slot.trainerId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      holdsSlot: true,
       scheduledStart: { lt: slot.scheduledEnd },
       scheduledEnd: { gt: slot.scheduledStart },
       ...(excludeId && { id: { not: excludeId } }),
@@ -90,21 +114,25 @@ export function findOverlappingBooking(db: Db, slot: BookingSlot, excludeId?: st
   });
 }
 
-export function countBookingsOfContract(
-  db: Db,
-  contractId: string,
-  statuses: readonly BookingStatus[],
-): Promise<number> {
+export function countBookingsOfContract(db: Db, contractId: string, statuses: readonly string[]): Promise<number> {
   return db.booking.count({ where: { contractId, status: { in: [...statuses] } } });
 }
 
-/** D-010: cancels every BOOKED booking of the contract. Returns their ids. */
-export async function cancelBookedBookingsOfContract(db: Db, contractId: string): Promise<string[]> {
+/** Booked sessions of the contract the customer has checked in to (D-010). */
+export function countCheckedInBookings(db: Db, contractId: string): Promise<number> {
+  return db.booking.count({ where: { contractId, status: "BOOKED", session: { isNot: null } } });
+}
+
+/** D-010: cancels every Booked booking of the contract, with the rule of Hủy lịch. Returns their ids. */
+export async function cancelBookedBookingsOfContract(
+  db: Db,
+  contractId: string,
+  rule: StatusRule,
+  actorId: string,
+): Promise<string[]> {
   const booked = await db.booking.findMany({ where: { contractId, status: "BOOKED" }, select: { id: true } });
   const ids = booked.map((b) => b.id);
-  if (ids.length > 0) {
-    await db.booking.updateMany({ where: { id: { in: ids }, status: "BOOKED" }, data: { status: "CANCELLED" } });
-  }
+  for (const id of ids) await setStatus(db, id, "BOOKED", rule, actorId);
   return ids;
 }
 

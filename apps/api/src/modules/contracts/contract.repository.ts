@@ -9,8 +9,8 @@ import { readParameter } from "../../platform/parameters/parameter.service.js";
 const withRefs = {
   customer: { select: { id: true, customerCode: true, fullName: true, phone: true } },
   branch: { select: { id: true, name: true } },
-  // T-012: completed sessions are the contract's bookings in COMPLETED.
-  _count: { select: { bookings: { where: { status: "COMPLETED" } } } },
+  // T-050: the sessions used are the contract's bookings whose status consumed when it was set.
+  _count: { select: { bookings: { where: { consumes: true } } } },
   service: { select: { id: true, name: true, kind: true } },
   previousContract: { select: { id: true, contractCode: true } },
   createdBy: { select: { id: true, name: true } },

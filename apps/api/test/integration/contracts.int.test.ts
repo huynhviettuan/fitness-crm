@@ -825,7 +825,7 @@ describe("cancelling a contract with bookings (D-010, BR-017)", () => {
     expect(Object.fromEntries(statuses.map((b) => [b.id, b.status]))).toEqual({
       [future.id]: "CANCELLED",
       [past.id]: "CANCELLED",
-      [completed.id]: "COMPLETED",
+      [completed.id]: "TRAINED",
     });
     const audits = await prisma.auditEvent.findMany({ where: { action: "booking.cancelled" } });
     expect(audits.map((a) => a.entityId).sort()).toEqual([future.id, past.id].sort());
@@ -860,7 +860,7 @@ describe("cancelling a contract with bookings (D-010, BR-017)", () => {
       const contract = await getContract(scenario.manager, scenario.contract.id);
       const after = await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } });
       if (contract.status === "CANCELLED") expect(after.status).toBe("CANCELLED");
-      else expect(after.status).toBe("CHECKED_IN");
+      else expect(after.status).toBe("BOOKED");
     }
   });
 });

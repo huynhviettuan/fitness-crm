@@ -4,9 +4,12 @@ import {
   bookingPageSchema,
   bookingSchema,
   sessionCompletionSchema,
+  sessionStatusListSchema,
+  sessionStatusSchema,
   type BookingInput,
   type BookingStatus,
   type RescheduleInput,
+  type SessionStatusInput,
 } from "@flow/shared/bookings";
 import { api, query, read } from "./client";
 
@@ -15,6 +18,8 @@ export type BookingQuery = {
   from?: string;
   to?: string;
   status?: BookingStatus;
+  /** Booked sessions the customer has checked in to. */
+  checkedIn?: boolean;
   trainerId?: string;
   customerId?: string;
   contractId?: string;
@@ -61,5 +66,19 @@ export async function completeSession(id: string) {
   return read(
     sessionCompletionSchema,
     (await api()).POST("/api/v1/bookings/{id}/complete", { params: { path: { id } } }),
+  );
+}
+
+/** The session statuses and their rules (brief §6.2, D-025). */
+export async function listSessionStatuses() {
+  const { items } = await read(sessionStatusListSchema, (await api()).GET("/api/v1/session-statuses"));
+  return items;
+}
+
+/** Admin changes a rule; it applies to the next status change only (T-050). */
+export async function updateSessionStatus(code: string, input: SessionStatusInput) {
+  return read(
+    sessionStatusSchema,
+    (await api()).PUT("/api/v1/session-statuses/{code}", { params: { path: { code } }, body: input }),
   );
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { calendarDate, timeOfDay } from "../validation/index.js";
-import { BOOKING_STATUSES } from "./booking.domain.js";
+import { calendarDate, hasNoControlCharacters, timeOfDay } from "../validation/index.js";
+import { BOOKING_STATUSES, STATUS_COLORS } from "./booking.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 
@@ -37,6 +37,11 @@ export const listBookingsSchema = z.object({
   from: optionalDate,
   to: optionalDate,
   status: z.enum(BOOKING_STATUSES).optional(),
+  /** Booked sessions the customer has checked in to, waiting to be completed. */
+  checkedIn: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "true")),
   trainerId: z.uuid().optional(),
   customerId: z.uuid().optional(),
   contractId: z.uuid().optional(),
@@ -55,3 +60,25 @@ export type BookingInput = z.input<typeof bookingInputSchema>;
 export type BookingData = z.output<typeof bookingInputSchema>;
 export type RescheduleInput = z.input<typeof rescheduleSchema>;
 export type RescheduleData = z.output<typeof rescheduleSchema>;
+
+/** Admin edits a status rule: its labels, flags, and color (D-025). The code and the slot rule are fixed. */
+export const sessionStatusInputSchema = z.object({
+  labelVi: z
+    .string()
+    .trim()
+    .min(1, { error: "required" })
+    .max(40, { error: "tooLong" })
+    .refine(hasNoControlCharacters, { error: "invalidCharacters" }),
+  labelEn: z
+    .string()
+    .trim()
+    .min(1, { error: "required" })
+    .max(40, { error: "tooLong" })
+    .refine(hasNoControlCharacters, { error: "invalidCharacters" }),
+  consumes: z.boolean({ error: "invalidChoice" }),
+  creditsPt: z.boolean({ error: "invalidChoice" }),
+  locksOnSet: z.boolean({ error: "invalidChoice" }),
+  color: z.enum(STATUS_COLORS, { error: "invalidChoice" }),
+});
+
+export type SessionStatusInput = z.input<typeof sessionStatusInputSchema>;

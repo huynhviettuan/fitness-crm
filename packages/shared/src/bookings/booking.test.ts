@@ -8,26 +8,24 @@ import {
   canMarkNoShow,
   canReschedule,
   hasSessionForNewBooking,
-  isActiveBooking,
   isWithinContractPeriod,
-  type BookingStatus,
+  type BookingFacts,
 } from "./booking.domain.js";
-import { bookingInputSchema, rescheduleSchema } from "./booking.schema.js";
+import { bookingInputSchema, rescheduleSchema, sessionStatusInputSchema } from "./booking.schema.js";
 
-describe("allowed actions per status (A-006, docs/02 Flow 2)", () => {
-  const allowedFrom = (rule: (status: BookingStatus) => boolean) => BOOKING_STATUSES.filter(rule);
+describe("allowed actions (A-006, D-025, D-026)", () => {
+  const facts = (status: string, checkedIn: boolean) => ({ status, checkedIn });
+  const cases = BOOKING_STATUSES.flatMap((status) => [facts(status, false), facts(status, true)]);
+  const allowed = (rule: (facts: BookingFacts) => boolean) =>
+    cases.filter(rule).map(({ status, checkedIn }) => `${status}${checkedIn ? "+in" : ""}`);
 
-  it("matches the state machine", () => {
-    expect(allowedFrom(canReschedule)).toEqual(["BOOKED"]);
-    expect(allowedFrom(canCheckIn)).toEqual(["BOOKED"]);
-    // OQ-002 interim: never straight from BOOKED.
-    expect(allowedFrom(canComplete)).toEqual(["CHECKED_IN"]);
-    expect(allowedFrom(canCancelBooking)).toEqual(["BOOKED", "CHECKED_IN"]);
-    expect(allowedFrom(canMarkNoShow)).toEqual(["BOOKED"]);
-  });
-
-  it("cancelled and no-show bookings free the trainer's time (A-005)", () => {
-    expect(allowedFrom(isActiveBooking)).toEqual(["BOOKED", "CHECKED_IN", "COMPLETED"]);
+  it("matches the state machine: check-in is a fact on a Booked session, not a status", () => {
+    expect(allowed(canReschedule)).toEqual(["BOOKED"]);
+    expect(allowed(canCheckIn)).toEqual(["BOOKED"]);
+    // OQ-002 interim: never straight from Booked without a check-in.
+    expect(allowed(canComplete)).toEqual(["BOOKED+in"]);
+    expect(allowed(canCancelBooking)).toEqual(["BOOKED", "BOOKED+in"]);
+    expect(allowed(canMarkNoShow)).toEqual(["BOOKED"]);
   });
 });
 
@@ -103,5 +101,23 @@ describe("bookingInputSchema", () => {
     expect(
       rescheduleSchema.parse({ ...ids, date: "15/10/2026", startTime: "18:00", endTime: "19:00" }),
     ).not.toHaveProperty("contractId");
+  });
+});
+
+describe("sessionStatusInputSchema (D-025)", () => {
+  const input = {
+    labelVi: "Đã tập",
+    labelEn: "Trained",
+    consumes: true,
+    creditsPt: true,
+    locksOnSet: true,
+    color: "info",
+  };
+
+  it("takes labels, flags, and one of the design colors", () => {
+    expect(sessionStatusInputSchema.safeParse(input).success).toBe(true);
+    expect(sessionStatusInputSchema.safeParse({ ...input, color: "#ff0000" }).success).toBe(false);
+    expect(sessionStatusInputSchema.safeParse({ ...input, labelVi: " " }).success).toBe(false);
+    expect(sessionStatusInputSchema.safeParse({ ...input, consumes: "yes" }).success).toBe(false);
   });
 });

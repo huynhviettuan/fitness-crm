@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-15 — M5.1: configurable session statuses
+
+- **Statuses** (A-145): Booked, Đã tập, Hủy lịch and Khách không đến are rules Admin edits (uses a session, credits the PT, locked once set, color); each session keeps the rule applied when its status was set.
+- **Check-in** (A-146) is a fact on a Booked session, not a status.
+- **No-show** (A-147) now uses a session and keeps the trainer's time, as D-025 says.
+- **Cancel cut-off** (A-148): a parameter, off at first.
+- **Open**: OQ-048. Docs 04, 07, 13, 16, 18, 28; E2E-167.
+
 ## 2026-10-15 — M4.1b: private file storage
 
 - **Files** (A-143): pictures (PNG, JPEG, WebP up to 5 MB, checked by their bytes) in private storage (folder in development, Cloudflare R2 in staging and production); shown only through links signed for the user that expire in five minutes, and only to people who may see what the picture belongs to.

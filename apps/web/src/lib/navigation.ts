@@ -35,7 +35,16 @@ export const NAV_SECTIONS = [
       { group: "people", items: ["employees", "users", "roles", "branches", "approvalRules"] },
       {
         group: "config",
-        items: ["services", "promotions", "options", "parameters", "checklist", "auditCriteria", "scripts"],
+        items: [
+          "services",
+          "promotions",
+          "options",
+          "sessionStatuses",
+          "parameters",
+          "checklist",
+          "auditCriteria",
+          "scripts",
+        ],
       },
       { group: "monitoring", items: ["audit", "trash"] },
     ],

@@ -116,14 +116,6 @@ enum Gender {
 }
 
 // The booking owns the single lifecycle status (T-011).
-enum BookingStatus {
-  BOOKED
-  CHECKED_IN
-  COMPLETED
-  CANCELLED
-  NO_SHOW
-}
-
 // D-018: a request moves from PENDING to APPROVED or REJECTED by someone other than
 // its submitter, or is CANCELLED when its record goes away. Records that can need
 // approval use PENDING, APPROVED, and REJECTED, and count only when APPROVED.
@@ -194,6 +186,7 @@ model User {
   cashRecorded       CashTransaction[]        @relation("CashTransactionCreatedBy")
   cashOpeningsSet    CashOpeningBalance[]     @relation("CashOpeningUpdatedBy")
   filesUploaded      StoredFile[]             @relation("FileUploadedBy")
+  bookingStatusesSet Booking[]                @relation("BookingStatusSetBy")
   cashDeleted        CashTransaction[]        @relation("CashTransactionDeletedBy")
   trashEntries       TrashEntry[]
   approvalsSubmitted ApprovalRequest[]        @relation("ApprovalSubmittedBy")
@@ -1160,7 +1153,15 @@ model Booking {
   trainer        Employee      @relation(fields: [trainerId], references: [id], onDelete: Restrict)
   scheduledStart DateTime      @map("scheduled_start") @db.Timestamptz(3)
   scheduledEnd   DateTime      @map("scheduled_end") @db.Timestamptz(3)
-  status         BookingStatus @default(BOOKED)
+  // A key of session_statuses (M5.1); the flags below are the rule applied when it was set (T-050).
+  status         String        @default("BOOKED")
+  statusRule     SessionStatus @relation(fields: [status], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  consumes       Boolean       @default(false)
+  creditsPt      Boolean       @default(false) @map("credits_pt")
+  holdsSlot      Boolean       @default(true) @map("holds_slot")
+  statusSetAt    DateTime?     @map("status_set_at") @db.Timestamptz(3)
+  statusSetById  String?       @map("status_set_by") @db.Uuid
+  statusSetBy    User?         @relation("BookingStatusSetBy", fields: [statusSetById], references: [id], onDelete: Restrict)
   createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -1695,4 +1696,24 @@ model StoredFile {
   paymentProofs Payment[] @relation("PaymentProof")
 
   @@map("files")
+}
+
+// The statuses a session can have and their rules (brief §6.2, D-025, M5.1); admin edits the flags, labels and color.
+model SessionStatus {
+  code       String   @id
+  // For the audit trail, whose records point at a UUID.
+  id         String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  labelVi    String   @map("label_vi")
+  labelEn    String   @map("label_en")
+  consumes   Boolean
+  creditsPt  Boolean  @map("credits_pt")
+  holdsSlot  Boolean  @map("holds_slot")
+  locksOnSet Boolean  @map("locks_on_set")
+  color      String
+  sortOrder  Int      @map("sort_order")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  bookings Booking[]
+
+  @@map("session_statuses")
 }

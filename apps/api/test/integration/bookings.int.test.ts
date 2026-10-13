@@ -263,7 +263,7 @@ describe("trainer overlap (BR-010)", () => {
     ).resolves.toBeDefined();
   });
 
-  it("a cancelled or no-show booking frees the slot; a completed one does not (A-005)", async () => {
+  it("a cancelled booking frees the slot; a no-show and a trained one keep it (A-024)", async () => {
     const scenario = await bookingScenario();
     const cancelled = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
     const noShow = await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
@@ -274,10 +274,14 @@ describe("trainer overlap (BR-010)", () => {
     await completeSession(scenario.manager, completed.id);
 
     await expect(book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" })).resolves.toBeDefined();
-    await expect(book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" })).resolves.toBeDefined();
-    await expect(book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" })).rejects.toMatchObject({
-      code: "BOOKING_TRAINER_OVERLAP",
-    });
+    for (const [startTime, endTime] of [
+      ["09:00", "10:00"],
+      ["10:00", "11:00"],
+    ]) {
+      await expect(book(scenario.manager, scenario, { startTime, endTime })).rejects.toMatchObject({
+        code: "BOOKING_TRAINER_OVERLAP",
+      });
+    }
   });
 
   it("creates exactly one of two overlapping bookings sent at the same time (INT-003)", async () => {
@@ -374,7 +378,7 @@ describe("rescheduleBooking", () => {
 });
 
 describe("cancel and no-show", () => {
-  it("neither consumes a session (BR-008), and a repeat returns the current state", async () => {
+  it("Hủy lịch consumes nothing, Khách không đến consumes one and credits the PT (D-025); a repeat returns the current state", async () => {
     const scenario = await bookingScenario();
     const a = await book(scenario.manager, scenario, { startTime: "08:00", endTime: "09:00" });
     const b = await book(scenario.manager, scenario, { startTime: "09:00", endTime: "10:00" });
@@ -385,8 +389,16 @@ describe("cancel and no-show", () => {
     expect(await markNoShow(scenario.manager, b.id)).toMatchObject({ status: "NO_SHOW" });
 
     expect(await getContract(scenario.manager, scenario.contract.id)).toMatchObject({
-      completedSessions: 0,
-      remainingSessions: 24,
+      completedSessions: 1,
+      remainingSessions: 23,
+    });
+    expect(await prisma.booking.findUniqueOrThrow({ where: { id: b.id } })).toMatchObject({
+      consumes: true,
+      creditsPt: true,
+    });
+    expect(await prisma.booking.findUniqueOrThrow({ where: { id: a.id } })).toMatchObject({
+      consumes: false,
+      creditsPt: false,
     });
     expect(
       await prisma.auditEvent.count({ where: { entityId: { in: [a.id, b.id] }, action: { not: "booking.created" } } }),
@@ -480,7 +492,9 @@ describe("listing", () => {
     const b = await book(scenario.manager, scenario, { startTime: "10:00", endTime: "11:00" });
     await checkIn(scenario.manager, b.id);
 
-    expect((await listBookings(scenario.manager, { status: "CHECKED_IN" })).items.map((x) => x.id)).toEqual([b.id]);
+    expect(
+      (await listBookings(scenario.manager, { status: "BOOKED", checkedIn: "true" })).items.map((x) => x.id),
+    ).toEqual([b.id]);
     expect(
       (await listBookings(scenario.manager, { contractId: scenario.contract.id, order: "desc" })).items.map(
         (x) => x.id,

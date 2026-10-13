@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 
 type BadgeVariant = "success" | "warning" | "info" | "muted" | "destructive";
@@ -40,7 +40,6 @@ const STATUS_VARIANTS = {
     ON_HOLD: "info",
   },
   employee: { ACTIVE: "success", INACTIVE: "muted" },
-  booking: { BOOKED: "info", CHECKED_IN: "warning", COMPLETED: "success", CANCELLED: "muted", NO_SHOW: "destructive" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },
   option: { ACTIVE: "success", INACTIVE: "muted" },
   // D-018: only an approved record has an effect.
@@ -77,6 +76,20 @@ function variantOf<E extends Entity>(entity: E, status: StatusOf<E>): BadgeVaria
 export function StatusBadge<E extends Entity>({ entity, status }: StatusBadgeProps<E>) {
   const t = useTranslations("status");
   return <Badge variant={variantOf(entity, status)}>{t(`${entity}.${status}` as Parameters<typeof t>[0])}</Badge>;
+}
+
+/**
+ * A session status as admin configured it (D-025, M5.1): its label in the user's language and its color, which is one
+ * of the design tokens, never a raw palette class.
+ */
+export function SessionStatusBadge({ rule }: { rule: { labelVi: string; labelEn: string; color: BadgeVariant } }) {
+  const locale = useLocale();
+  return <Badge variant={rule.color}>{locale === "vi" ? rule.labelVi : rule.labelEn}</Badge>;
+}
+
+/** Border, background, and text classes for a surface in a configured color. */
+export function colorSurfaceClass(color: BadgeVariant): string {
+  return SURFACE_CLASSES[color];
 }
 
 /** Border, background, and text classes for a surface in the status's color. */

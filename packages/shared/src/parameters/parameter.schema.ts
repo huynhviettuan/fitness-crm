@@ -28,6 +28,8 @@ export const PARAMETER_DEFAULTS = {
   recareDays: "15",
   /** A customer whose last active contract ends within this many days is "expiring soon" (D-040, M4.5). */
   expiringSoonDays: "30",
+  /** A session cannot be cancelled (Hủy lịch) closer to its start than this many hours; 0 switches the limit off (D-029, BR-410). */
+  cancelCutoffHours: "0",
   /** A running contract with this many sessions left or fewer is "running out" in the contract report (A-023, M4.7). */
   runningOutSessions: "3",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
@@ -100,6 +102,14 @@ const minutes = z
   .refine((value) => Number(value) <= 1440, { error: "minutesOutOfRange" })
   .transform((value) => String(Number(value)));
 
+/** Whole hours, 0 to 720; 0 switches the limit off. */
+const hours = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) <= 720, { error: "hoursOutOfRange" })
+  .transform((value) => String(Number(value)));
+
 export const parametersInputSchema = z
   .object({
     calendarDayStart: calendarTime,
@@ -113,6 +123,7 @@ export const parametersInputSchema = z
     taskReminderHours: reminderHours,
     recareDays: days,
     expiringSoonDays: days,
+    cancelCutoffHours: hours,
     runningOutSessions: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
@@ -146,6 +157,7 @@ export const parametersSchema = z
     taskReminderHours: z.string(),
     recareDays: z.string(),
     expiringSoonDays: z.string(),
+    cancelCutoffHours: z.string(),
     runningOutSessions: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),

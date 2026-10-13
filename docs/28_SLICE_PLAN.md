@@ -254,7 +254,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 
 ## M5 — PT schedule, classes, sessions
 
-### M5.1 Configurable session statuses
+### M5.1 Configurable session statuses (done 2026-10-15: A-145 to A-148, OQ-048)
 
 - **Builds:**
   - **Status rules:** consumes a session, credits the PT, color, and locked once set. They are seeded from the brief's table and edited on screen.

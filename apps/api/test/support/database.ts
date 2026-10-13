@@ -32,6 +32,18 @@ export async function resetDatabase(): Promise<void> {
       data: { situationVi, sortOrder, active: true, answerVi: null, answerEn: null },
     });
   }
+  // The session status rules back to the brief's table (D-025).
+  for (const [code, consumes, creditsPt, holdsSlot, locksOnSet, color, labelVi, labelEn] of [
+    ["BOOKED", false, false, true, false, "destructive", "Booked", "Booked"],
+    ["TRAINED", true, true, true, true, "info", "Đã tập", "Trained"],
+    ["CANCELLED", false, false, false, false, "muted", "Hủy lịch", "Cancelled"],
+    ["NO_SHOW", true, true, true, false, "warning", "Khách không đến", "No-show"],
+  ] as const) {
+    await prisma.sessionStatus.update({
+      where: { code },
+      data: { consumes, creditsPt, holdsSlot, locksOnSet, color, labelVi, labelEn },
+    });
+  }
   // The approval matrix back to the migration's (09_RBAC.md).
   for (const { action, required, approvers } of SEEDED_APPROVAL_RULES) {
     await prisma.approvalRule.update({ where: { actionType: action }, data: { required, overdueHours: 24 } });

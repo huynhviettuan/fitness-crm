@@ -1,46 +1,48 @@
 // Pure booking rules: no database, no framework. The API enforces them; the web app
 // uses them to show only the actions that can succeed.
 
-/** The booking owns the single lifecycle status (T-011); matches the database enum. */
-export const BOOKING_STATUSES = ["BOOKED", "CHECKED_IN", "COMPLETED", "CANCELLED", "NO_SHOW"] as const;
+/**
+ * The statuses the system itself knows (D-025, M5.1). Their rules (consumes, credits the PT, color) are configuration
+ * in `session_statuses`; the database holds the codes, so a status added later is a row, not a migration.
+ */
+export const BOOKING_STATUSES = ["BOOKED", "TRAINED", "CANCELLED", "NO_SHOW"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
-/** A-005: these statuses hold the trainer's time slot (BR-010). */
-export const ACTIVE_BOOKING_STATUSES = [
-  "BOOKED",
-  "CHECKED_IN",
-  "COMPLETED",
-] as const satisfies readonly BookingStatus[];
-
 /** OQ-008 interim: bookings that will still use one of the contract's sessions. */
-export const OPEN_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as const satisfies readonly BookingStatus[];
+export const OPEN_BOOKING_STATUSES = ["BOOKED"] as const satisfies readonly BookingStatus[];
 
-export function isActiveBooking(status: BookingStatus): boolean {
-  return (ACTIVE_BOOKING_STATUSES as readonly BookingStatus[]).includes(status);
+/** The colors a status rule may take: the design tokens of the status badge (docs/23 §3). */
+export const STATUS_COLORS = ["success", "warning", "info", "muted", "destructive"] as const;
+export type StatusColor = (typeof STATUS_COLORS)[number];
+
+/**
+ * What decides the actions on a booking: its status, and whether the customer checked in (a session record exists).
+ * There is no separate "checked in" status (D-025); it is a fact on a Booked session.
+ */
+export type BookingFacts = { status: string; checkedIn: boolean };
+
+// Allowed actions (A-006, docs/02 Flow 2, D-026).
+
+export function canReschedule({ status, checkedIn }: BookingFacts): boolean {
+  return status === "BOOKED" && !checkedIn;
 }
 
-// Allowed actions per status (A-006, docs/02 Flow 2).
+export function canCheckIn({ status, checkedIn }: BookingFacts): boolean {
+  return status === "BOOKED" && !checkedIn;
+}
 
-export function canReschedule(status: BookingStatus): boolean {
+/** Only after check-in until OQ-002 decides whether a Booked session may be completed directly. */
+export function canComplete({ status, checkedIn }: BookingFacts): boolean {
+  return status === "BOOKED" && checkedIn;
+}
+
+/** A checked-in session may still be cancelled: the exceptional cancel. */
+export function canCancelBooking({ status }: BookingFacts): boolean {
   return status === "BOOKED";
 }
 
-export function canCheckIn(status: BookingStatus): boolean {
-  return status === "BOOKED";
-}
-
-/** Only from CHECKED_IN until OQ-002 decides whether BOOKED may be completed directly. */
-export function canComplete(status: BookingStatus): boolean {
-  return status === "CHECKED_IN";
-}
-
-/** CHECKED_IN → CANCELLED is the exceptional cancel. */
-export function canCancelBooking(status: BookingStatus): boolean {
-  return status === "BOOKED" || status === "CHECKED_IN";
-}
-
-export function canMarkNoShow(status: BookingStatus): boolean {
-  return status === "BOOKED";
+export function canMarkNoShow({ status, checkedIn }: BookingFacts): boolean {
+  return status === "BOOKED" && !checkedIn;
 }
 
 /**

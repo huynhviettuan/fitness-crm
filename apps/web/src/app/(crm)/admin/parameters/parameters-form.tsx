@@ -157,6 +157,7 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
           {field("freezeReminderDays", "numeric")}
           {field("expiringSoonDays", "numeric")}
           {field("runningOutSessions", "numeric")}
+          {field("cancelCutoffHours", "numeric")}
           <div className="sm:col-span-2">
             <SelectField
               control={form.control}

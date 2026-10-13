@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { DateTime } from "@/components/date-time";
-import { StatusBadge } from "@/components/status-badge";
+import { SessionStatusBadge } from "@/components/status-badge";
 import { BookingFormDialog, type BookingPreset } from "./booking-form";
 import { BookingSheet } from "./booking-sheet";
 import type { BookingPermissions, BookingRow, TrainerOption } from "./booking-types";
@@ -85,7 +85,10 @@ export function BookingsTable({
       header: t("fields.status"),
       cell: ({ row }) => (
         <div className="flex flex-wrap items-center gap-1">
-          <StatusBadge entity="booking" status={row.original.status} />
+          <SessionStatusBadge rule={row.original.statusRule} />
+          {row.original.checkedIn && row.original.status === "BOOKED" && (
+            <Badge variant="warning">{contractsT("checkedInBadge")}</Badge>
+          )}
           {/* A booked session of a deactivated contract is for admin to deal with (D-023). */}
           {row.original.contract.frozen && row.original.status === "BOOKED" && (
             <Badge variant="warning">{contractsT("frozenBooking")}</Badge>

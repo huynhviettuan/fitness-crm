@@ -5236,6 +5236,128 @@
         "x-permission": "authenticated"
       }
     },
+    "/api/v1/session-statuses": {
+      "get": {
+        "operationId": "SessionStatusesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatusList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/session-statuses/{code}": {
+      "put": {
+        "operationId": "SessionStatusesController_update",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "labelVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "labelEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "consumes": {
+                    "type": "boolean"
+                  },
+                  "creditsPt": {
+                    "type": "boolean"
+                  },
+                  "locksOnSet": {
+                    "type": "boolean"
+                  },
+                  "color": {
+                    "type": "string",
+                    "enum": [
+                      "success",
+                      "warning",
+                      "info",
+                      "muted",
+                      "destructive"
+                    ]
+                  }
+                },
+                "required": [
+                  "labelVi",
+                  "labelEn",
+                  "consumes",
+                  "creditsPt",
+                  "locksOnSet",
+                  "color"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
     "/api/v1/customers": {
       "get": {
         "operationId": "CustomersController_list",
@@ -8527,6 +8649,14 @@
           },
           {
             "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "checkedIn",
             "required": false,
             "in": "query",
             "schema": {
@@ -11837,6 +11967,10 @@
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
                   },
+                  "cancelCutoffHours": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}$"
+                  },
                   "runningOutSessions": {
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
@@ -11922,6 +12056,7 @@
                   "taskReminderHours",
                   "recareDays",
                   "expiringSoonDays",
+                  "cancelCutoffHours",
                   "runningOutSessions",
                   "studioDepartmentId",
                   "receptionDepartmentId",
@@ -13453,6 +13588,7 @@
               "CONTRACT_HAS_CHECKED_IN_BOOKING",
               "PAYMENT_CONTRACT_CANCELLED",
               "BOOKING_TRAINER_OVERLAP",
+              "BOOKING_CANCEL_TOO_LATE",
               "IDEMPOTENCY_KEY_REUSED",
               "APPROVAL_NOT_PENDING",
               "APPROVAL_ALREADY_PENDING",
@@ -17424,6 +17560,70 @@
           "expiresAt"
         ]
       },
+      "SessionStatusList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionStatus"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "SessionStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "labelVi": {
+            "type": "string"
+          },
+          "labelEn": {
+            "type": "string"
+          },
+          "consumes": {
+            "type": "boolean"
+          },
+          "creditsPt": {
+            "type": "boolean"
+          },
+          "holdsSlot": {
+            "type": "boolean"
+          },
+          "locksOnSet": {
+            "type": "boolean"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "info",
+              "muted",
+              "destructive"
+            ]
+          },
+          "sortOrder": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "labelVi",
+          "labelEn",
+          "consumes",
+          "creditsPt",
+          "holdsSlot",
+          "locksOnSet",
+          "color",
+          "sortOrder"
+        ]
+      },
       "CustomerPage": {
         "type": "object",
         "properties": {
@@ -18885,14 +19085,49 @@
             "format": "uuid"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "BOOKED",
-              "CHECKED_IN",
-              "COMPLETED",
-              "CANCELLED",
-              "NO_SHOW"
+            "type": "string"
+          },
+          "statusRule": {
+            "type": "object",
+            "properties": {
+              "labelVi": {
+                "type": "string"
+              },
+              "labelEn": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string",
+                "enum": [
+                  "success",
+                  "warning",
+                  "info",
+                  "muted",
+                  "destructive"
+                ]
+              },
+              "locksOnSet": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "labelVi",
+              "labelEn",
+              "color",
+              "locksOnSet"
             ]
+          },
+          "consumes": {
+            "type": "boolean"
+          },
+          "creditsPt": {
+            "type": "boolean"
+          },
+          "holdsSlot": {
+            "type": "boolean"
+          },
+          "checkedIn": {
+            "type": "boolean"
           },
           "scheduledStart": {
             "type": "string",
@@ -18972,6 +19207,11 @@
         "required": [
           "id",
           "status",
+          "statusRule",
+          "consumes",
+          "creditsPt",
+          "holdsSlot",
+          "checkedIn",
           "scheduledStart",
           "scheduledEnd",
           "createdAt",
@@ -19930,6 +20170,9 @@
           "expiringSoonDays": {
             "type": "string"
           },
+          "cancelCutoffHours": {
+            "type": "string"
+          },
           "runningOutSessions": {
             "type": "string"
           },
@@ -19973,6 +20216,7 @@
           "taskReminderHours",
           "recareDays",
           "expiringSoonDays",
+          "cancelCutoffHours",
           "runningOutSessions",
           "studioDepartmentId",
           "receptionDepartmentId",

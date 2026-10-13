@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useTimeZone, useTranslations } from "next-intl";
+import { useLocale, useTimeZone, useTranslations } from "next-intl";
 import { TZDate } from "@date-fns/tz";
 import { cn } from "cn";
-import { statusSurfaceClass } from "@/components/status-badge";
+import { colorSurfaceClass } from "@/components/status-badge";
 import { formatTime } from "@/lib/format";
 import { BookingFormDialog, type BookingPreset } from "../bookings/booking-form";
 import { BookingSheet } from "../bookings/booking-sheet";
@@ -23,7 +23,7 @@ type TrainerScheduleGridProps = {
   date: string;
   /** One column per trainer. */
   columns: TrainerOption[];
-  /** Active bookings of the day (A-005); cancelled and no-show ones free the slot. */
+  /** The bookings of the day that hold the trainer's time (A-024); a cancelled one frees the slot. */
   bookings: BookingRow[];
   /** The configured calendar hours, as minutes after midnight (D-030). */
   dayStart: number;
@@ -53,6 +53,7 @@ export function TrainerScheduleGrid({
 }: TrainerScheduleGridProps) {
   const t = useTranslations();
   const timeZone = useTimeZone() ?? "UTC";
+  const locale = useLocale();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [preset, setPreset] = useState<BookingPreset | null>(null);
   const selected = bookings.find((b) => b.id === selectedId) ?? null;
@@ -143,7 +144,7 @@ export function TrainerScheduleGrid({
                       onClick={() => setSelectedId(booking.id)}
                       className={cn(
                         "absolute inset-x-1 overflow-hidden rounded-md border px-2 py-1 text-left text-xs leading-tight",
-                        statusSurfaceClass("booking", booking.status),
+                        colorSurfaceClass(booking.statusRule.color),
                       )}
                       // Position and length follow the booking's times.
                       style={{
@@ -158,7 +159,9 @@ export function TrainerScheduleGrid({
                         })}
                       </span>
                       <span className="block truncate text-foreground">{booking.customer.fullName}</span>
-                      <span className="block truncate">{t(`status.booking.${booking.status}`)}</span>
+                      <span className="block truncate">
+                        {locale === "vi" ? booking.statusRule.labelVi : booking.statusRule.labelEn}
+                      </span>
                     </button>
                   );
                 })}

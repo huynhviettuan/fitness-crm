@@ -9,7 +9,6 @@ import { env } from "@/lib/env";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { formatDateOnly } from "@/lib/format";
 import { can } from "@/lib/permissions";
-import { isActiveBooking } from "@flow/shared/bookings";
 import { listDayBookings } from "@/lib/api/bookings";
 import { getParameters } from "@/lib/api/configuration";
 import { minutesOfDay } from "@flow/shared/parameters";
@@ -53,9 +52,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
     typeof params.trainer === "string" && context.trainers.some((tr) => tr.id === params.trainer)
       ? params.trainer
       : undefined;
-  const bookings = (await listDayBookings({ date: formatDateOnly(day), trainerId })).filter((b) =>
-    isActiveBooking(b.status),
-  );
+  const bookings = (await listDayBookings({ date: formatDateOnly(day), trainerId })).filter((b) => b.holdsSlot);
   // Calendar hours are a system parameter (D-030, T-049).
   const parameters = await getParameters();
   const columns = scheduleColumns(

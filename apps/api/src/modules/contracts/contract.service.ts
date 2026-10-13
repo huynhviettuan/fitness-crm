@@ -560,7 +560,7 @@ function titleOf(contractCode: string, customerName: string): string {
 
 /**
  * D-010, BR-017: cancels the contract and all of its BOOKED bookings in one
- * transaction, each audited. Refused while a booking is CHECKED_IN. The contract lock
+ * transaction, each audited. Refused while a booking is checked in. The contract lock
  * keeps a check-in or a new booking from slipping in between the check and the
  * cancellation. Repeating the cancellation returns the current state.
  */
@@ -575,7 +575,7 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
     if (before.status === "CANCELLED") return presentOne(tx, before, today, actor);
     const from = effectiveStatus(before, today);
     if (!canCancel(from)) throw new AppError("INVALID_STATUS_TRANSITION");
-    if ((await bookingRepo.countBookingsOfContract(tx, id, ["CHECKED_IN"])) > 0) {
+    if ((await bookingRepo.countCheckedInBookings(tx, id)) > 0) {
       throw new AppError("CONTRACT_HAS_CHECKED_IN_BOOKING");
     }
 
@@ -597,7 +597,9 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
         });
       }
     }
-    const cancelledBookingIds = await bookingRepo.cancelBookedBookingsOfContract(tx, id);
+    const cancelledRule = await bookingRepo.findStatusRule(tx, "CANCELLED");
+    if (!cancelledRule) throw new AppError("INTERNAL_ERROR");
+    const cancelledBookingIds = await bookingRepo.cancelBookedBookingsOfContract(tx, id, cancelledRule, actor.id);
     for (const bookingId of cancelledBookingIds) {
       await recordAudit(tx, {
         actorUserId: actor.id,

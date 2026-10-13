@@ -27,7 +27,18 @@ import {
   rescheduleBooking,
 } from "./booking.service.js";
 
-const FILTERS = ["from", "to", "status", "trainerId", "customerId", "contractId", "order", "page", "pageSize"] as const;
+const FILTERS = [
+  "from",
+  "to",
+  "status",
+  "checkedIn",
+  "trainerId",
+  "customerId",
+  "contractId",
+  "order",
+  "page",
+  "pageSize",
+] as const;
 
 @ApiTags("bookings")
 @ApiErrors()

@@ -9,6 +9,7 @@ import { calendarDateInTimeZone, instantAt } from "@flow/shared/validation";
 import { assertCan, forbidden } from "../../platform/permissions/assert.js";
 import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
+import { readParameter } from "../../platform/parameters/parameter.service.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import * as contractRepo from "../contracts/contract.repository.js";
@@ -23,7 +24,8 @@ import {
   canReschedule,
   hasSessionForNewBooking,
   isWithinContractPeriod,
-  type BookingStatus,
+  type BookingFacts,
+  type StatusColor,
   bookingInputSchema,
   dayBookingsSchema,
   listBookingsSchema,
@@ -36,7 +38,15 @@ const DAY_LIMIT = 1000;
 /** What the UI and API see. */
 export type BookingView = {
   id: string;
-  status: BookingStatus;
+  status: string;
+  /** The status as configured now: labels and color (D-025). */
+  statusRule: { labelVi: string; labelEn: string; color: StatusColor; locksOnSet: boolean };
+  /** The rule applied when the status was set (T-050). */
+  consumes: boolean;
+  creditsPt: boolean;
+  holdsSlot: boolean;
+  /** The customer checked in: a session record exists. */
+  checkedIn: boolean;
   scheduledStart: Date;
   scheduledEnd: Date;
   createdAt: Date;
@@ -57,6 +67,7 @@ export async function listBookings(actor: Actor, rawQuery: unknown): Promise<Boo
       bookingsVisibleTo(actor),
       {
         status: query.status,
+        ...(query.checkedIn === undefined ? {} : { session: query.checkedIn ? { isNot: null } : { is: null } }),
         trainerId: query.trainerId,
         customerId: query.customerId,
         contractId: query.contractId,
@@ -155,7 +166,7 @@ export async function rescheduleBooking(actor: Actor, id: string, input: unknown
 
   return withOverlapMapped(() =>
     changeLockedBooking(actor, id, async (tx, before) => {
-      if (!canReschedule(before.status)) throw new AppError("INVALID_STATUS_TRANSITION");
+      if (!canReschedule(factsOf(before))) throw new AppError("INVALID_STATUS_TRANSITION");
       const contract = await contractRepo.findContract(tx, before.contractId, {});
       if (!contract) throw new AppError("NOT_FOUND");
       await assertBookable(tx, contract, slot, id);
@@ -181,13 +192,26 @@ export async function rescheduleBooking(actor: Actor, id: string, input: unknown
   );
 }
 
-/** BOOKED, or CHECKED_IN as the exceptional cancel (A-006). Does not consume (BR-008). */
+/**
+ * Hủy lịch: a Booked session, also a checked-in one as the exceptional cancel (A-006). It does not consume (D-025).
+ * When the cut-off parameter is on, a cancellation closer to the start than that many hours is refused (BR-410).
+ */
 export async function cancelBooking(actor: Actor, id: string): Promise<BookingView> {
   assertCan(actor, "booking.manage");
-  return transitionBooking(actor, id, { to: "CANCELLED", allowed: canCancelBooking, action: "booking.cancelled" });
+  const cutoffHours = Number(await readParameter(prisma, "cancelCutoffHours"));
+  return transitionBooking(actor, id, {
+    to: "CANCELLED",
+    allowed: canCancelBooking,
+    action: "booking.cancelled",
+    check: (booking) => {
+      if (cutoffHours > 0 && booking.scheduledStart.getTime() - Date.now() < cutoffHours * 3_600_000) {
+        throw new AppError("BOOKING_CANCEL_TOO_LATE");
+      }
+    },
+  });
 }
 
-/** BOOKED only (A-006). Does not consume in V1 (BR-008). */
+/** Khách không đến: a Booked session not yet checked in (A-006). Consumes and credits the PT by its rule (D-025). */
 export async function markNoShow(actor: Actor, id: string): Promise<BookingView> {
   assertCan(actor, "booking.manage");
   return transitionBooking(actor, id, { to: "NO_SHOW", allowed: canMarkNoShow, action: "booking.no_show" });
@@ -202,18 +226,26 @@ export async function transitionBooking(
   actor: Actor,
   id: string,
   options: {
-    to: BookingStatus;
-    allowed: (status: BookingStatus) => boolean;
+    to: string;
+    allowed: (facts: BookingFacts) => boolean;
     action: string;
+    /** Extra refusals, run before anything changes. */
+    check?: (booking: repo.BookingRecord) => void;
     apply?: (tx: Prisma.TransactionClient) => Promise<unknown>;
   },
 ): Promise<BookingView> {
   return changeLockedBooking(actor, id, async (tx, before) => {
     if (before.status === options.to) return toBookingView(before);
-    if (!options.allowed(before.status)) throw new AppError("INVALID_STATUS_TRANSITION");
+    // A status that locks once set (Đã tập) is never left (D-026).
+    if (before.statusRule.locksOnSet || !options.allowed(factsOf(before))) {
+      throw new AppError("INVALID_STATUS_TRANSITION");
+    }
+    options.check?.(before);
+    const rule = await repo.findStatusRule(tx, options.to);
+    if (!rule) throw new AppError("INTERNAL_ERROR");
     // Cancelling stays possible, so admin can deal with the bookings of a deactivated contract (D-023).
     if (options.to !== "CANCELLED" && before.contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
-    if ((await repo.moveStatus(tx, id, before.status, options.to)) === 0)
+    if ((await repo.setStatus(tx, id, before.status, rule, actor.id)) === 0)
       throw new AppError("INVALID_STATUS_TRANSITION");
     await options.apply?.(tx);
     await recordAudit(tx, {
@@ -222,7 +254,7 @@ export async function transitionBooking(
       entityId: id,
       action: options.action,
       before: { status: before.status },
-      after: { status: options.to },
+      after: { status: options.to, consumes: rule.consumes, creditsPt: rule.creditsPt },
       context: { contractId: before.contractId },
     });
     return bookingView(tx, actor, id);
@@ -321,11 +353,21 @@ function toSlot(data: { trainerId: string; date: Date; startTime: string; endTim
   };
 }
 
+/** What decides the actions on a booking (D-025): its status and whether the customer checked in. */
+export function factsOf(booking: repo.BookingRecord): BookingFacts {
+  return { status: booking.status, checkedIn: booking.session !== null };
+}
+
 export function toBookingView(booking: repo.BookingRecord): BookingView {
   const { contract, session } = booking;
   return {
     id: booking.id,
     status: booking.status,
+    statusRule: { ...booking.statusRule, color: booking.statusRule.color as StatusColor },
+    consumes: booking.consumes,
+    creditsPt: booking.creditsPt,
+    holdsSlot: booking.holdsSlot,
+    checkedIn: session !== null,
     scheduledStart: booking.scheduledStart,
     scheduledEnd: booking.scheduledEnd,
     createdAt: booking.createdAt,

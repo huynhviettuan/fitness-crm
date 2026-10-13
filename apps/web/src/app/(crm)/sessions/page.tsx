@@ -106,11 +106,11 @@ function viewQuery(view: View): BookingQuery {
     case "today":
       return { from: formatDateOnly(today), to: formatDateOnly(today) };
     case "upcoming":
-      return { from: formatDateOnly(tomorrow), status: "BOOKED" };
+      return { from: formatDateOnly(tomorrow), status: "BOOKED", checkedIn: false };
     case "checkedIn":
-      return { status: "CHECKED_IN" };
+      return { status: "BOOKED", checkedIn: true };
     case "completed":
-      return { status: "COMPLETED", order: "desc" };
+      return { status: "TRAINED", order: "desc" };
     case "noShow":
       return { status: "NO_SHOW", order: "desc" };
     case "cancelled":

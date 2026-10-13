@@ -1,4 +1,4 @@
-import type { BookingStatus } from "@flow/shared/bookings";
+import type { StatusColor } from "@flow/shared/bookings";
 
 // Shapes the booking screens pass from server to client components.
 
@@ -9,7 +9,10 @@ export type TrainerOption = { id: string; employeeCode: string; fullName: string
 
 export type BookingRow = {
   id: string;
-  status: BookingStatus;
+  status: string;
+  statusRule: { labelVi: string; labelEn: string; color: StatusColor; locksOnSet: boolean };
+  holdsSlot: boolean;
+  checkedIn: boolean;
   scheduledStart: Date;
   scheduledEnd: Date;
   customer: { id: string; customerCode: string; fullName: string };

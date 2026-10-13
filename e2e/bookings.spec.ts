@@ -5,7 +5,13 @@ import { fill, labels } from "./support/labels";
 
 const cf = labels.contracts.fields;
 const b = labels.bookings;
-const status = labels.status.booking;
+// The session statuses are configuration; these are the brief's table as seeded (D-025).
+const status = {
+  BOOKED: "Booked",
+  TRAINED: "Đã tập",
+  CANCELLED: "Hủy lịch",
+  NO_SHOW: "Khách không đến",
+};
 
 test.describe("bookings as a receptionist", () => {
   test.use(signedInAs("RECEPTIONIST"));
@@ -35,7 +41,7 @@ test.describe("bookings as a receptionist", () => {
     await contractDetailPage.openCheckins();
     const sheet = await contractDetailPage.bookings.open("18:00");
     await sheet.action(b.checkIn).click();
-    await expect(sheet.detail(b.fields.status)).toHaveText(status.CHECKED_IN);
+    await expect(sheet.detail(b.fields.status)).toContainText(labels.bookings.checkedInBadge);
     // OQ-011: a receptionist cannot complete.
     await expect(sheet.action(b.complete)).toHaveCount(0);
     await sheet.close();
@@ -174,7 +180,7 @@ test.describe("sessions as a manager", () => {
     await expect(contractDetailPage.figure(cf.remainingSessions)).toHaveText("0");
   });
 
-  test("no-show and cancel consume nothing, and today's sessions are listed (BR-008)", async ({
+  test("a no-show consumes a session and a cancel does not, and today's sessions are listed (D-025)", async ({
     apiAs,
     testTag,
     sessionsPage,
@@ -192,13 +198,14 @@ test.describe("sessions as a manager", () => {
 
     let sheet = await table.open(customer.fullName, "05:00–05:30");
     await sheet.confirm(b.noShow);
-    await expect(sheet.detail(b.fields.status)).toHaveText(status.NO_SHOW);
+    await expect(sheet.detail(b.fields.status)).toContainText(status.NO_SHOW);
     await sheet.close();
 
     sheet = await table.open(customer.fullName, "05:30–06:00");
     await sheet.confirm(b.cancel);
-    await expect(sheet.detail(b.fields.status)).toHaveText(status.CANCELLED);
-    await expect(sheet.detail(b.fields.remainingSessions)).toHaveText("24");
+    await expect(sheet.detail(b.fields.status)).toContainText(status.CANCELLED);
+    // The no-show used one session of 24 (D-025); the cancel used none.
+    await expect(sheet.detail(b.fields.remainingSessions)).toHaveText("23");
     await sheet.close();
 
     await sessionsPage.showView(b.views.noShow);
@@ -262,8 +269,8 @@ test.describe("as a trainer on a phone", () => {
     await expect(
       page.getByRole("region", { name: labels.common.notifications }).getByText(fill(b.completed, { remaining: 23 })),
     ).toBeVisible();
-    await expect(sheet.detail(b.fields.status)).toHaveText(status.COMPLETED);
+    await expect(sheet.detail(b.fields.status)).toContainText(status.TRAINED);
     await sheet.close();
-    await expect(calendarPage.block(E2E_TRAINER_NAME, customer.fullName)).toContainText(status.COMPLETED);
+    await expect(calendarPage.block(E2E_TRAINER_NAME, customer.fullName)).toContainText(status.TRAINED);
   });
 });

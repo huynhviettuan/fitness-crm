@@ -10,7 +10,8 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DateTime } from "@/components/date-time";
 import { notify } from "@/components/notify";
-import { StatusBadge } from "@/components/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { SessionStatusBadge } from "@/components/status-badge";
 import { useErrorMessage } from "@/components/use-error-message";
 import type { ActionResult } from "@/lib/actions/result";
 import { formatDate, formatTime } from "@/lib/format";
@@ -68,7 +69,16 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
   );
 
   const rows: { label: string; value: React.ReactNode }[] = [
-    { label: f("fields.status"), value: <StatusBadge entity="booking" status={booking.status} /> },
+    {
+      label: f("fields.status"),
+      value: (
+        <span className="flex flex-wrap items-center gap-1">
+          <SessionStatusBadge rule={booking.statusRule} />
+          {/* Check-in is a fact on a Booked session, not a status of its own (D-025). */}
+          {booking.checkedIn && booking.status === "BOOKED" && <Badge variant="warning">{t("checkedInBadge")}</Badge>}
+        </span>
+      ),
+    },
     {
       label: f("fields.customer"),
       value: (
@@ -135,30 +145,30 @@ function BookingActions({
     router.refresh();
   };
 
-  const { status } = booking;
+  const facts = { status: booking.status, checkedIn: booking.checkedIn };
   const remaining = booking.contract.remainingSessions;
 
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      {permissions.manage && canReschedule(status) && (
+      {permissions.manage && canReschedule(facts) && (
         <Button variant="outline" onClick={() => setRescheduling(true)}>
           <CalendarClockIcon />
           {t("reschedule")}
         </Button>
       )}
-      {permissions.manage && canMarkNoShow(status) && (
+      {permissions.manage && canMarkNoShow(facts) && (
         <Button variant="outline" onClick={() => setConfirm("noShow")}>
           <UserXIcon />
           {t("noShow")}
         </Button>
       )}
-      {permissions.manage && canCancelBooking(status) && (
+      {permissions.manage && canCancelBooking(facts) && (
         <Button variant="outline" onClick={() => setConfirm("cancel")}>
           <BanIcon />
           {t("cancel")}
         </Button>
       )}
-      {permissions.checkIn && canCheckIn(status) && (
+      {permissions.checkIn && canCheckIn(facts) && (
         <Button
           disabled={checkingIn}
           onClick={() =>
@@ -174,7 +184,7 @@ function BookingActions({
           {t("checkIn")}
         </Button>
       )}
-      {permissions.complete && canComplete(status) && (
+      {permissions.complete && canComplete(facts) && (
         <Button onClick={() => setConfirm("complete")}>
           <CheckCheckIcon />
           {t("complete")}
@@ -198,7 +208,7 @@ function BookingActions({
         open={confirm === "cancel"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title={t("cancelTitle")}
-        description={status === "CHECKED_IN" ? t("cancelCheckedInBody") : t("cancelBody")}
+        description={booking.checkedIn ? t("cancelCheckedInBody") : t("cancelBody")}
         confirmLabel={t("cancel")}
         dismissLabel={t("keep")}
         destructive

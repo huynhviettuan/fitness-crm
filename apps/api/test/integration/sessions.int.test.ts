@@ -31,7 +31,8 @@ describe("checkIn", () => {
     const checkedIn = await checkIn(reception, booking.id);
 
     expect(checkedIn).toMatchObject({
-      status: "CHECKED_IN",
+      status: "BOOKED",
+      checkedIn: true,
       session: { checkedInBy: "RECEPTIONIST test user", completedAt: null },
     });
     expect(await remaining(scenario)).toMatchObject({ completedSessions: 0, remainingSessions: 24 });
@@ -40,7 +41,7 @@ describe("checkIn", () => {
   it("a repeat returns the current state and creates nothing more", async () => {
     const { manager, booking } = await checkedInBooking();
 
-    expect(await checkIn(manager, booking.id)).toMatchObject({ status: "CHECKED_IN" });
+    expect(await checkIn(manager, booking.id)).toMatchObject({ status: "BOOKED", checkedIn: true });
     expect(await prisma.session.count({ where: { bookingId: booking.id } })).toBe(1);
     expect(await prisma.auditEvent.count({ where: { entityId: booking.id, action: "booking.checked_in" } })).toBe(1);
   });
@@ -61,7 +62,9 @@ describe("completeSession", () => {
     const result = await completeSession(scenario.manager, scenario.booking.id);
 
     expect(result.booking).toMatchObject({
-      status: "COMPLETED",
+      status: "TRAINED",
+      consumes: true,
+      creditsPt: true,
       session: { completedBy: "FITNESS_MANAGER test user" },
     });
     expect(result.contract).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
@@ -71,7 +74,7 @@ describe("completeSession", () => {
     });
     expect(audit).toMatchObject({
       actorUserId: scenario.manager.id,
-      after: { status: "COMPLETED" },
+      after: { status: "TRAINED", consumes: true, creditsPt: true },
       metadata: { remainingSessions: 23 },
     });
   });
@@ -96,7 +99,7 @@ describe("completeSession", () => {
     );
 
     for (const result of results) {
-      expect(result.booking.status).toBe("COMPLETED");
+      expect(result.booking.status).toBe("TRAINED");
       expect(result.contract).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
     }
     expect(await remaining(scenario)).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
@@ -117,7 +120,7 @@ describe("completeSession", () => {
         trainerId: scenario.trainer.id,
         scheduledStart: new Date("2026-10-15T13:00:00Z"),
         scheduledEnd: new Date("2026-10-15T14:00:00Z"),
-        status: "CHECKED_IN",
+        status: "BOOKED",
         session: { create: { checkedInAt: new Date(), checkedInById: scenario.manager.id } },
       },
     });
@@ -158,7 +161,8 @@ describe("completeSession", () => {
         code: "INVALID_STATUS_TRANSITION",
       });
     }
-    expect(await remaining(scenario)).toMatchObject({ completedSessions: 0, remainingSessions: 24 });
+    // Only the no-show used a session (D-025).
+    expect(await remaining(scenario)).toMatchObject({ completedSessions: 1, remainingSessions: 23 });
   });
 
   it("a receptionist cannot complete (OQ-011, T-024)", async () => {

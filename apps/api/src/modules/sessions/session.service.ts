@@ -4,14 +4,15 @@ import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
 import { findContract } from "../contracts/contract.repository.js";
 import { contractView, type ContractView } from "../contracts/contract.service.js";
-import { moveStatus } from "../bookings/booking.repository.js";
+import { findStatusRule, setStatus } from "../bookings/booking.repository.js";
 import { canCheckIn, canComplete, isWithinContractPeriod } from "@flow/shared/bookings";
 import { entitledSessions } from "@flow/shared/contracts";
 import {
   bookingView,
   changeLockedBooking,
+  factsOf,
   sessionDay,
-  transitionBooking,
+  toBookingView,
   type BookingView,
 } from "../bookings/booking.service.js";
 import { createSession, recordCompletion } from "./session.repository.js";
@@ -19,24 +20,33 @@ import { createSession, recordCompletion } from "./session.repository.js";
 export type CompletionResult = { booking: BookingView; contract: ContractView };
 
 /**
- * Manual check-in (D-003): BOOKED → CHECKED_IN and the session record is created. Does
- * not consume a session (BR-005). A repeat returns the current state.
+ * Manual check-in (D-003): the session record is created and the booking stays Booked (D-025: check-in is a fact, not
+ * a status). It does not consume a session (BR-005). A repeat returns the current state.
  */
 export async function checkIn(actor: Actor, bookingId: string): Promise<BookingView> {
   assertCan(actor, "session.checkIn");
-  return transitionBooking(actor, bookingId, {
-    to: "CHECKED_IN",
-    allowed: canCheckIn,
-    action: "booking.checked_in",
-    apply: (tx) => createSession(tx, { bookingId, checkedInAt: new Date(), checkedInById: actor.id }),
+  return changeLockedBooking(actor, bookingId, async (tx, before) => {
+    if (before.status === "BOOKED" && before.session) return toBookingView(before);
+    if (!canCheckIn(factsOf(before))) throw new AppError("INVALID_STATUS_TRANSITION");
+    if (before.contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
+    await createSession(tx, { bookingId, checkedInAt: new Date(), checkedInById: actor.id });
+    await recordAudit(tx, {
+      actorUserId: actor.id,
+      entityType: "booking",
+      entityId: bookingId,
+      action: "booking.checked_in",
+      before: { status: before.status, checkedIn: false },
+      after: { status: before.status, checkedIn: true },
+      context: { contractId: before.contractId },
+    });
+    return bookingView(tx, actor, bookingId);
   });
 }
 
 /**
- * Completes a checked-in session and so consumes exactly one session of its contract
- * (BR-006). The locked transaction from docs/22 §7 (T-013) makes this safe when it is
- * repeated or sent many times at once (BR-007), and when the last sessions of a
- * contract are completed together (BR-009).
+ * Completes a checked-in session: it becomes Đã tập and consumes exactly one session of its contract by the rule of
+ * that status (BR-006, D-025). The locked transaction from docs/22 §7 (T-013) makes this safe when it is repeated or
+ * sent many times at once (BR-007), and when the last sessions of a contract are completed together (BR-009).
  */
 export async function completeSession(actor: Actor, bookingId: string): Promise<CompletionResult> {
   assertCan(actor, "session.complete");
@@ -46,9 +56,9 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
       contract: await contractView(tx, actor, booking.contractId),
     });
 
-    // Already completed: return it, consuming nothing and auditing nothing.
-    if (booking.status === "COMPLETED") return result();
-    if (!canComplete(booking.status)) throw new AppError("INVALID_STATUS_TRANSITION");
+    // Already trained: return it, consuming nothing and auditing nothing.
+    if (booking.status === "TRAINED") return result();
+    if (!canComplete(factsOf(booking))) throw new AppError("INVALID_STATUS_TRANSITION");
 
     const contract = await findContract(tx, booking.contractId, {});
     if (!contract) throw new AppError("NOT_FOUND");
@@ -67,7 +77,9 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
       contract._count.bookings;
     if (remaining <= 0) throw new AppError("CONTRACT_NO_REMAINING_SESSIONS");
 
-    if ((await moveStatus(tx, bookingId, "CHECKED_IN", "COMPLETED")) !== 1) {
+    const rule = await findStatusRule(tx, "TRAINED");
+    if (!rule) throw new AppError("INTERNAL_ERROR");
+    if ((await setStatus(tx, bookingId, "BOOKED", rule, actor.id)) !== 1) {
       throw new AppError("INVALID_STATUS_TRANSITION");
     }
     await recordCompletion(tx, bookingId, new Date(), actor.id);
@@ -76,9 +88,9 @@ export async function completeSession(actor: Actor, bookingId: string): Promise<
       entityType: "booking",
       entityId: bookingId,
       action: "booking.completed",
-      before: { status: "CHECKED_IN" },
-      after: { status: "COMPLETED" },
-      context: { contractId: contract.id, remainingSessions: remaining - 1 },
+      before: { status: "BOOKED" },
+      after: { status: "TRAINED", consumes: rule.consumes, creditsPt: rule.creditsPt },
+      context: { contractId: contract.id, remainingSessions: remaining - (rule.consumes ? 1 : 0) },
     });
     return result();
   });

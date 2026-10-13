@@ -46,7 +46,8 @@
     "cashBookReport": "Sổ quỹ",
     "incomeExpenseReport": "Thu chi",
     "contractReport": "Báo cáo hợp đồng",
-    "exceptionPriceReport": "Giá ngoại lệ"
+    "exceptionPriceReport": "Giá ngoại lệ",
+    "sessionStatuses": "Trạng thái buổi tập"
   },
   "status": {
     "customer": {
@@ -64,13 +65,6 @@
       "CANCELLED": "Đã hủy",
       "REJECTED": "Đã từ chối",
       "FROZEN": "Tạm vô hiệu"
-    },
-    "booking": {
-      "BOOKED": "Đã đặt",
-      "CHECKED_IN": "Đã check-in",
-      "COMPLETED": "Hoàn thành",
-      "CANCELLED": "Đã hủy",
-      "NO_SHOW": "Vắng mặt"
     },
     "employee": {
       "ACTIVE": "Đang làm việc",
@@ -573,7 +567,8 @@
     "STEP_LOCKED": "Bước này đã quá hạn và hết thời gian gia hạn, nên đã khóa là Không thực hiện.",
     "DISCOUNT_ABOVE_LIMIT": "Mức giảm giá vượt ngưỡng vai trò của bạn được duyệt. Cần người có ngưỡng cao hơn duyệt.",
     "CONTRACT_HAS_DEPENDENTS": "Hợp đồng còn phiếu thu hoặc buổi tập. Hãy xóa chúng trước.",
-    "CONTRACT_FROZEN": "Hợp đồng đang bị khóa. Hãy kích hoạt lại trước."
+    "CONTRACT_FROZEN": "Hợp đồng đang bị khóa. Hãy kích hoạt lại trước.",
+    "BOOKING_CANCEL_TOO_LATE": "Đã quá hạn hủy lịch."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -651,7 +646,9 @@
     "periodTooLong": "Khoảng thời gian quá dài.",
     "fileTooLarge": "Ảnh quá lớn (tối đa 5 MB).",
     "notAnImage": "Chỉ nhận ảnh PNG, JPEG hoặc WebP.",
-    "fileInUse": "Ảnh này đã được dùng ở nơi khác."
+    "fileInUse": "Ảnh này đã được dùng ở nơi khác.",
+    "hoursOutOfRange": "Số giờ từ 0 đến 720.",
+    "bookedNeverConsumes": "Đặt lịch không bao giờ trừ buổi."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -903,7 +900,8 @@
     "reactivateReason": "Lý do",
     "reactivated": "Đã kích hoạt lại hợp đồng {code}",
     "deactivatedSince": "Bị khóa bởi {name} từ ngày",
-    "frozenBooking": "Hợp đồng đang bị khóa"
+    "frozenBooking": "Hợp đồng đang bị khóa",
+    "checkedInBadge": "Đã check-in"
   },
   "employees": {
     "title": "Nhân viên",
@@ -1065,7 +1063,8 @@
       "checkedIn": "Check-in",
       "completed": "Hoàn thành",
       "remainingSessions": "Buổi còn lại"
-    }
+    },
+    "checkedInBadge": "Đã check-in"
   },
   "finance": {
     "title": "Tài chính",
@@ -1428,7 +1427,8 @@
       "expiringSoonDays": "Sắp hết hạn trong (ngày)",
       "freezeReminderDays": "Nhắc quản lý sau (ngày bị khóa)",
       "managerDepartmentId": "Phòng ban quản lý (việc nhắc hợp đồng bị khóa)",
-      "runningOutSessions": "Sắp hết buổi khi còn (buổi)"
+      "runningOutSessions": "Sắp hết buổi khi còn (buổi)",
+      "cancelCutoffHours": "Hủy lịch trước giờ tập tối thiểu (giờ, 0 = tắt)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1513,7 +1513,8 @@
       "price_tier_version": "Phiên bản bậc giá",
       "promotion": "Khuyến mãi và voucher",
       "cash_opening_balance": "Số dư quỹ đầu kỳ",
-      "file": "Tệp"
+      "file": "Tệp",
+      "session_status": "Trạng thái buổi tập"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2408,5 +2409,34 @@
     "saved": "Đã lưu ảnh.",
     "removed": "Đã xóa ảnh.",
     "unavailable": "Không tải được ảnh."
+  },
+  "sessionStatuses": {
+    "title": "Trạng thái buổi tập",
+    "description": "Mỗi trạng thái của buổi tập: có trừ buổi của hợp đồng không, có tính cho PT không, và màu hiển thị.",
+    "note": "Thay đổi chỉ áp dụng cho lần đổi trạng thái sau đó: mỗi buổi giữ quy tắc đã dùng khi nó được đặt trạng thái. Khóa sau khi đặt nghĩa là không đổi lại được (Đã tập). Hủy lịch giải phóng giờ của PT; các trạng thái khác giữ giờ.",
+    "edit": "Sửa",
+    "rowActions": "Sửa trạng thái {name}",
+    "editTitle": "Sửa trạng thái {code}",
+    "editBody": "Tên hiển thị, việc trừ buổi, tính cho PT, khóa sau khi đặt và màu.",
+    "bookedFixed": "Đặt lịch không bao giờ trừ buổi, không tính cho PT và không khóa; chỉ đổi được tên và màu.",
+    "saved": "Đã lưu trạng thái.",
+    "fields": {
+      "status": "Trạng thái",
+      "code": "Mã",
+      "labelVi": "Tên tiếng Việt",
+      "labelEn": "Tên tiếng Anh",
+      "consumes": "Trừ buổi",
+      "creditsPt": "Tính cho PT",
+      "holdsSlot": "Giữ giờ của PT",
+      "locksOnSet": "Khóa sau khi đặt",
+      "color": "Màu"
+    },
+    "colors": {
+      "success": "Xanh lá",
+      "warning": "Vàng",
+      "info": "Xanh dương",
+      "muted": "Xám",
+      "destructive": "Đỏ"
+    }
   }
 }
