@@ -9,7 +9,7 @@ const b = labels.bookings;
 test.describe("PT grid on a phone", () => {
   test.use({ ...signedInAs("RECEPTIONIST"), viewport: { width: 375, height: 812 } });
 
-  test("E2E-168: books from a cell, then a second trainer at the same time is refused for the same customer", async ({
+  test("@smoke E2E-168: books from a cell, then a second trainer at the same time is refused for the same customer", async ({
     page,
     apiAs,
     testTag,

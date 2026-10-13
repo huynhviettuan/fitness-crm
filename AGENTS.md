@@ -156,6 +156,7 @@ pnpm format               # Prettier on the whole repository; pnpm format:check 
 pnpm test                 # unit (Vitest) in every package
 pnpm test:integration     # API integration tests against TEST_DATABASE_URL
 pnpm test:e2e             # builds both apps, then Playwright against E2E_DATABASE_URL
+pnpm test:e2e:smoke       # builds, then the cases tagged @smoke plus the OWASP security suite (what CI runs on every push)
 pnpm test:security        # builds, then the OWASP security suite
 pnpm security:audit       # dependency vulnerability gate
 pnpm turbo run openapi:check   # apps/api/openapi.json matches the controllers

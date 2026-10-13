@@ -4,7 +4,7 @@
 // rate-limit table, so the next run starts fresh.
 import { expect, test } from "../fixtures";
 
-test("repeated failed sign-ins from one IP are throttled with 429", async ({ apiAs }) => {
+test("@smoke repeated failed sign-ins from one IP are throttled with 429", async ({ apiAs }) => {
   const api = await apiAs(null);
   const statuses: number[] = [];
 

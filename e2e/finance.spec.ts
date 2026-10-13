@@ -20,7 +20,7 @@ function randomPastMonth(): { month: string; day: string } {
 test.describe("finance as a receptionist", () => {
   test.use(signedInAs("RECEPTIONIST"));
 
-  test("E2E-008: payments of 5,000,000 and 3,000,000, once approved, leave a debt of 4,000,000 (D-018)", async ({
+  test("@smoke E2E-008: payments of 5,000,000 and 3,000,000, once approved, leave a debt of 4,000,000 (D-018)", async ({
     page,
     apiAs,
     testTag,

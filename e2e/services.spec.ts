@@ -11,7 +11,7 @@ const toasts = (page: Page) => page.getByRole("region", { name: labels.common.no
 test.describe("services as Admin", () => {
   test.use(signedInAs("ADMIN"));
 
-  test("E2E-152: Admin adds a service, prices it in tiers, tries a count, and a new version waits for its day", async ({
+  test("@smoke E2E-152: Admin adds a service, prices it in tiers, tries a count, and a new version waits for its day", async ({
     page,
     servicesPage,
     serviceDetailPage,

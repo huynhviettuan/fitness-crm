@@ -16,7 +16,7 @@ const status = {
 test.describe("bookings as a receptionist", () => {
   test.use(signedInAs("RECEPTIONIST"));
 
-  test("E2E-002/003: booking and check-in leave the remaining sessions unchanged", async ({
+  test("@smoke E2E-002/003: booking and check-in leave the remaining sessions unchanged", async ({
     page,
     apiAs,
     testTag,
@@ -52,7 +52,7 @@ test.describe("bookings as a receptionist", () => {
     await expect(contractDetailPage.figure(cf.completedSessions)).toHaveText("0");
   });
 
-  test("E2E-007: the calendar fills in trainer and time, and refuses an overlapping booking", async ({
+  test("@smoke E2E-007: the calendar fills in trainer and time, and refuses an overlapping booking", async ({
     page,
     apiAs,
     testTag,
@@ -107,7 +107,7 @@ test.describe("bookings as a receptionist", () => {
 test.describe("sessions as a manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-004/005: completing consumes exactly one session, and a retry consumes nothing more", async ({
+  test("@smoke E2E-004/005: completing consumes exactly one session, and a retry consumes nothing more", async ({
     page,
     apiAs,
     testTag,

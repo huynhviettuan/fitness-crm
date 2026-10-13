@@ -45,7 +45,7 @@ async function recordCash(
 test.describe("as an Admin", () => {
   test.use(signedInAs("ADMIN"));
 
-  test("E2E-165: the cash book closes at opening + in − out, Admin sets the opening balance, and it exports", async ({
+  test("@smoke E2E-165: the cash book closes at opening + in − out, Admin sets the opening balance, and it exports", async ({
     page,
     apiAs,
     testTag,

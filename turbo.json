@@ -65,6 +65,10 @@
       "dependsOn": ["^build", "api#build", "web#build"],
       "cache": false
     },
+    "test:e2e:smoke": {
+      "dependsOn": ["^build", "api#build", "web#build"],
+      "cache": false
+    },
     "test:security": {
       "dependsOn": ["^build", "api#build", "web#build"],
       "cache": false

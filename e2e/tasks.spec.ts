@@ -25,7 +25,7 @@ async function giveTaskViaApi(
 test.describe("tasks as a manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-115: a manager gives a task, the receptionist accepts it, and they talk in the comments", async ({
+  test("@smoke E2E-115: a manager gives a task, the receptionist accepts it, and they talk in the comments", async ({
     page,
     apiAs,
     testTag,

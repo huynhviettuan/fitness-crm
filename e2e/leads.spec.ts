@@ -12,7 +12,7 @@ const toasts = (page: Page) => page.getByRole("region", { name: labels.common.no
 test.describe("leads as a receptionist", () => {
   test.use(signedInAs("RECEPTIONIST"));
 
-  test("E2E-116: a walk-in is added with the quick form, gets an LD code, goes to the consultant, and is listed with its channel", async ({
+  test("@smoke E2E-116: a walk-in is added with the quick form, gets an LD code, goes to the consultant, and is listed with its channel", async ({
     page,
     testTag,
     leadsPage,

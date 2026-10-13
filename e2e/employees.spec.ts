@@ -10,7 +10,7 @@ const weekday = isoWeekdayOf(BOOKING_DAY.date);
 test.describe("employees as a manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-114: a manager adds a PT, gives them a shift and a day off, and the calendar shades off-duty time but books any time (D-058)", async ({
+  test("@smoke E2E-114: a manager adds a PT, gives them a shift and a day off, and the calendar shades off-duty time but books any time (D-058)", async ({
     page,
     testTag,
     employeesPage,

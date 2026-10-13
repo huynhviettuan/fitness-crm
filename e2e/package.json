@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
-    "test:security": "playwright test security",
+    "test:e2e:smoke": "playwright test -c playwright.smoke.config.ts",
+    "test:security": "playwright test -c playwright.security.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint"
   },

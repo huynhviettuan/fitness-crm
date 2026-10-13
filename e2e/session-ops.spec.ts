@@ -8,7 +8,7 @@ const b = labels.bookings;
 test.describe("session operations as admin", () => {
   test.use(signedInAs("ADMIN"));
 
-  test("E2E-108: a Booked session is completed straight from its dialog, with no check-in, and then stays locked", async ({
+  test("@smoke E2E-108: a Booked session is completed straight from its dialog, with no check-in, and then stays locked", async ({
     page,
     apiAs,
     testTag,

@@ -23,7 +23,7 @@ async function bookedLead(apiAs: (role: "RECEPTIONIST" | "CONSULTING") => Promis
 test.describe("Show at reception", () => {
   test.use(signedInAs("RECEPTIONIST"));
 
-  test("E2E-119: the receptionist records Show; the lead becomes a customer with its ID document, after consent", async ({
+  test("@smoke E2E-119: the receptionist records Show; the lead becomes a customer with its ID document, after consent", async ({
     page,
     apiAs,
     testTag,

@@ -1,0 +1,53 @@
+name: Full E2E
+
+# The whole Playwright suite is slow, so the pull-request CI runs only the smoke cases (ci.yml). This runs everything
+# every night, and whenever someone starts it by hand (run it before closing a milestone).
+on:
+  schedule:
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+env:
+  DATABASE_URL: postgresql://fitness:fitness@localhost:5432/fitness_crm
+  TEST_DATABASE_URL: postgresql://fitness:fitness@localhost:5432/fitness_crm_test
+  E2E_DATABASE_URL: postgresql://fitness:fitness@localhost:5432/fitness_crm_e2e
+  BETTER_AUTH_SECRET: ci-only-secret-that-protects-nothing-real
+  FIELD_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  BETTER_AUTH_URL: http://localhost:3000
+  API_URL: http://localhost:4000
+  GYM_TIMEZONE: Asia/Ho_Chi_Minh
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  full-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: fitness
+          POSTGRES_PASSWORD: fitness
+          POSTGRES_DB: fitness_crm
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fitness -d fitness_crm"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Create test databases
+        run: psql "$DATABASE_URL" -c "CREATE DATABASE fitness_crm_test" -c "CREATE DATABASE fitness_crm_e2e"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter e2e exec playwright install --with-deps chromium
+      - name: Full E2E suite, security included
+        run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7

@@ -10,7 +10,7 @@ const cf = labels.contracts.fields;
 test.describe("approvals as a Fitness Manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-113: a receipt waits in the inbox, counts once approved, and nobody approves their own", async ({
+  test("@smoke E2E-113: a receipt waits in the inbox, counts once approved, and nobody approves their own", async ({
     page,
     apiAs,
     testTag,

@@ -12,7 +12,7 @@ const yesterday = () => gymDay(-1).split("/").reverse().join("-");
 test.describe("check-in as admin", () => {
   test.use(signedInAs("ADMIN"));
 
-  test("E2E-169: a machine is registered, its scans pair a session, a lone scan hangs, and the admin settles it", async ({
+  test("@smoke E2E-169: a machine is registered, its scans pair a session, a lone scan hangs, and the admin settles it", async ({
     page,
     apiAs,
     testTag,

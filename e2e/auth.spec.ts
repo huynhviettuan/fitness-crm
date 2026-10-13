@@ -3,7 +3,7 @@ import { E2E_PASSWORD, E2E_USERS } from "./support/db";
 import { labels } from "./support/labels";
 
 test.describe("signing in", () => {
-  test("an admin signs in with email and password and lands on the dashboard", async ({ loginPage, shell }) => {
+  test("@smoke an admin signs in with email and password and lands on the dashboard", async ({ loginPage, shell }) => {
     await loginPage.goto();
     await loginPage.signIn(E2E_USERS.ADMIN.email, E2E_PASSWORD);
 

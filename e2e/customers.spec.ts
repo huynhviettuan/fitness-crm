@@ -4,7 +4,7 @@ import { fill, labels } from "./support/labels";
 test.use(signedInAs("RECEPTIONIST"));
 
 test.describe("customers", () => {
-  test("E2E-001 (part 1): a receptionist adds a customer and finds them again", async ({
+  test("@smoke E2E-001 (part 1): a receptionist adds a customer and finds them again", async ({
     page,
     shell,
     customersPage,

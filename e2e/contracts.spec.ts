@@ -23,7 +23,7 @@ const CONTRACT_URL = /\/contracts\/[0-9a-f-]{36}$/;
 test.describe("contracts as a Fitness Manager", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
 
-  test("E2E-104: any session count gives the tier price, the end date, and the name; the contract is approved by someone else, never its creator (D-018)", async ({
+  test("@smoke E2E-104: any session count gives the tier price, the end date, and the name; the contract is approved by someone else, never its creator (D-018)", async ({
     page,
     apiAs,
     testTag,
@@ -223,7 +223,7 @@ test.describe("contracts as a manager", () => {
 test.describe("contracts as an admin", () => {
   test.use(signedInAs("ADMIN"));
 
-  test("E2E-105: an approved contract is locked: even Admin has no Edit, and the API refuses a change (D-022)", async ({
+  test("@smoke E2E-105: an approved contract is locked: even Admin has no Edit, and the API refuses a change (D-022)", async ({
     apiAs,
     testTag,
     contractDetailPage,
