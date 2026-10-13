@@ -6130,6 +6130,72 @@
           "contracts"
         ],
         "x-permission": "contract.create"
+      },
+      "delete": {
+        "operationId": "ContractsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedForApproval"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Deleted to the trash"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.delete"
       }
     },
     "/api/v1/contracts/{id}/activate": {
@@ -6171,6 +6237,136 @@
           "contracts"
         ],
         "x-permission": "contract.approve"
+      }
+    },
+    "/api/v1/contracts/{id}/reject": {
+      "post": {
+        "operationId": "ContractsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.approve"
+      }
+    },
+    "/api/v1/contracts/{id}/unapprove": {
+      "post": {
+        "operationId": "ContractsController_unapprove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contracts"
+        ],
+        "x-permission": "contract.unapprove"
       }
     },
     "/api/v1/contracts/{id}/cancel": {
@@ -8713,6 +8909,8 @@
                             "contract.create",
                             "contract.approve",
                             "contract.cancel",
+                            "contract.unapprove",
+                            "contract.delete",
                             "booking.view",
                             "booking.manage",
                             "session.checkIn",
@@ -9120,6 +9318,8 @@
                         "contract.create",
                         "contract.approve",
                         "contract.cancel",
+                        "contract.unapprove",
+                        "contract.delete",
                         "booking.view",
                         "booking.manage",
                         "session.checkIn",
@@ -9375,6 +9575,8 @@
                         "contract.create",
                         "contract.approve",
                         "contract.cancel",
+                        "contract.unapprove",
+                        "contract.delete",
                         "booking.view",
                         "booking.manage",
                         "session.checkIn",
@@ -11703,6 +11905,7 @@
               "INVALID_STATUS_TRANSITION",
               "STEP_LOCKED",
               "CONTRACT_NOT_EDITABLE",
+              "CONTRACT_HAS_DEPENDENTS",
               "DISCOUNT_ABOVE_LIMIT",
               "CONTRACT_NOT_ACTIVE",
               "CONTRACT_NO_REMAINING_SESSIONS",
@@ -11786,6 +11989,33 @@
                   "limit",
                   "total"
                 ]
+              },
+              "dependents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "payment",
+                        "booking"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "id",
+                    "label"
+                  ]
+                }
               }
             }
           }
@@ -11854,6 +12084,8 @@
                 "contract.create",
                 "contract.approve",
                 "contract.cancel",
+                "contract.unapprove",
+                "contract.delete",
                 "booking.view",
                 "booking.manage",
                 "session.checkIn",
@@ -15448,6 +15680,7 @@
               "DRAFT",
               "ACTIVE",
               "CANCELLED",
+              "REJECTED",
               "EXPIRED"
             ]
           },
@@ -15615,6 +15848,81 @@
           "isImported": {
             "type": "boolean"
           },
+          "createdBy": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "approvedBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "approvedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "rejection": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "by": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "reason": {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            },
+            "required": [
+              "by",
+              "at",
+              "reason"
+            ]
+          },
+          "approvalPending": {
+            "type": "boolean"
+          },
           "totalSessions": {
             "type": "integer"
           },
@@ -15682,6 +15990,11 @@
           "paymentDueOn",
           "notes",
           "isImported",
+          "createdBy",
+          "approvedBy",
+          "approvedAt",
+          "rejection",
+          "approvalPending",
           "totalSessions",
           "openingSessionsUsed",
           "completedSessions",
@@ -15842,6 +16155,33 @@
           "employeeCode",
           "fullName",
           "isTrainer"
+        ]
+      },
+      "SubmittedForApproval": {
+        "type": "object",
+        "properties": {
+          "approval": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PENDING"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "approval"
         ]
       },
       "PaymentPage": {
@@ -16417,33 +16757,6 @@
           "total"
         ]
       },
-      "SubmittedForApproval": {
-        "type": "object",
-        "properties": {
-          "approval": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "status": {
-                "type": "string",
-                "enum": [
-                  "PENDING"
-                ]
-              }
-            },
-            "required": [
-              "id",
-              "status"
-            ]
-          }
-        },
-        "required": [
-          "approval"
-        ]
-      },
       "DebtPage": {
         "type": "object",
         "properties": {
@@ -16729,6 +17042,8 @@
                     "contract.create",
                     "contract.approve",
                     "contract.cancel",
+                    "contract.unapprove",
+                    "contract.delete",
                     "booking.view",
                     "booking.manage",
                     "session.checkIn",
@@ -16977,6 +17292,8 @@
                 "contract.create",
                 "contract.approve",
                 "contract.cancel",
+                "contract.unapprove",
+                "contract.delete",
                 "booking.view",
                 "booking.manage",
                 "session.checkIn",
@@ -17135,7 +17452,8 @@
               "customerGroups",
               "auditFailReasons",
               "stepReopenReasons",
-              "exceptionPriceReasons"
+              "exceptionPriceReasons",
+              "unapproveReasons"
             ]
           },
           "labelVi": {
@@ -17396,7 +17714,8 @@
             "enum": [
               "payment",
               "cash_transaction",
-              "person"
+              "person",
+              "contract"
             ]
           },
           "entityId": {
@@ -17480,7 +17799,8 @@
               "payment.create",
               "cash.create",
               "record.delete",
-              "customer.identity"
+              "customer.identity",
+              "contract.create"
             ]
           },
           "entityType": {
@@ -17627,7 +17947,8 @@
               "payment.create",
               "cash.create",
               "record.delete",
-              "customer.identity"
+              "customer.identity",
+              "contract.create"
             ]
           },
           "required": {

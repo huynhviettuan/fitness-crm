@@ -24,6 +24,8 @@ export const ERROR_HTTP_STATUS = {
   // D-054: the step passed its deadline and the grace period and is "Không thực hiện"; nobody ticks it late.
   STEP_LOCKED: 409,
   CONTRACT_NOT_EDITABLE: 409,
+  // D-022, brief §5.4: a contract with receipts or sessions is not deleted (or unapproved); the answer lists them.
+  CONTRACT_HAS_DEPENDENTS: 409,
   // A-112: the total discount is above what the approver's role may approve itself.
   DISCOUNT_ABOVE_LIMIT: 409,
   CONTRACT_NOT_ACTIVE: 409,
@@ -76,6 +78,10 @@ export const apiErrorSchema = z
       duplicate: duplicatePersonSchema.optional(),
       /** EXPORT_TOO_LARGE: the most rows an export holds and how many the list has (A-078). */
       exportLimit: z.object({ limit: z.int(), total: z.int() }).optional(),
+      /** CONTRACT_HAS_DEPENDENTS: the receipts and sessions to deal with first (at most 20). */
+      dependents: z
+        .array(z.object({ kind: z.enum(["payment", "booking"]), id: z.uuid(), label: z.string() }))
+        .optional(),
     }),
   })
   .meta({ id: "ApiError" });

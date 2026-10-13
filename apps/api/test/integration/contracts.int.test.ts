@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/platform/db/prisma.js";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
+import { activateContract } from "../../src/modules/contracts/contract-approval.service.js";
 import {
-  activateContract,
   cancelContract,
   createContract,
   getContract,

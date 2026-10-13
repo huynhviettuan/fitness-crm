@@ -10,7 +10,14 @@ import { instant, listOf, pageOf } from "../validation/index.js";
  * without effect, approve or reject by someone else. Which actions need approval, and
  * who approves, is configuration. Actions are added with the features that have them.
  */
-export const APPROVAL_ACTIONS = ["payment.create", "cash.create", "record.delete", "customer.identity"] as const;
+// "contract.create" is a new contract waiting for approval (M4.4, A-120).
+export const APPROVAL_ACTIONS = [
+  "payment.create",
+  "cash.create",
+  "record.delete",
+  "customer.identity",
+  "contract.create",
+] as const;
 export type ApprovalAction = (typeof APPROVAL_ACTIONS)[number];
 
 export const APPROVAL_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"] as const;

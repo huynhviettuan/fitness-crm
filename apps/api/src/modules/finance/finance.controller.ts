@@ -16,6 +16,7 @@ import { submittedSchema } from "@flow/shared/approvals";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
+import { submittedOrDone } from "../../platform/http/submitted.js";
 import {
   ApiErrors,
   ApiIdempotencyKey,
@@ -159,14 +160,4 @@ export class CashTransactionsController {
   ) {
     return submittedOrDone(response, await deleteCashTransaction(actor, id, body));
   }
-}
-
-/** 202 with the approval request it created, or 204 when the change took effect. */
-function submittedOrDone(response: Response, submitted: { approval: { id: string } } | null) {
-  if (!submitted) {
-    response.status(204);
-    return undefined;
-  }
-  response.status(202);
-  return encode(submittedSchema, { approval: { id: submitted.approval.id, status: "PENDING" } });
 }

@@ -77,7 +77,8 @@ async function seed(prisma: typeof client) {
   const { env } = await import("../src/platform/env.js");
   const { calendarDateInTimeZone } = await import("@flow/shared/validation");
   const { createCustomer } = await import("../src/modules/customers/customer.service.js");
-  const { activateContract, createContract } = await import("../src/modules/contracts/contract.service.js");
+  const { createContract } = await import("../src/modules/contracts/contract.service.js");
+  const { activateContract } = await import("../src/modules/contracts/contract-approval.service.js");
   const { createService, saveTiers } = await import("../src/modules/services/service.service.js");
   const { createEmployee: addEmployee } = await import("../src/modules/employees/employee.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");

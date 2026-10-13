@@ -4,6 +4,7 @@ import { calendarDateInTimeZone } from "../validation/index.js";
 import {
   canActivate,
   canCancel,
+  canUnapprove,
   contractEndDate,
   contractFigures,
   effectiveStatus,
@@ -47,12 +48,18 @@ describe("effective status (T-018, INT-008)", () => {
 
 describe("allowed actions by status", () => {
   it.each([
-    ["DRAFT", { edit: true, activate: true, cancel: true }],
-    ["ACTIVE", { edit: false, activate: false, cancel: true }],
-    ["EXPIRED", { edit: false, activate: false, cancel: false }],
-    ["CANCELLED", { edit: false, activate: false, cancel: false }],
+    ["DRAFT", { edit: true, activate: true, cancel: true, unapprove: false }],
+    ["ACTIVE", { edit: false, activate: false, cancel: true, unapprove: true }],
+    ["EXPIRED", { edit: false, activate: false, cancel: false, unapprove: false }],
+    ["CANCELLED", { edit: false, activate: false, cancel: false, unapprove: false }],
+    ["REJECTED", { edit: false, activate: false, cancel: false, unapprove: false }],
   ] as const)("%s", (status, expected) => {
-    expect({ edit: isEditable(status), activate: canActivate(status), cancel: canCancel(status) }).toEqual(expected);
+    expect({
+      edit: isEditable(status),
+      activate: canActivate(status),
+      cancel: canCancel(status),
+      unapprove: canUnapprove(status),
+    }).toEqual(expected);
   });
 });
 

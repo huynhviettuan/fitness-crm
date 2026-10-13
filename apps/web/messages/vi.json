@@ -54,10 +54,11 @@
       "DISABLED": "Đã vô hiệu hóa"
     },
     "contract": {
-      "DRAFT": "Nháp",
+      "DRAFT": "Chờ duyệt",
       "ACTIVE": "Đang hiệu lực",
       "EXPIRED": "Hết hạn",
-      "CANCELLED": "Đã hủy"
+      "CANCELLED": "Đã hủy",
+      "REJECTED": "Đã từ chối"
     },
     "booking": {
       "BOOKED": "Đã đặt",
@@ -151,7 +152,12 @@
     "back": "Quay lại",
     "exportExcel": "Xuất Excel",
     "exporting": "Đang xuất…",
-    "exportTooLarge": "Danh sách có {total} dòng, mỗi lần xuất tối đa {limit} dòng. Hãy lọc bớt trước."
+    "exportTooLarge": "Danh sách có {total} dòng, mỗi lần xuất tối đa {limit} dòng. Hãy lọc bớt trước.",
+    "blockedBy": "Cần xóa các mục sau trước:",
+    "dependentKinds": {
+      "payment": "Phiếu thu",
+      "booking": "Buổi tập"
+    }
   },
   "auth": {
     "title": "Đăng nhập",
@@ -552,7 +558,8 @@
     "PERSON_ALREADY_MERGED": "Hồ sơ này đã được gộp vào hồ sơ khác.",
     "EXPORT_TOO_LARGE": "Danh sách quá dài để xuất. Hãy lọc bớt trước.",
     "STEP_LOCKED": "Bước này đã quá hạn và hết thời gian gia hạn, nên đã khóa là Không thực hiện.",
-    "DISCOUNT_ABOVE_LIMIT": "Mức giảm giá vượt ngưỡng vai trò của bạn được duyệt. Cần người có ngưỡng cao hơn duyệt."
+    "DISCOUNT_ABOVE_LIMIT": "Mức giảm giá vượt ngưỡng vai trò của bạn được duyệt. Cần người có ngưỡng cao hơn duyệt.",
+    "CONTRACT_HAS_DEPENDENTS": "Hợp đồng còn phiếu thu hoặc buổi tập. Hãy xóa chúng trước."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -637,10 +644,10 @@
     "editDescription": "Chỉ hợp đồng nháp mới sửa được.",
     "created": "Đã tạo hợp đồng {code}",
     "updated": "Đã lưu thay đổi",
-    "activate": "Kích hoạt",
-    "activateTitle": "Kích hoạt hợp đồng {code}?",
-    "activateBody": "Hợp đồng bắt đầu có hiệu lực. Sau khi kích hoạt, gói tập, giá trị, số buổi và thời hạn không sửa được nữa.",
-    "activated": "Đã kích hoạt hợp đồng {code}",
+    "activate": "Duyệt",
+    "activateTitle": "Duyệt hợp đồng {code}?",
+    "activateBody": "Hợp đồng có hiệu lực và đặt lịch được. Sau khi duyệt không sửa được gói, giá trị, số buổi và ngày nữa.",
+    "activated": "Đã duyệt hợp đồng {code}",
     "cancel": "Hủy hợp đồng",
     "cancelTitle": "Hủy hợp đồng {code}?",
     "cancelBody": "Hợp đồng sẽ không dùng được nữa và các lịch hẹn sắp tới của hợp đồng cũng bị hủy. Không thể hoàn tác.",
@@ -693,7 +700,9 @@
       "signature": "Chữ ký",
       "paymentDueOn": "Hạn thanh toán",
       "notes": "Ghi chú",
-      "imported": "Hợp đồng chuyển từ hệ thống cũ"
+      "imported": "Hợp đồng chuyển từ hệ thống cũ",
+      "createdBy": "Người tạo",
+      "approval": "Duyệt"
     },
     "cancelBookingsList": "{count, plural, other {# lịch hẹn sau sẽ bị hủy:}}",
     "sessionHistory": "Lịch sử buổi tập",
@@ -786,7 +795,23 @@
     "signedLine": "Đã ký {on} · {by}",
     "bonusLine": "{sessions} buổi, {months} tháng, {days} ngày",
     "back": "Về hồ sơ khách hàng",
-    "priceAndStaff": "Giá và phụ trách"
+    "priceAndStaff": "Giá và phụ trách",
+    "reject": "Từ chối",
+    "rejectTitle": "Từ chối hợp đồng {code}?",
+    "rejectBody": "Hợp đồng không có hiệu lực và không sửa được. Nếu nhập sai, hãy xóa và tạo hợp đồng khác.",
+    "rejectReason": "Lý do",
+    "rejected": "Đã từ chối hợp đồng {code}",
+    "unapprove": "Hủy duyệt",
+    "unapproveTitle": "Đưa hợp đồng {code} về chờ duyệt?",
+    "unapproveBody": "Chỉ làm được khi hợp đồng chưa có phiếu thu và chưa có buổi tập nào. Hợp đồng cần được duyệt lại.",
+    "unapproveReason": "Lý do",
+    "unapproved": "Hợp đồng {code} đang chờ duyệt lại",
+    "delete": "Xóa hợp đồng",
+    "deleteTitle": "Xóa hợp đồng {code}?",
+    "deleteBody": "Hợp đồng chuyển vào thùng rác và biến khỏi mọi danh sách, báo cáo. Phải xóa phiếu thu và buổi tập trước.",
+    "approvalPending": "Đang chờ người duyệt",
+    "approvalApproved": "Đã duyệt bởi {name}",
+    "approvalRejected": "Bị từ chối bởi {name}"
   },
   "employees": {
     "title": "Nhân viên",
@@ -1043,9 +1068,11 @@
       "contract": {
         "view": "Xem hợp đồng",
         "create": "Tạo và sửa hợp đồng nháp",
-        "approve": "Duyệt (kích hoạt) hợp đồng",
+        "approve": "Duyệt hợp đồng",
         "cancel": "Hủy hợp đồng",
-        "export": "Xuất danh sách hợp đồng"
+        "export": "Xuất danh sách hợp đồng",
+        "unapprove": "Đưa hợp đồng đã duyệt về chờ duyệt",
+        "delete": "Xóa hợp đồng"
       },
       "booking": {
         "view": "Xem lịch PT và buổi tập",
@@ -1211,7 +1238,8 @@
       "auditFailReasons": "Tiêu chí audit chưa đạt",
       "needDetails": "Chi tiết nhu cầu (có mã số)",
       "stepReopenReasons": "Lý do gỡ tick",
-      "exceptionPriceReasons": "Lý do giá ngoại lệ"
+      "exceptionPriceReasons": "Lý do giá ngoại lệ",
+      "unapproveReasons": "Lý do hủy duyệt hợp đồng"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -1295,7 +1323,8 @@
     "types": {
       "payment": "Phiếu thu",
       "cash_transaction": "Khoản thu chi",
-      "person": "Hồ sơ đã gộp"
+      "person": "Hồ sơ đã gộp",
+      "contract": "Hợp đồng"
     },
     "fields": {
       "type": "Loại",
@@ -1418,7 +1447,8 @@
       "payment_create": "Phiếu thu",
       "cash_create": "Khoản thu chi",
       "record_delete": "Xóa dữ liệu",
-      "customer_identity": "Sửa thông tin khách hàng"
+      "customer_identity": "Sửa thông tin khách hàng",
+      "contract_create": "Hợp đồng mới"
     },
     "fields": {
       "submittedAt": "Gửi lúc",
@@ -1440,7 +1470,8 @@
       "payment_create": "Khoản thanh toán được tính vào số đã trả và công nợ của hợp đồng.",
       "cash_create": "Khoản này được tính vào tổng thu chi.",
       "record_delete": "Dữ liệu được xóa và chuyển vào thùng rác.",
-      "customer_identity": "Thông tin mới của khách hàng có hiệu lực."
+      "customer_identity": "Thông tin mới của khách hàng có hiệu lực.",
+      "contract_create": "Hợp đồng có hiệu lực và đặt lịch được. Sau khi duyệt không sửa được nữa."
     },
     "approved": "Đã duyệt",
     "rejectTitle": "Từ chối {name}?",

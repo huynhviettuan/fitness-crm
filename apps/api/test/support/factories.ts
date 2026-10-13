@@ -209,6 +209,7 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   { id: "c0000000-0000-4000-8000-000000000010", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000020", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000021", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000022", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   ...[
     ["c0000000-0000-4000-8000-000000000201", "Ban điều hành", "Executive board"],
     ["c0000000-0000-4000-8000-000000000202", "Studio", "Studio"],
@@ -278,14 +279,19 @@ export const SEEDED_APPROVAL_RULES: { action: ApprovalAction; required: boolean;
   { action: "cash.create", required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] },
   { action: "record.delete", required: true, approvers: ["ADMIN"] },
   { action: "customer.identity", required: true, approvers: ["FITNESS_MANAGER"] },
+  { action: "contract.create", required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] },
 ];
 
 /**
  * Switches the approval matrix off, for tests about something else (payments, debt,
- * deletion). resetDatabase() switches it back on.
+ * deletion). resetDatabase() switches it back on. A new contract keeps waiting for its approver, which the helpers
+ * that need an active contract provide.
  */
 export async function withoutApprovals(): Promise<void> {
-  await prisma.approvalRule.updateMany({ data: { required: false } });
+  await prisma.approvalRule.updateMany({
+    where: { actionType: { not: "contract.create" } },
+    data: { required: false },
+  });
 }
 
 /** An option's id by its Vietnamese label; "Khác" is each list's Other. */

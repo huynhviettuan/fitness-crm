@@ -32,10 +32,12 @@ enum Locale {
 }
 
 // Stored contract statuses; EXPIRED is derived from end_date (T-018).
+// DRAFT is "pending approval" (A-120); REJECTED was turned down by the approver (A-121).
 enum ContractStatus {
   DRAFT
   ACTIVE
   CANCELLED
+  REJECTED
 }
 
 // D-019: one record per person; a lead becomes a customer at Show.
@@ -176,7 +178,9 @@ model User {
   sessions           AuthSession[]
   accounts           AuthAccount[]
   auditEvents        AuditEvent[]
-  contractsCreated   Contract[]
+  contractsCreated   Contract[]               @relation("ContractCreatedBy")
+  contractsApproved  Contract[]               @relation("ContractApprovedBy")
+  contractsDeleted   Contract[]               @relation("ContractDeletedBy")
   // Brief §8.4: the employee this login belongs to, at most one.
   employee           Employee?
   sessionsCheckedIn  Session[]                @relation("SessionCheckedInBy")
@@ -398,6 +402,7 @@ model Option {
   inquiryNeedGroups    LeadInquiry[]              @relation("InquiryNeedGroup")
   personMerges         PersonMerge[]
   contractExceptions   Contract[]                 @relation("ContractExceptionReason")
+  contractsDeletedFor  Contract[]                 @relation("ContractDeleteReason")
 
   @@unique([listKey, labelVi])
   @@unique([listKey, code])
@@ -986,9 +991,20 @@ model Contract {
   idempotencyKey      String         @unique @map("idempotency_key")
   requestFingerprint  String?        @map("request_fingerprint")
   createdById         String         @map("created_by") @db.Uuid
-  createdBy           User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy           User           @relation("ContractCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  // Approval (A-121): who turned a pending contract into an active one, and when.
+  approvedById        String?        @map("approved_by") @db.Uuid
+  approvedBy          User?          @relation("ContractApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedAt          DateTime?      @map("approved_at") @db.Timestamptz(3)
+  // Deletion (A-125, D-035): the row stays, marked, and is in the trash.
+  deletedAt           DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  deletedById         String?        @map("deleted_by") @db.Uuid
+  deletedBy           User?          @relation("ContractDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+  deleteReasonId      String?        @map("delete_reason_option_id") @db.Uuid
+  deleteReason        Option?        @relation("ContractDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
+  deleteReasonNote    String?        @map("delete_reason_note")
 
   bookings   Booking[]
   payments   Payment[]
@@ -998,6 +1014,7 @@ model Contract {
   @@index([customerId])
   @@index([branchId])
   @@index([serviceId])
+  @@index([deletedAt])
   @@map("contracts")
 }
 

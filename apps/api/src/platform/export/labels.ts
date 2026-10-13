@@ -18,10 +18,11 @@ const STATUS = {
     DISABLED: { vi: "Đã vô hiệu hóa", en: "Disabled" },
   },
   contract: {
-    DRAFT: { vi: "Nháp", en: "Draft" },
+    DRAFT: { vi: "Chờ duyệt", en: "Pending approval" },
     ACTIVE: { vi: "Đang hiệu lực", en: "Active" },
     EXPIRED: { vi: "Hết hạn", en: "Expired" },
     CANCELLED: { vi: "Đã hủy", en: "Cancelled" },
+    REJECTED: { vi: "Đã từ chối", en: "Rejected" },
   },
   approval: {
     PENDING: { vi: "Chờ duyệt", en: "Pending" },

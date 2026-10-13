@@ -178,6 +178,8 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     stepReopenReasons: Prisma.sql`SELECT "metadata"->>'note' AS note, "created_at" AS at FROM "audit_events" WHERE "action" = 'lead.step_reopened' AND "metadata"->>'reason' = (SELECT "label_vi" FROM "options" WHERE "id" = ${id}::uuid)`,
     customerGroups: Prisma.sql`SELECT "customer_group_note" AS note, "updated_at" AS at FROM "customers" WHERE "customer_group_option_id" = ${id}::uuid`,
     exceptionPriceReasons: Prisma.sql`SELECT "exception_note" AS note, "created_at" AS at FROM "contracts" WHERE "exception_reason_option_id" = ${id}::uuid`,
+    // The note of an unapproval is in its history entry (A-124).
+    unapproveReasons: Prisma.sql`SELECT "metadata"->>'note' AS note, "created_at" AS at FROM "audit_events" WHERE "action" = 'contract.unapproved' AND "metadata"->>'reason' = (SELECT "label_vi" FROM "options" WHERE "id" = ${id}::uuid)`,
   };
   const rows = await prisma.$queryRaw<{ note: string; count: number; lastUsedAt: Date }[]>`
     SELECT MIN(btrim(note)) AS note, COUNT(*)::int AS count, MAX(at) AS "lastUsedAt"

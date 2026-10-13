@@ -97,7 +97,7 @@ Hideable customer fields so far: phone, email, ID document, health note, and (M2
 | System | `user.manage`, `role.manage`, `branch.manage` |
 | Leads | `lead.view`, `lead.create`, `lead.manage` (edit and change status; Admin, Fitness Manager, Consulting, Receptionist; M2 slice 1), `lead.assign` (reassign, told of new leads; Admin, Fitness Manager), `lead.receive` (in the round-robin; Consulting; M2 slice 2), `lead.merge` (merge two records of one person; Admin, Fitness Manager; M2 slice 5, A-065), `script.manage` (the script library; Admin, Fitness Manager; M2 slice 6, A-072), `lead.audit` (the automatic consulting audit; Admin, Fitness Manager; M3 slice 2, A-084), `lead.untick` (remove the tick of a consulting step; Admin only; M2.7, A-102); `lead.assign` also switches a consultant's receiving and sets the turn weight (M2.7, A-100) |
 | Customers | `customer.view`, `customer.manage` |
-| Contract operations | `contract.view`, `contract.create`, `contract.approve`, `contract.cancel` |
+| Contract operations | `contract.view`, `contract.create`, `contract.approve` (and the matrix action `contract.create` decides who may), `contract.cancel`, `contract.unapprove` and `contract.delete` (Admin only, M4.4a) |
 | PT schedule | `booking.view`, `booking.manage`, `session.checkIn`, `session.complete` |
 | Employees | `employee.view`, `employee.manage` (profiles and working schedules, M1 slice 6; were `trainer.*`) |
 | Cash book | `payment.view`, `payment.record`, `payment.delete`, `cash.manage`, `cash.delete` |

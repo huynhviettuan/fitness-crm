@@ -315,9 +315,9 @@ export const test = base.extend<Fixtures>({
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).
-      await prisma.trashEntry.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds] } } });
+      await prisma.trashEntry.deleteMany({ where: { entityId: { in: [...paymentIds, ...cashIds, ...contractIds] } } });
       await prisma.approvalRequest.deleteMany({
-        where: { entityId: { in: [...paymentIds, ...cashIds, ...customerIds] } },
+        where: { entityId: { in: [...paymentIds, ...cashIds, ...customerIds, ...contractIds] } },
       });
       await prisma.payment.deleteMany({ where: { id: { in: paymentIds } } });
       await prisma.cashTransaction.deleteMany({ where: { id: { in: cashIds } } });

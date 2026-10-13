@@ -197,7 +197,10 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decided (working assumptions):** the creator needs the customer in their scope (A-117); rounding is whole VND, half up, at each step (A-118). Statuses Frozen and On hold arrive with M4.6 and M8; "Pending" keeps its stored name `DRAFT`.
 - **Depends on:** M4.2.
 
-### M4.4 Approval, lock, contract list and detail
+### M4.4 Approval, lock, contract list and detail (built as M4.4a and M4.4b)
+
+- **M4.4a (done 2026-10-14, A-120 to A-125, OQ-041, OQ-042):** the approval, rejection, lead status, the lock (service and database trigger), unapprove, and delete.
+- **M4.4b (next):** the list with every §5.3 column, the totals row and the filters, the detail tabs, Print, and Update note.
 
 - **Builds:**
   - **Approval:** approve or reject with a reason through the approval engine, and the creator can't approve. An approved contract is locked: an edit is refused in the service and by a database trigger, even for admin.

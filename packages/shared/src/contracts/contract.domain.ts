@@ -3,8 +3,11 @@
 import { formatCode } from "../parameters/parameter.schema.js";
 import { endDateOf } from "../services/service.domain.js";
 
-/** Stored statuses; EXPIRED is derived from the end date (T-018). Matches the database enum. */
-export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "CANCELLED"] as const;
+/**
+ * Stored statuses; EXPIRED is derived from the end date (T-018). Matches the database enum. DRAFT is "pending approval"
+ * (A-120); REJECTED is a contract the approver turned down (A-121).
+ */
+export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "CANCELLED", "REJECTED"] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 
 export type EffectiveContractStatus = ContractStatus | "EXPIRED";
@@ -39,8 +42,14 @@ export function isEditable(status: EffectiveContractStatus): boolean {
   return status === "DRAFT";
 }
 
+/** Only a contract waiting for approval is approved or rejected (D-018). */
 export function canActivate(status: EffectiveContractStatus): boolean {
   return status === "DRAFT";
+}
+
+/** Unapproving sends an approved contract back to pending (A-124). */
+export function canUnapprove(status: EffectiveContractStatus): boolean {
+  return status === "ACTIVE";
 }
 
 /** An expired contract is not cancelled; it has already ended (docs/05 state diagram). */

@@ -36,7 +36,9 @@ test.describe("approvals as a Fitness Manager", () => {
     await expect(approvalsPage.row(title)).toHaveCount(0);
 
     await approvalsPage.goto("mine");
-    await expect(approvalsPage.row(title)).toContainText(labels.status.approval.PENDING);
+    // The contract's own approval is in the list too: this is the receipt's.
+    const receipt = approvalsPage.row(title).filter({ hasText: a.actions.payment_create });
+    await expect(receipt).toContainText(labels.status.approval.PENDING);
     await expect(approvalsPage.approveButton(title)).toHaveCount(0);
 
     await contractDetailPage.goto(contract.id);

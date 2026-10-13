@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Actor } from "../../src/platform/auth/session.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
-import { activateContract, createContract } from "../../src/modules/contracts/contract.service.js";
+import { createContract } from "../../src/modules/contracts/contract.service.js";
+import { activateContract } from "../../src/modules/contracts/contract-approval.service.js";
 import { createEmployee, replaceShifts } from "../../src/modules/employees/employee.service.js";
 import { createBooking } from "../../src/modules/bookings/booking.service.js";
 import { createService, saveTiers } from "../../src/modules/services/service.service.js";

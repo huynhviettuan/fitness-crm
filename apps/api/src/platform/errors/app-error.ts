@@ -2,6 +2,8 @@ import { ERROR_HTTP_STATUS, type DuplicatePerson, type ErrorCode, type FieldErro
 
 export type { ErrorCode, FieldErrors };
 
+type Dependent = { kind: "payment" | "booking"; id: string; label: string };
+
 export class AppError extends Error {
   readonly code: ErrorCode;
   readonly fieldErrors?: FieldErrors;
@@ -9,6 +11,8 @@ export class AppError extends Error {
   readonly duplicate?: DuplicatePerson;
   /** EXPORT_TOO_LARGE: the row limit and the list's row count (A-078). */
   readonly exportLimit?: { limit: number; total: number };
+  /** CONTRACT_HAS_DEPENDENTS: what blocks the deletion. */
+  readonly dependents?: Dependent[];
 
   constructor(
     code: ErrorCode,
@@ -17,6 +21,7 @@ export class AppError extends Error {
       fieldErrors?: FieldErrors;
       duplicate?: DuplicatePerson;
       exportLimit?: { limit: number; total: number };
+      dependents?: Dependent[];
     },
   ) {
     super(options?.message ?? code);
@@ -25,6 +30,7 @@ export class AppError extends Error {
     this.fieldErrors = options?.fieldErrors;
     this.duplicate = options?.duplicate;
     this.exportLimit = options?.exportLimit;
+    this.dependents = options?.dependents;
   }
 
   get httpStatus(): number {

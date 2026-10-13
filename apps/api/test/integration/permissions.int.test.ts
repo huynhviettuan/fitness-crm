@@ -11,7 +11,8 @@ import {
   listCustomers,
   updateCustomer,
 } from "../../src/modules/customers/customer.service.js";
-import { activateContract, createContract, listContracts } from "../../src/modules/contracts/contract.service.js";
+import { createContract, listContracts } from "../../src/modules/contracts/contract.service.js";
+import { activateContract } from "../../src/modules/contracts/contract-approval.service.js";
 import { createEmployee } from "../../src/modules/employees/employee.service.js";
 import { createService, saveTiers } from "../../src/modules/services/service.service.js";
 import { listBookings } from "../../src/modules/bookings/booking.service.js";

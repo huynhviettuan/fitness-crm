@@ -37,8 +37,8 @@ async function seed(prisma: typeof client) {
   const { createEmployee, replaceShifts, updateEmployee } =
     await import("../src/modules/employees/employee.service.js");
   const { createCustomer, updateCustomer } = await import("../src/modules/customers/customer.service.js");
-  const { activateContract, cancelContract, createContract } =
-    await import("../src/modules/contracts/contract.service.js");
+  const { cancelContract, createContract } = await import("../src/modules/contracts/contract.service.js");
+  const { activateContract } = await import("../src/modules/contracts/contract-approval.service.js");
   const { createService, saveTiers } = await import("../src/modules/services/service.service.js");
   const { cancelBooking, createBooking, markNoShow } = await import("../src/modules/bookings/booking.service.js");
   const { checkIn, completeSession } = await import("../src/modules/sessions/session.service.js");

@@ -170,4 +170,50 @@ test.describe("A10 contract input errors", () => {
     });
     expect(unknown.status()).toBe(404);
   });
+
+  test("approving, rejecting, unapproving, and deleting are for their roles only (M4.4a, D-018, A-124, A-125)", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const seller = await apiAs("FITNESS_MANAGER");
+    const customer = await createCustomerViaApi(reception, testTag);
+    const pending = await createContractViaApi(seller, customer.id);
+    const reason = { reasonId: randomUUID() };
+
+    // No permission: 403. Nobody decides their own contract: 403 for the seller too.
+    for (const role of ["RECEPTIONIST", "PT", "ACCOUNTANT", "CONSULTING"] as const) {
+      const api = await apiAs(role);
+      expect((await api.post(`/api/v1/contracts/${pending.id}/activate`)).status()).toBe(403);
+      expect((await api.post(`/api/v1/contracts/${pending.id}/reject`, { data: reason })).status()).toBe(403);
+    }
+    expect((await seller.post(`/api/v1/contracts/${pending.id}/activate`)).status()).toBe(403);
+
+    // Unapproving and deleting are Admin's: a Fitness Manager gets 403 whatever the contract.
+    expect((await seller.post(`/api/v1/contracts/${pending.id}/unapprove`, { data: reason })).status()).toBe(403);
+    expect((await seller.delete(`/api/v1/contracts/${pending.id}`, { data: reason })).status()).toBe(403);
+  });
+
+  test("a reason is required to reject, unapprove, or delete, and an unknown contract is 404", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const admin = await apiAs("ADMIN");
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id);
+
+    for (const response of [
+      await admin.post(`/api/v1/contracts/${contract.id}/reject`, { data: {} }),
+      await admin.post(`/api/v1/contracts/${contract.id}/unapprove`, { data: {} }),
+      await admin.delete(`/api/v1/contracts/${contract.id}`, { data: {} }),
+    ]) {
+      expect(response.status()).toBe(400);
+      expect(await response.json()).toMatchObject({ code: "VALIDATION_FAILED" });
+    }
+    const unknown = randomUUID();
+    expect((await admin.post(`/api/v1/contracts/${unknown}/activate`)).status()).toBe(404);
+    expect((await admin.delete(`/api/v1/contracts/${unknown}`, { data: { reasonId: randomUUID() } })).status()).toBe(
+      404,
+    );
+  });
 });

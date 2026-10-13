@@ -1,9 +1,10 @@
 import "server-only";
 import { unstable_rethrow } from "next/navigation";
-import { isApiError, type DuplicatePerson, type ErrorCode, type FieldErrors } from "@/lib/api/errors";
+import { isApiError, type Dependents, type DuplicatePerson, type ErrorCode, type FieldErrors } from "@/lib/api/errors";
 
 export type ActionResult<T = void> =
-  { ok: true; data: T } | { ok: false; code: ErrorCode; fieldErrors?: FieldErrors; duplicate?: DuplicatePerson };
+  | { ok: true; data: T }
+  | { ok: false; code: ErrorCode; fieldErrors?: FieldErrors; duplicate?: DuplicatePerson; dependents?: Dependents };
 
 /**
  * Runs a Server Action body and turns API errors into a serializable result the form
@@ -21,6 +22,7 @@ export async function runAction<T>(body: () => Promise<T>): Promise<ActionResult
         code: error.code,
         fieldErrors: error.fieldErrors,
         ...(error.duplicate ? { duplicate: error.duplicate } : {}),
+        ...(error.dependents ? { dependents: error.dependents } : {}),
       };
     }
     console.error("Unhandled Server Action error", error);

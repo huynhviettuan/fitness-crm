@@ -54,10 +54,11 @@
       "DISABLED": "Disabled"
     },
     "contract": {
-      "DRAFT": "Draft",
+      "DRAFT": "Pending approval",
       "ACTIVE": "Active",
       "EXPIRED": "Expired",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "REJECTED": "Rejected"
     },
     "booking": {
       "BOOKED": "Booked",
@@ -151,7 +152,12 @@
     "back": "Back",
     "exportExcel": "Export Excel",
     "exporting": "Exporting…",
-    "exportTooLarge": "This list has {total} rows; one export holds at most {limit}. Narrow the filters first."
+    "exportTooLarge": "This list has {total} rows; one export holds at most {limit}. Narrow the filters first.",
+    "blockedBy": "These must be deleted first:",
+    "dependentKinds": {
+      "payment": "Receipt",
+      "booking": "Session"
+    }
   },
   "auth": {
     "title": "Sign in",
@@ -552,7 +558,8 @@
     "PERSON_ALREADY_MERGED": "This record was already merged into another.",
     "EXPORT_TOO_LARGE": "The list is too long to export. Narrow the filters first.",
     "STEP_LOCKED": "This step is past its deadline and grace period, so it is locked as Not done.",
-    "DISCOUNT_ABOVE_LIMIT": "The discount is above what your role may approve. A role with a higher limit must approve it."
+    "DISCOUNT_ABOVE_LIMIT": "The discount is above what your role may approve. A role with a higher limit must approve it.",
+    "CONTRACT_HAS_DEPENDENTS": "The contract has receipts or sessions. Delete them first."
   },
   "validation": {
     "required": "Required.",
@@ -637,10 +644,10 @@
     "editDescription": "Only draft contracts can be edited.",
     "created": "Contract {code} created",
     "updated": "Changes saved",
-    "activate": "Activate",
-    "activateTitle": "Activate contract {code}?",
-    "activateBody": "The contract takes effect. After activation, its package, value, sessions, and dates can't be edited.",
-    "activated": "Contract {code} activated",
+    "activate": "Approve",
+    "activateTitle": "Approve contract {code}?",
+    "activateBody": "The contract takes effect and can be booked. After approval its package, value, sessions, and dates can't be edited.",
+    "activated": "Contract {code} approved",
     "cancel": "Cancel contract",
     "cancelTitle": "Cancel contract {code}?",
     "cancelBody": "The contract can't be used anymore, and its upcoming bookings are cancelled too. This can't be undone.",
@@ -693,7 +700,9 @@
       "signature": "Signature",
       "paymentDueOn": "Payment due",
       "notes": "Notes",
-      "imported": "Brought over from the old system"
+      "imported": "Brought over from the old system",
+      "createdBy": "Created by",
+      "approval": "Approval"
     },
     "cancelBookingsList": "{count, plural, one {This booking will be cancelled:} other {These # bookings will be cancelled:}}",
     "sessionHistory": "Session history",
@@ -786,7 +795,23 @@
     "signedLine": "Signed {on} · {by}",
     "bonusLine": "{sessions} sessions, {months} months, {days} days",
     "back": "Back to the customer",
-    "priceAndStaff": "Price and staff"
+    "priceAndStaff": "Price and staff",
+    "reject": "Reject",
+    "rejectTitle": "Reject contract {code}?",
+    "rejectBody": "The contract has no effect and can't be edited. Delete it and create another if it was wrong.",
+    "rejectReason": "Reason",
+    "rejected": "Contract {code} rejected",
+    "unapprove": "Unapprove",
+    "unapproveTitle": "Send contract {code} back to pending approval?",
+    "unapproveBody": "Only possible while the contract has no receipts and no recorded sessions. It needs approval again.",
+    "unapproveReason": "Reason",
+    "unapproved": "Contract {code} is waiting for approval again",
+    "delete": "Delete contract",
+    "deleteTitle": "Delete contract {code}?",
+    "deleteBody": "The contract moves to the trash and leaves every list and report. Receipts and sessions must be deleted first.",
+    "approvalPending": "Waiting for an approver",
+    "approvalApproved": "Approved by {name}",
+    "approvalRejected": "Rejected by {name}"
   },
   "employees": {
     "title": "Employees",
@@ -1043,9 +1068,11 @@
       "contract": {
         "view": "View contracts",
         "create": "Create and edit draft contracts",
-        "approve": "Approve (activate) contracts",
+        "approve": "Approve contracts",
         "cancel": "Cancel contracts",
-        "export": "Export the contracts"
+        "export": "Export the contracts",
+        "unapprove": "Send an approved contract back to pending",
+        "delete": "Delete contracts"
       },
       "booking": {
         "view": "View the PT calendar and sessions",
@@ -1211,7 +1238,8 @@
       "auditFailReasons": "Audit criteria not met",
       "needDetails": "Need details (coded)",
       "stepReopenReasons": "Reasons to remove a tick",
-      "exceptionPriceReasons": "Exception price reasons"
+      "exceptionPriceReasons": "Exception price reasons",
+      "unapproveReasons": "Reasons to unapprove a contract"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -1295,7 +1323,8 @@
     "types": {
       "payment": "Receipt",
       "cash_transaction": "Income or expense",
-      "person": "Merged record"
+      "person": "Merged record",
+      "contract": "Contract"
     },
     "fields": {
       "type": "Kind",
@@ -1418,7 +1447,8 @@
       "payment_create": "Receipt",
       "cash_create": "Income or expense",
       "record_delete": "Deletion",
-      "customer_identity": "Customer details"
+      "customer_identity": "Customer details",
+      "contract_create": "New contract"
     },
     "fields": {
       "submittedAt": "Submitted",
@@ -1440,7 +1470,8 @@
       "payment_create": "The payment counts toward the contract's paid amount and debt.",
       "cash_create": "The entry counts toward the totals.",
       "record_delete": "The record is deleted and moved to the trash.",
-      "customer_identity": "The customer's new details take effect."
+      "customer_identity": "The customer's new details take effect.",
+      "contract_create": "The contract takes effect and can be booked. After approval it can't be edited."
     },
     "approved": "Approved",
     "rejectTitle": "Reject {name}?",

@@ -2,6 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { labels } from "../support/labels";
 import { AppShell } from "./app-shell";
 import { BookingsTable, bookingForm, type BookingFormDialog } from "./bookings";
+import { OTHER_OPTION_LABEL } from "../support/options";
 import { PaymentDialog, PaymentsTable } from "./finance";
 
 const form = labels.contracts.form;
@@ -87,6 +88,27 @@ export class ContractDetailPage {
 
   action(name: string): Locator {
     return this.shell.main.getByRole("button", { name, exact: true });
+  }
+
+  /** Rejecting or unapproving: the action, then a reason from its list ("Khác") with a note, then the same button. */
+  async actWithReason(name: string, reasonLabel: string, note: string): Promise<void> {
+    await this.action(name).click();
+    const dialog = this.page.getByRole("dialog");
+    await dialog.getByRole("combobox", { name: reasonLabel, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
+    await dialog.getByRole("button", { name, exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+  }
+
+  /** Deleting: the delete action, a reason ("Khác") with a note, and the dialog's own delete button. */
+  async deleteWithReason(note: string): Promise<void> {
+    await this.action(labels.contracts.delete).click();
+    const dialog = this.page.getByRole("alertdialog");
+    await dialog.getByRole("combobox", { name: labels.finance.deleteReason, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
+    await dialog.getByRole("button", { name: labels.finance.delete, exact: true }).click();
   }
 
   /** Clicks an action, then confirms it in its confirmation dialog. */

@@ -1,5 +1,13 @@
 # Documentation Changelog
 
+## 2026-10-14 — M4.4a: contract approval, lock, unapprove, delete
+
+- **Approval through the engine** (D-018, A-120, A-121): a new contract is a request in the approval inbox (matrix action `contract.create`: Fitness Manager and Admin); approving makes it active, rejecting needs a reason and moves it to Rejected. Nobody approves their own; the approver's discount limit is checked (A-112). The contract page has Approve and Reject.
+- **The lock** (D-022, brief §5.4, A-122): an approved contract cannot be changed, by the service or by a database trigger, even by Admin.
+- **Lead status** (A-123): the first approved contract turns the customer's status to "Đã ký hợp đồng".
+- **Unapprove and delete** (A-124, A-125): Admin sends an approved contract back to pending when no receipts or sessions exist, and deletes to the trash with a reason (the deletion waits for a second approver); receipts and sessions are listed when they block it.
+- **Open**: OQ-041 (rejected contract), OQ-042 (unapprove with receipts or sessions). Docs 04, 07, 09, 13, 16, 18, 28; E2E-105 rewritten, E2E-160, E2E-161.
+
 ## 2026-10-12 — M4.3: the contract model and creation
 
 - **The price comes from the tier** (BR-301, AC-10): a contract takes a service and a session count; the unit price, total, end date, and name ("Hybrid Training 30 buổi") are worked out from the version of the prices in force on the contract date. A count no tier covers is refused (A-107).

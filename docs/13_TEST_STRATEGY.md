@@ -31,7 +31,9 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 | E2E-103 | "Khác" without note refused; option deactivated stays on old record (`e2e/configuration.spec.ts`, `e2e/finance.spec.ts`) | AC-03, AC-04 |
 | E2E-104 | Contract form: any session count → tier price, end date, name in the price panel; the draft is created with a generated code and approved by someone else, never its creator (`e2e/contracts.spec.ts`; the pricing rules in `apps/api/test/integration/contracts.int.test.ts`) | AC-10, D-018 |
 | E2E-159 | An agreed price is an exception with a reason; it shows against the tier price, and a role whose discount limit it exceeds cannot activate it, Admin can | AC-10, A-112, A-113 |
-| E2E-105 | Approved contract cannot be edited by admin | AC-11 |
+| E2E-105 | Approved contract cannot be edited by admin: no Edit button, `409 CONTRACT_NOT_EDITABLE`, and the database trigger (`apps/api/test/integration/contract-approval.int.test.ts`, INT-010) | AC-11 |
+| E2E-160 | The approver approves or rejects from the contract page; a rejection takes a reason and shows it | D-018, A-121 |
+| E2E-161 | Admin unapproves an approved contract, and deletes one: a receipt blocks it and is listed, a second Admin approves the deletion, and it is gone | A-124, A-125 |
 | E2E-106 | Delete contract with receipts → blocked with list → delete receipts → delete contract → totals drop; both in trash (receipts part: `e2e/history.spec.ts`, M1 slice 4; contracts in M4) | AC-12, AC-13 |
 | E2E-107 | Freeze → booking refused → reactivate → proposed extension → confirm once | AC-14 |
 | E2E-108 | Đã tập and no-show consume 1 and credit PT; Hủy lịch and delete do not; colors | AC-15 |

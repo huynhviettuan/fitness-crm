@@ -57,6 +57,16 @@ export const contractSchema = z
     notes: z.string().nullable(),
     /** Brought over from before the tiers (M4.3): its price is flagged as an exception and it has no service. */
     isImported: z.boolean(),
+    createdBy: z.object({ id: z.uuid(), name: z.string() }),
+    /** Who approved it and when (A-121); null while pending, rejected, or brought over. */
+    approvedBy: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+    approvedAt: instant.nullable(),
+    /** Set when the status is REJECTED: who turned it down, when, and why (A-121). */
+    rejection: z
+      .object({ by: z.object({ id: z.uuid(), name: z.string() }), at: instant, reason: chosenOptionSchema })
+      .nullable(),
+    /** Whether a request waits for an approver (A-120). */
+    approvalPending: z.boolean(),
     // Derived figures (T-012, BR-013, D-011). `totalSessions` is bought plus bonus.
     totalSessions: z.int(),
     openingSessionsUsed: z.int(),

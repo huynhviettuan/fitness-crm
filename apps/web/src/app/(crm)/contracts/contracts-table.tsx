@@ -12,7 +12,7 @@ export type ContractRow = {
   contractCode: string;
   customer: { id: string; customerCode: string; fullName: string };
   packageName: string;
-  status: "DRAFT" | "ACTIVE" | "EXPIRED" | "CANCELLED";
+  status: "DRAFT" | "ACTIVE" | "EXPIRED" | "CANCELLED" | "REJECTED";
   totalSessions: number;
   remainingSessions: number;
   contractValue: number;

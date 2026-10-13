@@ -4,6 +4,14 @@ import { customerRef } from "../customers/person.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { isUniqueViolation } from "../../platform/db/errors.js";
+import {
+  cancelPendingFor,
+  ruleFor,
+  submitForApproval,
+  withPendingConflictMapped,
+} from "../../platform/approvals/approval.engine.js";
+import { encode } from "../../platform/http/encode.js";
+import { moveToTrash } from "../../platform/trash/trash.service.js";
 import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
@@ -12,21 +20,23 @@ import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
-import { chosen, resolveChoice } from "../../platform/options/option.service.js";
+import { chosen, chosenSelect, resolveChoice } from "../../platform/options/option.service.js";
 import { ownCustomers, visibleTo as customersVisibleTo } from "../customers/customer.service.js";
 import { findCustomer } from "../customers/customer.repository.js";
 import * as bookingRepo from "../bookings/booking.repository.js";
+import { addStatusChange } from "../leads/lead.repository.js";
 import { recordPaymentIn } from "../finance/payment.service.js";
 import { validPaidByContract } from "../finance/payment.repository.js";
 import { canApproveDiscount, discountOfOffer, resolveOffers } from "../promotions/promotion.service.js";
 import { onSaleIn, priceAt } from "../services/service.service.js";
 import * as repo from "./contract.repository.js";
 import {
-  canActivate,
   canCancel,
+  canUnapprove,
   contractEndDate,
   contractFigures,
   contractInputSchema,
+  contractSchema,
   contractStaffQuerySchema,
   effectiveStatus,
   entitledSessions,
@@ -35,12 +45,14 @@ import {
   listContractsSchema,
   ptSharesRequired,
   sharesProblems,
+  unapproveSchema,
   type Contract as ContractView,
   type ContractStaff,
   type ContractData,
   type Share,
 } from "@flow/shared/contracts";
 import { displayNameOf } from "@flow/shared/services";
+import { deleteSchema } from "@flow/shared/trash";
 import { discountPercentOf, priceBreakdown } from "@flow/shared/promotions";
 
 const AUDITED_FIELDS = [
@@ -163,6 +175,20 @@ export async function createContract(
           keyDerivedFrom(key.data, "first-payment"),
         );
       }
+      // A-120: the contract waits for an approver, or is approved at once when the matrix asks for none.
+      if ((await ruleFor(tx, "contract.create")).required) {
+        await submitForApproval(tx, actor, {
+          action: "contract.create",
+          entityType: "contract",
+          entityId: contract.id,
+          branchId: customer.branchId,
+          title: titleOf(contractCode, customer.fullName),
+          amount: built.write.contractValue as number,
+          payload: { contractCode },
+        });
+      } else {
+        await decideContract(tx, actor, contract.id, "APPROVED");
+      }
       return contract.id;
     }, LOCKING_TRANSACTION);
     return {
@@ -200,6 +226,11 @@ export async function updateContract(actor: Actor, id: string, input: unknown): 
       built.companionIds,
     );
     if (changed === 0) throw new AppError("CONTRACT_NOT_EDITABLE");
+    // The approver sees the value as edited (A-120).
+    await tx.approvalRequest.updateMany({
+      where: { actionType: "contract.create", entityId: id, status: "PENDING" },
+      data: { amount: built.write.contractValue as number },
+    });
 
     const after = await getOrThrow(tx, actor, id);
     const changes = diffFields(before, after, AUDITED_FIELDS);
@@ -218,38 +249,228 @@ export async function updateContract(actor: Actor, id: string, input: unknown): 
   });
 }
 
-/** Repeating an activation that already happened returns the current state (docs/07). */
-export async function activateContract(actor: Actor, id: string): Promise<ContractView> {
-  assertCan(actor, "contract.approve");
-  const today = gymToday();
-  return prisma.$transaction(async (tx) => {
-    const before = await getOrThrow(tx, actor, id);
-    if (before.status === "ACTIVE") return presentOne(tx, before, today);
-    const from = effectiveStatus(before, today);
-    if (!canActivate(from)) throw new AppError("INVALID_STATUS_TRANSITION");
-    // Activating is the contract's approval until M4.4: never by its creator (D-018).
-    if (before.createdById === actor.id) throw new AppError("APPROVAL_OWN_REQUEST");
-    // A discount above what the approver's role may approve itself needs a role with a higher limit (A-112).
-    if (!(await canApproveDiscount(tx, actor, discountPercentOfRecord(before)))) {
-      throw new AppError("DISCOUNT_ABOVE_LIMIT");
-    }
+/**
+ * Approving or rejecting a pending contract (D-018, A-121), called by the approval engine's handler in the decision's
+ * transaction, which has taken the contract lock. Approving checks that the approver's role may approve the discount
+ * (A-112), records who and when, and turns the customer's lead status to "Đã ký hợp đồng" (A-123). Rejecting moves it
+ * to REJECTED, where it has no effect.
+ */
+export async function decideContract(tx: Db, decider: Actor, id: string, to: "APPROVED" | "REJECTED"): Promise<void> {
+  const contract = await repo.findContract(tx, id, { deletedAt: null });
+  if (!contract) throw new AppError("NOT_FOUND");
+  if (contract.status !== "DRAFT") throw new AppError("APPROVAL_NOT_PENDING");
+  const now = new Date();
 
-    if ((await repo.moveStatus(tx, id, before.status, "ACTIVE")) === 0) {
-      // Another request changed it first.
-      const now = await getOrThrow(tx, actor, id);
-      if (now.status === "ACTIVE") return presentOne(tx, now, today);
-      throw new AppError("INVALID_STATUS_TRANSITION");
-    }
+  if (to === "REJECTED") {
+    if ((await repo.moveStatus(tx, id, "DRAFT", "REJECTED")) === 0) throw new AppError("APPROVAL_NOT_PENDING");
     await recordAudit(tx, {
-      actorUserId: actor.id,
+      actorUserId: decider.id,
       entityType: "contract",
       entityId: id,
-      action: "contract.activated",
-      before: { status: from },
-      after: { status: "ACTIVE" },
+      action: "contract.rejected",
+      before: { status: "DRAFT" },
+      after: { status: "REJECTED" },
     });
-    return presentOne(tx, await getOrThrow(tx, actor, id), today);
+    return;
+  }
+
+  // A discount above what the approver's role may approve itself needs a role with a higher limit (A-112).
+  if (!(await canApproveDiscount(tx, decider, discountPercentOfRecord(contract)))) {
+    throw new AppError("DISCOUNT_ABOVE_LIMIT");
+  }
+  if ((await repo.approve(tx, id, decider.id, now)) === 0) throw new AppError("APPROVAL_NOT_PENDING");
+  await recordAudit(tx, {
+    actorUserId: decider.id,
+    entityType: "contract",
+    entityId: id,
+    action: "contract.activated",
+    before: { status: "DRAFT" },
+    after: { status: "ACTIVE" },
   });
+  await markContracted(tx, decider, contract.customerId, now);
+}
+
+/** A-123: the lead status of a customer with an approved contract is "Đã ký hợp đồng" (CONTRACTED). */
+async function markContracted(tx: Db, actor: Pick<Actor, "id">, customerId: string, now: Date): Promise<void> {
+  const person = await tx.customer.findUnique({ where: { id: customerId }, select: { leadStatus: true } });
+  if (!person || person.leadStatus === "CONTRACTED") return;
+  await tx.customer.update({ where: { id: customerId }, data: { leadStatus: "CONTRACTED", leadStatusChangedAt: now } });
+  await addStatusChange(tx, {
+    customerId,
+    fromStatus: person.leadStatus,
+    toStatus: "CONTRACTED",
+    changedById: actor.id,
+    changedAt: now,
+  });
+  await recordAudit(tx, {
+    actorUserId: actor.id,
+    entityType: "lead",
+    entityId: customerId,
+    action: "lead.status_changed",
+    before: { leadStatus: person.leadStatus },
+    after: { leadStatus: "CONTRACTED" },
+    context: { reason: "contract.approved" },
+  });
+}
+
+/** The request that waits for this contract's approval, if any, and the contract as `actor` sees it. */
+export async function pendingApprovalOf(
+  actor: Actor,
+  id: string,
+): Promise<{ requestId: string | null; contract: ContractView }> {
+  const contract = await contractView(prisma, actor, id);
+  const request = await prisma.approvalRequest.findFirst({
+    where: { actionType: "contract.create", entityId: id, status: "PENDING" },
+    select: { id: true },
+  });
+  return { requestId: request?.id ?? null, contract };
+}
+
+/**
+ * A-124: sends an approved contract back to pending approval, with a reason, when nothing depends on it: no receipts
+ * that count and no recorded sessions. The new request is in the creator's name, so the creator cannot approve it
+ * again (D-018). Admin only.
+ */
+export async function unapproveContract(actor: Actor, id: string, input: unknown): Promise<ContractView> {
+  assertCan(actor, "contract.unapprove");
+  const { reasonId, reasonNote } = parseInput(unapproveSchema, input);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+  const today = gymToday();
+
+  return withPendingConflictMapped(() =>
+    prisma.$transaction(async (tx) => {
+      if (!(await repo.lockContract(tx, id))) throw new AppError("NOT_FOUND");
+      const before = await getOrThrow(tx, actor, id);
+      if (!canUnapprove(before.status)) throw new AppError("INVALID_STATUS_TRANSITION");
+      await assertNoDependents(tx, id);
+      const reason = await resolveChoice(tx, "unapproveReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+      const option = await tx.option.findUniqueOrThrow({ where: { id: reason.optionId }, select: chosenSelect });
+      if ((await repo.unapprove(tx, id)) === 0) throw new AppError("INVALID_STATUS_TRANSITION");
+
+      await recordAudit(tx, {
+        actorUserId: actor.id,
+        entityType: "contract",
+        entityId: id,
+        action: "contract.unapproved",
+        before: { status: "ACTIVE", approvedById: before.approvedById },
+        after: { status: "DRAFT" },
+        context: { reason: option.labelVi, note: reason.note },
+      });
+      await submitForApproval(
+        tx,
+        { id: before.createdById },
+        {
+          action: "contract.create",
+          entityType: "contract",
+          entityId: id,
+          branchId: before.branchId,
+          title: titleOf(before.contractCode, before.customer.fullName),
+          amount: Number(before.contractValue),
+          payload: { contractCode: before.contractCode, unapproved: true },
+        },
+      );
+      return presentOne(tx, await getOrThrow(tx, actor, id), today);
+    }, LOCKING_TRANSACTION),
+  );
+}
+
+/**
+ * A-125, brief §5.4: deletes a contract to the trash with a reason, when no receipts that count and no recorded
+ * sessions depend on it (they are deleted first, and the answer lists them). When the matrix requires it, the deletion
+ * waits for approval and the contract stays in effect until then (D-018). Admin only.
+ */
+export async function deleteContract(
+  actor: Actor,
+  id: string,
+  input: unknown,
+): Promise<{ approval: { id: string } } | null> {
+  assertCan(actor, "contract.delete");
+  const { reasonId, reasonNote } = parseInput(deleteSchema, input);
+  if (!z.uuid().safeParse(id).success) throw new AppError("NOT_FOUND");
+
+  return withPendingConflictMapped(() =>
+    prisma.$transaction(async (tx) => {
+      if (!(await repo.lockContract(tx, id))) throw new AppError("NOT_FOUND");
+      const contract = await getOrThrow(tx, actor, id);
+      await assertNoDependents(tx, id);
+      const reason = await resolveChoice(tx, "deleteReasons", "reasonId", { optionId: reasonId, note: reasonNote });
+      if ((await ruleFor(tx, "record.delete")).required) {
+        const option = await tx.option.findUniqueOrThrow({ where: { id: reason.optionId }, select: chosenSelect });
+        const approval = await submitForApproval(tx, actor, {
+          action: "record.delete",
+          entityType: "contract",
+          entityId: id,
+          branchId: contract.branchId,
+          title: titleOf(contract.contractCode, contract.customer.fullName),
+          amount: Number(contract.contractValue),
+          payload: { reason: chosen(option, reason.note) },
+        });
+        return { approval };
+      }
+      await applyContractDeletion(tx, actor, id, reason);
+      return null;
+    }, LOCKING_TRANSACTION),
+  );
+}
+
+/** Deletes the contract now, under the lock the caller holds: marks it, trash entry, audit, withdraws its requests. */
+export async function applyContractDeletion(
+  tx: Db,
+  deleter: Pick<Actor, "id">,
+  id: string,
+  reason: { optionId: string; note: string | null },
+): Promise<void> {
+  const contract = await repo.findContract(tx, id, { deletedAt: null });
+  if (!contract) throw new AppError("NOT_FOUND");
+  await assertNoDependents(tx, id);
+  const view = await presentOne(tx, contract, gymToday());
+  const deletedAt = new Date();
+  const marked = await repo.markDeleted(tx, id, {
+    deletedAt,
+    deletedById: deleter.id,
+    deleteReasonId: reason.optionId,
+    deleteReasonNote: reason.note,
+  });
+  if (marked !== 1) throw new AppError("NOT_FOUND");
+  await moveToTrash(
+    tx,
+    deleter,
+    {
+      entityType: "contract",
+      entityId: id,
+      branchId: contract.branchId,
+      title: titleOf(contract.contractCode, contract.customer.fullName),
+      amount: view.contractValue,
+      snapshot: encode(contractSchema, view) as Record<string, unknown>,
+    },
+    reason,
+    deletedAt,
+  );
+  await cancelPendingFor(tx, id);
+}
+
+/** D-022, brief §5.4: receipts and sessions are dealt with before the contract; the error lists what is left. */
+async function assertNoDependents(tx: Db, id: string): Promise<void> {
+  const { payments, bookings } = await repo.findDependents(tx, id);
+  if (payments.length + bookings.length === 0) return;
+  throw new AppError("CONTRACT_HAS_DEPENDENTS", {
+    dependents: [
+      ...payments.map((row) => ({
+        kind: "payment" as const,
+        id: row.id,
+        label: `${Number(row.amount)} · ${row.paidOn.toISOString().slice(0, 10)}`,
+      })),
+      ...bookings.map((row) => ({
+        kind: "booking" as const,
+        id: row.id,
+        label: `${row.scheduledStart.toISOString()} · ${row.status}`,
+      })),
+    ],
+  });
+}
+
+function titleOf(contractCode: string, customerName: string): string {
+  return `${contractCode} · ${customerName}`;
 }
 
 /**
@@ -522,11 +743,9 @@ async function getOrThrow(db: Db, actor: Actor, id: string): Promise<repo.Contra
 
 /** Contract views with their confirmed payments (BR-013), read with `db`. */
 async function present(db: Db, contracts: repo.ContractRecord[], today: Date): Promise<ContractView[]> {
-  const paid = await validPaidByContract(
-    db,
-    contracts.map((c) => c.id),
-  );
-  return contracts.map((contract) => toView(contract, today, paid.get(contract.id) ?? 0));
+  const ids = contracts.map((c) => c.id);
+  const [paid, approvals] = await Promise.all([validPaidByContract(db, ids), repo.approvalsOf(db, ids)]);
+  return contracts.map((contract) => toView(contract, today, paid.get(contract.id) ?? 0, approvals.get(contract.id)));
 }
 
 async function presentOne(db: Db, contract: repo.ContractRecord, today: Date): Promise<ContractView> {
@@ -534,7 +753,12 @@ async function presentOne(db: Db, contract: repo.ContractRecord, today: Date): P
   return view;
 }
 
-function toView(contract: repo.ContractRecord, today: Date, confirmedPaidAmount: number): ContractView {
+function toView(
+  contract: repo.ContractRecord,
+  today: Date,
+  confirmedPaidAmount: number,
+  approval: repo.ApprovalState | undefined,
+): ContractView {
   return {
     id: contract.id,
     contractCode: contract.contractCode,
@@ -578,6 +802,14 @@ function toView(contract: repo.ContractRecord, today: Date, confirmedPaidAmount:
     paymentDueOn: contract.paymentDueOn,
     notes: contract.notes,
     isImported: contract.isImported,
+    createdBy: contract.createdBy,
+    approvedBy: contract.approvedBy,
+    approvedAt: contract.approvedAt,
+    rejection:
+      contract.status === "REJECTED" && approval?.rejected
+        ? { by: approval.rejected.by, at: approval.rejected.at, reason: approval.rejected.reason }
+        : null,
+    approvalPending: contract.status === "DRAFT" && Boolean(approval?.pending),
     ...contractFigures({
       totalSessions: entitledSessions(contract.totalSessions, contract.bonusSessions),
       openingSessionsUsed: contract.openingSessionsUsed,
@@ -599,5 +831,5 @@ function gymToday(): Date {
  */
 export function contractsVisibleTo(actor: Actor): Prisma.ContractWhereInput {
   const own: Prisma.ContractWhereInput = { OR: [{ createdById: actor.id }, { customer: ownCustomers(actor) }] };
-  return { AND: [inBranches(actor), isOwnOnly(actor, "contracts") ? own : {}] };
+  return { AND: [inBranches(actor), isOwnOnly(actor, "contracts") ? own : {}, { deletedAt: null }] };
 }

@@ -40,6 +40,8 @@ export const OPTION_LISTS = [
   "stepReopenReasons",
   // Why a contract has an exception price (BR-302, A-113), M4.3.
   "exceptionPriceReasons",
+  // Why admin sent an approved contract back to pending approval (A-124), M4.4.
+  "unapproveReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

@@ -1,16 +1,20 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req, Res } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, Res } from "@nestjs/common";
+import { ApiNoContentResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import {
   contractInputSchema,
   contractPageSchema,
   contractSchema,
   contractStaffListSchema,
+  unapproveSchema,
 } from "@flow/shared/contracts";
+import { rejectSchema, submittedSchema } from "@flow/shared/approvals";
+import { deleteSchema } from "@flow/shared/trash";
 import { paymentInputSchema, paymentPageSchema, paymentSchema } from "@flow/shared/finance";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
+import { submittedOrDone } from "../../platform/http/submitted.js";
 import {
   ApiErrors,
   ApiIdempotencyKey,
@@ -23,13 +27,15 @@ import { exportList } from "../../platform/export/export.service.js";
 import { contractsExport, CONTRACT_EXPORT_QUERY } from "./contract.export.js";
 import { listPayments, recordPayment } from "../finance/payment.service.js";
 import {
-  activateContract,
   cancelContract,
+  deleteContract,
   getContract,
   listContracts,
   staffChoices,
+  unapproveContract,
   updateContract,
 } from "./contract.service.js";
+import { activateContract, rejectContract } from "./contract-approval.service.js";
 
 @ApiTags("contracts")
 @ApiErrors()
@@ -87,12 +93,53 @@ export class ContractsController {
     return encode(contractSchema, await updateContract(actor, id, body));
   }
 
+  /** Approves the contract's waiting request, as the inbox does (A-121); repeating it returns the state. */
   @Post(":id/activate")
   @RequirePermission("contract.approve")
   @HttpCode(200)
   @ApiResult(contractSchema)
   async activate(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
     return encode(contractSchema, await activateContract(actor, id));
+  }
+
+  /** Turns a pending contract down with a reason from `rejectReasons` (A-121). */
+  @Post(":id/reject")
+  @RequirePermission("contract.approve")
+  @HttpCode(200)
+  @ApiResult(contractSchema)
+  async reject(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: rejectSchema }) body: unknown,
+  ) {
+    return encode(contractSchema, await rejectContract(actor, id, body));
+  }
+
+  /** Sends an approved contract back to pending approval when no receipts or sessions depend on it (A-124). */
+  @Post(":id/unapprove")
+  @RequirePermission("contract.unapprove")
+  @HttpCode(200)
+  @ApiResult(contractSchema)
+  async unapprove(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: unapproveSchema }) body: unknown,
+  ) {
+    return encode(contractSchema, await unapproveContract(actor, id, body));
+  }
+
+  /** To the trash with a reason, when nothing depends on it (A-125); 202 when the deletion waits for approval. */
+  @Delete(":id")
+  @RequirePermission("contract.delete")
+  @ApiNoContentResponse({ description: "Deleted to the trash" })
+  @ApiResult(submittedSchema, 202, "Waiting for approval (D-018)")
+  async remove(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: deleteSchema }) body: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return submittedOrDone(response, await deleteContract(actor, id, body));
   }
 
   /** Cancelling cascades to the contract's open bookings (D-010). */

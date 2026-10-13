@@ -18,7 +18,7 @@ import { requirePageUser } from "@/lib/auth/current-user";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { isApiError } from "@/lib/api/errors";
 import { can } from "@/lib/permissions";
-import { canActivate, canCancel, isEditable } from "@flow/shared/contracts";
+import { canActivate, canCancel, canUnapprove, isEditable } from "@flow/shared/contracts";
 import { getContract } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
@@ -26,6 +26,7 @@ import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
 import { PaymentsTable, RecordPaymentButton } from "../../finance/payments";
 import { ActivateContractButton, CancelContractButton, EditContractButton } from "../contract-buttons";
+import { DeleteContractButton, RejectContractButton, UnapproveContractButton } from "../contract-decisions";
 
 async function loadContract(user: CurrentUser, id: string) {
   try {
@@ -66,6 +67,9 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     ? (await listBookings({ contractId: contract.id, status: "BOOKED", pageSize: 100 })).items
     : [];
 
+  // D-018: nobody decides their own contract; the API enforces it, the page shows only what can succeed.
+  const canDecide = can(user, "contract.approve") && canActivate(contract.status) && contract.createdBy.id !== user.id;
+
   // Brief §8.2: a task about this contract.
   const assignees = can(user, "task.create") ? await getTaskAssignees() : null;
   const actions = (
@@ -79,7 +83,12 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
       )}
       {can(user, "contract.create") && isEditable(contract.status) && <EditContractButton contract={contract} />}
       {cancellable && <CancelContractButton contract={contract} bookings={toCancel} />}
-      {can(user, "contract.approve") && canActivate(contract.status) && <ActivateContractButton contract={contract} />}
+      {canDecide && <ActivateContractButton contract={contract} />}
+      {canDecide && <RejectContractButton contract={contract} />}
+      {can(user, "contract.unapprove") && canUnapprove(contract.status) && (
+        <UnapproveContractButton contract={contract} />
+      )}
+      {can(user, "contract.delete") && <DeleteContractButton contract={contract} />}
     </>
   );
 
@@ -130,6 +139,8 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
               <Detail label={f("fields.startDate")} value={<DateTime value={contract.startDate} format="dateOnly" />} />
               <Detail label={f("fields.endDate")} value={<DateTime value={contract.endDate} format="dateOnly" />} />
               <Detail label={f("fields.createdAt")} value={<DateTime value={contract.createdAt} format="dateTime" />} />
+              <Detail label={f("fields.createdBy")} value={contract.createdBy.name} />
+              <Detail label={f("fields.approval")} value={<ApprovalLine contract={contract} />} />
             </dl>
           </CardContent>
         </Card>
@@ -319,4 +330,28 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
       <dd className="text-right text-sm">{value}</dd>
     </div>
   );
+}
+
+/** Where the contract stands with its approvers (A-120, A-121). */
+async function ApprovalLine({ contract }: { contract: Awaited<ReturnType<typeof getContract>> }) {
+  const t = await getTranslations("contracts");
+  if (contract.status === "REJECTED" && contract.rejection) {
+    return (
+      <span>
+        {t("approvalRejected", { name: contract.rejection.by.name })}
+        {": "}
+        <ChosenOptionText option={contract.rejection.reason} />
+      </span>
+    );
+  }
+  if (contract.status === "DRAFT") return <span>{t("approvalPending")}</span>;
+  if (contract.approvedBy && contract.approvedAt) {
+    return (
+      <span>
+        {t("approvalApproved", { name: contract.approvedBy.name })}{" "}
+        <DateTime value={contract.approvedAt} format="dateTime" />
+      </span>
+    );
+  }
+  return <span>—</span>;
 }

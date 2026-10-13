@@ -1,7 +1,14 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { createUserViaApi, roleIdOf } from "./support/admin";
-import { PT24, createContractViaApi, createCustomerViaApi, gymDay } from "./support/data";
-import { E2E_SALESPERSON_NAME, E2E_SERVICE_NAME } from "./support/db";
+import {
+  PT24,
+  contractPayload,
+  createContractViaApi,
+  createCustomerViaApi,
+  gymDay,
+  recordPaymentViaApi,
+} from "./support/data";
+import { E2E_SALESPERSON_NAME, E2E_SERVICE_NAME, E2E_USERS } from "./support/db";
 import { fill, labels } from "./support/labels";
 
 const f = labels.contracts.fields;
@@ -50,12 +57,12 @@ test.describe("contracts as a Fitness Manager", () => {
     await expect(contractDetailPage.figure(f.debt)).toHaveText(/12\.000\.000/);
     await expect(contractDetailPage.figure(f.tierUnitPrice)).toHaveText(/500\.000/);
 
-    // The seller cannot approve their own contract.
-    await contractDetailPage.action(labels.contracts.activate).click();
-    await page.getByRole("alertdialog").getByRole("button", { name: labels.contracts.activate, exact: true }).click();
-    await expect(toasts.getByText(labels.errors.APPROVAL_OWN_REQUEST)).toBeVisible();
-    await page.keyboard.press("Escape");
+    // The seller cannot approve their own contract: no button, and the API refuses (D-018).
+    await expect(contractDetailPage.action(labels.contracts.activate)).toHaveCount(0);
     const contractId = new URL(page.url()).pathname.split("/").pop()!;
+    const own = await (await apiAs("FITNESS_MANAGER")).post(`/api/v1/contracts/${contractId}/activate`);
+    expect(own.status()).toBe(403);
+    expect(await own.json()).toMatchObject({ code: "APPROVAL_OWN_REQUEST" });
     const activated = await (await apiAs("ADMIN")).post(`/api/v1/contracts/${contractId}/activate`);
     expect(activated.status()).toBe(200);
     await page.reload();
@@ -206,5 +213,113 @@ test.describe("contracts as a manager", () => {
 
     expect(gymDay(0)).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
     expect(contract.id).toBeDefined();
+  });
+});
+
+test.describe("contracts as an admin", () => {
+  test.use(signedInAs("ADMIN"));
+
+  test("E2E-105: an approved contract is locked: even Admin has no Edit, and the API refuses a change (D-022)", async ({
+    apiAs,
+    testTag,
+    contractDetailPage,
+  }) => {
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+      activateWith: await apiAs("ADMIN"),
+    });
+
+    await contractDetailPage.goto(contract.id);
+    await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.ACTIVE);
+    await expect(contractDetailPage.heading(PT24.packageName)).toBeVisible();
+    await expect(contractDetailPage.action(labels.contracts.edit)).toHaveCount(0);
+
+    const changed = await (
+      await apiAs("ADMIN")
+    ).patch(`/api/v1/contracts/${contract.id}`, { data: await contractPayload({ sessions: 12 }) });
+    expect(changed.status()).toBe(409);
+    expect(await changed.json()).toMatchObject({ code: "CONTRACT_NOT_EDITABLE" });
+  });
+
+  test("E2E-160: the approver approves or rejects from the contract page, with a reason for a rejection (D-018, A-121)", async ({
+    apiAs,
+    testTag,
+    contractDetailPage,
+  }) => {
+    const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), testTag);
+    const manager = await apiAs("FITNESS_MANAGER");
+    const toApprove = await createContractViaApi(manager, customer.id);
+    const toReject = await createContractViaApi(manager, customer.id);
+
+    await contractDetailPage.goto(toApprove.id);
+    await expect(contractDetailPage.figure(f.approval)).toHaveText(labels.contracts.approvalPending);
+    await contractDetailPage.confirmAction(labels.contracts.activate);
+    await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.ACTIVE);
+    await expect(contractDetailPage.figure(f.approval)).toContainText(
+      fill(labels.contracts.approvalApproved, { name: E2E_USERS.ADMIN.name }),
+    );
+
+    await contractDetailPage.goto(toReject.id);
+    await contractDetailPage.actWithReason(
+      labels.contracts.reject,
+      labels.contracts.rejectReason,
+      `Sai giá ${testTag}`,
+    );
+    await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.REJECTED);
+    await expect(contractDetailPage.figure(f.approval)).toContainText(`Sai giá ${testTag}`);
+    await expect(contractDetailPage.action(labels.contracts.activate)).toHaveCount(0);
+    await expect(contractDetailPage.action(labels.contracts.edit)).toHaveCount(0);
+  });
+
+  test("E2E-161: Admin sends an approved contract back to pending, and deletes one that nothing depends on (A-124, A-125)", async ({
+    page,
+    apiAs,
+    apiSignedIn,
+    testTag,
+    contractDetailPage,
+  }) => {
+    const reception = await apiAs("RECEPTIONIST");
+    const admin = await apiAs("ADMIN");
+    const customer = await createCustomerViaApi(reception, testTag);
+    const manager = await apiAs("FITNESS_MANAGER");
+    const withReceipt = await createContractViaApi(manager, customer.id, { activateWith: admin });
+    await recordPaymentViaApi(reception, withReceipt.id, "1.000.000");
+
+    // A receipt blocks the deletion, and is listed.
+    await contractDetailPage.goto(withReceipt.id);
+    await contractDetailPage.deleteWithReason(`Nhập sai ${testTag}`);
+    const blocked = page.getByRole("alertdialog");
+    await expect(blocked.getByText(labels.common.blockedBy)).toBeVisible();
+    await expect(blocked.getByText(labels.common.dependentKinds.payment, { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // Without receipts or sessions, Admin sends it back, and another approver approves it again.
+    const plain = await createContractViaApi(manager, customer.id, { activateWith: admin });
+    await contractDetailPage.goto(plain.id);
+    await contractDetailPage.actWithReason(
+      labels.contracts.unapprove,
+      labels.contracts.unapproveReason,
+      `Nhập sai ${testTag}`,
+    );
+    await expect(contractDetailPage.figure(f.status)).toHaveText(labels.status.contract.DRAFT);
+    await expect(contractDetailPage.figure(f.approval)).toHaveText(labels.contracts.approvalPending);
+
+    // Deleting waits for a second Admin (record.delete), then the contract is gone.
+    const colleague = await createUserViaApi(admin, testTag, {
+      roleId: await roleIdOf(admin, { code: "ADMIN" }),
+      label: "Quản trị",
+    });
+    await contractDetailPage.deleteWithReason(`Nhập sai ${testTag}`);
+    const toasts = page.getByRole("region", { name: labels.common.notifications });
+    await expect(toasts.getByText(labels.approvals.submitted)).toBeVisible();
+    const mine = (await (await admin.get("/api/v1/approvals?view=mine&pageSize=100")).json()) as {
+      items: { id: string; entityId: string; action: string }[];
+    };
+    const request = mine.items.find((item) => item.entityId === plain.id && item.action === "record.delete")!;
+    const approved = await (
+      await apiSignedIn(colleague.email, colleague.password)
+    ).post(`/api/v1/approvals/${request.id}/approve`);
+    expect(approved.status()).toBeLessThan(300);
+    expect((await admin.get(`/api/v1/contracts/${plain.id}`)).status()).toBe(404);
   });
 });

@@ -12,6 +12,7 @@ import { resolveChoice } from "../../platform/options/option.service.js";
 import { hasBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import { lockContract } from "../contracts/contract.repository.js";
+import { applyContractDeletion, decideContract } from "../contracts/contract.service.js";
 import { applyIdentityChange } from "../customers/customer.service.js";
 import { applyCashDeletion, decideCashTransaction, findCashForApproval } from "../finance/cash.service.js";
 import { applyPaymentDeletion, decidePayment, findPaymentForApproval } from "../finance/payment.service.js";
@@ -46,13 +47,16 @@ const HANDLERS: Record<ApprovalAction, Handler> = {
   "record.delete": {
     lock: async (tx, request) => {
       if (request.entityType === "payment") await lockPaymentContract(tx, request);
+      if (request.entityType === "contract") await lockContract(tx, request.entityId);
     },
     // The record is deleted by whoever asked; the approver is in the request and audit.
     approve: async (tx, request) => {
       const reason = (request.payload as { reason: ChosenOption }).reason;
       const deleter = { id: request.submittedById };
       const chosen = { optionId: reason.id, note: reason.note };
-      if (request.entityType === "payment") {
+      if (request.entityType === "contract") {
+        await applyContractDeletion(tx, deleter, request.entityId, chosen);
+      } else if (request.entityType === "payment") {
         const payment = await findPaymentForApproval(tx, request.entityId);
         if (!payment) throw new AppError("NOT_FOUND");
         await applyPaymentDeletion(tx, payment, deleter, chosen);
@@ -62,6 +66,13 @@ const HANDLERS: Record<ApprovalAction, Handler> = {
         await applyCashDeletion(tx, transaction, deleter, chosen);
       }
     },
+  },
+  "contract.create": {
+    lock: async (tx, request) => {
+      await lockContract(tx, request.entityId);
+    },
+    approve: (tx, request, decider) => decideContract(tx, decider, request.entityId, "APPROVED"),
+    reject: (tx, request, decider) => decideContract(tx, decider, request.entityId, "REJECTED"),
   },
   "customer.identity": {
     approve: (tx, request, decider) =>

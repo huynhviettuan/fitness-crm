@@ -115,6 +115,9 @@ export const contractStaffQuerySchema = z.object({ branchId: z.uuid().optional()
 /** T-015: a client-generated UUID sent with every create. */
 export const idempotencyKeySchema = z.uuid();
 
+/** Sending an approved contract back to pending approval needs a reason from `unapproveReasons` (A-124). */
+export const unapproveSchema = z.object({ reasonId: optionChoice, reasonNote: optionNote });
+
 export const listContractsSchema = z.object({
   q: z.string().trim().max(100).refine(hasNoControlCharacters).optional().default(""),
   customerId: z.uuid().optional(),
@@ -124,3 +127,4 @@ export const listContractsSchema = z.object({
 
 export type ContractInput = z.input<typeof contractInputSchema>;
 export type ContractData = z.output<typeof contractInputSchema>;
+export type UnapproveInput = z.input<typeof unapproveSchema>;

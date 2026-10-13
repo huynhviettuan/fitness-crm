@@ -15,7 +15,7 @@ export const deleteSchema = z.object({
 });
 
 /** What can be deleted so far; each module adds its records when it is built. */
-export const TRASH_ENTITY_TYPES = ["payment", "cash_transaction", "person"] as const;
+export const TRASH_ENTITY_TYPES = ["payment", "cash_transaction", "person", "contract"] as const;
 export type TrashEntityType = (typeof TRASH_ENTITY_TYPES)[number];
 
 const optionalDate = z

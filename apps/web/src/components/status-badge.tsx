@@ -23,7 +23,7 @@ const STATUS_VARIANTS = {
   leadStep: { WAITING: "muted", OPEN: "info", DONE: "success", NOT_DONE: "destructive" },
   stepTiming: { ON_TIME: "success", LATE: "destructive" },
   user: { ACTIVE: "success", DISABLED: "muted" },
-  contract: { DRAFT: "muted", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted" },
+  contract: { DRAFT: "warning", ACTIVE: "success", EXPIRED: "warning", CANCELLED: "muted", REJECTED: "destructive" },
   employee: { ACTIVE: "success", INACTIVE: "muted" },
   booking: { BOOKED: "info", CHECKED_IN: "warning", COMPLETED: "success", CANCELLED: "muted", NO_SHOW: "destructive" },
   branch: { ACTIVE: "success", INACTIVE: "muted" },

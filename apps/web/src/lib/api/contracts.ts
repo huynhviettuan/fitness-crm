@@ -1,6 +1,9 @@
 import "server-only";
 import { contractPageSchema, contractSchema, contractStaffListSchema } from "@flow/shared/contracts";
-import { api, query, read } from "./client";
+import type { DeleteInput } from "@flow/shared/trash";
+import type { RejectInput } from "@flow/shared/approvals";
+import type { UnapproveInput } from "@flow/shared/contracts";
+import { api, query, read, submittedOrDone } from "./client";
 
 export async function listContracts(params: { q?: string; customerId?: string; page?: number; pageSize?: number }) {
   return read(contractPageSchema, (await api()).GET("/api/v1/contracts", { params: { query: query(params) } }));
@@ -43,4 +46,25 @@ export async function activateContract(id: string) {
 
 export async function cancelContract(id: string) {
   return read(contractSchema, (await api()).POST("/api/v1/contracts/{id}/cancel", { params: { path: { id } } }));
+}
+
+/** A-121: turns a pending contract down; the reason is from the `rejectReasons` list. */
+export async function rejectContract(id: string, input: RejectInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/reject", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** A-124: an approved contract back to pending approval, with a reason. */
+export async function unapproveContract(id: string, input: UnapproveInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/unapprove", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** A-125: moves the contract to the trash; true when the deletion waits for approval (D-018). */
+export async function deleteContract(id: string, input: DeleteInput) {
+  return submittedOrDone((await api()).DELETE("/api/v1/contracts/{id}", { params: { path: { id } }, body: input }));
 }
