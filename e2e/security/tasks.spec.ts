@@ -16,10 +16,12 @@ test.describe("A01 tasks", () => {
   for (const role of ["ADMIN", "FITNESS_MANAGER", "RECEPTIONIST", "PT", "ACCOUNTANT", "CONSULTING"] as Role[]) {
     test(`${role} can give a task (09_RBAC.md)`, async ({ apiAs, testTag }) => {
       const api = await apiAs(role);
+      const me = await (await api.get("/api/v1/me")).json();
+      // Other specs add branches while this runs; an account that works in several must say which one.
       const response = await api.post("/api/v1/tasks", {
-        data: { title: `Việc ${testTag}`, assigneeUserId: await idOf(api), ...DUE },
+        data: { title: `Việc ${testTag}`, assigneeUserId: me.id, branchId: me.branches[0]?.id, ...DUE },
       });
-      expect(response.status()).toBe(201);
+      expect(response.status(), await response.text()).toBe(201);
     });
   }
 
