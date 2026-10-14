@@ -30,7 +30,19 @@ const full = {
       },
       sets: {
         orderBy: { setNo: "asc" },
-        include: { flag: { select: chosenSelect }, action: { select: chosenSelect } },
+        include: {
+          flag: { select: chosenSelect },
+          action: { select: chosenSelect },
+          escalation: {
+            select: {
+              id: true,
+              raisedAt: true,
+              seenAt: true,
+              direction: true,
+              seenBy: { select: { id: true, name: true } },
+            },
+          },
+        },
       },
     },
   },

@@ -13415,6 +13415,123 @@
         "x-permission": "workout.log"
       }
     },
+    "/api/v1/workout/escalations": {
+      "get": {
+        "operationId": "WorkoutEscalationsController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutEscalationPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-escalations"
+        ],
+        "x-permission": "workout.view"
+      }
+    },
+    "/api/v1/workout/escalations/{id}/seen": {
+      "post": {
+        "operationId": "WorkoutEscalationsController_seen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "direction": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "direction"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutEscalation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-escalations"
+        ],
+        "x-permission": "workout.review"
+      }
+    },
     "/api/v1/notification-preferences": {
       "get": {
         "operationId": "NotificationPreferencesController_get",
@@ -13457,7 +13574,7 @@
                 "type": "object",
                 "properties": {
                   "items": {
-                    "maxItems": 7,
+                    "maxItems": 8,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -13471,7 +13588,8 @@
                             "approvalOverdue",
                             "leadAssigned",
                             "leadReclaimed",
-                            "sessionHanging"
+                            "sessionHanging",
+                            "workoutEscalation"
                           ]
                         },
                         "email": {
@@ -13566,7 +13684,7 @@
                 "type": "object",
                 "properties": {
                   "items": {
-                    "maxItems": 7,
+                    "maxItems": 8,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -13580,7 +13698,8 @@
                             "approvalOverdue",
                             "leadAssigned",
                             "leadReclaimed",
-                            "sessionHanging"
+                            "sessionHanging",
+                            "workoutEscalation"
                           ]
                         },
                         "emailMandatory": {
@@ -27043,6 +27162,53 @@
                       "note": {
                         "nullable": true,
                         "type": "string"
+                      },
+                      "escalation": {
+                        "nullable": true,
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "raisedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "seenAt": {
+                            "nullable": true,
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "seenBy": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          },
+                          "direction": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "raisedAt",
+                          "seenAt",
+                          "seenBy",
+                          "direction"
+                        ]
                       }
                     },
                     "required": [
@@ -27057,7 +27223,8 @@
                       "heartRate",
                       "flag",
                       "action",
-                      "note"
+                      "note",
+                      "escalation"
                     ]
                   }
                 }
@@ -27095,6 +27262,199 @@
           "items"
         ]
       },
+      "WorkoutEscalationPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkoutEscalation"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "WorkoutEscalation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "logId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "SEEN"
+            ]
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "customerCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "customerCode",
+              "fullName"
+            ]
+          },
+          "trainer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "employeeCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "employeeCode",
+              "fullName"
+            ]
+          },
+          "exercise": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "setNo": {
+            "type": "integer"
+          },
+          "flag": {
+            "$ref": "#/components/schemas/ChosenOption"
+          },
+          "actionNote": {
+            "nullable": true,
+            "type": "string"
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          },
+          "raisedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "raisedBy": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "seenAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "seenBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "direction": {
+            "nullable": true,
+            "type": "string"
+          },
+          "taskId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
+          "canMarkSeen": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "logId",
+          "status",
+          "branch",
+          "customer",
+          "trainer",
+          "exercise",
+          "setNo",
+          "flag",
+          "actionNote",
+          "note",
+          "raisedAt",
+          "raisedBy",
+          "seenAt",
+          "seenBy",
+          "direction",
+          "taskId",
+          "canMarkSeen"
+        ]
+      },
       "NotificationPreferences": {
         "type": "object",
         "properties": {
@@ -27112,7 +27472,8 @@
                     "approvalOverdue",
                     "leadAssigned",
                     "leadReclaimed",
-                    "sessionHanging"
+                    "sessionHanging",
+                    "workoutEscalation"
                   ]
                 },
                 "email": {
@@ -27163,7 +27524,8 @@
                     "approvalOverdue",
                     "leadAssigned",
                     "leadReclaimed",
-                    "sessionHanging"
+                    "sessionHanging",
+                    "workoutEscalation"
                   ]
                 },
                 "emailMandatory": {
@@ -28769,7 +29131,8 @@
                 "enum": [
                   "lead",
                   "customer",
-                  "contract"
+                  "contract",
+                  "workoutLog"
                 ]
               },
               "id": {
@@ -29026,7 +29389,8 @@
                 "enum": [
                   "lead",
                   "customer",
-                  "contract"
+                  "contract",
+                  "workoutLog"
                 ]
               },
               "id": {
@@ -29219,7 +29583,9 @@
               "leadInquiry",
               "personMerged",
               "contractFrozenLong",
-              "sessionHanging"
+              "sessionHanging",
+              "workoutEscalation",
+              "workoutEscalationSeen"
             ]
           },
           "params": {

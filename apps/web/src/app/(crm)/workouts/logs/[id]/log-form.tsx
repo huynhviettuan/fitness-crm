@@ -396,6 +396,19 @@ export function LogForm({
                           }
                         />
                       </div>
+                      {before?.escalation && (
+                        <p
+                          role="status"
+                          className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive"
+                        >
+                          {before.escalation.seenAt
+                            ? t("escalationSeen", {
+                                by: before.escalation.seenBy?.name ?? "",
+                                direction: before.escalation.direction ?? "",
+                              })
+                            : t("escalationWaiting")}
+                        </p>
+                      )}
                       <Input
                         aria-label={`${setLabel} · ${t("fields.setNote")}`}
                         placeholder={t("fields.setNote")}

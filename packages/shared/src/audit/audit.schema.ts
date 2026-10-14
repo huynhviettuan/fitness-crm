@@ -29,6 +29,7 @@ export const AUDIT_ENTITY_TYPES = [
   "workout_stage",
   "workout_plan",
   "workout_log",
+  "workout_escalation",
   "approval_request",
   "approval_rule",
   "task",

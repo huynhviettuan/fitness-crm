@@ -32,6 +32,9 @@ export const NOTIFICATION_KINDS = [
   "contractFrozenLong",
   // A session still lacks a full check-in after the escalation hours (D-071).
   "sessionHanging",
+  // A coach chose "Dừng + Escalation" on a set (brief §7.4): the manager and the Master hear at once; the coach hears when it is seen.
+  "workoutEscalation",
+  "workoutEscalationSeen",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

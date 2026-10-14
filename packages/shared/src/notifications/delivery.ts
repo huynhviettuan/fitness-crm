@@ -19,6 +19,7 @@ export const EXTERNAL_NOTIFICATION_KINDS = [
   "leadAssigned",
   "leadReclaimed",
   "sessionHanging",
+  "workoutEscalation",
 ] as const satisfies readonly NotificationKind[];
 export type ExternalNotificationKind = (typeof EXTERNAL_NOTIFICATION_KINDS)[number];
 
@@ -78,6 +79,8 @@ export const NOTIFICATION_TEXTS: Record<EmailLocale, Words> = {
     leadReclaimed: "Lead {code} · {name} đã chuyển cho người khác vì {minutes} phút chưa được chăm sóc",
     contractFrozenLong: "Hợp đồng {code} của {name} đã bị khóa quá {days} ngày.",
     sessionHanging: "Buổi tập của {customer} với {trainer} vẫn thiếu check-in sau {hours} giờ.",
+    workoutEscalation: "Dừng + Escalation: {customer} · {exercise} (coach {trainer}). Flag: {flag}. {note}",
+    workoutEscalationSeen: "{by} đã xem escalation của {customer} · {exercise}: {direction}",
   },
   en: {
     taskAssigned: '{by} gave you the task "{title}"',
@@ -100,6 +103,8 @@ export const NOTIFICATION_TEXTS: Record<EmailLocale, Words> = {
     leadReclaimed: "Lead {code} · {name} was moved to someone else after {minutes} minutes without care",
     contractFrozenLong: "Contract {code} of {name} has been deactivated for more than {days} days.",
     sessionHanging: "Session of {customer} with {trainer} still lacks a full check-in after {hours} hours.",
+    workoutEscalation: "Stop + Escalation: {customer} · {exercise} (coach {trainer}). Flag: {flag}. {note}",
+    workoutEscalationSeen: "{by} saw the escalation of {customer} · {exercise}: {direction}",
   },
 };
 
@@ -120,6 +125,7 @@ export const NOTIFICATION_TITLES: Record<EmailLocale, Record<ExternalNotificatio
     leadAssigned: "Lead mới được giao",
     leadReclaimed: "Lead đã chuyển người",
     sessionHanging: "Buổi tập thiếu check-in",
+    workoutEscalation: "Dừng buổi tập + Escalation",
   },
   en: {
     taskDueSoon: "Task due soon",
@@ -129,6 +135,7 @@ export const NOTIFICATION_TITLES: Record<EmailLocale, Record<ExternalNotificatio
     leadAssigned: "Lead assigned to you",
     leadReclaimed: "Lead moved to someone else",
     sessionHanging: "Session without a full check-in",
+    workoutEscalation: "Workout stopped: escalation",
   },
 };
 

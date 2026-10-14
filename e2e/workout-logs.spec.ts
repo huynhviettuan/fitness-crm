@@ -1,50 +1,13 @@
 import { expect, signedInAs, test } from "./fixtures";
-import { bookingSetup, createBookingViaApi, randomBookingDay } from "./support/data";
 import { E2E_TRAINER_NAME } from "./support/db";
 import { fill, labels } from "./support/labels";
 import { OTHER_OPTION_LABEL } from "./support/options";
-import { approvedPlanViaApi, workoutCatalog, type ApiAs } from "./support/workouts";
+import { sessionsWithPlan } from "./support/workouts";
 
 // The session log (brief §7.3; FR-WKO-003; D-033; AC-20, AC-23; docs/13 E2E-171): opened from a PT session, plan and actual on
 // one row per set, the actual starting as the plan, filled in by the coach on a phone.
 const w = labels.workoutLogs;
 const p = labels.workoutPlans;
-
-/** A customer with an approved plan for the E2E coach, and two PT sessions on one day (10:00 and 12:00). */
-async function sessionsWithPlan(
-  apiAs: ApiAs,
-  tag: string,
-  sessions = 2,
-): Promise<{
-  customer: Awaited<ReturnType<typeof bookingSetup>>["customer"];
-  catalog: Awaited<ReturnType<typeof workoutCatalog>>;
-  day: ReturnType<typeof randomBookingDay>;
-  bookings: [string, string];
-}> {
-  const { customer, refs } = await bookingSetup(apiAs, tag);
-  // The coach is the employee the PT login belongs to, so the PT owns these sessions.
-  const { employeeId: trainerId } = (await (await (await apiAs("PT")).get("/api/v1/me")).json()) as {
-    employeeId: string;
-  };
-  const catalog = await workoutCatalog(apiAs, tag);
-  await approvedPlanViaApi(apiAs, { customerId: customer.id, contractId: refs.contractId, trainerId }, catalog, tag);
-  const reception = await apiAs("RECEPTIONIST");
-  const day = randomBookingDay();
-  const first = await createBookingViaApi(
-    reception,
-    { ...refs, trainerId },
-    { date: day.date, startTime: "10:00", endTime: "11:00" },
-  );
-  const second =
-    sessions > 1
-      ? await createBookingViaApi(
-          reception,
-          { ...refs, trainerId },
-          { date: day.date, startTime: "12:00", endTime: "13:00" },
-        )
-      : first;
-  return { customer, catalog, day, bookings: [first.id, second.id] };
-}
 
 test.describe("a coach's log on a phone", () => {
   test.use({ ...signedInAs("PT"), viewport: { width: 375, height: 812 } });

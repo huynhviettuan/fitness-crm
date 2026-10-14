@@ -290,7 +290,7 @@ describe("the employee's choices and the devices", () => {
 
     const first = await getPreferences(actor);
     expect(first.pushDevices).toBe(0);
-    expect(first.items).toHaveLength(7);
+    expect(first.items).toHaveLength(8);
     expect(first.items.every((item) => item.email && item.push)).toBe(true);
     expect(first.items.find((item) => item.kind === "taskOverdue")).toMatchObject({
       emailMandatory: true,

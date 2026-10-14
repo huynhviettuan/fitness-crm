@@ -29,6 +29,7 @@ import {
   type TaskAction,
   type TaskAssignees,
   type TaskDetail,
+  type ManualTaskEntityType,
   type TaskEntityType,
   type TaskStatus,
   type TaskSummary,
@@ -464,7 +465,7 @@ async function assertAssignee(
 }
 
 /** The linked record must be one the actor can see; the task takes its branch. */
-async function entityBranch(db: Db, actor: Actor, type: TaskEntityType, id: string): Promise<string> {
+async function entityBranch(db: Db, actor: Actor, type: ManualTaskEntityType, id: string): Promise<string> {
   const found =
     type === "lead"
       ? await db.customer.findFirst({ where: { AND: [{ id }, leadsVisibleTo(actor)] }, select: { branchId: true } })
@@ -799,4 +800,70 @@ export async function createHangingSessionTask(
     link: link(task),
   });
   return task.id;
+}
+
+/**
+ * The task of an escalation (brief §7.4): "Dừng + Escalation" on a set of a session log. It goes to the manager department
+ * set in the parameter `managerDepartmentId`; without one it goes to the first of the people told, so it is never lost.
+ * It stays open until the escalation is marked seen with a direction. Returns the task's id.
+ */
+export async function createEscalationTask(
+  db: Db,
+  input: {
+    log: { id: string; branchId: string };
+    by: string;
+    recipients: string[];
+    title: string;
+    description: string;
+    dueAt: Date;
+  },
+): Promise<string | null> {
+  const departmentId = await readParameter(db, "managerDepartmentId");
+  const department = departmentId ? await repo.findDepartment(db, departmentId) : null;
+  const useDepartment = Boolean(department?.active && !department.isOther);
+  const assigneeUserId = useDepartment ? null : (input.recipients[0] ?? null);
+  if (!useDepartment && !assigneeUserId) return null;
+  const task = await repo.createTask(db, {
+    branchId: input.log.branchId,
+    assignerId: input.by,
+    title: input.title,
+    description: input.description,
+    assigneeUserId,
+    assigneeDepartmentId: useDepartment ? department!.id : null,
+    dueAt: input.dueAt,
+    priority: "HIGH",
+    reminderMinutes: [],
+    entityType: "workoutLog",
+    entityId: input.log.id,
+    source: "workoutEscalation",
+  });
+  await recordAudit(db, {
+    actorUserId: input.by,
+    entityType: "task",
+    entityId: task.id,
+    action: "task.created",
+    after: { ...pick(task, AUDITED_FIELDS), entityType: "workoutLog", entityId: input.log.id },
+    context: { source: "workoutEscalation" },
+  });
+  return task.id;
+}
+
+/** Closes the task of an escalation that was marked seen, with the direction as its last comment. */
+export async function completeEscalationTask(
+  db: Db,
+  input: { taskId: string; by: string; direction: string },
+): Promise<void> {
+  const task = await db.task.findUnique({ where: { id: input.taskId }, select: { id: true, status: true } });
+  if (!task || !(OPEN_TASK_STATUSES as readonly string[]).includes(task.status)) return;
+  await repo.createComment(db, { taskId: task.id, authorId: input.by, body: input.direction, mentions: [] });
+  await repo.updateTask(db, task.id, { status: "DONE", doneAt: new Date() });
+  await recordAudit(db, {
+    actorUserId: input.by,
+    entityType: "task",
+    entityId: task.id,
+    action: "task.completed",
+    before: { status: task.status },
+    after: { status: "DONE" },
+    context: { source: "workoutEscalation" },
+  });
 }

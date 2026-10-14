@@ -35,6 +35,16 @@ export const logSetSchema = z.object({
   flag: chosenOptionSchema,
   action: chosenOptionSchema,
   note: z.string().nullable(),
+  /** The escalation this set raised with "Dừng + Escalation", and what became of it (M7.4). */
+  escalation: z
+    .object({
+      id: z.uuid(),
+      raisedAt: instant,
+      seenAt: instant.nullable(),
+      seenBy: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+      direction: z.string().nullable(),
+    })
+    .nullable(),
 });
 
 export const logItemSchema = z.object({

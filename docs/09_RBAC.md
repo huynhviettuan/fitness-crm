@@ -102,6 +102,7 @@ Hideable customer fields so far: phone, email, ID document, health note, and (M2
 | Contract operations | `contract.view`, `contract.create`, `contract.approve` (and the matrix action `contract.create` decides who may), `contract.cancel`, `contract.unapprove` and `contract.delete` (Admin only, M4.4a), `contract.print` and `contract.note` (M4.4b: held by every role that sees contracts, and by every role that creates them) |
 | Check-in | `checkin.review` (Admin, Fitness Manager), `checkin.devices` (Admin), `report.manualConfirmations` (Admin, Fitness Manager) |
 | Workout catalogs (M7.1) | `workout.view` (Admin, Fitness Manager, Master, PT), `workout.catalog` (Admin, Fitness Manager) |
+| Workout escalations (M7.4) | read with `workout.view` (a PT: their own sessions'); mark seen with `workout.review`; told at once: users of the branch with `workout.review` |
 | Workout logs (M7.3) | `workout.log` (Admin, Fitness Manager, PT: own sessions); reads with `workout.view` |
 | Workout plans (M7.2) | `workout.plan` (Admin, Fitness Manager, PT: own plans), `workout.review` (Admin, Fitness Manager, Master); approval action `workout.plan` (Master and Admin) |
 | Staff notifications (M6.4) | each employee's own choices and devices: any signed-in user; the mandatory marks: `config.manage` (Admin) |

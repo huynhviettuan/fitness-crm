@@ -55,7 +55,7 @@ export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
     });
   }
   for (const kind of EXTERNAL_NOTIFICATION_KINDS) {
-    const emailMandatory = ["taskOverdue", "approvalOverdue", "sessionHanging"].includes(kind);
+    const emailMandatory = ["taskOverdue", "approvalOverdue", "sessionHanging", "workoutEscalation"].includes(kind);
     await prisma.staffNotificationSetting.upsert({
       where: { kind },
       update: { emailMandatory, pushMandatory: false, updatedById: null, updatedAt: null },

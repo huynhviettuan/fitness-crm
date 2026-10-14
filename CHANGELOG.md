@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-28 — M7.4: escalation
+
+- **Escalation** (A-206 to A-211): *Dừng + Escalation* on a set tells the manager and the Master at once (app, email, push), makes a high-priority task in Giao việc, and waits until one of them marks it seen with a direction; the coach is told.
+- **Open**: OQ-060. Docs 04, 07, 09, 13, 16, 18, 28; E2E-172.
+
 ## 2026-10-27 — M7.3: the session log
 
 - **Log** (A-199 to A-205): one log for each PT session, opened from the session; plan and actual on one row per set, the actual starting as the plan; before, during and after parts with 1 to 10 scales; Flag and Action from the admin lists.

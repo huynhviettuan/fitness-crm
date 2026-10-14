@@ -59,7 +59,8 @@
     "workoutCatalog": "Danh mục giáo án",
     "workoutPlans": "Giáo án của khách",
     "workoutTemplates": "Template giáo án",
-    "workoutLogs": "Nhật ký buổi tập"
+    "workoutLogs": "Nhật ký buổi tập",
+    "workoutEscalations": "Escalation buổi tập"
   },
   "status": {
     "customer": {
@@ -1682,7 +1683,8 @@
       "workout_exercise": "Bài tập",
       "workout_stage": "Stage giáo án",
       "workout_plan": "Giáo án",
-      "workout_log": "Nhật ký buổi tập"
+      "workout_log": "Nhật ký buổi tập",
+      "workout_escalation": "Escalation buổi tập"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1894,7 +1896,8 @@
     "entityTypes": {
       "customer": "Khách hàng",
       "contract": "Hợp đồng",
-      "lead": "Lead"
+      "lead": "Lead",
+      "workoutLog": "Nhật ký buổi tập"
     },
     "details": "Chi tiết công việc",
     "remindersHint": "Số giờ trước hạn, ví dụ 24, 3, 1. Để trống thì dùng mốc chung của hệ thống. Số lẻ dùng dấu chấm: 0.5 là nửa giờ.",
@@ -1931,7 +1934,9 @@
       "personMerged": "Hồ sơ {mergedCode} đã được gộp vào {code} · {name}",
       "leadReclaimed": "Lead {code} · {name} đã chuyển cho người khác vì {minutes} phút chưa được chăm sóc",
       "contractFrozenLong": "Hợp đồng {code} của {name} đã bị khóa quá {days} ngày.",
-      "sessionHanging": "Buổi tập của {customer} với {trainer} vẫn thiếu check-in sau {hours} giờ."
+      "sessionHanging": "Buổi tập của {customer} với {trainer} vẫn thiếu check-in sau {hours} giờ.",
+      "workoutEscalation": "Dừng + Escalation: {customer} · {exercise} (coach {trainer}). Flag: {flag}. {note}",
+      "workoutEscalationSeen": "{by} đã xem escalation của {customer} · {exercise}: {direction}"
     }
   },
   "checklist": {
@@ -3179,6 +3184,34 @@
     "save": "Lưu nhật ký",
     "saved": "Đã lưu nhật ký",
     "problems": "Cần sửa trước khi lưu:",
-    "readOnly": "Bạn chỉ xem được nhật ký này."
+    "readOnly": "Bạn chỉ xem được nhật ký này.",
+    "escalationWaiting": "Đã báo escalation cho quản lý và Master, đang chờ xử lý.",
+    "escalationSeen": "{by} đã xem escalation: {direction}"
+  },
+  "workoutEscalations": {
+    "title": "Escalation buổi tập",
+    "description": "Các lần coach chọn Dừng + Escalation trong nhật ký buổi tập. Quản lý hoặc Master đánh dấu đã xem và ghi hướng xử lý.",
+    "filters": "Bộ lọc escalation",
+    "apply": "Áp dụng",
+    "allStatuses": "Mọi trạng thái",
+    "empty": "Chưa có escalation nào.",
+    "status": {
+      "WAITING": "Chờ xử lý",
+      "SEEN": "Đã xem"
+    },
+    "fields": {
+      "status": "Trạng thái",
+      "raisedAt": "Lúc báo",
+      "customer": "Khách",
+      "trainer": "Coach",
+      "exercise": "Bài tập",
+      "flag": "Flag",
+      "note": "Ghi chú của coach",
+      "direction": "Hướng xử lý"
+    },
+    "exerciseSet": "{exercise} · set {set}",
+    "markSeen": "Đánh dấu đã xem",
+    "confirmSeen": "Đã xem và gửi hướng xử lý",
+    "seen": "Đã đánh dấu đã xem"
   }
 }

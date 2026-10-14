@@ -60,7 +60,7 @@ export async function resetDatabase(): Promise<void> {
   }
   // Admin's mandatory marks for staff notifications back to the migration's (the truncate above clears them, M6.4).
   for (const kind of EXTERNAL_NOTIFICATION_KINDS) {
-    const emailMandatory = ["taskOverdue", "approvalOverdue", "sessionHanging"].includes(kind);
+    const emailMandatory = ["taskOverdue", "approvalOverdue", "sessionHanging", "workoutEscalation"].includes(kind);
     await prisma.staffNotificationSetting.upsert({
       where: { kind },
       update: { emailMandatory, pushMandatory: false, updatedById: null, updatedAt: null },

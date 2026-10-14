@@ -113,6 +113,7 @@ erDiagram
 | `workout_equipment` (M7.1) | id, code, name, notes, active; code and name unique whatever the capitals |
 | `workout_areas` (M7.1) | id, code, name, parent_id (the tree, depth 5), notes, active; name unique among siblings |
 | `workout_exercises` (M7.1) | id, name (unique), search_name, area_id, equipment_id (optional), kind (STRENGTH or CARDIO), description, video_url (https), active |
+| `workout_escalations` (M7.4) | id, log_id, set_id (unique; none once the set is taken out), exercise_id and exercise_name, set_no, flag_option_id, flag_note, action_note, note (copied when raised), raised_by/at, task_id (the task in Giao việc), seen_by/at and direction (all or none: CHECK) |
 | `workout_logs` (M7.3) | id, booking_id (unique: one log for each PT session), branch_id, customer_id, trainer_id, plan_id and plan_session_id (the planned session it follows), goal, pre_stress, pre_energy, pre_impact_option_id, post_srpe, post_energy, post_summary_option_id (each scale with its note; CHECK 1 to 10), coach_notes |
 | `workout_log_items` / `workout_log_sets` (M7.3) | the log's exercises (plan_item_id when the plan had it) and sets: the plan's targets as copied (`plan_*`, `planned`), the actuals, flag_option_id, action_option_id (each with a note), note |
 | `workout_plans` (M7.2) | id, kind (TEMPLATE or CUSTOMER), name, status (DRAFT, PENDING, APPROVED, REJECTED, SUPERSEDED), branch_id, customer_id, contract_id, trainer_id, template_id, revises_id (one open revision per plan: partial unique index), plan_date, phase, goal, notes, approved_by/at |

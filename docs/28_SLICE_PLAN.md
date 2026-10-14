@@ -423,7 +423,7 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 - **Tests:** E2E-111 (the log part) at phone width.
 - **Depends on:** M7.2.
 
-### M7.4 Escalation
+### M7.4 Escalation (done 2026-10-28: A-206 to A-211, OQ-060)
 
 - **Builds:** "Dừng + Escalation" notifies the manager and the Master at once, with a link to the session. It creates a task that stays in the waiting list until it is marked seen with a direction.
 - **Source:** brief §7.4; FR-WKO-004; AC-21.

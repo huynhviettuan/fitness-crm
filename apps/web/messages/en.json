@@ -59,7 +59,8 @@
     "workoutCatalog": "Workout catalogs",
     "workoutPlans": "Customers' plans",
     "workoutTemplates": "Plan templates",
-    "workoutLogs": "Session logs"
+    "workoutLogs": "Session logs",
+    "workoutEscalations": "Workout escalations"
   },
   "status": {
     "customer": {
@@ -1682,7 +1683,8 @@
       "workout_exercise": "Exercise",
       "workout_stage": "Plan stage",
       "workout_plan": "Workout plan",
-      "workout_log": "Session log"
+      "workout_log": "Session log",
+      "workout_escalation": "Workout escalation"
     },
     "verbs": {
       "created": "Created",
@@ -1894,7 +1896,8 @@
     "entityTypes": {
       "customer": "Customer",
       "contract": "Contract",
-      "lead": "Lead"
+      "lead": "Lead",
+      "workoutLog": "Session log"
     },
     "details": "Task details",
     "remindersHint": "Hours before the deadline, for example 24, 3, 1. Leave empty for the shared points of the system. Use a dot for fractions: 0.5 is half an hour.",
@@ -1931,7 +1934,9 @@
       "personMerged": "Record {mergedCode} was merged into {code} · {name}",
       "leadReclaimed": "Lead {code} · {name} was moved to someone else after {minutes} minutes without care",
       "contractFrozenLong": "Contract {code} of {name} has been deactivated for more than {days} days.",
-      "sessionHanging": "Session of {customer} with {trainer} still lacks a full check-in after {hours} hours."
+      "sessionHanging": "Session of {customer} with {trainer} still lacks a full check-in after {hours} hours.",
+      "workoutEscalation": "Stop + Escalation: {customer} · {exercise} (coach {trainer}). Flag: {flag}. {note}",
+      "workoutEscalationSeen": "{by} saw the escalation of {customer} · {exercise}: {direction}"
     }
   },
   "checklist": {
@@ -3179,6 +3184,34 @@
     "save": "Save log",
     "saved": "Log saved",
     "problems": "Fix before saving:",
-    "readOnly": "You can only read this log."
+    "readOnly": "You can only read this log.",
+    "escalationWaiting": "Escalation sent to the manager and the Master, waiting to be handled.",
+    "escalationSeen": "{by} saw the escalation: {direction}"
+  },
+  "workoutEscalations": {
+    "title": "Workout escalations",
+    "description": "Each time a coach chose Stop + Escalation in a session log. The manager or the Master marks it seen and writes a direction.",
+    "filters": "Escalation filters",
+    "apply": "Apply",
+    "allStatuses": "All statuses",
+    "empty": "No escalations yet.",
+    "status": {
+      "WAITING": "Waiting",
+      "SEEN": "Seen"
+    },
+    "fields": {
+      "status": "Status",
+      "raisedAt": "Raised",
+      "customer": "Customer",
+      "trainer": "Coach",
+      "exercise": "Exercise",
+      "flag": "Flag",
+      "note": "Coach's note",
+      "direction": "Direction"
+    },
+    "exerciseSet": "{exercise} · set {set}",
+    "markSeen": "Mark seen",
+    "confirmSeen": "Seen: send the direction",
+    "seen": "Marked as seen"
   }
 }

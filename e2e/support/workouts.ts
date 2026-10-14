@@ -1,5 +1,6 @@
 import { expect, type APIRequestContext } from "@playwright/test";
 import { approvePendingViaApi } from "./approvals";
+import { bookingSetup, createBookingViaApi, randomBookingDay } from "./data";
 
 export type ApiAs = (role: "ADMIN" | "FITNESS_MANAGER" | "RECEPTIONIST" | "PT") => Promise<APIRequestContext>;
 
@@ -82,4 +83,40 @@ export async function approvedPlanViaApi(
   expect((await manager.post(`/api/v1/workout/plans/${plan.id}/submit`)).ok(), "submit plan").toBe(true);
   await approvePendingViaApi(await apiAs("ADMIN"), plan.id, "workout.plan");
   return plan;
+}
+
+/** A customer with an approved plan for the E2E coach, and two PT sessions on one day (10:00 and 12:00). */
+export async function sessionsWithPlan(
+  apiAs: ApiAs,
+  tag: string,
+  sessions = 2,
+): Promise<{
+  customer: Awaited<ReturnType<typeof bookingSetup>>["customer"];
+  catalog: Awaited<ReturnType<typeof workoutCatalog>>;
+  day: ReturnType<typeof randomBookingDay>;
+  bookings: [string, string];
+}> {
+  const { customer, refs } = await bookingSetup(apiAs, tag);
+  // The coach is the employee the PT login belongs to, so the PT owns these sessions.
+  const { employeeId: trainerId } = (await (await (await apiAs("PT")).get("/api/v1/me")).json()) as {
+    employeeId: string;
+  };
+  const catalog = await workoutCatalog(apiAs, tag);
+  await approvedPlanViaApi(apiAs, { customerId: customer.id, contractId: refs.contractId, trainerId }, catalog, tag);
+  const reception = await apiAs("RECEPTIONIST");
+  const day = randomBookingDay();
+  const first = await createBookingViaApi(
+    reception,
+    { ...refs, trainerId },
+    { date: day.date, startTime: "10:00", endTime: "11:00" },
+  );
+  const second =
+    sessions > 1
+      ? await createBookingViaApi(
+          reception,
+          { ...refs, trainerId },
+          { date: day.date, startTime: "12:00", endTime: "13:00" },
+        )
+      : first;
+  return { customer, catalog, day, bookings: [first.id, second.id] };
 }

@@ -228,6 +228,8 @@ model User {
   workoutPlansApproved        WorkoutPlan[]              @relation("WorkoutPlanApprovedBy")
   workoutLogsCreated          WorkoutLog[]               @relation("WorkoutLogCreatedBy")
   workoutLogsUpdated          WorkoutLog[]               @relation("WorkoutLogUpdatedBy")
+  escalationsRaised           WorkoutEscalation[]        @relation("WorkoutEscalationRaisedBy")
+  escalationsSeen             WorkoutEscalation[]        @relation("WorkoutEscalationSeenBy")
 
   @@index([roleId])
   @@map("users")
@@ -406,6 +408,7 @@ model Option {
   logPostSummaries     WorkoutLog[]               @relation("WorkoutLogPostSummary")
   logSetFlags          WorkoutLogSet[]            @relation("WorkoutLogSetFlag")
   logSetActions        WorkoutLogSet[]            @relation("WorkoutLogSetAction")
+  escalationFlags      WorkoutEscalation[]        @relation("WorkoutEscalationFlag")
   cashMethods          CashTransaction[]          @relation("CashMethod")
   cashOpeningMethods   CashOpeningBalance[]       @relation("CashOpeningMethod")
   paymentDeleteReasons Payment[]                  @relation("PaymentDeleteReason")
@@ -1390,36 +1393,37 @@ model TaskReminder {
 }
 
 model Task {
-  id                   String       @id @default(uuid()) @db.Uuid
-  branchId             String       @map("branch_id") @db.Uuid
-  branch               Branch       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  id                   String             @id @default(uuid()) @db.Uuid
+  branchId             String             @map("branch_id") @db.Uuid
+  branch               Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
   title                String
   description          String?
-  assignerId           String       @map("assigner_id") @db.Uuid
-  assigner             User         @relation("TaskAssigner", fields: [assignerId], references: [id], onDelete: Restrict)
-  assigneeUserId       String?      @map("assignee_user_id") @db.Uuid
-  assigneeUser         User?        @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+  assignerId           String             @map("assigner_id") @db.Uuid
+  assigner             User               @relation("TaskAssigner", fields: [assignerId], references: [id], onDelete: Restrict)
+  assigneeUserId       String?            @map("assignee_user_id") @db.Uuid
+  assigneeUser         User?              @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
   // From the "departments" list.
-  assigneeDepartmentId String?      @map("assignee_department_option_id") @db.Uuid
-  assigneeDepartment   Option?      @relation(fields: [assigneeDepartmentId], references: [id], onDelete: Restrict)
-  dueAt                DateTime     @map("due_at") @db.Timestamptz(3)
-  priority             TaskPriority @default(NORMAL)
-  status               TaskStatus   @default(NEW)
+  assigneeDepartmentId String?            @map("assignee_department_option_id") @db.Uuid
+  assigneeDepartment   Option?            @relation(fields: [assigneeDepartmentId], references: [id], onDelete: Restrict)
+  dueAt                DateTime           @map("due_at") @db.Timestamptz(3)
+  priority             TaskPriority       @default(NORMAL)
+  status               TaskStatus         @default(NEW)
   // The record the task is about: "lead", "customer", or "contract" (more with later modules).
-  entityType           String?      @map("entity_type")
-  entityId             String?      @map("entity_id") @db.Uuid
+  entityType           String?            @map("entity_type")
+  entityId             String?            @map("entity_id") @db.Uuid
   // Set when the system made the task: "studio" for Báo Studio (brief §4.1), which updates its own.
   source               String?
-  acceptedAt           DateTime?    @map("accepted_at") @db.Timestamptz(3)
-  startedAt            DateTime?    @map("started_at") @db.Timestamptz(3)
-  doneAt               DateTime?    @map("done_at") @db.Timestamptz(3)
-  cancelledAt          DateTime?    @map("cancelled_at") @db.Timestamptz(3)
+  workoutEscalation    WorkoutEscalation?
+  acceptedAt           DateTime?          @map("accepted_at") @db.Timestamptz(3)
+  startedAt            DateTime?          @map("started_at") @db.Timestamptz(3)
+  doneAt               DateTime?          @map("done_at") @db.Timestamptz(3)
+  cancelledAt          DateTime?          @map("cancelled_at") @db.Timestamptz(3)
   // Its own reminder points, minutes before the deadline; none means the shared points (D-056).
-  reminderMinutes      Int[]        @default([]) @map("reminder_minutes")
+  reminderMinutes      Int[]              @default([]) @map("reminder_minutes")
   // When the overdue notice went out, so it goes once (worker, T-059); the points before the deadline are `reminders`.
-  overdueNotifiedAt    DateTime?    @map("overdue_notified_at") @db.Timestamptz(3)
-  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  overdueNotifiedAt    DateTime?          @map("overdue_notified_at") @db.Timestamptz(3)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   comments    TaskComment[]
   reminders   TaskReminder[]
@@ -2312,7 +2316,8 @@ model WorkoutLog {
   createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  items WorkoutLogItem[]
+  items       WorkoutLogItem[]
+  escalations WorkoutEscalation[]
 
   @@index([customerId, createdAt])
   @@index([trainerId])
@@ -2340,39 +2345,76 @@ model WorkoutLogItem {
 }
 
 model WorkoutLogSet {
-  id                  String         @id @default(uuid()) @db.Uuid
-  itemId              String         @map("item_id") @db.Uuid
-  item                WorkoutLogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  setNo               Int            @map("set_no")
+  id                  String             @id @default(uuid()) @db.Uuid
+  itemId              String             @map("item_id") @db.Uuid
+  item                WorkoutLogItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  setNo               Int                @map("set_no")
   // The plan's targets as they were when the log was made (null on a set the coach added).
-  planned             Boolean        @default(false)
-  planWeight          Decimal?       @map("plan_weight") @db.Decimal(7, 2)
-  planReps            Int?           @map("plan_reps")
-  planRestSeconds     Int?           @map("plan_rest_seconds")
-  planRir             Int?           @map("plan_rir")
-  planTempo           String?        @map("plan_tempo")
-  planTechnique       String?        @map("plan_technique")
-  planVideoUrl        String?        @map("plan_video_url")
-  planDurationMinutes Decimal?       @map("plan_duration_minutes") @db.Decimal(6, 1)
-  planSpeed           Decimal?       @map("plan_speed") @db.Decimal(5, 1)
-  planHeartRate       Int?           @map("plan_heart_rate")
-  planNotes           String?        @map("plan_notes")
-  weight              Decimal?       @db.Decimal(7, 2)
+  planned             Boolean            @default(false)
+  planWeight          Decimal?           @map("plan_weight") @db.Decimal(7, 2)
+  planReps            Int?               @map("plan_reps")
+  planRestSeconds     Int?               @map("plan_rest_seconds")
+  planRir             Int?               @map("plan_rir")
+  planTempo           String?            @map("plan_tempo")
+  planTechnique       String?            @map("plan_technique")
+  planVideoUrl        String?            @map("plan_video_url")
+  planDurationMinutes Decimal?           @map("plan_duration_minutes") @db.Decimal(6, 1)
+  planSpeed           Decimal?           @map("plan_speed") @db.Decimal(5, 1)
+  planHeartRate       Int?               @map("plan_heart_rate")
+  planNotes           String?            @map("plan_notes")
+  weight              Decimal?           @db.Decimal(7, 2)
   reps                Int?
   rir                 Int?
-  durationMinutes     Decimal?       @map("duration_minutes") @db.Decimal(6, 1)
-  speed               Decimal?       @db.Decimal(5, 1)
-  heartRate           Int?           @map("heart_rate")
-  flagId              String         @map("flag_option_id") @db.Uuid
-  flag                Option         @relation("WorkoutLogSetFlag", fields: [flagId], references: [id], onDelete: Restrict)
-  flagNote            String?        @map("flag_note")
-  actionId            String         @map("action_option_id") @db.Uuid
-  action              Option         @relation("WorkoutLogSetAction", fields: [actionId], references: [id], onDelete: Restrict)
-  actionNote          String?        @map("action_note")
+  durationMinutes     Decimal?           @map("duration_minutes") @db.Decimal(6, 1)
+  speed               Decimal?           @db.Decimal(5, 1)
+  heartRate           Int?               @map("heart_rate")
+  flagId              String             @map("flag_option_id") @db.Uuid
+  flag                Option             @relation("WorkoutLogSetFlag", fields: [flagId], references: [id], onDelete: Restrict)
+  flagNote            String?            @map("flag_note")
+  actionId            String             @map("action_option_id") @db.Uuid
+  action              Option             @relation("WorkoutLogSetAction", fields: [actionId], references: [id], onDelete: Restrict)
+  actionNote          String?            @map("action_note")
   note                String?
+  escalation          WorkoutEscalation?
 
   @@index([itemId])
   @@index([flagId])
   @@index([actionId])
   @@map("workout_log_sets")
+}
+
+// ---------------------------------------------------------------------------
+// Escalation (M7.4, brief §7.4, FR-WKO-004): a set with the Action "Dừng + Escalation" raises one, once. It tells the manager
+// and the Master, waits as a task in Giao việc, and is closed by one of them marking it seen with a direction. What it says
+// is copied when it is raised, so it reads the same whatever happens to the log after.
+// ---------------------------------------------------------------------------
+
+model WorkoutEscalation {
+  id           String         @id @default(uuid()) @db.Uuid
+  logId        String         @map("log_id") @db.Uuid
+  log          WorkoutLog     @relation(fields: [logId], references: [id], onDelete: Cascade)
+  // The set that raised it; none once the coach has taken that set out of the log.
+  setId        String?        @unique @map("set_id") @db.Uuid
+  set          WorkoutLogSet? @relation(fields: [setId], references: [id], onDelete: SetNull)
+  exerciseId   String         @map("exercise_id") @db.Uuid
+  exerciseName String         @map("exercise_name")
+  setNo        Int            @map("set_no")
+  flagId       String         @map("flag_option_id") @db.Uuid
+  flag         Option         @relation("WorkoutEscalationFlag", fields: [flagId], references: [id], onDelete: Restrict)
+  flagNote     String?        @map("flag_note")
+  actionNote   String?        @map("action_note")
+  note         String?
+  raisedById   String         @map("raised_by") @db.Uuid
+  raisedBy     User           @relation("WorkoutEscalationRaisedBy", fields: [raisedById], references: [id], onDelete: Restrict)
+  raisedAt     DateTime       @default(now()) @map("raised_at") @db.Timestamptz(3)
+  taskId       String?        @unique @map("task_id") @db.Uuid
+  task         Task?          @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  seenById     String?        @map("seen_by") @db.Uuid
+  seenBy       User?          @relation("WorkoutEscalationSeenBy", fields: [seenById], references: [id], onDelete: Restrict)
+  seenAt       DateTime?      @map("seen_at") @db.Timestamptz(3)
+  direction    String?
+
+  @@index([logId])
+  @@index([seenAt])
+  @@map("workout_escalations")
 }

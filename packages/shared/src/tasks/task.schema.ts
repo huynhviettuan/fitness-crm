@@ -17,7 +17,11 @@ export const TASK_PRIORITIES = ["LOW", "NORMAL", "HIGH"] as const;
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 /** Records a task can be about. Leads and sessions join when their modules are built. */
-export const TASK_ENTITY_TYPES = ["lead", "customer", "contract"] as const;
+/** The records a person can attach a task to. */
+export const MANUAL_TASK_ENTITY_TYPES = ["lead", "customer", "contract"] as const;
+/** Every record a task can be about: the system also makes tasks about a session log's escalation (M7.4). */
+export const TASK_ENTITY_TYPES = [...MANUAL_TASK_ENTITY_TYPES, "workoutLog"] as const;
+export type ManualTaskEntityType = (typeof MANUAL_TASK_ENTITY_TYPES)[number];
 export type TaskEntityType = (typeof TASK_ENTITY_TYPES)[number];
 
 /** What a user may do with a task; the API decides and the screen shows only these. */
@@ -83,7 +87,7 @@ export const taskInputSchema = z
     entityType: z
       .preprocess(
         (value) => (value === "" ? null : value),
-        z.enum(TASK_ENTITY_TYPES, { error: "invalidChoice" }).nullable(),
+        z.enum(MANUAL_TASK_ENTITY_TYPES, { error: "invalidChoice" }).nullable(),
       )
       .prefault(""),
     entityId: optionalId.prefault(""),

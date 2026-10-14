@@ -20,9 +20,11 @@ import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.j
 import { AppError } from "../../platform/errors/app-error.js";
 import { chosen, resolveChoice } from "../../platform/options/option.service.js";
 import { assertCan } from "../../platform/permissions/assert.js";
-import { inBranches, isOwnOnly } from "../../platform/permissions/scope.js";
+import { isOwnOnly } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import { bookingsVisibleTo } from "../bookings/booking.service.js";
+import { raiseEscalations } from "./escalation.service.js";
+import { logsVisibleTo } from "./log.scope.js";
 import * as repo from "./log.repository.js";
 
 // The session log (M7.3, brief §7.3, FR-WKO-003; A-199 to A-205). Opened from a PT session; the plan's targets are copied
@@ -34,14 +36,6 @@ const notFound = () => new AppError("NOT_FOUND");
 const invalid = (field: string, code = "invalidChoice") =>
   new AppError("VALIDATION_FAILED", { fieldErrors: { [field]: [code] } });
 const decimal = (value: Prisma.Decimal | null): number | null => (value === null ? null : Number(value));
-
-/** The logs an actor may see: their branches', and for a PT the sessions they teach or the customers they created. */
-function visibleTo(actor: Actor): Prisma.WorkoutLogWhereInput {
-  const own: Prisma.WorkoutLogWhereInput = {
-    OR: [...(actor.employeeId ? [{ trainerId: actor.employeeId }] : []), { customer: { createdById: actor.id } }],
-  };
-  return { AND: [inBranches(actor), isOwnOnly(actor, "schedule") ? own : {}] };
-}
 
 /** Whether the actor may write this log: a PT only the sessions they teach, a manager any in their branches. */
 function mayWrite(actor: Actor, log: { trainerId: string }): boolean {
@@ -126,13 +120,14 @@ function toView(record: repo.LogRecord, actor: Actor): Log {
         flag: chosen(set.flag, set.flagNote),
         action: chosen(set.action, set.actionNote),
         note: set.note,
+        escalation: set.escalation,
       })),
     })),
   };
 }
 
 async function viewOf(db: Db, actor: Actor, id: string): Promise<Log> {
-  const record = await repo.findLog(db, { AND: [{ id }, visibleTo(actor)] });
+  const record = await repo.findLog(db, { AND: [{ id }, logsVisibleTo(actor)] });
   if (!record) throw notFound();
   return toView(record, actor);
 }
@@ -144,7 +139,7 @@ export async function listLogs(actor: Actor, rawQuery: unknown): Promise<LogPage
   const query = parseInput(logListQuerySchema, rawQuery);
   const { items, total } = await repo.listLogs(
     prisma,
-    { AND: [visibleTo(actor), { customerId: query.customerId, trainerId: query.trainerId }] },
+    { AND: [logsVisibleTo(actor), { customerId: query.customerId, trainerId: query.trainerId }] },
     { skip: (query.page - 1) * query.pageSize, take: query.pageSize },
   );
   return {
@@ -360,7 +355,7 @@ export async function updateLog(actor: Actor, id: string, rawInput: unknown): Pr
   const input = parseInput(logContentSchema, rawInput);
   return prisma.$transaction(async (tx) => {
     if (!(await repo.lockLog(tx, id))) throw notFound();
-    const before = await repo.findLog(tx, { AND: [{ id }, visibleTo(actor)] });
+    const before = await repo.findLog(tx, { AND: [{ id }, logsVisibleTo(actor)] });
     if (!before || !mayWrite(actor, before)) throw notFound();
 
     const impact = input.preImpactId
@@ -488,6 +483,8 @@ export async function updateLog(actor: Actor, id: string, rawInput: unknown): Pr
       }
     }
 
+    // "Dừng + Escalation" on a set tells the manager and the Master, once for the set (M7.4).
+    await raiseEscalations(tx, actor, id);
     const after = await viewOf(tx, actor, id);
     await recordAudit(tx, {
       actorUserId: actor.id,

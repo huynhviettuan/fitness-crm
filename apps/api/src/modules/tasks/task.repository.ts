@@ -152,9 +152,9 @@ export function findDepartment(db: Db, id: string) {
 export async function entityRefs(
   db: Db,
   refs: { type: string; id: string }[],
-): Promise<Map<string, { label: string; type: "lead" | "customer" | "contract" }>> {
+): Promise<Map<string, { label: string; type: "lead" | "customer" | "contract" | "workoutLog" }>> {
   const ids = (...types: string[]) => refs.filter((ref) => types.includes(ref.type)).map((ref) => ref.id);
-  const [people, contracts] = await Promise.all([
+  const [people, contracts, logs] = await Promise.all([
     db.customer.findMany({
       where: { id: { in: ids("lead", "customer") } },
       select: { id: true, stage: true, leadCode: true, customerCode: true, fullName: true },
@@ -163,8 +163,16 @@ export async function entityRefs(
       where: { id: { in: ids("contract") } },
       select: { id: true, contractCode: true, packageName: true },
     }),
+    db.workoutLog.findMany({
+      where: { id: { in: ids("workoutLog") } },
+      select: {
+        id: true,
+        customer: { select: { customerCode: true, fullName: true } },
+        booking: { select: { scheduledStart: true } },
+      },
+    }),
   ]);
-  type Ref = { label: string; type: "lead" | "customer" | "contract" };
+  type Ref = { label: string; type: "lead" | "customer" | "contract" | "workoutLog" };
   const entries: [string, Ref][] = [
     ...people.map((p): [string, Ref] =>
       p.stage === "LEAD"
@@ -172,6 +180,10 @@ export async function entityRefs(
         : [p.id, { label: `${p.customerCode} · ${p.fullName}`, type: "customer" }],
     ),
     ...contracts.map((c): [string, Ref] => [c.id, { label: `${c.contractCode} · ${c.packageName}`, type: "contract" }]),
+    ...logs.map((l): [string, Ref] => [
+      l.id,
+      { label: `${l.customer.customerCode} · ${l.customer.fullName}`, type: "workoutLog" },
+    ]),
   ];
   return new Map(entries);
 }

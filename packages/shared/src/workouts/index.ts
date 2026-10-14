@@ -7,3 +7,4 @@ export * from "./plan.view.js";
 export * from "./log.domain.js";
 export * from "./log.schema.js";
 export * from "./log.view.js";
+export * from "./escalation.schema.js";
