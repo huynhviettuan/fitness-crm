@@ -43,6 +43,23 @@ enum ContractStatus {
 }
 
 // D-019: one record per person; a lead becomes a customer at Show.
+// The change vouchers of a contract (M8, brief §5.6, D-024): one kind each, waiting for approval before they act.
+enum VoucherKind {
+  RENEWAL
+  UPGRADE
+  HOLD
+  TRANSFER
+  BRANCH_TRANSFER
+  CONVERSION
+  CANCELLATION
+}
+
+enum VoucherStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum PersonStage {
   LEAD
   CUSTOMER
@@ -230,6 +247,8 @@ model User {
   workoutLogsUpdated          WorkoutLog[]               @relation("WorkoutLogUpdatedBy")
   escalationsRaised           WorkoutEscalation[]        @relation("WorkoutEscalationRaisedBy")
   escalationsSeen             WorkoutEscalation[]        @relation("WorkoutEscalationSeenBy")
+  vouchersCreated             ContractChangeVoucher[]    @relation("VoucherCreatedBy")
+  vouchersApproved            ContractChangeVoucher[]    @relation("VoucherApprovedBy")
 
   @@index([roleId])
   @@map("users")
@@ -273,6 +292,7 @@ model Branch {
 
   workoutPlans WorkoutPlan[]
   workoutLogs  WorkoutLog[]
+  vouchers     ContractChangeVoucher[]
 
   @@map("branches")
 }
@@ -726,15 +746,16 @@ model Customer {
   consultingAudits  ConsultingAudit[]
 
   // Set when this record was merged into another (A-064): it is hidden everywhere, its codes stay reserved.
-  mergedIntoId     String?           @map("merged_into_id") @db.Uuid
-  mergedInto       Customer?         @relation("CustomerMergedInto", fields: [mergedIntoId], references: [id], onDelete: Restrict)
-  mergedFrom       Customer[]        @relation("CustomerMergedInto")
-  mergedAt         DateTime?         @map("merged_at") @db.Timestamptz(3)
-  mergesAsSurvivor PersonMerge[]     @relation("MergeSurvivor")
-  mergeAsMerged    PersonMerge?      @relation("MergeMerged")
+  mergedIntoId     String?                 @map("merged_into_id") @db.Uuid
+  mergedInto       Customer?               @relation("CustomerMergedInto", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  mergedFrom       Customer[]              @relation("CustomerMergedInto")
+  mergedAt         DateTime?               @map("merged_at") @db.Timestamptz(3)
+  mergesAsSurvivor PersonMerge[]           @relation("MergeSurvivor")
+  mergeAsMerged    PersonMerge?            @relation("MergeMerged")
   classAttendances ClassAttendance[]
   workoutPlans     WorkoutPlan[]
   workoutLogs      WorkoutLog[]
+  vouchers         ContractChangeVoucher[]
 
   @@index([phone])
   @@index([searchName])
@@ -1044,6 +1065,9 @@ model Contract {
   deleteReasonId      String?        @map("delete_reason_option_id") @db.Uuid
   deleteReason        Option?        @relation("ContractDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
   deleteReasonNote    String?        @map("delete_reason_note")
+  // Derived from the approved change vouchers by a database trigger, never written by the app (M8, T-050).
+  voucherSessions     Int            @default(0) @map("voucher_sessions")
+  voucherValue        Decimal        @default(0) @map("voucher_value") @db.Decimal(14, 0)
 
   bookings         Booking[]
   freezes          ContractFreeze[]
@@ -1054,6 +1078,7 @@ model Contract {
   classAttendances ClassAttendance[]
   payoutLines      PtPayoutLine[]
   workoutPlans     WorkoutPlan[]
+  vouchers         ContractChangeVoucher[]
 
   @@index([customerId])
   @@index([branchId])
@@ -2417,4 +2442,52 @@ model WorkoutEscalation {
   @@index([logId])
   @@index([seenAt])
   @@map("workout_escalations")
+}
+
+// ---------------------------------------------------------------------------
+// Contract change vouchers (M8, brief §5.6, FR-CHG-001, FR-CHG-002, D-024). A voucher waits for approval and then acts on
+// the contract it is linked to; its effects (sessions and value added, the end date) are set once, at approval, and a trigger
+// sums them into contracts.voucher_sessions and contracts.voucher_value. An approved voucher is never edited (T-050).
+// ---------------------------------------------------------------------------
+
+model ContractChangeVoucher {
+  id                 String        @id @default(uuid()) @db.Uuid
+  // From voucher_seq with the configured prefix (D-038); never reused.
+  voucherNumber      String        @unique @map("voucher_number")
+  kind               VoucherKind
+  status             VoucherStatus @default(PENDING)
+  contractId         String        @map("contract_id") @db.Uuid
+  contract           Contract      @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  branchId           String        @map("branch_id") @db.Uuid
+  branch             Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customerId         String        @map("customer_id") @db.Uuid
+  customer           Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  // The kind's own fields (brief §5.6); the ones a kind does not have stay empty.
+  fromDate           DateTime?     @map("from_date") @db.Date
+  toDate             DateTime?     @map("to_date") @db.Date
+  months             Int?
+  days               Int?
+  sessions           Int?
+  amount             Decimal?      @db.Decimal(14, 0)
+  note               String?
+  // What approving it did: set at approval, and summed into the contract by a trigger.
+  sessionsDelta      Int           @default(0) @map("sessions_delta")
+  valueDelta         Decimal       @default(0) @map("value_delta") @db.Decimal(14, 0)
+  endDateBefore      DateTime?     @map("end_date_before") @db.Date
+  endDateAfter       DateTime?     @map("end_date_after") @db.Date
+  // T-015: replaying a create with the same key returns this voucher.
+  idempotencyKey     String        @unique @map("idempotency_key")
+  requestFingerprint String?       @map("request_fingerprint")
+  createdById        String        @map("created_by") @db.Uuid
+  createdBy          User          @relation("VoucherCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  approvedById       String?       @map("approved_by") @db.Uuid
+  approvedBy         User?         @relation("VoucherApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedAt         DateTime?     @map("approved_at") @db.Timestamptz(3)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([contractId, status])
+  @@index([customerId])
+  @@index([branchId])
+  @@map("contract_change_vouchers")
 }

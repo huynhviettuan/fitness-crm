@@ -11,6 +11,7 @@ const bookingInclude = {
       packageName: true,
       status: true,
       totalSessions: true,
+      voucherSessions: true,
       bonusSessions: true,
       openingSessionsUsed: true,
       // T-050: the sessions used are the contract's bookings whose status consumed when it was set, and the class
@@ -210,6 +211,23 @@ export async function cancelBookedBookingsOfContract(
   actorId: string,
 ): Promise<string[]> {
   const booked = await db.booking.findMany({ where: { contractId, status: "BOOKED" }, select: { id: true } });
+  const ids = booked.map((b) => b.id);
+  for (const id of ids) await setStatus(db, id, "BOOKED", rule, actorId);
+  return ids;
+}
+
+/** M8.1: cancels the Booked sessions of a contract that start inside a range (a hold), with the rule of Hủy lịch. */
+export async function cancelBookedBookingsInRange(
+  db: Db,
+  contractId: string,
+  range: { from: Date; to: Date },
+  rule: StatusRule,
+  actorId: string,
+): Promise<string[]> {
+  const booked = await db.booking.findMany({
+    where: { contractId, status: "BOOKED", scheduledStart: { gte: range.from, lt: range.to } },
+    select: { id: true },
+  });
   const ids = booked.map((b) => b.id);
   for (const id of ids) await setStatus(db, id, "BOOKED", rule, actorId);
   return ids;

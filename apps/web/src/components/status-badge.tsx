@@ -49,6 +49,8 @@ const STATUS_VARIANTS = {
   taskPriority: { LOW: "muted", NORMAL: "info", HIGH: "destructive" },
   // M7.2: a workout plan is written, waits for the Master, is in use, was sent back, or was replaced by a revision.
   plan: { DRAFT: "muted", PENDING: "warning", APPROVED: "success", REJECTED: "destructive", SUPERSEDED: "muted" },
+  // M8: a change voucher waits for approval, acts, or was turned down.
+  voucher: { PENDING: "warning", APPROVED: "success", REJECTED: "destructive" },
   // D-036: a customer email waits to be sent, was sent, or could not be.
   email: { QUEUED: "info", SENT: "success", FAILED: "destructive" },
 } as const satisfies Record<string, Record<string, BadgeVariant>>;

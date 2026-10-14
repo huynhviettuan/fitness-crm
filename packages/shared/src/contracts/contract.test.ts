@@ -11,6 +11,7 @@ import {
   contractFigures,
   effectiveStatus,
   entitledSessions,
+  valueOfContract,
   formatContractCode,
   isEditable,
   ptSharesRequired,
@@ -95,8 +96,15 @@ describe("contractFigures (T-012, BR-013, D-011)", () => {
 
 describe("entitledSessions and contractEndDate (A-108, A-114)", () => {
   it("adds the bonus sessions to the ones bought", () => {
-    expect(entitledSessions(24, 0)).toBe(24);
-    expect(entitledSessions(24, 3)).toBe(27);
+    expect(entitledSessions(24, 0, 0)).toBe(24);
+    expect(entitledSessions(24, 3, 0)).toBe(27);
+  });
+
+  it("adds the sessions of the approved change vouchers, which may take some away (M8)", () => {
+    expect(entitledSessions(24, 3, 12)).toBe(39);
+    expect(entitledSessions(24, 3, -10)).toBe(17);
+    expect(valueOfContract(9_000_000, 3_000_000)).toBe(12_000_000);
+    expect(valueOfContract(9_000_000, -2_000_000)).toBe(7_000_000);
   });
 
   it("adds the tier's validity and the bonus months and days, the start day counting", () => {

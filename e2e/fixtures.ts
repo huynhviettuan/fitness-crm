@@ -378,6 +378,26 @@ export const test = base.extend<Fixtures>({
       });
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: payoutIds } } });
       await prisma.ptPayout.deleteMany({ where: { id: { in: payoutIds } } });
+      // Change vouchers of the tagged customers (M8): a decided one cannot be removed, so the guard is off for the delete.
+      const voucherIds = ids(
+        await prisma.contractChangeVoucher.findMany({
+          where: { customerId: { in: customerIds } },
+          select: { id: true },
+        }),
+      );
+      if (voucherIds.length > 0) {
+        await prisma.approvalRequest.deleteMany({ where: { entityId: { in: voucherIds } } });
+        await prisma.auditEvent.deleteMany({ where: { entityId: { in: voucherIds } } });
+        await prisma.$transaction([
+          prisma.$executeRawUnsafe(
+            'ALTER TABLE "contract_change_vouchers" DISABLE TRIGGER "contract_change_vouchers_immutable"',
+          ),
+          prisma.contractChangeVoucher.deleteMany({ where: { id: { in: voucherIds } } }),
+          prisma.$executeRawUnsafe(
+            'ALTER TABLE "contract_change_vouchers" ENABLE TRIGGER "contract_change_vouchers_immutable"',
+          ),
+        ]);
+      }
       // Session logs of the tagged bookings and customers go before the plans, the catalog and the bookings they point at (M7.3).
       const logIds = ids(
         await prisma.workoutLog.findMany({

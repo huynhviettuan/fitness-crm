@@ -32,6 +32,10 @@ export const EMAIL_PLACEHOLDERS = {
   debt: { vi: "Còn nợ", en: "Still owed", sample: { vi: "9.000.000 ₫", en: "VND 9,000,000" } },
   addedDays: { vi: "Số ngày được cộng thêm", en: "Days added", sample: { vi: "10", en: "10" } },
   daysLeft: { vi: "Số ngày còn lại", en: "Days left", sample: { vi: "14", en: "14" } },
+  voucherNumber: { vi: "Số phiếu biến động", en: "Change voucher number", sample: { vi: "BD000012", en: "BD000012" } },
+  sessionsAdded: { vi: "Số buổi được cộng thêm", en: "Sessions added", sample: { vi: "12", en: "12" } },
+  fromDate: { vi: "Từ ngày (dd/MM/yyyy)", en: "From day (dd/MM/yyyy)", sample: { vi: "01/11/2026", en: "01/11/2026" } },
+  toDate: { vi: "Đến ngày (dd/MM/yyyy)", en: "To day (dd/MM/yyyy)", sample: { vi: "30/11/2026", en: "30/11/2026" } },
 } as const;
 export type EmailPlaceholder = keyof typeof EMAIL_PLACEHOLDERS;
 
@@ -181,6 +185,21 @@ export const EMAIL_EVENTS = {
     placeholders: CONTRACT,
     required: ["remaining"],
   },
+  // The change vouchers (M8, D-024, D-036): a voucher that moves the session count always tells the customer.
+  "change.renewal": {
+    vi: "Gia hạn hợp đồng (phiếu biến động)",
+    en: "Contract renewed (change voucher)",
+    mandatory: true,
+    placeholders: [...CONTRACT, "day", "voucherNumber", "sessionsAdded", "addedDays", "fromDate", "toDate", "amount"],
+    required: ["remaining", "endDate"],
+  },
+  "change.hold": {
+    vi: "Bảo lưu hợp đồng (phiếu biến động)",
+    en: "Contract on hold (change voucher)",
+    mandatory: false,
+    placeholders: [...CONTRACT, "voucherNumber", "fromDate", "toDate", "addedDays"],
+    required: ["endDate"],
+  },
 } as const satisfies Record<string, EventDefinition>;
 export type EmailEvent = keyof typeof EMAIL_EVENTS;
 export const EMAIL_EVENT_KEYS = Object.keys(EMAIL_EVENTS) as EmailEvent[];
@@ -275,6 +294,26 @@ export const EMAIL_TEMPLATE_DEFAULTS: Record<EmailEvent, EmailTemplate> = {
     bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} ({packageName}) chỉ còn {remaining} buổi, hiệu lực đến {endDate}. Hãy liên hệ phòng tập để tái ký.${FOOTER.vi}`,
     subjectEn: "Contract {contractCode} is running out of sessions",
     bodyEn: `Hello {customerName},\n\nContract {contractCode} ({packageName}) has only {remaining} sessions left and runs until {endDate}. Please contact the gym to renew.${FOOTER.en}`,
+  },
+  "change.renewal": {
+    subjectVi: "Gia hạn hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+Hợp đồng {contractCode} ({packageName}) đã được gia hạn theo phiếu {voucherNumber}: thêm {sessionsAdded} buổi, hiệu lực đến {endDate}. Tổng số buổi: {totalSessions}. Số buổi còn lại: {remaining}. Số tiền gia hạn: {amount}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} renewed, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+Contract {contractCode} ({packageName}) was renewed by voucher {voucherNumber}: {sessionsAdded} sessions added, valid until {endDate}. Sessions in all: {totalSessions}. Sessions left: {remaining}. Renewal amount: {amount}.${FOOTER.en}`,
+  },
+  "change.hold": {
+    subjectVi: "Bảo lưu hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+Hợp đồng {contractCode} ({packageName}) được bảo lưu từ {fromDate} đến {toDate} theo phiếu {voucherNumber}. Ngày hết hạn mới: {endDate} (cộng thêm {addedDays} ngày). Số buổi còn lại: {remaining}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} on hold, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+Contract {contractCode} ({packageName}) is on hold from {fromDate} to {toDate} by voucher {voucherNumber}. New end date: {endDate} ({addedDays} days added). Sessions left: {remaining}.${FOOTER.en}`,
   },
 };
 

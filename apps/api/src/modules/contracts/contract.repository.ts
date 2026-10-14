@@ -36,6 +36,12 @@ const withRefs = {
       reasonNote: true,
     },
   },
+  // The approved holds, for the contract's "on hold" days (M8.1).
+  vouchers: {
+    where: { kind: "HOLD", status: "APPROVED" },
+    select: { voucherNumber: true, fromDate: true, toDate: true },
+    orderBy: { fromDate: "asc" },
+  },
   exceptionReason: { select: chosenSelect },
   promotion: { select: { id: true, name: true } },
   voucher: { select: { id: true, name: true } },
@@ -198,7 +204,7 @@ export async function approvalsOf(db: Db, ids: string[]): Promise<Map<string, Ap
 
 /** What blocks deleting a contract (A-125): its receipts that count or may count, and its recorded sessions. */
 export async function findDependents(db: Db, contractId: string) {
-  const [payments, sessions, attendances] = await Promise.all([
+  const [payments, sessions, attendances, vouchers] = await Promise.all([
     db.payment.findMany({
       where: { contractId, deletedAt: null, approvalStatus: { not: "REJECTED" } },
       select: { id: true, amount: true, paidOn: true },
@@ -218,12 +224,19 @@ export async function findDependents(db: Db, contractId: string) {
       orderBy: { enrolledAt: "asc" },
       take: 20,
     }),
+    // A contract with change vouchers is not deleted (D-022, M8): pending and approved ones, not the rejected.
+    db.contractChangeVoucher.findMany({
+      where: { contractId, status: { not: "REJECTED" } },
+      select: { id: true, voucherNumber: true, kind: true },
+      orderBy: { createdAt: "asc" },
+      take: 20,
+    }),
   ]);
   const bookings = [
     ...sessions,
     ...attendances.map((row) => ({ id: row.id, scheduledStart: row.classSession.startsAt, status: row.status })),
   ];
-  return { payments, bookings };
+  return { payments, bookings, vouchers };
 }
 
 /** Marks the contract deleted (A-125); the caller has written the trash entry. Returns rows changed. */
@@ -295,6 +308,11 @@ export async function reactivate(
 }
 
 /** Moves the status only if it is still `from`, so concurrent requests cannot both win. */
+/** The end date moves by a freeze or a change voucher: the one date the lock after approval leaves open (A-122). */
+export function setEndDate(db: Db, id: string, endDate: Date) {
+  return db.contract.update({ where: { id }, data: { endDate }, select: { id: true } });
+}
+
 export async function moveStatus(db: Db, id: string, from: ContractStatus, to: ContractStatus): Promise<number> {
   const { count } = await db.contract.updateMany({ where: { id, status: from }, data: { status: to } });
   return count;
@@ -343,7 +361,10 @@ export function filterWhere(filters: ContractFilters, today: Date): Prisma.Contr
 
 /** The money of the contracts a filter matches, to derive their payment status and totals. */
 export function moneyOf(db: Db, where: Prisma.ContractWhereInput) {
-  return db.contract.findMany({ where, select: { id: true, contractValue: true, openingPaidAmount: true } });
+  return db.contract.findMany({
+    where,
+    select: { id: true, contractValue: true, voucherValue: true, openingPaidAmount: true },
+  });
 }
 
 export async function listContracts(

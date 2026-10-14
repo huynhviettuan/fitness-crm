@@ -165,8 +165,8 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
       LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
       WHERE c.status NOT IN ('DRAFT', 'REJECTED') AND c.deleted_at IS NULL AND ${where}
       GROUP BY c.id
-      HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
-      ORDER BY c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) DESC, c.contract_code
+      HAVING c.contract_value + c.voucher_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
+      ORDER BY c.contract_value + c.voucher_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) DESC, c.contract_code
       LIMIT ${options.take} OFFSET ${options.skip}`,
     db.$queryRaw<{ total: bigint }[]>`
       SELECT COUNT(*) AS total FROM (
@@ -175,7 +175,7 @@ export async function contractsWithDebt(db: Db, scope: DebtScope, options: { ski
         LEFT JOIN payments p ON p.contract_id = c.id AND p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
         WHERE c.status NOT IN ('DRAFT', 'REJECTED') AND c.deleted_at IS NULL AND ${where}
         GROUP BY c.id
-        HAVING c.contract_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
+        HAVING c.contract_value + c.voucher_value - c.opening_paid_amount - COALESCE(SUM(p.amount), 0) > 0
       ) owing`,
   ]);
   return { ids: rows.map((row) => row.id), total: Number(total) };

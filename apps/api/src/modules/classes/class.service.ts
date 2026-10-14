@@ -27,6 +27,7 @@ import {
   type GymClass,
 } from "@flow/shared/classes";
 import { findContract, lockContract, usedSessionsOf } from "../contracts/contract.repository.js";
+import { holdCovering } from "../changes/voucher.repository.js";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { findBookableTrainer } from "../employees/employee.service.js";
 import { queueSessionEmail } from "../sessions/session-email.js";
@@ -74,7 +75,7 @@ function toAttendeeView(row: repo.ClassSessionRecord["attendances"][number]): Cl
       contractCode: contract.contractCode,
       packageName: contract.packageName,
       remainingSessions:
-        entitledSessions(contract.totalSessions, contract.bonusSessions) -
+        entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions) -
         contract.openingSessionsUsed -
         usedSessionsOf(contract),
     },
@@ -269,12 +270,14 @@ export async function enrollCustomer(actor: Actor, sessionId: string, rawInput: 
     if (effectiveStatus(contract, gymToday()) !== "ACTIVE") throw new AppError("CONTRACT_NOT_ACTIVE");
     if (!isWithinContractPeriod(dayOf(session.startsAt), contract))
       throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
+    // A day inside an approved hold is not enrolled (M8.1, A-222).
+    if (await holdCovering(tx, contract.id, dayOf(session.startsAt))) throw new AppError("CONTRACT_ON_HOLD");
     if (session.attendances.some((attendance) => attendance.customer.id === customerId)) {
       throw new AppError("CLASS_ALREADY_ENROLLED");
     }
     if ((await repo.countSeats(tx, sessionId)) >= session.capacity) throw new AppError("CLASS_FULL");
     const remaining =
-      entitledSessions(contract.totalSessions, contract.bonusSessions) -
+      entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions) -
       contract.openingSessionsUsed -
       usedSessionsOf(contract);
     if (!hasSessionForEnrollment(remaining, await repo.countOpenEnrollments(tx, contractId))) {
@@ -371,8 +374,9 @@ export async function markAttendance(
       if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
       if (!isWithinContractPeriod(dayOf(session.startsAt), contract))
         throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
+      if (await holdCovering(tx, contract.id, dayOf(session.startsAt))) throw new AppError("CONTRACT_ON_HOLD");
       remaining =
-        entitledSessions(contract.totalSessions, contract.bonusSessions) -
+        entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions) -
         contract.openingSessionsUsed -
         usedSessionsOf(contract);
       if (remaining <= 0) throw new AppError("CONTRACT_NO_REMAINING_SESSIONS");

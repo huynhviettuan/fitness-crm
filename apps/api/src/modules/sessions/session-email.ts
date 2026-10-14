@@ -63,7 +63,7 @@ export async function queueSessionEmail(tx: Db, cause: Cause): Promise<void> {
   ]);
   if (!customer || !contract) throw new AppError("NOT_FOUND");
   // The counts are read after the change, so they are what the customer now has (D-011: sessions used before go-live count).
-  const entitled = entitledSessions(contract.totalSessions, contract.bonusSessions);
+  const entitled = entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions);
   const remaining = entitled - contract.openingSessionsUsed - usedSessionsOf(contract);
   const locale = emailLocaleFor(customer.countryCode);
   const values: EmailValues = {

@@ -454,6 +454,18 @@ export const SEEDED_APPROVAL_RULES: { action: ApprovalAction; required: boolean;
   { action: "customer.identity", required: true, approvers: ["FITNESS_MANAGER"] },
   { action: "contract.create", required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] },
   { action: "workout.plan", required: true, approvers: ["MASTER", "ADMIN"] },
+  // The change vouchers (M8): each kind waits for the Fitness Manager or Admin (OQ-023).
+  ...(
+    [
+      "voucher.renewal",
+      "voucher.upgrade",
+      "voucher.hold",
+      "voucher.transfer",
+      "voucher.branchTransfer",
+      "voucher.conversion",
+      "voucher.cancellation",
+    ] as const
+  ).map((action) => ({ action, required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] as RoleCode[] })),
 ];
 
 /**

@@ -21,6 +21,7 @@ export const PARAMETER_DEFAULTS = {
   /** Receipts (phiếu thu) and expense vouchers (phiếu chi), M4.5. */
   receiptCodePrefix: "PT",
   expenseCodePrefix: "PC",
+  changeCodePrefix: "BD",
   employeeCodePrefix: "NV",
   /** The shared reminder points of a task, hours before its deadline: 24, 3, and 1 (brief §8.2, D-056). */
   taskReminderHours: "24, 3, 1",
@@ -158,6 +159,7 @@ export const parametersInputSchema = z
     contractCodePrefix: codePrefix,
     receiptCodePrefix: codePrefix,
     expenseCodePrefix: codePrefix,
+    changeCodePrefix: codePrefix,
     employeeCodePrefix: codePrefix,
     taskReminderHours: reminderHours,
     recareDays: days,
@@ -199,6 +201,7 @@ export const parametersSchema = z
     contractCodePrefix: z.string(),
     receiptCodePrefix: z.string(),
     expenseCodePrefix: z.string(),
+    changeCodePrefix: z.string(),
     employeeCodePrefix: z.string(),
     taskReminderHours: z.string(),
     recareDays: z.string(),

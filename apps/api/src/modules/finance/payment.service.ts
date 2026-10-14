@@ -29,7 +29,7 @@ import { deleteSchema } from "@flow/shared/trash";
 import type { ChosenOption } from "@flow/shared/options";
 import { findContract, lockContract } from "../contracts/contract.repository.js";
 import { contractViewsByIds, contractsVisibleTo, type ContractView } from "../contracts/contract.service.js";
-import { idempotencyKeySchema } from "@flow/shared/contracts";
+import { idempotencyKeySchema, valueOfContract } from "@flow/shared/contracts";
 import * as repo from "./payment.repository.js";
 import {
   exceedsContractValue,
@@ -171,7 +171,7 @@ export async function recordPaymentIn(
   if (contract.status === "CANCELLED") throw new AppError("PAYMENT_CONTRACT_CANCELLED");
   const confirmedPaidAmount = await repo.sumCommittedPayments(tx, { contractId });
   const figures = {
-    contractValue: Number(contract.contractValue),
+    contractValue: valueOfContract(Number(contract.contractValue), Number(contract.voucherValue)),
     openingPaidAmount: Number(contract.openingPaidAmount),
     confirmedPaidAmount,
   };

@@ -83,6 +83,11 @@ export const contractSchema = z
       .nullable(),
     /** Whether a request waits for an approver (A-120). */
     approvalPending: z.boolean(),
+    /** What its approved change vouchers added to the sessions and the value (M8, T-050); both already in the figures below. */
+    voucherSessions: z.int(),
+    voucherValue: z.int(),
+    /** The approved hold that covers today, if any (M8.1): no booking or check-in until it ends. */
+    onHold: z.object({ voucherNumber: z.string(), fromDate: instant, toDate: instant }).nullable(),
     // Derived figures (T-012, BR-013, D-011). `totalSessions` is bought plus bonus.
     totalSessions: z.int(),
     openingSessionsUsed: z.int(),

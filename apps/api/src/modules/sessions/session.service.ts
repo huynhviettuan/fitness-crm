@@ -90,7 +90,7 @@ export async function sessionProblem(
   if (!contract) throw new AppError("NOT_FOUND");
   // D-011: sessions used before go-live count too.
   const remaining =
-    entitledSessions(contract.totalSessions, contract.bonusSessions) -
+    entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions) -
     contract.openingSessionsUsed -
     usedSessionsOf(contract);
   const found = (code: ErrorCode | null) => ({ code, remaining, contractId: contract.id });

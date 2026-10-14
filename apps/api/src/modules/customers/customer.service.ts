@@ -329,16 +329,32 @@ async function contractStatuses(db: Db, ids: string[]): Promise<Map<string, Cust
   const [rows, soonDays] = await Promise.all([
     db.contract.findMany({
       where: { customerId: { in: ids }, deletedAt: null, status: { in: ["ACTIVE", "FROZEN"] } },
-      select: { customerId: true, status: true, endDate: true },
+      select: {
+        customerId: true,
+        status: true,
+        endDate: true,
+        // An approved hold that covers today puts the contract "on hold" like a freeze does (M8.1, A-222).
+        vouchers: { where: { kind: "HOLD", status: "APPROVED" }, select: { fromDate: true, toDate: true } },
+      },
     }),
     readParameter(db, "expiringSoonDays"),
   ]);
   const today = calendarDateInTimeZone(env.GYM_TIMEZONE);
+  const held = (row: (typeof rows)[number]) =>
+    row.vouchers.some(
+      (hold) =>
+        hold.fromDate !== null &&
+        hold.toDate !== null &&
+        hold.fromDate.getTime() <= today.getTime() &&
+        today.getTime() <= hold.toDate.getTime(),
+    );
   return new Map(
     ids.map((id) => [
       id,
       customerContractStatus(
-        rows.filter((row) => row.customerId === id),
+        rows
+          .filter((row) => row.customerId === id)
+          .map((row) => ({ ...row, status: held(row) ? ("FROZEN" as const) : row.status })),
         today,
         Number(soonDays),
       ),

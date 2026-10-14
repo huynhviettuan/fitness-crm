@@ -39,6 +39,7 @@ export const PERMISSION_GROUPS = {
     "contract.delete",
     "contract.print",
     "contract.note",
+    "contract.change",
     // Deactivating (Tạm vô hiệu) and reactivating a contract are Admin's (D-023).
     "contract.deactivate",
     "contract.reactivate",

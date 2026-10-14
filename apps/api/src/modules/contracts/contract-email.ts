@@ -1,5 +1,5 @@
-import { emailLocaleFor, type EmailEvent, type EmailLocale, type EmailValues } from "@flow/shared/mail";
-import { entitledSessions } from "@flow/shared/contracts";
+import { EMAIL_EVENTS, emailLocaleFor, type EmailEvent, type EmailLocale, type EmailValues } from "@flow/shared/mail";
+import { entitledSessions, valueOfContract } from "@flow/shared/contracts";
 import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { prisma, type Db } from "../../platform/db/prisma.js";
 import { env } from "../../platform/env.js";
@@ -27,6 +27,8 @@ export type ContractEmailEvent = Extract<
   | "contract.cancelled"
   | "contract.expiring"
   | "contract.runningOut"
+  | "change.renewal"
+  | "change.hold"
 >;
 
 /** An amount in dong as the customer reads it: 3.000.000 ₫ in Vietnamese, VND 3,000,000 in English. */
@@ -48,6 +50,14 @@ type Cause = {
   payment?: { receiptNumber: string; amount: number };
   addedDays?: number;
   daysLeft?: number;
+  /** What a change voucher says to the customer (M8): its number, what it added, its days and amount. */
+  voucher?: {
+    voucherNumber: string;
+    sessionsAdded: number;
+    fromDate: Date | null;
+    toDate: Date | null;
+    amount: number | null;
+  };
 };
 
 /** Queues the email of one change to a contract; nothing when the event is off or the customer has no address. */
@@ -59,11 +69,15 @@ export async function queueContractEmail(tx: Db, cause: Cause): Promise<void> {
     where: { id: contract.customerId },
     select: { fullName: true, email: true, countryCode: true },
   });
-  if (!customer?.email?.trim()) return;
+  if (!customer) throw new AppError("NOT_FOUND");
+  // A customer with no address is skipped quietly, except for a mandatory event: that one is queued and fails with a task
+  // for reception (D-036).
+  if (!customer.email?.trim() && !EMAIL_EVENTS[cause.event].mandatory) return;
 
   const locale = emailLocaleFor(customer.countryCode);
-  const entitled = entitledSessions(contract.totalSessions, contract.bonusSessions);
+  const entitled = entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions);
   const remaining = entitled - contract.openingSessionsUsed - usedSessionsOf(contract);
+  const value = valueOfContract(Number(contract.contractValue), Number(contract.voucherValue));
   const paid = Number(contract.openingPaidAmount) + (await sumValidPayments(tx, { contractId: contract.id }));
   const values: EmailValues = {
     customerName: customer.fullName,
@@ -74,13 +88,17 @@ export async function queueContractEmail(tx: Db, cause: Cause): Promise<void> {
     totalSessions: entitled,
     remaining,
     day: formatDay(cause.day ?? calendarDateInTimeZone(env.GYM_TIMEZONE)),
-    amount: moneyText(cause.payment?.amount ?? Number(contract.contractValue), locale),
+    amount: moneyText(cause.payment?.amount ?? cause.voucher?.amount ?? value, locale),
     paidTotal: moneyText(paid, locale),
-    debt: moneyText(Math.max(0, Number(contract.contractValue) - paid), locale),
+    debt: moneyText(Math.max(0, value - paid), locale),
     receiptNumber: cause.payment?.receiptNumber ?? "",
     reason: cause.reason ? (cause.reason.note ?? (locale === "vi" ? cause.reason.labelVi : cause.reason.labelEn)) : "",
     addedDays: cause.addedDays ?? 0,
     daysLeft: cause.daysLeft ?? 0,
+    voucherNumber: cause.voucher?.voucherNumber ?? "",
+    sessionsAdded: cause.voucher?.sessionsAdded ?? 0,
+    fromDate: cause.voucher?.fromDate ? formatDay(cause.voucher.fromDate) : "",
+    toDate: cause.voucher?.toDate ? formatDay(cause.voucher.toDate) : "",
   };
   const rendered = await renderEmail(tx, cause.event, locale, values);
   if (!rendered) return;
@@ -127,7 +145,7 @@ export async function emailContractNotices(now: Date = new Date()): Promise<numb
     const running = await prisma.$queryRaw<{ id: string }[]>`
       SELECT c.id FROM contracts c
       WHERE c.deleted_at IS NULL AND c.status = 'ACTIVE' AND c.end_date >= ${today}::date
-        AND c.total_sessions + c.bonus_sessions - c.opening_sessions_used
+        AND c.total_sessions + c.bonus_sessions + c.voucher_sessions - c.opening_sessions_used
             - (SELECT COUNT(*) FROM bookings k WHERE k.contract_id = c.id AND k.consumes)
             - (SELECT COUNT(*) FROM class_attendances a WHERE a.contract_id = c.id AND a.consumes)
             <= ${sessions}::int`;

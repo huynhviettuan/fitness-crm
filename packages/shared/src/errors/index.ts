@@ -31,6 +31,8 @@ export const ERROR_HTTP_STATUS = {
   CONTRACT_NOT_ACTIVE: 409,
   // D-023: a deactivated contract is not booked, checked in, or completed until it is reactivated.
   CONTRACT_FROZEN: 409,
+  // M8.1: a day inside an approved hold of the contract is not booked, checked in, or completed.
+  CONTRACT_ON_HOLD: 409,
   CONTRACT_NO_REMAINING_SESSIONS: 409,
   CONTRACT_HAS_CHECKED_IN_BOOKING: 409,
   PAYMENT_CONTRACT_CANCELLED: 409,
@@ -100,7 +102,7 @@ export const apiErrorSchema = z
       exportLimit: z.object({ limit: z.int(), total: z.int() }).optional(),
       /** CONTRACT_HAS_DEPENDENTS: the receipts and sessions to deal with first (at most 20). */
       dependents: z
-        .array(z.object({ kind: z.enum(["payment", "booking"]), id: z.uuid(), label: z.string() }))
+        .array(z.object({ kind: z.enum(["payment", "booking", "voucher"]), id: z.uuid(), label: z.string() }))
         .optional(),
     }),
   })

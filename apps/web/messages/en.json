@@ -153,6 +153,11 @@
       "APPROVED": "In use",
       "REJECTED": "Rejected",
       "SUPERSEDED": "Replaced"
+    },
+    "voucher": {
+      "PENDING": "Waiting for approval",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
     }
   },
   "common": {
@@ -183,7 +188,8 @@
     "blockedBy": "These must be deleted first:",
     "dependentKinds": {
       "payment": "Receipt",
-      "booking": "Session"
+      "booking": "Session",
+      "voucher": "Change voucher"
     }
   },
   "auth": {
@@ -602,7 +608,8 @@
     "CLASS_CONTRACT_MISMATCH": "The contract is not a group-class contract of this branch.",
     "PAYOUT_NOTHING_TO_PAY": "Nothing is left to pay the PT in this period: the sessions are paid, or the total after adjustments is not above zero.",
     "PLAN_NOT_EDITABLE": "The plan was sent or approved, so it cannot be edited. Make a revision.",
-    "PLAN_NOT_APPROVED": "Only a plan in use can have a revision."
+    "PLAN_NOT_APPROVED": "Only a plan in use can have a revision.",
+    "CONTRACT_ON_HOLD": "These days are on hold, so nothing can be booked."
   },
   "validation": {
     "required": "Required.",
@@ -704,7 +711,11 @@
     "plannedSetRemoved": "A set that is in the plan cannot be removed.",
     "plannedExerciseRemoved": "An exercise that is in the plan cannot be removed.",
     "notLoggable": "The session was cancelled, so it has no log.",
-    "noDefaultOption": "The Flag or Action list has no active entry."
+    "noDefaultOption": "The Flag or Action list has no active entry.",
+    "nothingToAdd": "Enter at least one of months, days or sessions.",
+    "outsideContract": "The first day must be within the contract's term.",
+    "overlapsHold": "Overlaps another hold of the contract.",
+    "hasTrainedSessions": "A session was already counted in these days; they cannot be held."
   },
   "contracts": {
     "title": "Contracts",
@@ -957,7 +968,11 @@
     "reactivated": "Contract {code} reactivated",
     "deactivatedSince": "Deactivated by {name} on",
     "frozenBooking": "Contract deactivated",
-    "checkedInBadge": "Checked in"
+    "checkedInBadge": "Checked in",
+    "onHold": "On hold",
+    "onHoldPeriod": "Hold period",
+    "fromVouchers": "Added by change vouchers",
+    "fromVouchersSessions": "{count, plural, one {# session} other {# sessions}}"
   },
   "employees": {
     "title": "Employees",
@@ -1292,7 +1307,8 @@
         "print": "Print contracts",
         "note": "Update a contract's note",
         "deactivate": "Deactivate a contract",
-        "reactivate": "Reactivate a contract"
+        "reactivate": "Reactivate a contract",
+        "change": "Raise contract change vouchers"
       },
       "booking": {
         "view": "View the PT calendar and sessions",
@@ -1583,7 +1599,8 @@
       "scanClockToleranceSeconds": "Machine clock tolerance (seconds)",
       "hangingEscalationHours": "Hours before a hanging session is escalated (0 = off)",
       "classGenerateWeeks": "Weeks of class sessions made ahead",
-      "ptTimesheetRate": "PT timesheet rate (%)"
+      "ptTimesheetRate": "PT timesheet rate (%)",
+      "changeCodePrefix": "Change voucher number"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1686,7 +1703,8 @@
       "workout_stage": "Plan stage",
       "workout_plan": "Workout plan",
       "workout_log": "Session log",
-      "workout_escalation": "Workout escalation"
+      "workout_escalation": "Workout escalation",
+      "contract_change_voucher": "Change voucher"
     },
     "verbs": {
       "created": "Created",
@@ -1725,7 +1743,9 @@
       "unapproved": "Sent back to pending",
       "note_updated": "Note updated",
       "deactivated": "Deactivated",
-      "reactivated": "Reactivated"
+      "reactivated": "Reactivated",
+      "renewed_by_voucher": "Renewed (change voucher)",
+      "held_by_voucher": "Held (change voucher)"
     },
     "fields": {
       "at": "When",
@@ -1761,7 +1781,14 @@
       "record_delete": "Deletion",
       "customer_identity": "Customer details",
       "contract_create": "New contract",
-      "workout_plan": "Workout plan or template"
+      "workout_plan": "Workout plan or template",
+      "voucher_renewal": "Renewal voucher",
+      "voucher_upgrade": "Upgrade voucher",
+      "voucher_hold": "Hold voucher",
+      "voucher_transfer": "Transfer voucher",
+      "voucher_branchTransfer": "Branch transfer voucher",
+      "voucher_conversion": "Conversion voucher",
+      "voucher_cancellation": "Cancellation voucher"
     },
     "fields": {
       "submittedAt": "Submitted",
@@ -1785,7 +1812,14 @@
       "record_delete": "The record is deleted and moved to the trash.",
       "customer_identity": "The customer's new details take effect.",
       "contract_create": "The contract takes effect and can be booked. After approval it can't be edited.",
-      "workout_plan": "The plan is in use. After approval it is not edited; to change it, make a revision and send it again."
+      "workout_plan": "The plan is in use. After approval it is not edited; to change it, make a revision and send it again.",
+      "voucher_renewal": "A change voucher acts when approved: the contract's sessions, value and end date change with it.",
+      "voucher_upgrade": "A change voucher acts when approved: the contract's sessions, value and end date change with it.",
+      "voucher_hold": "A change voucher acts when approved: the contract's sessions, value and end date change with it.",
+      "voucher_transfer": "A change voucher acts when approved: the contract's sessions, value and end date change with it.",
+      "voucher_branchTransfer": "A change voucher acts when approved: the contract's sessions, value and end date change with it.",
+      "voucher_conversion": "A change voucher acts when approved: the contract's sessions, value and end date change with it.",
+      "voucher_cancellation": "A change voucher acts when approved: the contract's sessions, value and end date change with it."
     },
     "approved": "Approved",
     "rejectTitle": "Reject {name}?",
@@ -3283,6 +3317,48 @@
       "exercise": "Exercise",
       "flag": "Flag",
       "action": "Action",
+      "note": "Note"
+    }
+  },
+  "contractChanges": {
+    "title": "Change vouchers",
+    "empty": "This contract has no change vouchers yet.",
+    "toApprovals": "Waiting for approval",
+    "raise": "Send voucher",
+    "raisedPending": "Voucher sent, waiting for approval",
+    "raisedDone": "The voucher is in effect",
+    "renewal": "Renew",
+    "renewalTitle": "Renew contract {code}",
+    "renewalDescription": "Adds months, days or sessions. The renewal amount is added to the contract's debt and collected by receipts. The voucher acts only once approved.",
+    "hold": "Hold",
+    "holdTitle": "Hold contract {code}",
+    "holdDescription": "Pauses the contract at the customer's request. The end date moves back by the days held; sessions booked in these days are cancelled when the voucher is approved.",
+    "fromHint": "dd/MM/yyyy, empty is the day after it ends",
+    "dayHint": "dd/MM/yyyy",
+    "daysCount": "{count, plural, one {# day} other {# days}}",
+    "sessionsCount": "{count, plural, one {# session} other {# sessions}}",
+    "monthsCount": "{count, plural, one {# month} other {# months}}",
+    "kinds": {
+      "RENEWAL": "Renewal",
+      "UPGRADE": "Upgrade",
+      "HOLD": "Hold",
+      "TRANSFER": "Transfer",
+      "BRANCH_TRANSFER": "Branch transfer",
+      "CONVERSION": "Conversion",
+      "CANCELLATION": "Cancellation"
+    },
+    "fields": {
+      "voucher": "Voucher",
+      "kind": "Kind",
+      "what": "What",
+      "amount": "Amount",
+      "status": "Status",
+      "createdBy": "Raised by",
+      "fromDate": "From",
+      "toDate": "To",
+      "months": "Months",
+      "days": "Days",
+      "sessions": "Sessions",
       "note": "Note"
     }
   }

@@ -13703,6 +13703,345 @@
         "x-permission": "workout.view"
       }
     },
+    "/api/v1/contract-changes": {
+      "get": {
+        "operationId": "ContractChangesController_list",
+        "parameters": [
+          {
+            "name": "contractId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucherPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.view"
+      }
+    },
+    "/api/v1/contract-changes/{id}": {
+      "get": {
+        "operationId": "ContractChangesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.view"
+      }
+    },
+    "/api/v1/contract-changes/renewals": {
+      "post": {
+        "operationId": "ContractChangesController_renewal",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A UUID generated when the form opens (T-015).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fromDate": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "months": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 120
+                  },
+                  "days": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3650
+                  },
+                  "sessions": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "amount": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "contractId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created and applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.change"
+      }
+    },
+    "/api/v1/contract-changes/holds": {
+      "post": {
+        "operationId": "ContractChangesController_hold",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A UUID generated when the form opens (T-015).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fromDate": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "toDate": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "note": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "contractId",
+                  "fromDate",
+                  "toDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created and applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.change"
+      }
+    },
     "/api/v1/notification-preferences": {
       "get": {
         "operationId": "NotificationPreferencesController_get",
@@ -15532,6 +15871,7 @@
                             "contract.delete",
                             "contract.print",
                             "contract.note",
+                            "contract.change",
                             "contract.deactivate",
                             "contract.reactivate",
                             "booking.view",
@@ -15980,6 +16320,7 @@
                         "contract.delete",
                         "contract.print",
                         "contract.note",
+                        "contract.change",
                         "contract.deactivate",
                         "contract.reactivate",
                         "booking.view",
@@ -16276,6 +16617,7 @@
                         "contract.delete",
                         "contract.print",
                         "contract.note",
+                        "contract.change",
                         "contract.deactivate",
                         "contract.reactivate",
                         "booking.view",
@@ -17058,6 +17400,10 @@
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
                   },
+                  "changeCodePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{1,5}$"
+                  },
                   "employeeCodePrefix": {
                     "type": "string",
                     "pattern": "^[A-Z]{1,5}$"
@@ -17186,6 +17532,7 @@
                   "contractCodePrefix",
                   "receiptCodePrefix",
                   "expenseCodePrefix",
+                  "changeCodePrefix",
                   "employeeCodePrefix",
                   "taskReminderHours",
                   "recareDays",
@@ -18725,6 +19072,7 @@
               "DISCOUNT_ABOVE_LIMIT",
               "CONTRACT_NOT_ACTIVE",
               "CONTRACT_FROZEN",
+              "CONTRACT_ON_HOLD",
               "CONTRACT_NO_REMAINING_SESSIONS",
               "CONTRACT_HAS_CHECKED_IN_BOOKING",
               "PAYMENT_CONTRACT_CANCELLED",
@@ -18828,7 +19176,8 @@
                       "type": "string",
                       "enum": [
                         "payment",
-                        "booking"
+                        "booking",
+                        "voucher"
                       ]
                     },
                     "id": {
@@ -18917,6 +19266,7 @@
                 "contract.delete",
                 "contract.print",
                 "contract.note",
+                "contract.change",
                 "contract.deactivate",
                 "contract.reactivate",
                 "booking.view",
@@ -24272,6 +24622,34 @@
           "approvalPending": {
             "type": "boolean"
           },
+          "voucherSessions": {
+            "type": "integer"
+          },
+          "voucherValue": {
+            "type": "integer"
+          },
+          "onHold": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "voucherNumber": {
+                "type": "string"
+              },
+              "fromDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "toDate": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "voucherNumber",
+              "fromDate",
+              "toDate"
+            ]
+          },
           "totalSessions": {
             "type": "integer"
           },
@@ -24355,6 +24733,9 @@
           "rejection",
           "freeze",
           "approvalPending",
+          "voucherSessions",
+          "voucherValue",
+          "onHold",
           "totalSessions",
           "openingSessionsUsed",
           "completedSessions",
@@ -28163,6 +28544,230 @@
           "history"
         ]
       },
+      "ChangeVoucherPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeVoucher"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "ChangeVoucher": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "voucherNumber": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "RENEWAL",
+              "UPGRADE",
+              "HOLD",
+              "TRANSFER",
+              "BRANCH_TRANSFER",
+              "CONVERSION",
+              "CANCELLATION"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "contract": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode"
+            ]
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "customerCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "customerCode",
+              "fullName"
+            ]
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "fromDate": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "toDate": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "months": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "days": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "sessions": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "amount": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "reason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChosenOption"
+              }
+            ]
+          },
+          "note": {
+            "nullable": true,
+            "type": "string"
+          },
+          "sessionsDelta": {
+            "type": "integer"
+          },
+          "valueDelta": {
+            "type": "integer"
+          },
+          "endDateBefore": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDateAfter": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvedBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "approvedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "pendingRequestId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "voucherNumber",
+          "kind",
+          "status",
+          "contract",
+          "customer",
+          "branch",
+          "fromDate",
+          "toDate",
+          "months",
+          "days",
+          "sessions",
+          "amount",
+          "reason",
+          "note",
+          "sessionsDelta",
+          "valueDelta",
+          "endDateBefore",
+          "endDateAfter",
+          "createdBy",
+          "createdAt",
+          "approvedBy",
+          "approvedAt",
+          "pendingRequestId"
+        ]
+      },
       "NotificationPreferences": {
         "type": "object",
         "properties": {
@@ -28693,6 +29298,7 @@
                     "contract.delete",
                     "contract.print",
                     "contract.note",
+                    "contract.change",
                     "contract.deactivate",
                     "contract.reactivate",
                     "booking.view",
@@ -28982,6 +29588,7 @@
                 "contract.delete",
                 "contract.print",
                 "contract.note",
+                "contract.change",
                 "contract.deactivate",
                 "contract.reactivate",
                 "booking.view",
@@ -29274,6 +29881,9 @@
           "expenseCodePrefix": {
             "type": "string"
           },
+          "changeCodePrefix": {
+            "type": "string"
+          },
           "employeeCodePrefix": {
             "type": "string"
           },
@@ -29349,6 +29959,7 @@
           "contractCodePrefix",
           "receiptCodePrefix",
           "expenseCodePrefix",
+          "changeCodePrefix",
           "employeeCodePrefix",
           "taskReminderHours",
           "recareDays",
@@ -29525,7 +30136,14 @@
               "record.delete",
               "customer.identity",
               "contract.create",
-              "workout.plan"
+              "workout.plan",
+              "voucher.renewal",
+              "voucher.upgrade",
+              "voucher.hold",
+              "voucher.transfer",
+              "voucher.branchTransfer",
+              "voucher.conversion",
+              "voucher.cancellation"
             ]
           },
           "entityType": {
@@ -29674,7 +30292,14 @@
               "record.delete",
               "customer.identity",
               "contract.create",
-              "workout.plan"
+              "workout.plan",
+              "voucher.renewal",
+              "voucher.upgrade",
+              "voucher.hold",
+              "voucher.transfer",
+              "voucher.branchTransfer",
+              "voucher.conversion",
+              "voucher.cancellation"
             ]
           },
           "required": {

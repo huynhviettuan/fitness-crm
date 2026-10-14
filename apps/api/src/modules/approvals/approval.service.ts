@@ -13,6 +13,7 @@ import { hasBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import { lockContract } from "../contracts/contract.repository.js";
 import { decidePlan, lockPlanForDecision } from "../workouts/plan.service.js";
+import { decideVoucher, lockVoucherContract } from "../changes/voucher.service.js";
 import { applyContractDeletion, decideContract } from "../contracts/contract.service.js";
 import { applyIdentityChange } from "../customers/customer.service.js";
 import { applyCashDeletion, decideCashTransaction, findCashForApproval } from "../finance/cash.service.js";
@@ -35,7 +36,21 @@ const lockPaymentContract = async (tx: Db, request: RequestRow) => {
   if (payment) await lockContract(tx, payment.contractId);
 };
 
+/** Every change voucher is decided the same way, under its contract's lock (M8, T-040). */
+const voucherHandler: Handler = {
+  lock: (tx, request) => lockVoucherContract(tx, request.entityId),
+  approve: (tx, request, decider) => decideVoucher(tx, decider, request.entityId, "APPROVED"),
+  reject: (tx, request, decider) => decideVoucher(tx, decider, request.entityId, "REJECTED"),
+};
+
 const HANDLERS: Record<ApprovalAction, Handler> = {
+  "voucher.renewal": voucherHandler,
+  "voucher.upgrade": voucherHandler,
+  "voucher.hold": voucherHandler,
+  "voucher.transfer": voucherHandler,
+  "voucher.branchTransfer": voucherHandler,
+  "voucher.conversion": voucherHandler,
+  "voucher.cancellation": voucherHandler,
   "payment.create": {
     lock: lockPaymentContract,
     approve: (tx, request, decider) => decidePayment(tx, decider, request.entityId, "APPROVED"),

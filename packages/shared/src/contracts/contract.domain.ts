@@ -121,9 +121,17 @@ export function paymentStatusOf(contractValue: number, paidAmount: number): Paym
 /** The statuses the list can be filtered by: the stored ones and the derived EXPIRED. */
 export const LIST_STATUSES = [...CONTRACT_STATUSES, "EXPIRED"] as const;
 
-/** The sessions a contract entitles: the ones bought and the bonus ones, kept apart on the contract (brief §5.1). */
-export function entitledSessions(bought: number, bonus: number): number {
-  return bought + bonus;
+/**
+ * The sessions a contract entitles: the ones bought and the bonus ones, kept apart on the contract (brief §5.1), and the
+ * ones its approved change vouchers added or took away (M8, T-050). The last is derived by the database, never typed.
+ */
+export function entitledSessions(bought: number, bonus: number, vouchers: number): number {
+  return bought + bonus + vouchers;
+}
+
+/** The value of a contract: what was sold, and what its approved change vouchers added or took away (M8, T-050). */
+export function valueOfContract(sold: number, vouchers: number): number {
+  return sold + vouchers;
 }
 
 /**

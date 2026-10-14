@@ -13,6 +13,10 @@
       "types": "./dist/audit/index.d.ts",
       "default": "./dist/audit/index.js"
     },
+    "./changes": {
+      "types": "./dist/changes/index.d.ts",
+      "default": "./dist/changes/index.js"
+    },
     "./checkin": {
       "types": "./dist/checkin/index.d.ts",
       "default": "./dist/checkin/index.js"

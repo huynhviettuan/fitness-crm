@@ -81,8 +81,8 @@ export async function creditedRows(
     }[]
   >`
     SELECT b.trainer_id, e.employee_code, e.full_name AS trainer_name,
-           c.id AS contract_id, c.contract_code, c.contract_type, c.contract_value, c.vat_amount,
-           c.total_sessions, c.bonus_sessions, c.notes,
+           c.id AS contract_id, c.contract_code, c.contract_type, c.contract_value + c.voucher_value AS contract_value,
+           c.vat_amount, c.total_sessions + c.voucher_sessions AS total_sessions, c.bonus_sessions, c.notes,
            c.branch_id, br.name AS branch_name,
            cu.id AS customer_id, cu.customer_code, cu.full_name AS customer_name, cu.phone,
            s.id AS service_id, s.name AS service_name, s.commission_rate,

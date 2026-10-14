@@ -50,7 +50,8 @@ export async function payableSessions(
       commission_rate: Prisma.Decimal | null;
     }[]
   >`
-    SELECT b.id AS booking_id, b.contract_id, c.contract_value, c.vat_amount, c.total_sessions, c.bonus_sessions,
+    SELECT b.id AS booking_id, b.contract_id, c.contract_value + c.voucher_value AS contract_value, c.vat_amount,
+           c.total_sessions + c.voucher_sessions AS total_sessions, c.bonus_sessions,
            s.commission_rate
     FROM bookings b
     JOIN contracts c ON c.id = b.contract_id

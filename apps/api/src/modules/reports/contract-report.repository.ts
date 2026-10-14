@@ -51,8 +51,8 @@ export async function contractGroups(
   >`
     WITH base AS (
       SELECT c.service_id, t.min_sessions, t.max_sessions, c.contract_type, c.status, c.contract_date, c.end_date,
-             c.contract_value, c.opening_paid_amount, c.opening_sessions_used,
-             c.total_sessions + c.bonus_sessions AS entitled,
+             c.contract_value + c.voucher_value AS contract_value, c.opening_paid_amount, c.opening_sessions_used,
+             c.total_sessions + c.bonus_sessions + c.voucher_sessions AS entitled,
              COALESCE(paid.total, 0) AS paid, COALESCE(paid.received, 0) AS received,
              (SELECT COUNT(*) FROM bookings k WHERE k.contract_id = c.id AND k.consumes)
                + (SELECT COUNT(*) FROM class_attendances a WHERE a.contract_id = c.id AND a.consumes) AS completed

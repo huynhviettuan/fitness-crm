@@ -79,6 +79,7 @@ const sessionInclude = {
           contractCode: true,
           packageName: true,
           totalSessions: true,
+          voucherSessions: true,
           bonusSessions: true,
           openingSessionsUsed: true,
           _count: {

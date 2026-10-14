@@ -17,6 +17,7 @@ import { readParameter } from "../../platform/parameters/parameter.service.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { diffFields, recordAudit } from "../../platform/audit/audit.repository.js";
 import * as contractRepo from "../contracts/contract.repository.js";
+import { holdCovering } from "../changes/voucher.repository.js";
 import { effectiveStatus, entitledSessions } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { findBookableTrainer } from "../employees/employee.service.js";
@@ -148,7 +149,7 @@ export async function createBooking(actor: Actor, input: unknown): Promise<Booki
       await assertBookable(tx, contract, slot);
 
       const remaining =
-        entitledSessions(contract.totalSessions, contract.bonusSessions) -
+        entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions) -
         contract.openingSessionsUsed -
         contractRepo.usedSessionsOf(contract);
       const open = await repo.countBookingsOfContract(tx, contract.id, OPEN_BOOKING_STATUSES);
@@ -381,6 +382,8 @@ export async function assertBookable(
   if (!isWithinContractPeriod(sessionDay(slot.scheduledStart), contract)) {
     throw new AppError("BOOKING_OUTSIDE_CONTRACT_PERIOD");
   }
+  // A day inside an approved hold is not booked (M8.1, A-222).
+  if (await holdCovering(tx, contract.id, sessionDay(slot.scheduledStart))) throw new AppError("CONTRACT_ON_HOLD");
   if (!(await findBookableTrainer(tx, slot.trainerId))) {
     throw new AppError("VALIDATION_FAILED", { fieldErrors: { trainerId: ["trainerUnavailable"] } });
   }
@@ -489,7 +492,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
       contractCode: contract.contractCode,
       packageName: contract.packageName,
       remainingSessions:
-        entitledSessions(contract.totalSessions, contract.bonusSessions) -
+        entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions) -
         contract.openingSessionsUsed -
         contractRepo.usedSessionsOf(contract),
       frozen: contract.status === "FROZEN",

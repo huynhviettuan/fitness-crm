@@ -36,9 +36,11 @@ describe("the templates the system starts with", () => {
 
   it("every mandatory event tells the customer the sessions left, and the optional ones are many", () => {
     const mandatory = EMAIL_EVENT_KEYS.filter((event) => EMAIL_EVENTS[event].mandatory);
-    expect(mandatory).toHaveLength(5);
+    // The five of the sessions, and the change vouchers that move the session count (M8, D-036).
+    expect(mandatory.filter((event) => !event.startsWith("change."))).toHaveLength(5);
     for (const event of mandatory) expect(EMAIL_EVENTS[event].required).toContain("remaining");
-    expect(EMAIL_EVENT_KEYS.filter((event) => !EMAIL_EVENTS[event].mandatory)).toHaveLength(8);
+    const optional = EMAIL_EVENT_KEYS.filter((event) => !EMAIL_EVENTS[event].mandatory);
+    expect(optional.filter((event) => !event.startsWith("change."))).toHaveLength(8);
   });
 });
 

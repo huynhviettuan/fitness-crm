@@ -44,6 +44,7 @@ import {
   contractStaffQuerySchema,
   effectiveStatus,
   entitledSessions,
+  valueOfContract,
   idempotencyKeySchema,
   isEditable,
   listContractsSchema,
@@ -99,13 +100,14 @@ export async function listContracts(actor: Actor, rawQuery: unknown): Promise<Co
     money.map((row) => row.id),
   );
   const paidOf = (row: (typeof money)[number]) => Number(row.openingPaidAmount) + (paid.get(row.id) ?? 0);
+  const valueOf = (row: (typeof money)[number]) => valueOfContract(Number(row.contractValue), Number(row.voucherValue));
   const matching = paymentStatus
-    ? money.filter((row) => paymentStatusOf(Number(row.contractValue), paidOf(row)) === paymentStatus)
+    ? money.filter((row) => paymentStatusOf(valueOf(row), paidOf(row)) === paymentStatus)
     : money;
   if (paymentStatus) where = { AND: [where, { id: { in: matching.map((row) => row.id) } }] };
 
   const { items, total } = await repo.listContracts(prisma, where, { page, pageSize });
-  const contractValue = matching.reduce((sum, row) => sum + Number(row.contractValue), 0);
+  const contractValue = matching.reduce((sum, row) => sum + valueOf(row), 0);
   const paidAmount = matching.reduce((sum, row) => sum + paidOf(row), 0);
   return {
     items: await present(prisma, items, today, actor),
@@ -544,8 +546,8 @@ export async function applyContractDeletion(
 
 /** D-022, brief §5.4: receipts and sessions are dealt with before the contract; the error lists what is left. */
 async function assertNoDependents(tx: Db, id: string): Promise<void> {
-  const { payments, bookings } = await repo.findDependents(tx, id);
-  if (payments.length + bookings.length === 0) return;
+  const { payments, bookings, vouchers } = await repo.findDependents(tx, id);
+  if (payments.length + bookings.length + vouchers.length === 0) return;
   throw new AppError("CONTRACT_HAS_DEPENDENTS", {
     dependents: [
       ...payments.map((row) => ({
@@ -558,6 +560,7 @@ async function assertNoDependents(tx: Db, id: string): Promise<void> {
         id: row.id,
         label: `${row.scheduledStart.toISOString()} · ${row.status}`,
       })),
+      ...vouchers.map((row) => ({ kind: "voucher" as const, id: row.id, label: `${row.voucherNumber} · ${row.kind}` })),
     ],
   });
 }
@@ -894,6 +897,20 @@ function freezeOf(contract: repo.ContractRecord, today: Date): ContractView["fre
   };
 }
 
+/** The approved hold that covers today, if any (M8.1). */
+function onHoldOf(contract: repo.ContractRecord, today: Date): ContractView["onHold"] {
+  const hold = contract.vouchers.find(
+    (voucher) =>
+      voucher.fromDate !== null &&
+      voucher.toDate !== null &&
+      voucher.fromDate.getTime() <= today.getTime() &&
+      today.getTime() <= voucher.toDate.getTime(),
+  );
+  return hold && hold.fromDate && hold.toDate
+    ? { voucherNumber: hold.voucherNumber, fromDate: hold.fromDate, toDate: hold.toDate }
+    : null;
+}
+
 function toView(
   contract: repo.ContractRecord,
   today: Date,
@@ -902,10 +919,10 @@ function toView(
   actor?: Pick<Actor, "masks">,
 ): ContractView {
   const figures = contractFigures({
-    totalSessions: entitledSessions(contract.totalSessions, contract.bonusSessions),
+    totalSessions: entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions),
     openingSessionsUsed: contract.openingSessionsUsed,
     completedSessions: repo.usedSessionsOf(contract),
-    contractValue: Number(contract.contractValue),
+    contractValue: valueOfContract(Number(contract.contractValue), Number(contract.voucherValue)),
     openingPaidAmount: Number(contract.openingPaidAmount),
     confirmedPaidAmount,
   });
@@ -963,6 +980,9 @@ function toView(
         : null,
     approvalPending: contract.status === "DRAFT" && Boolean(approval?.pending),
     freeze: freezeOf(contract, today),
+    voucherSessions: contract.voucherSessions,
+    voucherValue: Number(contract.voucherValue),
+    onHold: onHoldOf(contract, today),
     ...figures,
     paymentStatus: paymentStatusOf(figures.contractValue, figures.paidAmount),
   };

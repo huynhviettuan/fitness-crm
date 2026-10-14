@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-30 — M8.1: change vouchers, renewal and hold
+
+- **Framework** (A-219, A-223 to A-225): one voucher table for every kind, approval per kind, effects set at approval and summed into the contract by a trigger; every figure of sessions and value now includes them.
+- **Renewal** (A-220) and **hold** (A-221, A-222): sessions, days and an amount added; a hold moves the end date, cancels the sessions inside it and stops new bookings on its days.
+- **Open**: OQ-063. Docs 04, 07, 09, 13, 16, 18, 28; E2E-174.
+
 ## 2026-10-30 — Fingerprint machines are ZKTeco
 
 - **A-218**: the customer uses ZKTeco; the scan API stays the only entrance and a small bridge (a ZKBio Time poller or an ADMS receiver) is to be built once the software is known. TS-009 updated.

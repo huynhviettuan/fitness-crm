@@ -19,6 +19,14 @@ export const APPROVAL_ACTIONS = [
   "contract.create",
   // A workout plan or template waiting for the Master (M7.2, A-193).
   "workout.plan",
+  // The change vouchers of a contract, one action each so Admin switches each on or off (M8, D-024, OQ-023).
+  "voucher.renewal",
+  "voucher.upgrade",
+  "voucher.hold",
+  "voucher.transfer",
+  "voucher.branchTransfer",
+  "voucher.conversion",
+  "voucher.cancellation",
 ] as const;
 export type ApprovalAction = (typeof APPROVAL_ACTIONS)[number];
 

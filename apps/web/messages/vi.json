@@ -153,6 +153,11 @@
       "APPROVED": "Đang dùng",
       "REJECTED": "Bị từ chối",
       "SUPERSEDED": "Đã được thay"
+    },
+    "voucher": {
+      "PENDING": "Chờ duyệt",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Từ chối"
     }
   },
   "common": {
@@ -183,7 +188,8 @@
     "blockedBy": "Cần xóa các mục sau trước:",
     "dependentKinds": {
       "payment": "Phiếu thu",
-      "booking": "Buổi tập"
+      "booking": "Buổi tập",
+      "voucher": "Phiếu biến động"
     }
   },
   "auth": {
@@ -602,7 +608,8 @@
     "CLASS_CONTRACT_MISMATCH": "Hợp đồng không phải hợp đồng lớp nhóm của chi nhánh này.",
     "PAYOUT_NOTHING_TO_PAY": "Không còn gì để chi cho PT trong kỳ này: các buổi đã được chi, hoặc tổng sau điều chỉnh không dương.",
     "PLAN_NOT_EDITABLE": "Giáo án đã gửi duyệt hoặc đã duyệt nên không sửa được. Hãy tạo bản sửa.",
-    "PLAN_NOT_APPROVED": "Chỉ giáo án đang dùng mới tạo được bản sửa."
+    "PLAN_NOT_APPROVED": "Chỉ giáo án đang dùng mới tạo được bản sửa.",
+    "CONTRACT_ON_HOLD": "Những ngày này đang bảo lưu nên không đặt lịch được."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -704,7 +711,11 @@
     "plannedSetRemoved": "Set có trong giáo án thì không xóa được.",
     "plannedExerciseRemoved": "Bài tập có trong giáo án thì không xóa được.",
     "notLoggable": "Buổi tập đã hủy nên không có nhật ký.",
-    "noDefaultOption": "Danh sách Flag hoặc Action chưa có mục nào đang dùng."
+    "noDefaultOption": "Danh sách Flag hoặc Action chưa có mục nào đang dùng.",
+    "nothingToAdd": "Nhập ít nhất một trong số tháng, số ngày hoặc số buổi.",
+    "outsideContract": "Ngày bắt đầu phải nằm trong thời hạn của hợp đồng.",
+    "overlapsHold": "Trùng với một lần bảo lưu khác của hợp đồng.",
+    "hasTrainedSessions": "Trong thời gian này đã có buổi tập được tính; không thể bảo lưu."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -957,7 +968,11 @@
     "reactivated": "Đã kích hoạt lại hợp đồng {code}",
     "deactivatedSince": "Bị khóa bởi {name} từ ngày",
     "frozenBooking": "Hợp đồng đang bị khóa",
-    "checkedInBadge": "Đã check-in"
+    "checkedInBadge": "Đã check-in",
+    "onHold": "Đang bảo lưu",
+    "onHoldPeriod": "Thời gian bảo lưu",
+    "fromVouchers": "Cộng từ phiếu biến động",
+    "fromVouchersSessions": "{count} buổi"
   },
   "employees": {
     "title": "Nhân viên",
@@ -1292,7 +1307,8 @@
         "print": "In hợp đồng",
         "note": "Cập nhật ghi chú hợp đồng",
         "deactivate": "Hủy kích hoạt hợp đồng",
-        "reactivate": "Kích hoạt lại hợp đồng"
+        "reactivate": "Kích hoạt lại hợp đồng",
+        "change": "Tạo phiếu biến động hợp đồng"
       },
       "booking": {
         "view": "Xem lịch PT và buổi tập",
@@ -1583,7 +1599,8 @@
       "scanClockToleranceSeconds": "Sai lệch đồng hồ máy cho phép (giây)",
       "hangingEscalationHours": "Số giờ trước khi báo buổi treo (0 = tắt)",
       "classGenerateWeeks": "Số tuần tạo sẵn buổi lớp",
-      "ptTimesheetRate": "Tỷ lệ công của PT (%)"
+      "ptTimesheetRate": "Tỷ lệ công của PT (%)",
+      "changeCodePrefix": "Số phiếu biến động"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1686,7 +1703,8 @@
       "workout_stage": "Stage giáo án",
       "workout_plan": "Giáo án",
       "workout_log": "Nhật ký buổi tập",
-      "workout_escalation": "Escalation buổi tập"
+      "workout_escalation": "Escalation buổi tập",
+      "contract_change_voucher": "Phiếu biến động"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1725,7 +1743,9 @@
       "unapproved": "Đưa về chờ duyệt",
       "note_updated": "Cập nhật ghi chú",
       "deactivated": "Hủy kích hoạt",
-      "reactivated": "Kích hoạt lại"
+      "reactivated": "Kích hoạt lại",
+      "renewed_by_voucher": "Gia hạn (phiếu biến động)",
+      "held_by_voucher": "Bảo lưu (phiếu biến động)"
     },
     "fields": {
       "at": "Thời điểm",
@@ -1761,7 +1781,14 @@
       "record_delete": "Xóa dữ liệu",
       "customer_identity": "Sửa thông tin khách hàng",
       "contract_create": "Hợp đồng mới",
-      "workout_plan": "Giáo án hoặc template"
+      "workout_plan": "Giáo án hoặc template",
+      "voucher_renewal": "Phiếu gia hạn",
+      "voucher_upgrade": "Phiếu nâng cấp",
+      "voucher_hold": "Phiếu bảo lưu",
+      "voucher_transfer": "Phiếu chuyển nhượng",
+      "voucher_branchTransfer": "Phiếu chuyển chi nhánh",
+      "voucher_conversion": "Phiếu chuyển đổi",
+      "voucher_cancellation": "Phiếu hủy hợp đồng"
     },
     "fields": {
       "submittedAt": "Gửi lúc",
@@ -1785,7 +1812,14 @@
       "record_delete": "Dữ liệu được xóa và chuyển vào thùng rác.",
       "customer_identity": "Thông tin mới của khách hàng có hiệu lực.",
       "contract_create": "Hợp đồng có hiệu lực và đặt lịch được. Sau khi duyệt không sửa được nữa.",
-      "workout_plan": "Giáo án có hiệu lực để tập theo. Sau khi duyệt không sửa được nữa; muốn đổi thì tạo bản sửa và gửi duyệt lại."
+      "workout_plan": "Giáo án có hiệu lực để tập theo. Sau khi duyệt không sửa được nữa; muốn đổi thì tạo bản sửa và gửi duyệt lại.",
+      "voucher_renewal": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu.",
+      "voucher_upgrade": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu.",
+      "voucher_hold": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu.",
+      "voucher_transfer": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu.",
+      "voucher_branchTransfer": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu.",
+      "voucher_conversion": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu.",
+      "voucher_cancellation": "Phiếu biến động có hiệu lực khi duyệt: số buổi, giá trị và ngày hết hạn của hợp đồng thay đổi theo phiếu."
     },
     "approved": "Đã duyệt",
     "rejectTitle": "Từ chối {name}?",
@@ -3283,6 +3317,48 @@
       "exercise": "Bài tập",
       "flag": "Flag",
       "action": "Action",
+      "note": "Ghi chú"
+    }
+  },
+  "contractChanges": {
+    "title": "Phiếu biến động",
+    "empty": "Hợp đồng chưa có phiếu biến động nào.",
+    "toApprovals": "Chờ duyệt",
+    "raise": "Gửi phiếu",
+    "raisedPending": "Đã gửi phiếu, đang chờ duyệt",
+    "raisedDone": "Phiếu đã có hiệu lực",
+    "renewal": "Gia hạn",
+    "renewalTitle": "Gia hạn hợp đồng {code}",
+    "renewalDescription": "Cộng thêm tháng, ngày hoặc buổi. Số tiền gia hạn được cộng vào công nợ của hợp đồng và thu bằng phiếu thu. Phiếu chỉ có hiệu lực sau khi duyệt.",
+    "hold": "Bảo lưu",
+    "holdTitle": "Bảo lưu hợp đồng {code}",
+    "holdDescription": "Tạm dừng hợp đồng theo yêu cầu của khách. Ngày hết hạn lùi đúng số ngày bảo lưu; các buổi đã đặt trong thời gian này sẽ bị hủy khi phiếu được duyệt.",
+    "fromHint": "dd/MM/yyyy, trống là ngày sau khi hết hạn",
+    "dayHint": "dd/MM/yyyy",
+    "daysCount": "{count} ngày",
+    "sessionsCount": "{count} buổi",
+    "monthsCount": "{count} tháng",
+    "kinds": {
+      "RENEWAL": "Gia hạn",
+      "UPGRADE": "Nâng cấp",
+      "HOLD": "Bảo lưu",
+      "TRANSFER": "Chuyển nhượng",
+      "BRANCH_TRANSFER": "Chuyển chi nhánh",
+      "CONVERSION": "Chuyển đổi",
+      "CANCELLATION": "Hủy"
+    },
+    "fields": {
+      "voucher": "Số phiếu",
+      "kind": "Loại",
+      "what": "Nội dung",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "createdBy": "Người tạo",
+      "fromDate": "Từ ngày",
+      "toDate": "Đến ngày",
+      "months": "Số tháng",
+      "days": "Số ngày",
+      "sessions": "Số buổi",
       "note": "Ghi chú"
     }
   }

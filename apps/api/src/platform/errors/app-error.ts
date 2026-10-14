@@ -2,7 +2,7 @@ import { ERROR_HTTP_STATUS, type DuplicatePerson, type ErrorCode, type FieldErro
 
 export type { ErrorCode, FieldErrors };
 
-type Dependent = { kind: "payment" | "booking"; id: string; label: string };
+type Dependent = { kind: "payment" | "booking" | "voucher"; id: string; label: string };
 
 export class AppError extends Error {
   readonly code: ErrorCode;

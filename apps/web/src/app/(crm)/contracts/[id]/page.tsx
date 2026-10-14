@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { BanknoteIcon, CalendarIcon, HistoryIcon, PrinterIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +24,7 @@ import { can } from "@/lib/permissions";
 import { canActivate, canCancel, canDeactivate, canReactivate, canUnapprove, isEditable } from "@flow/shared/contracts";
 import { getContract, getContractHistory, listContractStaff } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
+import { listVouchers } from "@/lib/api/changes";
 import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
@@ -32,6 +34,7 @@ import { DeleteContractButton, RejectContractButton, UnapproveContractButton } f
 import { UpdateNoteButton } from "../contract-note";
 import { DeactivateContractButton, ReactivateContractButton } from "../contract-freeze";
 import { AuditTable } from "../../admin/audit/audit-table";
+import { ContractChanges } from "./contract-changes";
 
 async function loadContract(user: CurrentUser, id: string) {
   try {
@@ -64,6 +67,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     ? await Promise.all([listBookings({ contractId: contract.id, order: "desc", pageSize: 100 }), bookingContext(user)])
     : [null, null];
   const packageHistory = await getContractHistory(contract.id);
+  const vouchers = (await listVouchers({ contractId: contract.id, pageSize: 100 })).items;
   // The receipt can be credited to any active employee of the contract's branch (brief §8.1).
   const salespeople = can(user, "contract.create") ? await listContractStaff(contract.branch.id) : [];
   const payments = can(user, "payment.view") ? await listPayments({ contractId: contract.id, pageSize: 100 }) : null;
@@ -160,8 +164,36 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
                 <dl className="space-y-3">
                   <Detail
                     label={f("fields.status")}
-                    value={<StatusBadge entity="contract" status={contract.status} />}
+                    value={
+                      <span className="flex flex-wrap items-center gap-1">
+                        <StatusBadge entity="contract" status={contract.status} />
+                        {contract.onHold && <Badge variant="info">{t("onHold")}</Badge>}
+                      </span>
+                    }
                   />
+                  {contract.onHold && (
+                    <Detail
+                      label={t("onHoldPeriod")}
+                      value={
+                        <span>
+                          <DateTime value={contract.onHold.fromDate} format="dateOnly" /> –{" "}
+                          <DateTime value={contract.onHold.toDate} format="dateOnly" /> ·{" "}
+                          {contract.onHold.voucherNumber}
+                        </span>
+                      }
+                    />
+                  )}
+                  {(contract.voucherSessions !== 0 || contract.voucherValue !== 0) && (
+                    <Detail
+                      label={t("fromVouchers")}
+                      value={
+                        <span>
+                          {t("fromVouchersSessions", { count: contract.voucherSessions })} ·{" "}
+                          <Money amount={contract.voucherValue} />
+                        </span>
+                      }
+                    />
+                  )}
                   <Detail
                     label={f("fields.customer")}
                     value={
@@ -348,7 +380,13 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
             </section>
           )}
         </TabsContent>
-        <TabsContent value="history">
+        <TabsContent value="history" className="space-y-8">
+          <ContractChanges
+            contract={contract}
+            vouchers={vouchers}
+            canRenew={can(user, "contract.change") && (contract.status === "ACTIVE" || contract.status === "EXPIRED")}
+            canHold={can(user, "contract.change") && contract.status === "ACTIVE"}
+          />
           <section aria-labelledby="package-history" className="max-w-5xl space-y-4">
             <h2 id="package-history" className="text-lg font-semibold">
               {t("tabs.history")}
