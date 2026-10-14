@@ -218,6 +218,7 @@ model User {
   personMerges          PersonMerge[]
   classEnrollments      ClassAttendance[]        @relation("ClassEnrolledBy")
   classMarks            ClassAttendance[]        @relation("ClassMarkedBy")
+  ptPayoutsCreated      PtPayout[]               @relation("PtPayoutCreatedBy")
 
   @@index([roleId])
   @@map("users")
@@ -256,6 +257,8 @@ model Branch {
 
   classes       GymClass[]
   classSessions ClassSession[]
+
+  ptPayouts PtPayout[]
 
   @@map("branches")
 }
@@ -1028,6 +1031,7 @@ model Contract {
   shares           ContractStaffShare[]
   companions       ContractCompanion[]
   classAttendances ClassAttendance[]
+  payoutLines      PtPayoutLine[]
 
   @@index([customerId])
   @@index([branchId])
@@ -1118,6 +1122,7 @@ model Employee {
   daysOff              EmployeeDayOff[]
   classesCoached       GymClass[]           @relation("ClassCoach")
   classSessionsCoached ClassSession[]       @relation("ClassSessionCoach")
+  ptPayouts            PtPayout[]           @relation("PtPayoutTrainer")
 
   @@index([branchId])
   @@index([searchName])
@@ -1192,16 +1197,17 @@ model Booking {
   session Session?
 
   // The pairing of a customer's scan and the PT's scan with this booking (M5.3b, D-070). Both set, in time: confirmed.
-  customerScanId     String?       @map("customer_scan_id") @db.Uuid
-  customerScan       CheckinScan?  @relation("BookingCustomerScan", fields: [customerScanId], references: [id], onDelete: Restrict)
-  ptScanId           String?       @map("pt_scan_id") @db.Uuid
-  ptScan             CheckinScan?  @relation("BookingPtScan", fields: [ptScanId], references: [id], onDelete: Restrict)
+  customerScanId     String?        @map("customer_scan_id") @db.Uuid
+  customerScan       CheckinScan?   @relation("BookingCustomerScan", fields: [customerScanId], references: [id], onDelete: Restrict)
+  ptScanId           String?        @map("pt_scan_id") @db.Uuid
+  ptScan             CheckinScan?   @relation("BookingPtScan", fields: [ptScanId], references: [id], onDelete: Restrict)
   // The PT said the customer trained but forgot to scan: a request to admin to confirm (D-071).
-  scanRequestedAt    DateTime?     @map("scan_requested_at") @db.Timestamptz(3)
-  scanRequestedById  String?       @map("scan_requested_by") @db.Uuid
+  scanRequestedAt    DateTime?      @map("scan_requested_at") @db.Timestamptz(3)
+  scanRequestedById  String?        @map("scan_requested_by") @db.Uuid
   // The Studio Manager was told that this session still hangs after the escalation hours (D-071).
-  hangingEscalatedAt DateTime?     @map("hanging_escalated_at") @db.Timestamptz(3)
-  scans              CheckinScan[] @relation("ScanBooking")
+  hangingEscalatedAt DateTime?      @map("hanging_escalated_at") @db.Timestamptz(3)
+  scans              CheckinScan[]  @relation("ScanBooking")
+  payoutLines        PtPayoutLine[]
 
   @@index([contractId, status])
   @@index([customerId])
@@ -1337,6 +1343,7 @@ model CashTransaction {
   deleteReasonId   String?             @map("delete_reason_option_id") @db.Uuid
   deleteReason     Option?             @relation("CashDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
   deleteReasonNote String?             @map("delete_reason_note")
+  ptPayout         PtPayout?
 
   @@index([occurredOn])
   @@index([branchId])
@@ -1881,4 +1888,57 @@ model ClassAttendance {
   @@index([contractId])
   @@index([customerId])
   @@map("class_attendances")
+}
+
+// ---------------------------------------------------------------------------
+// PT payouts (M5.7, D-027, D-032, FR-CASH-003)
+// ---------------------------------------------------------------------------
+
+// A payout to one PT for a period of the allocation report: an expense voucher and the sessions it paid, so a session
+// is never paid twice. A payout is void when its voucher is deleted or rejected; the trigger then releases its lines.
+model PtPayout {
+  id                String          @id @default(uuid()) @db.Uuid
+  branchId          String          @map("branch_id") @db.Uuid
+  branch            Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  trainerId         String          @map("trainer_id") @db.Uuid
+  trainer           Employee        @relation("PtPayoutTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
+  periodFrom        DateTime        @map("period_from") @db.Date
+  periodTo          DateTime        @map("period_to") @db.Date
+  // The voucher's amount: the sessions paid plus the (negative) adjustments applied.
+  amount            Decimal         @db.Decimal(14, 0)
+  sessionAmount     Decimal         @map("session_amount") @db.Decimal(14, 0)
+  adjustmentAmount  Decimal         @map("adjustment_amount") @db.Decimal(14, 0)
+  sessionCount      Int             @map("session_count")
+  adjustmentCount   Int             @map("adjustment_count")
+  cashTransactionId String          @unique @map("cash_transaction_id") @db.Uuid
+  cashTransaction   CashTransaction @relation(fields: [cashTransactionId], references: [id], onDelete: Restrict)
+  idempotencyKey    String          @unique @map("idempotency_key")
+  createdById       String          @map("created_by") @db.Uuid
+  createdBy         User            @relation("PtPayoutCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  lines PtPayoutLine[]
+
+  @@index([trainerId, periodFrom])
+  @@index([branchId])
+  @@map("pt_payouts")
+}
+
+// One session paid (SESSION) or one paid session taken back after it was deleted from the history (ADJUSTMENT, negative).
+// A session has at most one live line of each kind; a line is released when its payout is void.
+model PtPayoutLine {
+  id         String    @id @default(uuid()) @db.Uuid
+  payoutId   String    @map("payout_id") @db.Uuid
+  payout     PtPayout  @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  bookingId  String    @map("booking_id") @db.Uuid
+  booking    Booking   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  contractId String    @map("contract_id") @db.Uuid
+  contract   Contract  @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  kind       String
+  amount     Decimal   @db.Decimal(14, 0)
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(3)
+
+  @@index([payoutId])
+  @@index([bookingId])
+  @@map("pt_payout_lines")
 }

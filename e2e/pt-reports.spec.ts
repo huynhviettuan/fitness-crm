@@ -1,6 +1,7 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { bookingSetup, createBookingViaApi, randomBookingDay } from "./support/data";
 import { fill, labels } from "./support/labels";
+import { createOptionViaApi } from "./support/options";
 import { readDownload } from "./support/xlsx";
 
 // The PT revenue allocation, the booking report, and the overview dashboard (brief §6.5, §9; D-032; docs/13 E2E-111).
@@ -64,6 +65,59 @@ test.describe("PT reports as admin", () => {
     expect(detail).toContain(500_000);
     // The PT's totals row follows their contracts, and a grand total closes the file.
     expect(file.rows.at(-1)?.[1]).toBe("Tổng cộng");
+  });
+
+  test("@smoke E2E-112: admin pays the PT for the period; the session is paid once and the payout is listed", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const { day, trainer } = await trainedSession(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const category = `Chi PT ${testTag}`;
+    await createOptionViaApi(admin, "expenseTypes", category);
+    const query = `from=${day.date}&to=${day.date}&trainer=${trainer.id}`;
+    const notice = (text: string | RegExp) =>
+      page.getByRole("region", { name: labels.common.notifications }).getByText(text);
+
+    await page.goto(`/reports/pt-revenue?${query}`);
+    const card = page.getByRole("region", { name: `${trainer.fullName} (${trainer.employeeCode})` });
+    await expect(card.getByLabel(fill(r.trainerTotals, { name: trainer.fullName }))).toContainText(
+      `${r.totalsOf.payable}500.000`,
+    );
+    await card.getByRole("button", { name: r.payout.button }).click();
+    const dialog = page.getByRole("dialog", { name: fill(r.payout.title, { name: trainer.fullName }) });
+    await expect(dialog).toContainText("500.000");
+    await dialog.getByRole("combobox", { name: r.payout.category, exact: true }).click();
+    await page.getByRole("listbox").getByRole("option", { name: category, exact: true }).click();
+    await dialog.getByRole("combobox", { name: r.payout.method, exact: true }).click();
+    await page.getByRole("listbox").getByRole("option", { name: "Tiền mặt", exact: true }).click();
+    await dialog.getByRole("button", { name: r.payout.confirm }).click();
+    await dialog.waitFor({ state: "hidden" });
+
+    // The voucher may wait for approval (D-018); either way the session is held, and nothing is left to pay.
+    await expect(notice(/Đã chi, phiếu|Đã gửi duyệt/)).toBeVisible();
+    await expect(card.getByRole("button", { name: r.payout.button })).toBeDisabled();
+    await expect(card.getByRole("row").filter({ hasText: "500.000" })).toContainText("1");
+
+    await page.goto(`/reports/pt-payouts?trainer=${trainer.id}`);
+    const row = page.getByRole("row").filter({ hasText: trainer.employeeCode });
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText("500.000");
+
+    // Repeating it through the API finds nothing left to pay.
+    const again = await admin.post("/api/v1/payouts", {
+      headers: { "idempotency-key": crypto.randomUUID() },
+      data: {
+        trainerId: trainer.id,
+        from: day.date,
+        to: day.date,
+        categoryId: await createOptionViaApi(admin, "expenseTypes", `Chi PT 2 ${testTag}`),
+        methodId: await createOptionViaApi(admin, "paymentMethods", `Hình thức ${testTag}`),
+      },
+    });
+    expect(again.status()).toBe(409);
+    expect(await again.json()).toMatchObject({ code: "PAYOUT_NOTHING_TO_PAY" });
   });
 
   test("the booking report lists the session with its check-in and check-out, filters by type, and exports", async ({

@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-21 — M5.7: PT payouts and adjustments
+
+- **Payouts** (A-173, A-174, A-176): an expense voucher per PT and period, the amount worked out from the allocation report, the sessions it paid recorded so none is paid twice, also under concurrent requests; a voided voucher releases its sessions.
+- **Adjustments** (A-175, D-027): a paid session deleted from the history is taken back, exactly, in the PT's next payout.
+- **Open**: OQ-054. Docs 04, 07, 09, 10, 13, 16, 18, 28; E2E-112, INT-011.
+
 ## 2026-10-20 — M5.6: PT revenue allocation, booking report, overview
 
 - **PT revenue allocation** (A-166 to A-170): a row per PT and contract, totals per PT, in and outside the shift, class sessions taught, Excel in GymMaster's column order. Service commission now starts at 100 (A-167); new parameter `ptTimesheetRate`.

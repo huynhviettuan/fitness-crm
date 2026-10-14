@@ -10892,6 +10892,229 @@
         "x-permission": "class.attend"
       }
     },
+    "/api/v1/payouts": {
+      "get": {
+        "operationId": "PayoutsController_list",
+        "parameters": [
+          {
+            "name": "trainerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PtPayoutPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payouts"
+        ],
+        "x-permission": "payout.view"
+      },
+      "post": {
+        "operationId": "PayoutsController_create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A UUID generated when the form opens (T-015).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "trainerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "to": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "categoryNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "methodId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "methodNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "trainerId",
+                  "from",
+                  "to",
+                  "categoryId",
+                  "methodId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PtPayoutDetail"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PtPayoutDetail"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PtPayoutDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payouts"
+        ],
+        "x-permission": "payout.create"
+      }
+    },
+    "/api/v1/payouts/{id}": {
+      "get": {
+        "operationId": "PayoutsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PtPayoutDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payouts"
+        ],
+        "x-permission": "payout.view"
+      }
+    },
     "/api/v1/payments": {
       "get": {
         "operationId": "PaymentsController_list",
@@ -12257,7 +12480,9 @@
                             "payment.editDate",
                             "cash.manage",
                             "cash.delete",
-                            "cash.opening"
+                            "cash.opening",
+                            "payout.view",
+                            "payout.create"
                           ]
                         },
                         "granted": {
@@ -12696,7 +12921,9 @@
                         "payment.editDate",
                         "cash.manage",
                         "cash.delete",
-                        "cash.opening"
+                        "cash.opening",
+                        "payout.view",
+                        "payout.create"
                       ]
                     }
                   },
@@ -12983,7 +13210,9 @@
                         "payment.editDate",
                         "cash.manage",
                         "cash.delete",
-                        "cash.opening"
+                        "cash.opening",
+                        "payout.view",
+                        "payout.create"
                       ]
                     }
                   },
@@ -15383,6 +15612,7 @@
               "CLASS_SESSION_CANCELLED",
               "CLASS_NOT_STARTED",
               "CLASS_CONTRACT_MISMATCH",
+              "PAYOUT_NOTHING_TO_PAY",
               "IDEMPOTENCY_KEY_REUSED",
               "APPROVAL_NOT_PENDING",
               "APPROVAL_ALREADY_PENDING",
@@ -15612,7 +15842,9 @@
                 "payment.editDate",
                 "cash.manage",
                 "cash.delete",
-                "cash.opening"
+                "cash.opening",
+                "payout.view",
+                "payout.create"
               ]
             }
           },
@@ -19462,6 +19694,12 @@
                       "allocation": {
                         "type": "integer"
                       },
+                      "paidSessions": {
+                        "type": "integer"
+                      },
+                      "payable": {
+                        "type": "integer"
+                      },
                       "adjustments": {
                         "type": "integer"
                       }
@@ -19479,6 +19717,8 @@
                       "commissionRate",
                       "timesheetRate",
                       "allocation",
+                      "paidSessions",
+                      "payable",
                       "adjustments"
                     ]
                   }
@@ -19498,6 +19738,9 @@
                 "allocation": {
                   "type": "integer"
                 },
+                "payable": {
+                  "type": "integer"
+                },
                 "adjustments": {
                   "type": "integer"
                 }
@@ -19510,6 +19753,7 @@
                 "outsideShift",
                 "classSessions",
                 "allocation",
+                "payable",
                 "adjustments"
               ]
             }
@@ -19526,6 +19770,9 @@
               "allocation": {
                 "type": "integer"
               },
+              "payable": {
+                "type": "integer"
+              },
               "adjustments": {
                 "type": "integer"
               }
@@ -19534,6 +19781,7 @@
               "credited",
               "classSessions",
               "allocation",
+              "payable",
               "adjustments"
             ]
           }
@@ -22216,6 +22464,306 @@
           "markedBy"
         ]
       },
+      "PtPayoutPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PtPayout"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "PtPayout": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "trainer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "employeeCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "employeeCode",
+              "fullName"
+            ]
+          },
+          "periodFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "sessionAmount": {
+            "type": "integer"
+          },
+          "adjustmentAmount": {
+            "type": "integer"
+          },
+          "sessionCount": {
+            "type": "integer"
+          },
+          "adjustmentCount": {
+            "type": "integer"
+          },
+          "approvalStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "void": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "branch",
+          "trainer",
+          "periodFrom",
+          "periodTo",
+          "amount",
+          "sessionAmount",
+          "adjustmentAmount",
+          "sessionCount",
+          "adjustmentCount",
+          "approvalStatus",
+          "void",
+          "createdAt",
+          "createdBy"
+        ]
+      },
+      "PtPayoutDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "trainer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "employeeCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "employeeCode",
+              "fullName"
+            ]
+          },
+          "periodFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "sessionAmount": {
+            "type": "integer"
+          },
+          "adjustmentAmount": {
+            "type": "integer"
+          },
+          "sessionCount": {
+            "type": "integer"
+          },
+          "adjustmentCount": {
+            "type": "integer"
+          },
+          "approvalStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "void": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "SESSION",
+                    "ADJUSTMENT"
+                  ]
+                },
+                "amount": {
+                  "type": "integer"
+                },
+                "released": {
+                  "type": "boolean"
+                },
+                "booking": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "scheduledStart": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "scheduledStart"
+                  ]
+                },
+                "customer": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "customerCode": {
+                      "type": "string"
+                    },
+                    "fullName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "customerCode",
+                    "fullName"
+                  ]
+                },
+                "contract": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "contractCode": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "contractCode"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "amount",
+                "released",
+                "booking",
+                "customer",
+                "contract"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "branch",
+          "trainer",
+          "periodFrom",
+          "periodTo",
+          "amount",
+          "sessionAmount",
+          "adjustmentAmount",
+          "sessionCount",
+          "adjustmentCount",
+          "approvalStatus",
+          "void",
+          "createdAt",
+          "createdBy",
+          "lines"
+        ]
+      },
       "Collected": {
         "type": "object",
         "properties": {
@@ -22601,7 +23149,9 @@
                     "payment.editDate",
                     "cash.manage",
                     "cash.delete",
-                    "cash.opening"
+                    "cash.opening",
+                    "payout.view",
+                    "payout.create"
                   ]
                 },
                 "granted": {
@@ -22881,7 +23431,9 @@
                 "payment.editDate",
                 "cash.manage",
                 "cash.delete",
-                "cash.opening"
+                "cash.opening",
+                "payout.view",
+                "payout.create"
               ]
             }
           },

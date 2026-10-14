@@ -118,7 +118,13 @@ describe("the PT revenue allocation (D-032, A-166 to A-170)", () => {
       allocation: 2_500_000,
       classSessions: 0,
     });
-    expect(report.totals).toEqual({ credited: 5, classSessions: 0, allocation: 2_500_000, adjustments: 0 });
+    expect(report.totals).toEqual({
+      credited: 5,
+      classSessions: 0,
+      allocation: 2_500_000,
+      payable: 2_500_000,
+      adjustments: 0,
+    });
 
     // Deleting a trained session from the history takes its credit away by itself (D-026, T-050).
     await deleteTrainedSession(root, mistaken.id, { reasonId: OTHER_DELETE, reasonNote: "Ghi nhầm" });

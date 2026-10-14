@@ -106,6 +106,8 @@ export const PERMISSION_GROUPS = {
     "cash.manage",
     "cash.delete",
     "cash.opening",
+    "payout.view",
+    "payout.create",
   ],
 } as const;
 

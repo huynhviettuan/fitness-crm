@@ -14,7 +14,14 @@ export const BOOKING_REPORT_QUERY = [...PERIOD_QUERY, "trainerId", "type", "stat
 type PtLine =
   | { kind: "row"; trainer: PtRevenueTrainer; row: PtRevenueRow }
   | { kind: "trainer"; trainer: PtRevenueTrainer }
-  | { kind: "total"; credited: number; classSessions: number; allocation: number; adjustments: number };
+  | {
+      kind: "total";
+      credited: number;
+      classSessions: number;
+      allocation: number;
+      payable: number;
+      adjustments: number;
+    };
 
 const TRAINER_TOTAL = { vi: "Tổng", en: "Total of" };
 
@@ -141,6 +148,17 @@ export const ptRevenueExport: ExportDefinition<PtLine> = {
           : line.kind === "trainer"
             ? line.trainer.adjustments
             : line.adjustments,
+    },
+    {
+      header: { vi: "Buổi đã chi", en: "Sessions paid" },
+      kind: "number",
+      value: (line) => (line.kind === "row" ? line.row.paidSessions : null),
+    },
+    {
+      header: { vi: "Còn phải chi", en: "Payable" },
+      kind: "money",
+      value: (line) =>
+        line.kind === "row" ? line.row.payable : line.kind === "trainer" ? line.trainer.payable : line.payable,
     },
     {
       header: { vi: "Ghi chú", en: "Note" },

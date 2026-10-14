@@ -26,6 +26,8 @@ import { readParameter } from "../../platform/parameters/parameter.service.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import { startOfGymDay, bookingsVisibleTo } from "../bookings/booking.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
+import { adjustmentFor } from "@flow/shared/payouts";
+import * as payoutRepo from "../payouts/payout.repository.js";
 import * as repo from "./pt-report.repository.js";
 import { assertWholeScope, branchesOf, periodOf } from "./report-scope.js";
 
@@ -65,6 +67,7 @@ export async function ptRevenueReport(actor: Actor, rawQuery: unknown): Promise<
         outsideShift: 0,
         classSessions: 0,
         allocation: 0,
+        payable: 0,
         adjustments: 0,
       };
       trainers.set(id, trainer);
@@ -107,7 +110,14 @@ export async function ptRevenueReport(actor: Actor, rawQuery: unknown): Promise<
         commissionRate: row.commissionRate,
         timesheetRate,
       }),
-      // Nothing is paid before the payouts of M5.7, so nothing is adjusted yet (D-027).
+      paidSessions: row.paid,
+      payable: ptAllocation({
+        credited: row.credited - row.paid,
+        allocationValue,
+        sessions,
+        commissionRate: row.commissionRate,
+        timesheetRate,
+      }),
       adjustments: 0,
     };
     trainer.rows.push(line);
@@ -115,6 +125,24 @@ export async function ptRevenueReport(actor: Actor, rawQuery: unknown): Promise<
     trainer.inShift += line.inShift;
     trainer.outsideShift += line.outsideShift;
     trainer.allocation += line.allocation;
+    trainer.payable += line.payable;
+  }
+  // Paid sessions deleted from the history since are taken back in the PT's next payout (D-027, A-173).
+  const pending = await payoutRepo.pendingAdjustments(prisma, branches, query.trainerId);
+  const unknown = [...new Set(pending.map((item) => item.trainerId))].filter((id) => !trainers.has(id));
+  const people = await prisma.employee.findMany({
+    where: { id: { in: unknown } },
+    select: { id: true, employeeCode: true, fullName: true },
+  });
+  for (const person of people) trainerOf(person.id, person.employeeCode, person.fullName);
+  for (const item of pending) {
+    const trainer = trainers.get(item.trainerId);
+    if (!trainer) continue;
+    const taken = adjustmentFor(item.paid);
+    trainer.adjustments += taken;
+    trainer.payable += taken;
+    const line = trainer.rows.find((candidate) => candidate.contract.id === item.contractId);
+    if (line) line.adjustments += taken;
   }
   for (const taught of classes) {
     trainerOf(taught.coachId, taught.employeeCode, taught.coachName).classSessions = taught.sessions;
@@ -138,6 +166,7 @@ export async function ptRevenueReport(actor: Actor, rawQuery: unknown): Promise<
       credited: sorted.reduce((sum, trainer) => sum + trainer.credited, 0),
       classSessions: sorted.reduce((sum, trainer) => sum + trainer.classSessions, 0),
       allocation: sorted.reduce((sum, trainer) => sum + trainer.allocation, 0),
+      payable: sorted.reduce((sum, trainer) => sum + trainer.payable, 0),
       adjustments: sorted.reduce((sum, trainer) => sum + trainer.adjustments, 0),
     },
   };

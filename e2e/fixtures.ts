@@ -357,6 +357,18 @@ export const test = base.extend<Fixtures>({
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...classIds, ...classSessionIds] } } });
       await prisma.classSession.deleteMany({ where: { classId: { in: classIds } } });
       await prisma.gymClass.deleteMany({ where: { id: { in: classIds } } });
+      // PT payouts of tagged PTs or paid with a tagged voucher, and the sessions they paid (M5.7).
+      const payoutIds = ids(
+        await prisma.ptPayout.findMany({
+          where: { OR: [{ trainerId: { in: trainerIds } }, { cashTransactionId: { in: cashIds } }] },
+          select: { id: true },
+        }),
+      );
+      await prisma.ptPayoutLine.deleteMany({
+        where: { OR: [{ payoutId: { in: payoutIds } }, { bookingId: { in: bookingIds } }] },
+      });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: payoutIds } } });
+      await prisma.ptPayout.deleteMany({ where: { id: { in: payoutIds } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).

@@ -8,10 +8,12 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { HiddenValue } from "@/components/hidden-value";
 import { Money } from "@/components/money";
+import { formatDateOnly } from "@/lib/format";
+import { PayoutButton } from "./payout-dialog";
 import type { PtRevenueReport, PtRevenueRow, PtRevenueTrainer } from "@flow/shared/reports";
 
 /** The PT revenue allocation (brief §6.5, D-032): GymMaster's columns, a table per PT with that PT's totals. */
-export function PtRevenueView({ report }: { report: PtRevenueReport }) {
+export function PtRevenueView({ report, canPay }: { report: PtRevenueReport; canPay: boolean }) {
   const t = useTranslations("ptRevenue");
 
   if (report.trainers.length === 0) return <EmptyState icon={HandCoinsIcon} title={t("empty")} />;
@@ -79,6 +81,8 @@ export function PtRevenueView({ report }: { report: PtRevenueReport }) {
       header: t("fields.adjustments"),
       cell: ({ row }) => <Money amount={row.original.adjustments} />,
     },
+    { id: "paid", header: t("fields.paid"), cell: ({ row }) => row.original.paidSessions },
+    { id: "payable", header: t("fields.payable"), cell: ({ row }) => <Money amount={row.original.payable} /> },
     { id: "note", header: t("fields.note"), cell: ({ row }) => row.original.contract.note ?? "—" },
   ];
 
@@ -87,11 +91,13 @@ export function PtRevenueView({ report }: { report: PtRevenueReport }) {
     { key: "classSessions", value: report.totals.classSessions, money: false },
     { key: "allocation", value: report.totals.allocation, money: true },
     { key: "adjustments", value: report.totals.adjustments, money: true },
+    { key: "payable", value: report.totals.payable, money: true },
   ] as const;
+  const period = { from: formatDateOnly(report.from), to: formatDateOnly(report.to) };
 
   return (
     <div className="min-w-0 space-y-6">
-      <section aria-label={t("totals")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label={t("totals")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {totals.map((entry) => (
           <Card key={entry.key}>
             <CardHeader>
@@ -107,19 +113,32 @@ export function PtRevenueView({ report }: { report: PtRevenueReport }) {
       </section>
       <p className="text-xs text-muted-foreground">{t("note")}</p>
       {report.trainers.map((trainer) => (
-        <TrainerCard key={trainer.employee.id} trainer={trainer} columns={columns} />
+        <TrainerCard key={trainer.employee.id} trainer={trainer} columns={columns} canPay={canPay} period={period} />
       ))}
     </div>
   );
 }
 
-function TrainerCard({ trainer, columns }: { trainer: PtRevenueTrainer; columns: DataTableColumn<PtRevenueRow>[] }) {
+function TrainerCard({
+  trainer,
+  columns,
+  canPay,
+  period,
+}: {
+  trainer: PtRevenueTrainer;
+  columns: DataTableColumn<PtRevenueRow>[];
+  canPay: boolean;
+  period: { from: string; to: string };
+}) {
   const t = useTranslations("ptRevenue");
   const label = `${trainer.employee.fullName} (${trainer.employee.employeeCode})`;
   return (
     <Card role="region" aria-label={label}>
       <CardHeader>
-        <CardTitle>{label}</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle>{label}</CardTitle>
+          {canPay && <PayoutButton trainer={trainer.employee} period={period} payable={trainer.payable} />}
+        </div>
         <dl
           aria-label={t("trainerTotals", { name: trainer.employee.fullName })}
           className="flex flex-wrap gap-x-6 gap-y-1 text-sm"
@@ -134,6 +153,9 @@ function TrainerCard({ trainer, columns }: { trainer: PtRevenueTrainer; columns:
           </Figure>
           <Figure label={t("totalsOf.adjustments")}>
             <Money amount={trainer.adjustments} />
+          </Figure>
+          <Figure label={t("totalsOf.payable")}>
+            <Money amount={trainer.payable} />
           </Figure>
         </dl>
       </CardHeader>

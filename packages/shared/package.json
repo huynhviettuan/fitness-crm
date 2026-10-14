@@ -85,6 +85,10 @@
       "types": "./dist/promotions/index.d.ts",
       "default": "./dist/promotions/index.js"
     },
+    "./payouts": {
+      "types": "./dist/payouts/index.d.ts",
+      "default": "./dist/payouts/index.js"
+    },
     "./reports": {
       "types": "./dist/reports/index.d.ts",
       "default": "./dist/reports/index.js"

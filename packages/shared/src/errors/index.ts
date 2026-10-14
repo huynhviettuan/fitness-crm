@@ -48,6 +48,8 @@ export const ERROR_HTTP_STATUS = {
   CLASS_NOT_STARTED: 409,
   // M5.5, A-162: the contract is not a group-class contract, or belongs to another branch than the class.
   CLASS_CONTRACT_MISMATCH: 422,
+  // M5.7, A-173: nothing is left to pay the PT for the period, or what is left is not above zero.
+  PAYOUT_NOTHING_TO_PAY: 409,
   IDEMPOTENCY_KEY_REUSED: 409,
   APPROVAL_NOT_PENDING: 409,
   APPROVAL_ALREADY_PENDING: 409,

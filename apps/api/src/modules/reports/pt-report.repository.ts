@@ -31,6 +31,8 @@ export type CreditedRow = {
   commissionRate: number;
   credited: number;
   inShift: number;
+  /** Of the credited sessions, the ones a standing payout already paid (M5.7). */
+  paid: number;
 };
 
 /** The gym day of a moment, in SQL. */
@@ -75,6 +77,7 @@ export async function creditedRows(
       commission_rate: Prisma.Decimal | null;
       credited: bigint;
       in_shift: bigint;
+      paid: bigint;
     }[]
   >`
     SELECT b.trainer_id, e.employee_code, e.full_name AS trainer_name,
@@ -93,7 +96,10 @@ export async function creditedRows(
                  AND EXTRACT(HOUR FROM ${local}) * 60 + EXTRACT(MINUTE FROM ${local}) < sh.end_minute)
              AND NOT EXISTS (
                SELECT 1 FROM employee_days_off d WHERE d.employee_id = b.trainer_id AND d.date = ${day})
-           ) AS in_shift
+           ) AS in_shift,
+           COUNT(*) FILTER (WHERE EXISTS (
+             SELECT 1 FROM pt_payout_lines l
+             WHERE l.booking_id = b.id AND l.kind = 'SESSION' AND l.released_at IS NULL)) AS paid
     FROM bookings b
     JOIN employees e ON e.id = b.trainer_id
     JOIN contracts c ON c.id = b.contract_id
@@ -129,6 +135,7 @@ export async function creditedRows(
     commissionRate: row.commission_rate === null ? 100 : Number(row.commission_rate),
     credited: Number(row.credited),
     inShift: Number(row.in_shift),
+    paid: Number(row.paid),
   }));
 }
 

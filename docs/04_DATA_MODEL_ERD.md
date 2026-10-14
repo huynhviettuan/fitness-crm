@@ -105,6 +105,8 @@ erDiagram
 
 | Table | Key fields |
 |---|---|
+| `pt_payouts` (M5.7) | id, branch_id, trainer_id, period_from, period_to, amount (= session_amount + adjustment_amount, above zero), session_amount, adjustment_amount, session_count, adjustment_count, cash_transaction_id (the expense voucher, unique), idempotency_key (unique), created_by/at |
+| `pt_payout_lines` (M5.7) | id, payout_id, booking_id, contract_id, kind (SESSION, or ADJUSTMENT: negative), amount, released_at; unique (booking, kind) while released_at is empty; released by a trigger when the voucher is deleted, rejected or cancelled (A-174) |
 | `services` | name, image, kind (PT, CLASS, MEMBER), branches, allowed_hours, commission_rate (percent of the allocation paid to the PT, 100 initially, A-167), is_group, max_members, max_per_week, max_per_day, active_from, active_to, notes |
 | `price_tier_versions` | service_id, version, effective_from, created_by; a version is never edited; contracts reference the version they used (A-109) |
 | `price_tiers` | version_id, min_sessions, max_sessions (empty: no limit), unit_price, validity_months, validity_days; tiers of one version never overlap (exclusion constraint) |

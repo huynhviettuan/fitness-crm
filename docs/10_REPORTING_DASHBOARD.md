@@ -30,7 +30,7 @@ One row per PT–contract pair in the period, matching GymMaster's "employee_pt_
 | Commission rate, timesheet rate | Configuration (100% initially; level per OQ-022) |
 | PT allocation | Credited × per-session allocation × commission rate × timesheet rate |
 | Total credited | All credited sessions of the PT in the period |
-| Adjustments | Negative lines from deleted sessions of paid periods (D-027) |
+| Adjustments | Negative lines from deleted sessions of paid periods (D-027, built M5.7: A-175). The report adds the sessions paid and the amount payable (A-173) |
 | Trial to contract, note | Trial session that led to the contract; note |
 
 The report is the basis of PT payout vouchers (D-032, `06_FUNCTIONAL_REQUIREMENTS.md` FR-CASH-003).

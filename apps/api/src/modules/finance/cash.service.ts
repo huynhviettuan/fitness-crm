@@ -97,70 +97,7 @@ export async function recordCashTransaction(
   if (replay) return { transaction: replay, replayed: true };
 
   try {
-    const created = await prisma.$transaction(async (tx) => {
-      const branchId = await resolveBranch(tx, actor, data.branchId);
-      // Income and expenses have their own lists; "Khác" needs a note (D-016).
-      const list = data.type === "INCOME" ? "incomeCategories" : "expenseTypes";
-      const category = await resolveChoice(tx, list, "categoryId", {
-        optionId: data.categoryId,
-        note: data.categoryNote,
-      });
-      const method = await resolveChoice(tx, "paymentMethods", "methodId", {
-        optionId: data.methodId,
-        note: data.methodNote,
-      });
-      // A refund is linked to a contract of the voucher's branch that the actor may see (D-034).
-      if (data.contractId) {
-        const contract = await findContract(tx, data.contractId, contractsVisibleTo(actor));
-        if (!contract || contract.branchId !== branchId) {
-          throw new AppError("VALIDATION_FAILED", { fieldErrors: { contractId: ["invalidChoice"] } });
-        }
-      }
-      const rule = await ruleFor(tx, "cash.create");
-      const number = data.type === "INCOME" ? await nextReceiptNumber(tx) : await repo.nextExpenseNumber(tx);
-      const transaction = await repo.createCashTransaction(tx, {
-        ...data,
-        number,
-        methodId: method.optionId,
-        methodNote: method.note,
-        approvalStatus: rule.required ? "PENDING" : "APPROVED",
-        categoryId: category.optionId,
-        categoryNote: category.note,
-        branchId,
-        idempotencyKey: key.data,
-        createdById: actor.id,
-      });
-      await recordAudit(tx, {
-        actorUserId: actor.id,
-        entityType: "cash_transaction",
-        entityId: transaction.id,
-        action: "cash_transaction.created",
-        after: {
-          number,
-          type: data.type,
-          category: { optionId: category.optionId, note: category.note },
-          method: { optionId: method.optionId, note: method.note },
-          payee: data.payee,
-          contractId: data.contractId,
-          amount: data.amount,
-          occurredOn: data.occurredOn.toISOString().slice(0, 10),
-          approvalStatus: transaction.approvalStatus,
-        },
-      });
-      if (rule.required) {
-        const view = toView(transaction);
-        await submitForApproval(tx, actor, {
-          action: "cash.create",
-          entityType: "cash_transaction",
-          entityId: transaction.id,
-          branchId: transaction.branchId,
-          title: titleOf(view),
-          amount: view.amount,
-          payload: { type: view.type },
-        });
-      }
-      return transaction;
-    });
+    const created = await prisma.$transaction((tx) => createCashTransactionIn(tx, actor, data, key.data));
     return { transaction: toView(created), replayed: false };
   } catch (error) {
     // The same request submitted twice at once: the unique key lets one through.
@@ -169,6 +106,80 @@ export async function recordCashTransaction(
     if (replayAfterRace) return { transaction: replayAfterRace, replayed: true };
     throw error;
   }
+}
+
+/**
+ * Records an income or expense inside the caller's transaction: its voucher number, audit, and a request for approval
+ * when the matrix requires it (D-018). PT payouts make their expense voucher through it (M5.7).
+ */
+export async function createCashTransactionIn(
+  tx: TxDb,
+  actor: Actor,
+  data: CashTransactionData,
+  key: string,
+): Promise<repo.CashTransactionRecord> {
+  const branchId = await resolveBranch(tx, actor, data.branchId);
+  // Income and expenses have their own lists; "Khác" needs a note (D-016).
+  const list = data.type === "INCOME" ? "incomeCategories" : "expenseTypes";
+  const category = await resolveChoice(tx, list, "categoryId", {
+    optionId: data.categoryId,
+    note: data.categoryNote,
+  });
+  const method = await resolveChoice(tx, "paymentMethods", "methodId", {
+    optionId: data.methodId,
+    note: data.methodNote,
+  });
+  // A refund is linked to a contract of the voucher's branch that the actor may see (D-034).
+  if (data.contractId) {
+    const contract = await findContract(tx, data.contractId, contractsVisibleTo(actor));
+    if (!contract || contract.branchId !== branchId) {
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { contractId: ["invalidChoice"] } });
+    }
+  }
+  const rule = await ruleFor(tx, "cash.create");
+  const number = data.type === "INCOME" ? await nextReceiptNumber(tx) : await repo.nextExpenseNumber(tx);
+  const transaction = await repo.createCashTransaction(tx, {
+    ...data,
+    number,
+    methodId: method.optionId,
+    methodNote: method.note,
+    approvalStatus: rule.required ? "PENDING" : "APPROVED",
+    categoryId: category.optionId,
+    categoryNote: category.note,
+    branchId,
+    idempotencyKey: key,
+    createdById: actor.id,
+  });
+  await recordAudit(tx, {
+    actorUserId: actor.id,
+    entityType: "cash_transaction",
+    entityId: transaction.id,
+    action: "cash_transaction.created",
+    after: {
+      number,
+      type: data.type,
+      category: { optionId: category.optionId, note: category.note },
+      method: { optionId: method.optionId, note: method.note },
+      payee: data.payee,
+      contractId: data.contractId,
+      amount: data.amount,
+      occurredOn: data.occurredOn.toISOString().slice(0, 10),
+      approvalStatus: transaction.approvalStatus,
+    },
+  });
+  if (rule.required) {
+    const view = toView(transaction);
+    await submitForApproval(tx, actor, {
+      action: "cash.create",
+      entityType: "cash_transaction",
+      entityId: transaction.id,
+      branchId: transaction.branchId,
+      title: titleOf(view),
+      amount: view.amount,
+      payload: { type: view.type },
+    });
+  }
+  return transaction;
 }
 
 /**

@@ -51,7 +51,8 @@
     "checkin": "Check-in",
     "classes": "Lịch lớp",
     "ptRevenueReport": "Doanh thu PT",
-    "bookingReport": "Báo cáo booking"
+    "bookingReport": "Báo cáo booking",
+    "ptPayouts": "Chi trả PT"
   },
   "status": {
     "customer": {
@@ -580,7 +581,8 @@
     "CLASS_ALREADY_ENROLLED": "Khách đã có chỗ trong buổi lớp này.",
     "CLASS_SESSION_CANCELLED": "Buổi lớp này đã hủy.",
     "CLASS_NOT_STARTED": "Buổi lớp chưa bắt đầu nên chưa điểm danh được.",
-    "CLASS_CONTRACT_MISMATCH": "Hợp đồng không phải hợp đồng lớp nhóm của chi nhánh này."
+    "CLASS_CONTRACT_MISMATCH": "Hợp đồng không phải hợp đồng lớp nhóm của chi nhánh này.",
+    "PAYOUT_NOTHING_TO_PAY": "Không còn gì để chi cho PT trong kỳ này: các buổi đã được chi, hoặc tổng sau điều chỉnh không dương."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -1351,6 +1353,10 @@
         "manage": "Thêm và sửa lớp",
         "enroll": "Đăng ký khách vào lớp",
         "attend": "Điểm danh lớp"
+      },
+      "payout": {
+        "view": "Xem chi trả PT",
+        "create": "Chi trả PT"
       }
     },
     "resources": {
@@ -1617,7 +1623,8 @@
       "session_status": "Trạng thái buổi tập",
       "checkin_device": "Máy chấm công",
       "class": "Lớp",
-      "class_session": "Buổi lớp"
+      "class_session": "Buổi lớp",
+      "pt_payout": "Chi trả PT"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2721,14 +2728,15 @@
       "credited": "Show dạy",
       "classSessions": "Buổi lớp đã dạy",
       "allocation": "Doanh thu PT",
-      "adjustments": "Điều chỉnh"
+      "adjustments": "Điều chỉnh",
+      "payable": "Còn phải chi"
     },
     "trainerTotals": "Tổng của {name}",
     "noRows": "PT này chỉ có buổi dạy lớp trong kỳ.",
     "noService": "Chưa có dịch vụ",
     "shiftValue": "{inside} trong ca · {outside} ngoài ca",
     "ratesValue": "HH {commission}% · công {timesheet}%",
-    "note": "Giá trị phân bổ = giá trị hợp đồng sau khuyến mãi, không gồm VAT. Doanh thu PT = Show dạy × phân bổ mỗi buổi × tỷ lệ hoa hồng của dịch vụ × tỷ lệ công (trong Tham số). Show dạy gồm buổi Đã tập, vắng không báo trước và Burn Show; buổi bị xóa khỏi lịch sử không tính. Buổi thuộc kỳ theo ngày hẹn. Buổi lớp có ít nhất một khách có mặt được đếm riêng và chưa tính doanh thu. Cột Điều chỉnh có số khi PT được chi lương (M5.7).",
+    "note": "Giá trị phân bổ = giá trị hợp đồng sau khuyến mãi, không gồm VAT. Doanh thu PT = Show dạy × phân bổ mỗi buổi × tỷ lệ hoa hồng của dịch vụ × tỷ lệ công (trong Tham số). Show dạy gồm buổi Đã tập, vắng không báo trước và Burn Show; buổi bị xóa khỏi lịch sử không tính. Buổi thuộc kỳ theo ngày hẹn. Buổi lớp có ít nhất một khách có mặt được đếm riêng và chưa tính doanh thu. Còn phải chi = doanh thu PT của các buổi chưa chi, trừ các buổi đã chi nhưng sau đó bị xóa khỏi lịch sử (Điều chỉnh); phần điều chỉnh được trừ vào lần chi tiếp theo của PT.",
     "fields": {
       "member": "Hội viên",
       "contract": "Hợp đồng",
@@ -2741,7 +2749,19 @@
       "rates": "Tỷ lệ",
       "allocation": "Doanh thu PT",
       "adjustments": "Điều chỉnh",
-      "note": "Ghi chú"
+      "note": "Ghi chú",
+      "paid": "Buổi đã chi",
+      "payable": "Còn phải chi"
+    },
+    "payout": {
+      "button": "Chi trả",
+      "title": "Chi trả cho {name}",
+      "description": "Chi các buổi chưa chi của kỳ {from} – {to}, trừ các buổi đã chi nhưng bị xóa khỏi lịch sử. Phiếu chi được tạo ngay; số tiền do hệ thống tính.",
+      "amount": "Số tiền chi",
+      "category": "Loại chi",
+      "method": "Hình thức chi",
+      "confirm": "Tạo phiếu chi",
+      "paid": "Đã chi, phiếu {number}"
     }
   },
   "bookingReport": {
@@ -2785,5 +2805,21 @@
     "revenue": "Doanh thu",
     "revenueTotal": "Tổng 12 tháng",
     "note": "Lead mới tính theo ngày tạo. Hội viên đã tập là khách có buổi PT hoặc buổi lớp đã dùng trong kỳ. Buổi PT tính các buổi có tính công cho PT, theo giờ bắt đầu. Doanh thu là tiền đã thu có hiệu lực theo tháng, không gồm số dư đầu kỳ."
+  },
+  "ptPayouts": {
+    "title": "Chi trả PT",
+    "description": "Các lần chi trả cho PT: phiếu chi, kỳ, số buổi đã chi và điều chỉnh đã trừ. Phiếu bị xóa hoặc từ chối thì các buổi được chi lại.",
+    "empty": "Chưa có lần chi trả nào.",
+    "void": "Đã hủy",
+    "fields": {
+      "number": "Phiếu chi",
+      "trainer": "PT",
+      "period": "Kỳ",
+      "amount": "Số tiền",
+      "sessions": "Số buổi",
+      "adjustments": "Điều chỉnh",
+      "status": "Trạng thái",
+      "created": "Tạo lúc"
+    }
   }
 }

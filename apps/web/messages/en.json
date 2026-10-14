@@ -51,7 +51,8 @@
     "checkin": "Check-in",
     "classes": "Class schedule",
     "ptRevenueReport": "PT revenue",
-    "bookingReport": "Booking report"
+    "bookingReport": "Booking report",
+    "ptPayouts": "PT payouts"
   },
   "status": {
     "customer": {
@@ -580,7 +581,8 @@
     "CLASS_ALREADY_ENROLLED": "The customer already has a seat in this class session.",
     "CLASS_SESSION_CANCELLED": "This class session is cancelled.",
     "CLASS_NOT_STARTED": "The class has not started, so attendance cannot be marked yet.",
-    "CLASS_CONTRACT_MISMATCH": "The contract is not a group-class contract of this branch."
+    "CLASS_CONTRACT_MISMATCH": "The contract is not a group-class contract of this branch.",
+    "PAYOUT_NOTHING_TO_PAY": "Nothing is left to pay the PT in this period: the sessions are paid, or the total after adjustments is not above zero."
   },
   "validation": {
     "required": "Required.",
@@ -1351,6 +1353,10 @@
         "manage": "Add and edit classes",
         "enroll": "Enroll customers in classes",
         "attend": "Mark class attendance"
+      },
+      "payout": {
+        "view": "View PT payouts",
+        "create": "Pay out PTs"
       }
     },
     "resources": {
@@ -1617,7 +1623,8 @@
       "session_status": "Session status",
       "checkin_device": "Check-in device",
       "class": "Class",
-      "class_session": "Class session"
+      "class_session": "Class session",
+      "pt_payout": "PT payout"
     },
     "verbs": {
       "created": "Created",
@@ -2721,14 +2728,15 @@
       "credited": "Credited sessions",
       "classSessions": "Class sessions taught",
       "allocation": "PT allocation",
-      "adjustments": "Adjustments"
+      "adjustments": "Adjustments",
+      "payable": "Payable"
     },
     "trainerTotals": "Totals of {name}",
     "noRows": "This PT only taught classes in the period.",
     "noService": "No service",
     "shiftValue": "{inside} in shift · {outside} outside",
     "ratesValue": "Comm. {commission}% · timesheet {timesheet}%",
-    "note": "Allocation value = the contract value after discounts, excluding VAT. PT allocation = credited sessions × allocation per session × the service's commission rate × the timesheet rate (Parameters). Credited sessions are trained, no-show and Burn Show sessions; a session deleted from the history is not counted. A session belongs to the period of its scheduled day. Class sessions with at least one customer present are counted apart and carry no revenue yet. Adjustments get figures when PTs are paid out (M5.7).",
+    "note": "Allocation value = the contract value after discounts, excluding VAT. PT allocation = credited sessions × allocation per session × the service's commission rate × the timesheet rate (Parameters). Credited sessions are trained, no-show and Burn Show sessions; a session deleted from the history is not counted. A session belongs to the period of its scheduled day. Class sessions with at least one customer present are counted apart and carry no revenue yet. Payable = the PT allocation of the sessions not paid yet, less the paid sessions deleted from the history since (Adjustments); an adjustment is taken off the PT's next payout.",
     "fields": {
       "member": "Member",
       "contract": "Contract",
@@ -2741,7 +2749,19 @@
       "rates": "Rates",
       "allocation": "PT allocation",
       "adjustments": "Adjustments",
-      "note": "Note"
+      "note": "Note",
+      "paid": "Sessions paid",
+      "payable": "Payable"
+    },
+    "payout": {
+      "button": "Pay out",
+      "title": "Pay {name}",
+      "description": "Pays the sessions of {from} – {to} not paid yet, less the paid sessions deleted from the history. The voucher is made at once; the amount is worked out by the system.",
+      "amount": "Amount to pay",
+      "category": "Expense type",
+      "method": "Payment method",
+      "confirm": "Make the voucher",
+      "paid": "Paid, voucher {number}"
     }
   },
   "bookingReport": {
@@ -2785,5 +2805,21 @@
     "revenue": "Revenue",
     "revenueTotal": "Total of 12 months",
     "note": "New leads count by the day they were created. Members who trained have a PT session or a class session used in the period. PT sessions are the ones that credit a PT, by the hour they started. Revenue is valid receipts by month, without opening balances."
+  },
+  "ptPayouts": {
+    "title": "PT payouts",
+    "description": "The payouts to PTs: the voucher, the period, the sessions paid, and the adjustments taken off. A payout whose voucher is deleted or rejected stands no more, and its sessions can be paid again.",
+    "empty": "No payout has been made yet.",
+    "void": "Void",
+    "fields": {
+      "number": "Voucher",
+      "trainer": "PT",
+      "period": "Period",
+      "amount": "Amount",
+      "sessions": "Sessions",
+      "adjustments": "Adjustments",
+      "status": "Status",
+      "created": "Created"
+    }
   }
 }

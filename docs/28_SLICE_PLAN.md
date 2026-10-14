@@ -341,7 +341,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** the owner sends a GymMaster "employee_pt_training" export with the data behind it, to match AC-18.
 - **Depends on:** M5.5.
 
-### M5.7 PT payouts and adjustments
+### M5.7 PT payouts and adjustments (done 2026-10-21: A-173 to A-176, OQ-054)
 
 - **Builds:**
   - **Payout expense vouchers** from a period of the allocation report. Each stores its period and the sessions it counted, so a session is never paid twice.

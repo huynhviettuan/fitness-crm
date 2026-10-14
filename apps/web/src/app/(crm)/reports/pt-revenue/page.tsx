@@ -40,7 +40,7 @@ export default async function PtRevenuePage({ searchParams }: PageProps<"/report
       />
       <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
         <TrainerFilters path="/reports/pt-revenue" values={values} branches={user.branches} trainers={trainers} />
-        <PtRevenueView report={report} />
+        <PtRevenueView report={report} canPay={can(user, "payout.create")} />
       </div>
     </>
   );

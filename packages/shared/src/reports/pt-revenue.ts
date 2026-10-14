@@ -107,7 +107,11 @@ export const ptRevenueRowSchema = z.object({
   commissionRate: z.number(),
   timesheetRate: z.number(),
   allocation: z.int(),
-  /** Negative lines from sessions deleted after their period was paid (D-027); filled by the payouts of M5.7. */
+  /** Of the credited sessions, the ones a payout already paid (M5.7). */
+  paidSessions: z.int(),
+  /** The allocation of the credited sessions not paid yet. */
+  payable: z.int(),
+  /** Negative: paid sessions of this contract deleted from the history since, taken back in the PT's next payout (D-027). */
   adjustments: z.int(),
 });
 
@@ -122,6 +126,9 @@ export const ptRevenueTrainerSchema = z.object({
   /** Class sessions the PT taught with at least one customer present (A-164); no revenue is allocated to them. */
   classSessions: z.int(),
   allocation: z.int(),
+  /** What a payout would pay now: the unpaid allocation plus the pending adjustments (A-173). */
+  payable: z.int(),
+  /** Every pending adjustment of the PT, on whatever contract (D-027). */
   adjustments: z.int(),
 });
 
@@ -134,6 +141,7 @@ export const ptRevenueReportSchema = z
       credited: z.int(),
       classSessions: z.int(),
       allocation: z.int(),
+      payable: z.int(),
       adjustments: z.int(),
     }),
   })

@@ -15,6 +15,7 @@ import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
 import { CheckinController, CheckinDevicesController } from "./modules/checkin/checkin.controller.js";
 import { ClassSessionsController, ClassesController } from "./modules/classes/classes.controller.js";
+import { PayoutsController } from "./modules/payouts/payouts.controller.js";
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
 import { CustomersController } from "./modules/customers/customers.controller.js";
 import { LeadsController } from "./modules/leads/leads.controller.js";
@@ -66,6 +67,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
     CheckinDevicesController,
     ClassesController,
     ClassSessionsController,
+    PayoutsController,
     PaymentsController,
     DebtsController,
     CashTransactionsController,
