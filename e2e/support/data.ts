@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { otherOptionId } from "./options";
 import { approvePendingViaApi } from "./approvals";
 import type { APIRequestContext } from "@playwright/test";
-import { contractFixtures } from "./db";
+import { E2E_BRANCH_ID, contractFixtures } from "./db";
 import { createUserViaApi, roleIdOf } from "./admin";
 
 // Test data created through the public API. Names carry the test's tag so the
@@ -342,4 +342,13 @@ export async function leadInRecareViaApi(
     await change({ status });
   }
   return created;
+}
+
+/** A member-kind service on the specs' branch; the `testTag` in its name removes it afterwards. */
+export async function createServiceViaApi(admin: APIRequestContext, name: string) {
+  const response = await admin.post("/api/v1/services", {
+    data: { name, kind: "MEMBER", branchIds: [E2E_BRANCH_ID] },
+  });
+  if (!response.ok()) throw new Error(`createService ${response.status()}: ${await response.text()}`);
+  return (await response.json()) as { id: string; name: string };
 }

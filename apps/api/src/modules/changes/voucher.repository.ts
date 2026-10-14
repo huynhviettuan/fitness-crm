@@ -9,6 +9,7 @@ const include = {
   contract: { select: { id: true, contractCode: true } },
   customer: { select: { id: true, customerCode: true, fullName: true } },
   branch: { select: { id: true, name: true } },
+  targetService: { select: { id: true, name: true } },
   createdBy: { select: { id: true, name: true } },
   approvedBy: { select: { id: true, name: true } },
 } satisfies Prisma.ContractChangeVoucherInclude;

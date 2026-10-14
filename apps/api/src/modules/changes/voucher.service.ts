@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   VOUCHER_ACTIONS,
   canChangeContract,
+  exchangeEffect,
+  exchangeInputSchema,
   endDateAfterHold,
   holdDays,
   holdInputSchema,
@@ -10,11 +12,12 @@ import {
   renewalInputSchema,
   renewalPeriod,
   voucherListQuerySchema,
+  type ExchangeKind,
   type Voucher,
   type VoucherKind,
   type VoucherPage,
 } from "@flow/shared/changes";
-import { effectiveStatus, idempotencyKeySchema } from "@flow/shared/contracts";
+import { effectiveStatus, entitledSessions, idempotencyKeySchema, valueOfContract } from "@flow/shared/contracts";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { ruleFor, submitForApproval } from "../../platform/approvals/approval.engine.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
@@ -62,6 +65,8 @@ function toView(record: repo.VoucherRecord, pendingRequestId: string | null): Vo
     days: record.days,
     sessions: record.sessions,
     amount: money(record.amount),
+    targetService: record.targetService,
+    credit: money(record.credit),
     reason: null,
     note: record.note,
     sessionsDelta: record.sessionsDelta,
@@ -128,7 +133,7 @@ export async function getVoucher(actor: Actor, id: string): Promise<Voucher> {
 
 type Fields = Pick<
   Prisma.ContractChangeVoucherUncheckedCreateInput,
-  "fromDate" | "toDate" | "months" | "days" | "sessions" | "amount" | "note"
+  "fromDate" | "toDate" | "months" | "days" | "sessions" | "amount" | "note" | "targetServiceId" | "credit"
 >;
 
 type Raised = { voucher: Voucher; replayed: boolean };
@@ -233,6 +238,13 @@ async function raise(
   }
 }
 
+const AUDIT_VERBS: Partial<Record<VoucherKind, string>> = {
+  RENEWAL: "contract.renewed_by_voucher",
+  HOLD: "contract.held_by_voucher",
+  UPGRADE: "contract.upgraded_by_voucher",
+  CONVERSION: "contract.converted_by_voucher",
+};
+
 const dayText = (day: Date) => day.toISOString().slice(0, 10);
 
 /** A renewal adds months, days or sessions, and what is to be paid for them (brief §5.6). */
@@ -261,6 +273,43 @@ export async function raiseRenewal(actor: Actor, rawInput: unknown, idempotencyK
     };
   });
 }
+
+/**
+ * An upgrade or a conversion exchanges what is left of the package for a new service (brief §5.6, A-227): the contract keeps
+ * its code and its history; the sessions left become the new package's, and the price less the credit is added to what is owed.
+ */
+async function raiseExchange(
+  actor: Actor,
+  kind: ExchangeKind,
+  rawInput: unknown,
+  idempotencyKey: unknown,
+): Promise<Raised> {
+  const input = parseInput(exchangeInputSchema, rawInput);
+  return raise(actor, idempotencyKey, input.contractId, kind, input, async (tx, contract, today) => {
+    if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
+    if (!canChangeContract(effectiveStatus(contract, today))) throw new AppError("CONTRACT_NOT_ACTIVE");
+    const service = await tx.service.findFirst({
+      where: { id: input.targetServiceId, active: true, branches: { some: { branchId: contract.branchId } } },
+      select: { id: true },
+    });
+    if (!service) throw invalid("targetServiceId");
+    if (input.credit > valueOfContract(Number(contract.contractValue), Number(contract.voucherValue))) {
+      throw invalid("credit", "creditAboveValue");
+    }
+    return {
+      targetServiceId: service.id,
+      sessions: input.sessions,
+      amount: input.amount,
+      credit: input.credit,
+      note: input.note,
+    };
+  });
+}
+
+export const raiseUpgrade = (actor: Actor, rawInput: unknown, key: unknown) =>
+  raiseExchange(actor, "UPGRADE", rawInput, key);
+export const raiseConversion = (actor: Actor, rawInput: unknown, key: unknown) =>
+  raiseExchange(actor, "CONVERSION", rawInput, key);
 
 /** A hold stops a running contract for the days asked; they are added to its end when it is approved (brief §5.6). */
 export async function raiseHold(actor: Actor, rawInput: unknown, idempotencyKey: unknown): Promise<Raised> {
@@ -374,6 +423,19 @@ export async function decideVoucher(
         context: { reason: "contract.hold", voucherNumber: voucher.voucherNumber, contractId: contract.id },
       });
     }
+  } else if (voucher.kind === "UPGRADE" || voucher.kind === "CONVERSION") {
+    // What is left now is exchanged for the new package, as the contract stands now (A-227, A-228).
+    const entitled = entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions);
+    const remaining = entitled - contract.openingSessionsUsed - contractRepo.usedSessionsOf(contract);
+    const value = valueOfContract(Number(contract.contractValue), Number(contract.voucherValue));
+    const credit = Number(voucher.credit ?? 0);
+    if (credit > value) throw new AppError("VALIDATION_FAILED", { fieldErrors: { credit: ["creditAboveValue"] } });
+    ({ sessionsDelta, valueDelta } = exchangeEffect({
+      remaining,
+      sessions: voucher.sessions ?? 0,
+      amount: Number(voucher.amount ?? 0),
+      credit,
+    }));
   } else {
     throw new AppError("INTERNAL_ERROR");
   }
@@ -403,7 +465,7 @@ export async function decideVoucher(
     actorUserId: decider.id,
     entityType: "contract",
     entityId: contract.id,
-    action: voucher.kind === "RENEWAL" ? "contract.renewed_by_voucher" : "contract.held_by_voucher",
+    action: AUDIT_VERBS[voucher.kind] ?? "contract.held_by_voucher",
     before: { endDate: dayText(endBefore) },
     after: { endDate: dayText(endAfter) },
     context: {
@@ -428,6 +490,22 @@ export async function decideVoucher(
         fromDate: voucher.fromDate,
         toDate: voucher.toDate,
         amount: valueDelta,
+      },
+    });
+  } else if (voucher.kind === "UPGRADE" || voucher.kind === "CONVERSION") {
+    await queueContractEmail(tx, {
+      event: voucher.kind === "UPGRADE" ? "change.upgrade" : "change.conversion",
+      causeId: id,
+      contractId: contract.id,
+      by: decider.id,
+      day: today,
+      voucher: {
+        voucherNumber: voucher.voucherNumber,
+        sessionsAdded: sessionsDelta,
+        fromDate: null,
+        toDate: null,
+        amount: valueDelta,
+        targetService: voucher.targetService?.name ?? "",
       },
     });
   } else {

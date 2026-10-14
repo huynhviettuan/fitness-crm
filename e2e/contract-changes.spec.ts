@@ -1,6 +1,6 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { approvePendingViaApi } from "./support/approvals";
-import { bookingSetup, createBookingViaApi } from "./support/data";
+import { bookingSetup, createBookingViaApi, createServiceViaApi } from "./support/data";
 import { fill, labels } from "./support/labels";
 
 // Contract change vouchers: renewal and hold (brief §5.6; FR-CHG-001, FR-CHG-002; D-024; docs/13 E2E-174). A voucher waits
@@ -123,6 +123,58 @@ test.describe("a manager raises vouchers", () => {
       data: { ...refs, date: "23/06/2031", startTime: "10:00", endTime: "11:00" },
     });
     expect(open.status()).toBe(201);
+  });
+});
+
+test.describe("a manager exchanges a package", () => {
+  test.use(signedInAs("FITNESS_MANAGER"));
+
+  test("an upgrade waits for the admin, then the sessions left become the new package's and the price less the credit is owed", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const { contract } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const service = await createServiceViaApi(admin, `Cao cấp ${testTag}`);
+    const read = async () =>
+      (await (await admin.get(`/api/v1/contracts/${contract.id}`)).json()) as {
+        remainingSessions: number;
+        contractValue: number;
+      };
+    const before = await read();
+
+    await page.goto(`/contracts/${contract.id}`);
+    await page.getByRole("tab", { name: historyTab }).click();
+    await page.getByRole("button", { name: c.upgrade, exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: fill(c.upgradeTitle, { code: contract.contractCode }) });
+    // The credit may not pass the price.
+    await dialog.getByLabel(c.fields.newSessions, { exact: true }).fill("10");
+    await dialog.getByLabel(c.fields.newPrice, { exact: true }).fill("1000000");
+    await dialog.getByLabel(c.fields.credit, { exact: true }).fill("2000000");
+    await dialog.getByRole("combobox", { name: c.fields.targetService }).click();
+    await page.getByRole("option", { name: service.name }).click();
+    await dialog.getByRole("button", { name: c.raise, exact: true }).click();
+    await expect(dialog.getByText(labels.validation.creditAboveAmount)).toBeVisible();
+    await dialog.getByLabel(c.fields.newPrice, { exact: true }).fill("8000000");
+    await dialog.getByRole("button", { name: c.raise, exact: true }).click();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(c.raisedPending),
+    ).toBeVisible();
+
+    const table = page.getByRole("table", { name: c.title, exact: true });
+    await expect(table.getByRole("row").nth(1)).toContainText(c.kinds.UPGRADE);
+    await expect(table.getByRole("row").nth(1)).toContainText(service.name);
+    expect(await read()).toMatchObject({ remainingSessions: before.remainingSessions });
+
+    const listed = (await (await admin.get(`/api/v1/contract-changes?contractId=${contract.id}`)).json()) as {
+      items: { id: string }[];
+    };
+    await approvePendingViaApi(admin, listed.items[0]!.id, "voucher.upgrade");
+    expect(await read()).toMatchObject({
+      remainingSessions: 10,
+      contractValue: before.contractValue + 6_000_000,
+    });
   });
 });
 

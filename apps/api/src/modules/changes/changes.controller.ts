@@ -1,13 +1,19 @@
 import { Body, Controller, Get, Param, Post, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
-import { holdInputSchema, renewalInputSchema, voucherPageSchema, voucherSchema } from "@flow/shared/changes";
+import {
+  exchangeInputSchema,
+  holdInputSchema,
+  renewalInputSchema,
+  voucherPageSchema,
+  voucherSchema,
+} from "@flow/shared/changes";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
-import { getVoucher, listVouchers, raiseHold, raiseRenewal } from "./voucher.service.js";
+import { getVoucher, listVouchers, raiseConversion, raiseHold, raiseRenewal, raiseUpgrade } from "./voucher.service.js";
 
 const FILTERS = ["contractId", "customerId", "kind", "status", "page", "pageSize"] as const;
 
@@ -63,6 +69,42 @@ export class ContractChangesController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { voucher, replayed } = await raiseHold(actor, body, request.get("idempotency-key"));
+    response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
+    return encode(voucherSchema, voucher);
+  }
+
+  /** An upgrade exchanges what is left of the package for a new service (A-227). */
+  @Post("upgrades")
+  @RequirePermission("contract.change")
+  @ApiIdempotencyKey()
+  @ApiResult(voucherSchema, 201, "Created and applied")
+  @ApiResult(voucherSchema, 202, "Waiting for approval (D-018)")
+  @ApiResult(voucherSchema, 200, "Replayed")
+  async upgrade(
+    @CurrentActor() actor: CurrentUser,
+    @Body({ schema: exchangeInputSchema }) body: unknown,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { voucher, replayed } = await raiseUpgrade(actor, body, request.get("idempotency-key"));
+    response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
+    return encode(voucherSchema, voucher);
+  }
+
+  /** A conversion exchanges what is left of the package for another service or contract (A-227). */
+  @Post("conversions")
+  @RequirePermission("contract.change")
+  @ApiIdempotencyKey()
+  @ApiResult(voucherSchema, 201, "Created and applied")
+  @ApiResult(voucherSchema, 202, "Waiting for approval (D-018)")
+  @ApiResult(voucherSchema, 200, "Replayed")
+  async conversion(
+    @CurrentActor() actor: CurrentUser,
+    @Body({ schema: exchangeInputSchema }) body: unknown,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { voucher, replayed } = await raiseConversion(actor, body, request.get("idempotency-key"));
     response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
     return encode(voucherSchema, voucher);
   }

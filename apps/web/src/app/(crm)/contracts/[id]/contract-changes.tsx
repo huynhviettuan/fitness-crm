@@ -7,7 +7,7 @@ import { Money } from "@/components/money";
 import { StatusBadge } from "@/components/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Voucher } from "@flow/shared/changes";
-import { HoldButton, RenewalButton } from "../change-dialogs";
+import { ExchangeButton, HoldButton, RenewalButton } from "../change-dialogs";
 
 /** The change vouchers of a contract, newest first, with the buttons to raise one (M8, brief §5.6). */
 export async function ContractChanges({
@@ -15,11 +15,14 @@ export async function ContractChanges({
   vouchers,
   canRenew,
   canHold,
+  services,
 }: {
   contract: { id: string; contractCode: string };
   vouchers: Voucher[];
   canRenew: boolean;
   canHold: boolean;
+  /** The services an upgrade or a conversion can go to; empty when the viewer cannot raise one. */
+  services: { id: string; name: string }[];
 }) {
   const t = await getTranslations("contractChanges");
   return (
@@ -31,6 +34,10 @@ export async function ContractChanges({
         <div className="flex flex-wrap gap-2">
           {canRenew && <RenewalButton contract={contract} />}
           {canHold && <HoldButton contract={contract} />}
+          {canHold && services.length > 0 && <ExchangeButton kind="upgrades" contract={contract} services={services} />}
+          {canHold && services.length > 0 && (
+            <ExchangeButton kind="conversions" contract={contract} services={services} />
+          )}
         </div>
       </div>
       {vouchers.length === 0 ? (
@@ -90,6 +97,13 @@ async function VoucherSummary({ voucher }: { voucher: Voucher }) {
       <span>
         <DateTime value={voucher.fromDate} format="dateOnly" /> – <DateTime value={voucher.toDate} format="dateOnly" />{" "}
         ({t("daysCount", { count: voucher.days ?? 0 })})
+      </span>
+    );
+  }
+  if ((voucher.kind === "UPGRADE" || voucher.kind === "CONVERSION") && voucher.targetService) {
+    return (
+      <span>
+        {voucher.targetService.name} · {t("sessionsCount", { count: voucher.sessions ?? 0 })}
       </span>
     );
   }

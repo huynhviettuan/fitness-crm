@@ -715,7 +715,9 @@
     "nothingToAdd": "Nhập ít nhất một trong số tháng, số ngày hoặc số buổi.",
     "outsideContract": "Ngày bắt đầu phải nằm trong thời hạn của hợp đồng.",
     "overlapsHold": "Trùng với một lần bảo lưu khác của hợp đồng.",
-    "hasTrainedSessions": "Trong thời gian này đã có buổi tập được tính; không thể bảo lưu."
+    "hasTrainedSessions": "Trong thời gian này đã có buổi tập được tính; không thể bảo lưu.",
+    "creditAboveAmount": "Giá trị quy đổi không được lớn hơn giá gói mới; trả lại tiền là hủy hợp đồng.",
+    "creditAboveValue": "Giá trị quy đổi lớn hơn giá trị hợp đồng."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1745,7 +1747,9 @@
       "deactivated": "Hủy kích hoạt",
       "reactivated": "Kích hoạt lại",
       "renewed_by_voucher": "Gia hạn (phiếu biến động)",
-      "held_by_voucher": "Bảo lưu (phiếu biến động)"
+      "held_by_voucher": "Bảo lưu (phiếu biến động)",
+      "upgraded_by_voucher": "Nâng cấp (phiếu biến động)",
+      "converted_by_voucher": "Chuyển đổi (phiếu biến động)"
     },
     "fields": {
       "at": "Thời điểm",
@@ -3359,7 +3363,17 @@
       "months": "Số tháng",
       "days": "Số ngày",
       "sessions": "Số buổi",
-      "note": "Ghi chú"
-    }
+      "note": "Ghi chú",
+      "targetService": "Dịch vụ mới",
+      "newSessions": "Số buổi của gói mới",
+      "newPrice": "Giá gói mới",
+      "credit": "Giá trị quy đổi cho buổi còn lại"
+    },
+    "upgrade": "Nâng cấp",
+    "conversion": "Chuyển đổi",
+    "upgradeTitle": "Nâng cấp hợp đồng {code}",
+    "conversionTitle": "Chuyển đổi hợp đồng {code}",
+    "exchangeDescription": "Đổi số buổi còn lại sang gói mới. Số buổi còn lại của hợp đồng sẽ bằng số buổi của gói mới; giá gói mới trừ giá trị quy đổi được cộng vào công nợ. Phiếu chỉ có hiệu lực sau khi duyệt.",
+    "targetPlaceholder": "Chọn dịch vụ mới"
   }
 }

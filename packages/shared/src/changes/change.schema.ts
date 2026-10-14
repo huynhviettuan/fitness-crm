@@ -50,6 +50,28 @@ export const holdInputSchema = z
     },
   );
 
+const money = z.preprocess((value) => (value === "" ? 0 : value), vndAmount).prefault(0);
+
+/**
+ * An upgrade or a conversion exchanges what is left of the package for a new one (brief §5.6, A-227): the new service, its
+ * sessions and its price, and the value credited for the sessions left. The credit cannot be more than the price: giving money
+ * back is a cancellation.
+ */
+export const exchangeInputSchema = z
+  .object({
+    contractId: z.uuid({ error: "required" }),
+    targetServiceId: z.uuid({ error: "required" }),
+    sessions: z.coerce
+      .number({ error: "invalidNumber" })
+      .int({ error: "invalidNumber" })
+      .min(1, { error: "outOfRange" })
+      .max(1000, { error: "outOfRange" }),
+    amount: money,
+    credit: money,
+    note,
+  })
+  .refine((value) => value.credit <= value.amount, { path: ["credit"], error: "creditAboveAmount" });
+
 export const voucherListQuerySchema = z.object({
   contractId: z.preprocess(blank, z.uuid({ error: "invalidChoice" }).optional()),
   customerId: z.preprocess(blank, z.uuid({ error: "invalidChoice" }).optional()),
@@ -60,4 +82,5 @@ export const voucherListQuerySchema = z.object({
 });
 
 export type RenewalInput = z.input<typeof renewalInputSchema>;
+export type ExchangeInput = z.input<typeof exchangeInputSchema>;
 export type HoldInput = z.input<typeof holdInputSchema>;

@@ -34,6 +34,7 @@ export const EMAIL_PLACEHOLDERS = {
   daysLeft: { vi: "Số ngày còn lại", en: "Days left", sample: { vi: "14", en: "14" } },
   voucherNumber: { vi: "Số phiếu biến động", en: "Change voucher number", sample: { vi: "BD000012", en: "BD000012" } },
   sessionsAdded: { vi: "Số buổi được cộng thêm", en: "Sessions added", sample: { vi: "12", en: "12" } },
+  targetService: { vi: "Dịch vụ mới", en: "New service", sample: { vi: "PT 1-1 24 buổi", en: "PT 1-1 24 sessions" } },
   fromDate: { vi: "Từ ngày (dd/MM/yyyy)", en: "From day (dd/MM/yyyy)", sample: { vi: "01/11/2026", en: "01/11/2026" } },
   toDate: { vi: "Đến ngày (dd/MM/yyyy)", en: "To day (dd/MM/yyyy)", sample: { vi: "30/11/2026", en: "30/11/2026" } },
 } as const;
@@ -193,6 +194,20 @@ export const EMAIL_EVENTS = {
     placeholders: [...CONTRACT, "day", "voucherNumber", "sessionsAdded", "addedDays", "fromDate", "toDate", "amount"],
     required: ["remaining", "endDate"],
   },
+  "change.upgrade": {
+    vi: "Nâng cấp hợp đồng (phiếu biến động)",
+    en: "Contract upgraded (change voucher)",
+    mandatory: true,
+    placeholders: [...CONTRACT, "voucherNumber", "targetService", "sessionsAdded", "amount"],
+    required: ["remaining", "targetService"],
+  },
+  "change.conversion": {
+    vi: "Chuyển đổi hợp đồng (phiếu biến động)",
+    en: "Contract converted (change voucher)",
+    mandatory: true,
+    placeholders: [...CONTRACT, "voucherNumber", "targetService", "sessionsAdded", "amount"],
+    required: ["remaining", "targetService"],
+  },
   "change.hold": {
     vi: "Bảo lưu hợp đồng (phiếu biến động)",
     en: "Contract on hold (change voucher)",
@@ -304,6 +319,26 @@ Hợp đồng {contractCode} ({packageName}) đã được gia hạn theo phiế
     bodyEn: `Hello {customerName},
 
 Contract {contractCode} ({packageName}) was renewed by voucher {voucherNumber}: {sessionsAdded} sessions added, valid until {endDate}. Sessions in all: {totalSessions}. Sessions left: {remaining}. Renewal amount: {amount}.${FOOTER.en}`,
+  },
+  "change.upgrade": {
+    subjectVi: "Nâng cấp hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+Hợp đồng {contractCode} đã được nâng cấp lên {targetService} theo phiếu {voucherNumber}. Số buổi thay đổi {sessionsAdded}; số buổi còn lại: {remaining}. Số tiền phải trả thêm: {amount}. Hiệu lực đến {endDate}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} upgraded, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+Contract {contractCode} was upgraded to {targetService} by voucher {voucherNumber}. Sessions changed by {sessionsAdded}; sessions left: {remaining}. Extra amount to pay: {amount}. Valid until {endDate}.${FOOTER.en}`,
+  },
+  "change.conversion": {
+    subjectVi: "Chuyển đổi hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+Hợp đồng {contractCode} đã được chuyển đổi sang {targetService} theo phiếu {voucherNumber}. Số buổi thay đổi {sessionsAdded}; số buổi còn lại: {remaining}. Số tiền phải trả thêm: {amount}. Hiệu lực đến {endDate}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} converted, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+Contract {contractCode} was converted to {targetService} by voucher {voucherNumber}. Sessions changed by {sessionsAdded}; sessions left: {remaining}. Extra amount to pay: {amount}. Valid until {endDate}.${FOOTER.en}`,
   },
   "change.hold": {
     subjectVi: "Bảo lưu hợp đồng {contractCode}, phiếu {voucherNumber}",

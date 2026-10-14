@@ -2,7 +2,7 @@
 // FR-CHG-001). Route-level 401s are also walked by access-control.spec.ts.
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
-import { bookingSetup } from "../support/data";
+import { bookingSetup, createServiceViaApi } from "../support/data";
 import type { Role } from "../support/db";
 
 const ROLES: Role[] = ["ADMIN", "FITNESS_MANAGER", "RECEPTIONIST", "CONSULTING", "PT", "ACCOUNTANT"];
@@ -37,6 +37,38 @@ test.describe("A01 who raises and reads vouchers", () => {
     // A role without the contract in its scope reads none of them.
     const pt = await apiAs("PT");
     expect((await pt.get(`/api/v1/contract-changes/${listed.items[0]!.id}`)).status()).toBe(404);
+  });
+
+  test("upgrades and conversions follow the same rule: only the roles that raise contracts", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const { contract } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const service = await createServiceViaApi(admin, `Nâng cấp ${testTag}`);
+    for (const path of ["upgrades", "conversions"]) {
+      for (const role of ROLES) {
+        const response = await (
+          await apiAs(role)
+        ).post(`/api/v1/contract-changes/${path}`, {
+          headers: { "Idempotency-Key": randomUUID() },
+          data: { contractId: contract.id, targetServiceId: service.id, sessions: 5, amount: 1000, credit: 500 },
+        });
+        expect([202, 201, 403, 404], `${path} ${role} ${response.status()}`).toContain(response.status());
+        if (role === "PT" || role === "ACCOUNTANT") expect(response.status(), `${path} ${role}`).toBe(403);
+      }
+    }
+    const anonymous = await apiAs(null);
+    for (const path of ["upgrades", "conversions"]) {
+      expect(
+        (
+          await anonymous.post(`/api/v1/contract-changes/${path}`, {
+            headers: { "Idempotency-Key": randomUUID() },
+            data: {},
+          })
+        ).status(),
+      ).toBe(401);
+    }
   });
 
   test("an anonymous request gets 401", async ({ apiAs }) => {
@@ -119,6 +151,30 @@ test.describe("A03 and A10 the inputs", () => {
     const overlap = await hold({ contractId: contract.id, fromDate: "22/06/2031", toDate: "25/06/2031" });
     expect(overlap.status()).toBe(400);
     expect(await overlap.json()).toMatchObject({ details: { fieldErrors: { fromDate: ["overlapsHold"] } } });
+
+    // An exchange: a missing key, a credit above the price, a service that does not exist, and a script in the note.
+    const service = await createServiceViaApi(await apiAs("ADMIN"), `Gói ${testTag}`);
+    const exchange = (data: unknown, key: string | null = randomUUID()) =>
+      manager.post("/api/v1/contract-changes/upgrades", {
+        headers: key ? { "Idempotency-Key": key } : {},
+        data: data as never,
+      });
+    const valid = { contractId: contract.id, targetServiceId: service.id, sessions: 5, amount: 1000, credit: 500 };
+    expect((await exchange(valid, null)).status()).toBe(400);
+    for (const patch of [
+      { credit: 2000 },
+      { sessions: 0 },
+      { sessions: 1001 },
+      { amount: -1 },
+      { targetServiceId: "nope" },
+      { note: "ab" },
+    ]) {
+      expect((await exchange({ ...valid, ...patch })).status(), JSON.stringify(patch)).toBe(400);
+    }
+    expect((await exchange({ ...valid, targetServiceId: randomUUID() })).status()).toBe(400);
+    const exchanged = await exchange({ ...valid, note: script });
+    expect(exchanged.status()).toBe(202);
+    expect(await exchanged.json()).toMatchObject({ note: script, kind: "UPGRADE" });
 
     expect((await manager.get("/api/v1/contract-changes/not-a-uuid")).status()).toBe(404);
     for (const query of ["kind=OTHER", "status=NOPE", "pageSize=101", "page=0", "contractId=nope"]) {

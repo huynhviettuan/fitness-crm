@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { PauseCircleIcon, RefreshCwIcon } from "lucide-react";
+import { ArrowRightLeftIcon, PauseCircleIcon, RefreshCwIcon, TrendingUpIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
-import { TextField, applyFieldErrors } from "@/components/form-fields";
+import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
-import { holdInputSchema, renewalInputSchema, type HoldInput, type RenewalInput } from "@flow/shared/changes";
+import {
+  exchangeInputSchema,
+  holdInputSchema,
+  renewalInputSchema,
+  type ExchangeInput,
+  type HoldInput,
+  type RenewalInput,
+} from "@flow/shared/changes";
 import { useSubmit } from "../admin/users/user-dialogs";
-import { raiseHoldAction, raiseRenewalAction } from "./change-actions";
+import { raiseExchangeAction, raiseHoldAction, raiseRenewalAction } from "./change-actions";
 
 type ContractRef = { id: string; contractCode: string };
 
@@ -167,6 +174,79 @@ function HoldDialog({ contract, onClose }: { contract: ContractRef; onClose: () 
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField control={form.control} name="fromDate" label={t("fields.fromDate")} placeholder={t("dayHint")} />
         <TextField control={form.control} name="toDate" label={t("fields.toDate")} placeholder={t("dayHint")} />
+      </div>
+      <TextField control={form.control} name="note" label={t("fields.note")} multiline />
+    </VoucherDialog>
+  );
+}
+
+type ExchangeValues = { targetServiceId: string; sessions: string; amount: string; credit: string; note: string };
+type ServiceRef = { id: string; name: string };
+
+/** An upgrade or a conversion: what is left of the package is exchanged for a new service (brief §5.6, A-227). */
+export function ExchangeButton({
+  kind,
+  contract,
+  services,
+}: {
+  kind: "upgrades" | "conversions";
+  contract: ContractRef;
+  services: ServiceRef[];
+}) {
+  const t = useTranslations("contractChanges");
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        {kind === "upgrades" ? <TrendingUpIcon /> : <ArrowRightLeftIcon />}
+        {kind === "upgrades" ? t("upgrade") : t("conversion")}
+      </Button>
+      {open && <ExchangeDialog kind={kind} contract={contract} services={services} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function ExchangeDialog({
+  kind,
+  contract,
+  services,
+  onClose,
+}: {
+  kind: "upgrades" | "conversions";
+  contract: ContractRef;
+  services: ServiceRef[];
+  onClose: () => void;
+}) {
+  const t = useTranslations("contractChanges");
+  const form = useForm<ExchangeValues>({
+    resolver: ((values: ExchangeValues, context: unknown, options: never) =>
+      zodResolver(exchangeInputSchema as never, undefined, { raw: true })(
+        { contractId: contract.id, ...values } as never,
+        context as never,
+        options,
+      )) as never,
+    defaultValues: { targetServiceId: "", sessions: "", amount: "", credit: "", note: "" },
+  });
+  const upgrade = kind === "upgrades";
+  return (
+    <VoucherDialog
+      title={t(upgrade ? "upgradeTitle" : "conversionTitle", { code: contract.contractCode })}
+      description={t("exchangeDescription")}
+      form={form}
+      run={(values, key) => raiseExchangeAction(kind, { contractId: contract.id, ...values } as ExchangeInput, key)}
+      onClose={onClose}
+    >
+      <SelectField
+        control={form.control}
+        name="targetServiceId"
+        label={t("fields.targetService")}
+        placeholder={t("targetPlaceholder")}
+        options={services.map((service) => ({ value: service.id, label: service.name }))}
+      />
+      <TextField control={form.control} name="sessions" label={t("fields.newSessions")} inputMode="numeric" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField control={form.control} name="amount" label={t("fields.newPrice")} inputMode="numeric" />
+        <TextField control={form.control} name="credit" label={t("fields.credit")} inputMode="numeric" />
       </div>
       <TextField control={form.control} name="note" label={t("fields.note")} multiline />
     </VoucherDialog>

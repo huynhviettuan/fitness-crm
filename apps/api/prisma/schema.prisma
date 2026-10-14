@@ -1630,6 +1630,7 @@ model Service {
   quickPackages QuickPackage[]
   promotions    PromotionService[]
   contracts     Contract[]
+  vouchers      ContractChangeVoucher[] @relation("VoucherTargetService")
 
   @@map("services")
 }
@@ -2469,6 +2470,10 @@ model ContractChangeVoucher {
   days               Int?
   sessions           Int?
   amount             Decimal?      @db.Decimal(14, 0)
+  // An upgrade or a conversion (M8.2): the service exchanged for, and the value credited for the sessions left.
+  targetServiceId    String?       @map("target_service_id") @db.Uuid
+  targetService      Service?      @relation("VoucherTargetService", fields: [targetServiceId], references: [id], onDelete: Restrict)
+  credit             Decimal?      @db.Decimal(14, 0)
   note               String?
   // What approving it did: set at approval, and summed into the contract by a trigger.
   sessionsDelta      Int           @default(0) @map("sessions_delta")

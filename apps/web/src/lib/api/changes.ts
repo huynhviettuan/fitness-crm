@@ -1,5 +1,11 @@
 import "server-only";
-import { voucherPageSchema, voucherSchema, type HoldInput, type RenewalInput } from "@flow/shared/changes";
+import {
+  voucherPageSchema,
+  voucherSchema,
+  type ExchangeInput,
+  type HoldInput,
+  type RenewalInput,
+} from "@flow/shared/changes";
 import { api, query, read } from "./client";
 
 // The change vouchers of contracts (M8, brief §5.6).
@@ -35,6 +41,16 @@ export async function raiseHold(input: HoldInput, idempotencyKey: string) {
   return read(
     voucherSchema,
     (await api()).POST("/api/v1/contract-changes/holds", {
+      params: { header: { "Idempotency-Key": idempotencyKey } },
+      body: input as never,
+    }),
+  );
+}
+
+export async function raiseExchange(kind: "upgrades" | "conversions", input: ExchangeInput, idempotencyKey: string) {
+  return read(
+    voucherSchema,
+    (await api()).POST(`/api/v1/contract-changes/${kind}` as "/api/v1/contract-changes/upgrades", {
       params: { header: { "Idempotency-Key": idempotencyKey } },
       body: input as never,
     }),

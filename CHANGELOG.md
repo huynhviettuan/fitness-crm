@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-31 — M8.2: upgrade and conversion
+
+- **Exchange** (A-227 to A-231): the sessions left are exchanged for a new package on the same contract; the price less the credit is added to what is owed; counted at approval; always emailed.
+- **Open**: OQ-065 (how the credit is worked out, the price lookup, the difference between the two kinds). Docs 04, 07, 13, 16, 18, 28; E2E-175.
+
 ## 2026-10-30 — M8.1: change vouchers, renewal and hold
 
 - **Framework** (A-219, A-223 to A-225): one voucher table for every kind, approval per kind, effects set at approval and summed into the contract by a trigger; every figure of sessions and value now includes them.

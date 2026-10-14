@@ -29,6 +29,8 @@ export type ContractEmailEvent = Extract<
   | "contract.runningOut"
   | "change.renewal"
   | "change.hold"
+  | "change.upgrade"
+  | "change.conversion"
 >;
 
 /** An amount in dong as the customer reads it: 3.000.000 ₫ in Vietnamese, VND 3,000,000 in English. */
@@ -57,6 +59,8 @@ type Cause = {
     fromDate: Date | null;
     toDate: Date | null;
     amount: number | null;
+    /** An upgrade or a conversion: the service exchanged for. */
+    targetService?: string;
   };
 };
 
@@ -96,6 +100,7 @@ export async function queueContractEmail(tx: Db, cause: Cause): Promise<void> {
     addedDays: cause.addedDays ?? 0,
     daysLeft: cause.daysLeft ?? 0,
     voucherNumber: cause.voucher?.voucherNumber ?? "",
+    targetService: cause.voucher?.targetService ?? "",
     sessionsAdded: cause.voucher?.sessionsAdded ?? 0,
     fromDate: cause.voucher?.fromDate ? formatDay(cause.voucher.fromDate) : "",
     toDate: cause.voucher?.toDate ? formatDay(cause.voucher.toDate) : "",

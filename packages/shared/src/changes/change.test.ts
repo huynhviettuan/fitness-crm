@@ -4,6 +4,8 @@ import {
   VOUCHER_KINDS,
   canChangeContract,
   endDateAfterHold,
+  exchangeEffect,
+  exchangeInputSchema,
   holdDays,
   holdInputSchema,
   isInRanges,
@@ -120,5 +122,31 @@ describe("renewals (brief §5.6, A-220)", () => {
     expect(voucherListQuerySchema.parse({ kind: "HOLD", status: "" }).kind).toBe("HOLD");
     expect(voucherListQuerySchema.safeParse({ kind: "OTHER" }).success).toBe(false);
     expect(voucherListQuerySchema.safeParse({ contractId: "nope" }).success).toBe(false);
+  });
+});
+
+describe("an upgrade or a conversion (M8.2, A-227)", () => {
+  it("makes the sessions left exactly the new package's, and adds the price less the credit", () => {
+    expect(exchangeEffect({ remaining: 5, sessions: 24, amount: 12_000_000, credit: 2_000_000 })).toEqual({
+      sessionsDelta: 19,
+      valueDelta: 10_000_000,
+    });
+    // A smaller package takes sessions away.
+    expect(exchangeEffect({ remaining: 20, sessions: 8, amount: 4_000_000, credit: 4_000_000 })).toEqual({
+      sessionsDelta: -12,
+      valueDelta: 0,
+    });
+  });
+
+  it("asks for the service, the sessions and the price; blanks are zero money; the credit cannot pass the price", () => {
+    const base = { contractId: id, targetServiceId: id, sessions: "24", amount: "12.000.000", credit: "" };
+    expect(exchangeInputSchema.parse(base)).toMatchObject({ sessions: 24, amount: 12_000_000, credit: 0 });
+    const bad = (patch: object) => exchangeInputSchema.safeParse({ ...base, ...patch });
+    expect(bad({ sessions: "0" }).success).toBe(false);
+    expect(bad({ sessions: "1001" }).success).toBe(false);
+    expect(bad({ targetServiceId: "x" }).success).toBe(false);
+    const over = bad({ amount: "1000000", credit: "2000000" });
+    expect(over.success).toBe(false);
+    expect(JSON.stringify(over.error?.issues)).toContain("creditAboveAmount");
   });
 });

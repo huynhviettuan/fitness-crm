@@ -24,6 +24,9 @@ export const voucherSchema = z
     days: z.int().nullable(),
     sessions: z.int().nullable(),
     amount: z.int().nullable(),
+    /** An upgrade or a conversion: the service exchanged for, and the value credited for the sessions left. */
+    targetService: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+    credit: z.int().nullable(),
     reason: chosenOptionSchema.nullable(),
     note: z.string().nullable(),
     /** What approving it did, set at approval: sessions and value added to the contract and the end dates. */

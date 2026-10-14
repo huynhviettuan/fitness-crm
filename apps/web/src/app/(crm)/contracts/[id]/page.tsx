@@ -25,6 +25,7 @@ import { canActivate, canCancel, canDeactivate, canReactivate, canUnapprove, isE
 import { getContract, getContractHistory, listContractStaff } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listVouchers } from "@/lib/api/changes";
+import { listServices } from "@/lib/api/services";
 import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
@@ -68,6 +69,11 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     : [null, null];
   const packageHistory = await getContractHistory(contract.id);
   const vouchers = (await listVouchers({ contractId: contract.id, pageSize: 100 })).items;
+  // The services a package can be exchanged for (A-227); a viewer who cannot read the catalog gets no exchange buttons.
+  const exchangeServices =
+    can(user, "contract.change") && contract.status === "ACTIVE"
+      ? await listServices({ branchId: contract.branch.id, onSale: true }).catch(() => [])
+      : [];
   // The receipt can be credited to any active employee of the contract's branch (brief §8.1).
   const salespeople = can(user, "contract.create") ? await listContractStaff(contract.branch.id) : [];
   const payments = can(user, "payment.view") ? await listPayments({ contractId: contract.id, pageSize: 100 }) : null;
@@ -386,6 +392,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
             vouchers={vouchers}
             canRenew={can(user, "contract.change") && (contract.status === "ACTIVE" || contract.status === "EXPIRED")}
             canHold={can(user, "contract.change") && contract.status === "ACTIVE"}
+            services={exchangeServices.map((service) => ({ id: service.id, name: service.name }))}
           />
           <section aria-labelledby="package-history" className="max-w-5xl space-y-4">
             <h2 id="package-history" className="text-lg font-semibold">

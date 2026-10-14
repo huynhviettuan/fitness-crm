@@ -74,3 +74,19 @@ export function renewalPeriod(input: { endDate: Date; today: Date; from: Date | 
   const to = endDateOf(from, input.months, input.days);
   return { from, to, newEndDate: to.getTime() > input.endDate.getTime() ? to : input.endDate };
 }
+
+/** The kinds that exchange what is left of a package for a new one (M8.2, A-227): same rules, own approval and email. */
+export const EXCHANGE_KINDS = ["UPGRADE", "CONVERSION"] as const;
+export type ExchangeKind = (typeof EXCHANGE_KINDS)[number];
+
+/**
+ * What approving an exchange adds to the contract (A-227): the sessions of the new package replace the ones still left,
+ * and the price of the new package replaces the value credited for them. Afterwards the sessions left are exactly the new
+ * package's, and the contract is worth what it was, plus the price, less the credit.
+ */
+export function exchangeEffect(input: { remaining: number; sessions: number; amount: number; credit: number }): {
+  sessionsDelta: number;
+  valueDelta: number;
+} {
+  return { sessionsDelta: input.sessions - input.remaining, valueDelta: input.amount - input.credit };
+}
