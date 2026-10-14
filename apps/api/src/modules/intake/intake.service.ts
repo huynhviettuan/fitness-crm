@@ -9,6 +9,7 @@ import {
   isMetaKind,
   leadFromForm,
   pageTokenInputSchema,
+  readInboundEmail,
   parseLeadgenPayload,
   parseMessagingPayload,
   parseWhatsAppPayload,
@@ -55,6 +56,8 @@ const sourceSelect = {
   channel: { select: { id: true, labelVi: true, labelEn: true } },
   source: { select: { id: true, labelVi: true, labelEn: true } },
   pageTokenEnc: true,
+  lastNotice: true,
+  lastNoticeAt: true,
   _count: { select: { messages: true } },
 } as const satisfies Prisma.IntakeSourceSelect;
 
@@ -70,13 +73,14 @@ function newKey(): string {
 }
 
 function present(record: SourceRecord): IntakeSource {
-  const { _count, lastReceivedAt, pageTokenEnc, ...rest } = record;
+  const { _count, lastReceivedAt, pageTokenEnc, lastNotice, lastNoticeAt, ...rest } = record;
   return {
     ...rest,
     lastReceivedAt: lastReceivedAt?.toISOString() ?? null,
     received: _count.messages,
     webhookPath: webhookPathOf(rest.kind, rest.id),
     hasPageToken: pageTokenEnc !== null,
+    notice: lastNotice && lastNoticeAt ? { text: lastNotice, at: lastNoticeAt.toISOString() } : null,
   };
 }
 
@@ -402,6 +406,7 @@ export const WEBHOOK_KINDS = {
 export type WebhookRoute = keyof typeof WEBHOOK_KINDS;
 
 export function webhookPathOf(kind: IntakeKind, id: string): string | null {
+  if (kind === "EMAIL") return "/api/v1/intake/email";
   if (kind === "WHATSAPP") return `/api/v1/intake/whatsapp/${id}`;
   if (kind === "MESSENGER" || kind === "INSTAGRAM") return `/api/v1/intake/meta/${id}`;
   return null;
@@ -448,6 +453,8 @@ export async function answerMetaHandshake(route: WebhookRoute, sourceId: string,
 type ChannelMessage = {
   externalId: string;
   phone: string | null;
+  /** Email (M10.5): the sender's address, which says who wrote before the phone does (A-291). */
+  email?: string | null;
   senderRef: string | null;
   name: string;
   body: string;
@@ -523,6 +530,14 @@ const ownerSelect = {
  * (Messenger, Instagram; A-277). A person merged away is followed to the one they were merged into (A-279).
  */
 async function ownerOf(sourceId: string, message: ChannelMessage) {
+  if (message.email) {
+    const byEmail = await prisma.customer.findFirst({
+      where: { email: { equals: message.email, mode: "insensitive" }, mergedIntoId: null },
+      orderBy: { createdAt: "asc" },
+      select: ownerSelect,
+    });
+    if (byEmail) return byEmail;
+  }
   if (message.phone) return prisma.customer.findFirst({ where: { phone: message.phone }, select: ownerSelect });
   if (!message.senderRef) return null;
   const earlier = await prisma.intakeMessage.findFirst({
@@ -596,7 +611,7 @@ async function takeIn(source: AuthenticatedSource, message: ChannelMessage): Pro
     const { personId } = await personFor(source, {
       name: message.name,
       phone: message.phone,
-      email: null,
+      email: message.email ?? null,
       note: message.body ? message.body.slice(0, 2000) : null,
       ownerId: owner?.id ?? null,
     });
@@ -689,6 +704,38 @@ async function takeInFormLead(source: MetaSource, event: LeadgenEvent): Promise<
     await prisma.intakeMessage.deleteMany({ where: { id: claim.id, personId: null } });
     throw error;
   }
+}
+
+// --------------------------------------------------------------------------------------------------------------- Email
+
+/**
+ * An email forwarded from the gym's Gmail through the inbound-mail service (A-287 to A-292). The source proves itself with its key
+ * as the Basic password of the webhook address. Gmail's confirmation of the forwarding rule is kept on the source for Admin to read;
+ * an auto-reply, a bounce or a mailing list is skipped; an email a person wrote is taken in like a WhatsApp message, the sender found
+ * by the address first and then by a phone written in it.
+ */
+export async function receiveEmail(source: AuthenticatedSource, payload: unknown): Promise<WhatsAppReceipt> {
+  const mail = readInboundEmail(payload);
+  if (!mail)
+    throw new AppError("VALIDATION_FAILED", { fieldErrors: { MessageID: ["required"], FromFull: ["required"] } });
+  if (mail.kind === "gmailConfirmation") {
+    await prisma.intakeSource.update({
+      where: { id: source.id },
+      data: { lastNotice: mail.notice, lastNoticeAt: new Date() },
+    });
+    return { received: 0, duplicates: 0 };
+  }
+  if (mail.kind === "automatic") return { received: 0, duplicates: 0 };
+  const taken = await takeIn(source, {
+    externalId: mail.externalId,
+    phone: mail.phone,
+    email: mail.email,
+    senderRef: null,
+    name: mail.name,
+    body: mail.body,
+    receivedAt: mail.receivedAt,
+  });
+  return taken ? { received: 1, duplicates: 0 } : { received: 0, duplicates: 1 };
 }
 
 // ----------------------------------------------------------------------------------------------------------- reading

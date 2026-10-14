@@ -471,7 +471,8 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 | M10.2 WhatsApp (done 2026-11-07: A-268 to A-274, OQ-073, doc 31 §6) | Signed webhook, handshake, conversation rule |
 | M10.3 Messenger and Instagram (done 2026-11-08: A-275 to A-280, OQ-074, doc 31 §7) | Shared Meta webhook, sender id, merge moves messages |
 | M10.4 Lead Ads (done 2026-11-09: A-281 to A-286, OQ-075, doc 31 §8) | leadgen webhook, Graph read with the Page token |
-| M10.5 onward | One channel per slice in the survey's order: Gmail forwarding and website form, Zalo OA (receive only), TikTok and Threads when available |
+| M10.5 Gmail forwarding (done 2026-11-10: A-287 to A-293, OQ-076, doc 31 §9) | Inbound-mail webhook, Basic key, confirmation notice |
+| M10.6 onward | One channel per slice in the survey's order (Zalo OA, then TikTok): Gmail forwarding and website form, Zalo OA (receive only), TikTok and Threads when available |
 
 ## M11 — AI-assisted audit (after OQ-025, TS-008)
 

@@ -276,6 +276,62 @@ test.describe("as an admin", () => {
     const conversation = page.getByRole("region", { name: t.conversation });
     await expect(conversation.getByText(`Bạn muốn tập gì?: PT buổi tối ${testTag}`)).toBeVisible();
   });
+
+  test("@smoke E2E-183: an email source is registered, Gmail's confirmation shows for Admin, and an email becomes a lead", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    await page.goto("/admin/intake");
+    await page.getByRole("button", { name: t.add }).click();
+    const dialog = page.getByRole("dialog", { name: t.add });
+    await dialog.getByLabel(t.fields.name).fill(`Gmail ${testTag}`);
+    await dialog.getByRole("combobox", { name: t.fields.kind }).click();
+    await page.getByRole("listbox").getByRole("option", { name: t.kinds.EMAIL }).click();
+    await dialog.getByRole("combobox", { name: t.fields.channel }).click();
+    await page.getByRole("listbox").getByRole("option").first().click();
+    await dialog.getByRole("button", { name: t.register }).click();
+
+    const inbound = new URL((await page.getByTestId("intake-inbound-url").textContent())?.trim() ?? "");
+    const key = (await page.getByTestId("intake-key").textContent())?.trim() ?? "";
+    expect(inbound.pathname).toBe("/api/v1/intake/email");
+    expect(decodeURIComponent(inbound.password)).toBe(key);
+    await page.getByRole("button", { name: t.keyDone }).click();
+
+    // The inbound-mail service posts with the credentials of the address, as HTTP Basic authentication.
+    const service = await apiAs(null, { origin: null });
+    const post = (data: Record<string, unknown>) =>
+      service.post(inbound.pathname, {
+        headers: { authorization: `Basic ${Buffer.from(`${inbound.username}:${key}`).toString("base64")}` },
+        data: { Headers: [], ...data },
+      });
+    const confirmation = await post({
+      MessageID: `confirm-${testTag}`,
+      FromFull: { Email: "forwarding-noreply@google.com", Name: "Gmail Team" },
+      Subject: "(#555666777) Gmail Forwarding Confirmation",
+      TextBody: `Confirmation code: 555666777 ${testTag}`,
+    });
+    expect(await confirmation.json()).toEqual({ received: 0, duplicates: 0 });
+    await page.reload();
+    await expect(
+      page.getByRole("row", { name: new RegExp(`Gmail ${testTag}`) }).getByTestId("intake-notice"),
+    ).toContainText(`Confirmation code: 555666777 ${testTag}`);
+
+    const sent = await post({
+      MessageID: `mail-${testTag}`,
+      FromFull: { Email: `an.${testTag.toLowerCase()}@example.com`, Name: `Khách mail ${testTag}` },
+      Subject: `Hỏi giá PT ${testTag}`,
+      TextBody: "Mình muốn tập buổi tối.",
+    });
+    expect(await sent.json()).toEqual({ received: 1, duplicates: 0 });
+    await page.goto(`/leads?q=${encodeURIComponent(`Khách mail ${testTag}`)}`);
+    await page
+      .getByRole("link", { name: `Khách mail ${testTag}` })
+      .first()
+      .click();
+    const conversation = page.getByRole("region", { name: t.conversation });
+    await expect(conversation.getByText(`Hỏi giá PT ${testTag}`)).toBeVisible();
+  });
 });
 
 test.describe("as a receptionist", () => {

@@ -10775,6 +10775,38 @@
         "x-permission": "device-key"
       }
     },
+    "/api/v1/intake/email": {
+      "post": {
+        "operationId": "IntakeController_email",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      }
+    },
     "/api/v1/intake/whatsapp/{sourceId}": {
       "get": {
         "operationId": "WhatsAppController_handshake",
@@ -10972,7 +11004,8 @@
                       "WEBSITE",
                       "WHATSAPP",
                       "MESSENGER",
-                      "INSTAGRAM"
+                      "INSTAGRAM",
+                      "EMAIL"
                     ]
                   },
                   "branchId": {
@@ -27834,6 +27867,23 @@
           },
           "hasPageToken": {
             "type": "boolean"
+          },
+          "notice": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "text",
+              "at"
+            ]
           }
         },
         "required": [
@@ -27847,7 +27897,8 @@
           "lastReceivedAt",
           "received",
           "webhookPath",
-          "hasPageToken"
+          "hasPageToken",
+          "notice"
         ]
       },
       "IntakeSourceCreated": {

@@ -29,6 +29,14 @@ export async function createApp(options: { logger?: false; docs?: boolean } = {}
   // Better Auth reads the raw body itself, so it is mounted before the JSON parser (T-044).
   app.getHttpAdapter().getInstance().all("/api/auth/*splat", toNodeHandler(auth));
   // `rawBody: true` above keeps the exact bytes of a JSON body: the signature of a WhatsApp delivery is over them (M10.2).
+  // A forwarded email comes with its attachments inside the JSON (M10.5): that one route may be bigger. Registered first, so the
+  // general parser below finds the body already read. 8 MB stays under what the web app's proxy buffers (10 MB, A-292).
+  app.useBodyParser("json", {
+    limit: "8mb",
+    type: (request: { url?: string; headers: Record<string, unknown> }) =>
+      /^\/api\/v1\/intake\/email\/?(\?|$)/.test(request.url ?? "") &&
+      /^application\/json\b/i.test(String(request.headers["content-type"] ?? "")),
+  });
   app.useBodyParser("json", { limit: "200kb" });
   // A picture is the body of its upload (M4.1b); anything bigger than 5 MB is refused before it is read.
   app.useBodyParser("raw", { type: ["image/png", "image/jpeg", "image/webp"], limit: "5mb" });

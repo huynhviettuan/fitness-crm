@@ -41,6 +41,7 @@ import {
   createSource,
   listSources,
   receiveWebsiteLead,
+  receiveEmail,
   receiveMetaDelivery,
   rotateSourceKey,
   setPageToken,
@@ -52,6 +53,20 @@ import {
 type SourceRequest = Request & { intakeSource?: AuthenticatedSource };
 
 /**
+ * The key a source sends: in `x-intake-key` (the website form), or as the password of HTTP Basic authentication, which is how an
+ * inbound-mail service carries credentials written in the webhook address (email, M10.5). The user name is not used.
+ */
+function sourceKey(headers: Request["headers"]): string | null {
+  const key = headers["x-intake-key"];
+  if (typeof key === "string") return key;
+  const basic = /^Basic ([A-Za-z0-9+/=]{1,400})$/.exec(headers.authorization ?? "");
+  if (!basic) return null;
+  const decoded = Buffer.from(basic[1]!, "base64").toString("utf8");
+  const colon = decoded.indexOf(":");
+  return colon >= 0 ? decoded.slice(colon + 1) : null;
+}
+
+/**
  * Lets a registered, active source in by its key; anything else is a 401. The key is never logged (OWASP A09). A source sending
  * too fast is told to slow down (429).
  */
@@ -59,8 +74,8 @@ type SourceRequest = Request & { intakeSource?: AuthenticatedSource };
 export class SourceGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<SourceRequest>();
-    const key = request.headers["x-intake-key"];
-    const source = typeof key === "string" ? await authenticateSource(key) : null;
+    const key = sourceKey(request.headers);
+    const source = key ? await authenticateSource(key) : null;
     if (!source) {
       logSecurityEvent("auth.unauthenticated", {
         method: request.method,
@@ -99,6 +114,17 @@ export class IntakeController {
   async website(@CurrentSource() source: AuthenticatedSource, @Body({ schema: websiteLeadSchema }) body: unknown) {
     if (source.kind !== "WEBSITE") throw new AppError("FORBIDDEN");
     return encode(intakeAnswerSchema, await receiveWebsiteLead(source, body));
+  }
+
+  /** An email forwarded from the gym's Gmail by the inbound-mail service (M10.5), its key as the Basic password. */
+  @Post("email")
+  @DeviceKeyEndpoint()
+  @UseGuards(SourceGuard)
+  @HttpCode(200)
+  @ApiResult(whatsAppReceiptSchema)
+  async email(@CurrentSource() source: AuthenticatedSource, @Body() body: unknown) {
+    if (source.kind !== "EMAIL") throw new AppError("FORBIDDEN");
+    return encode(whatsAppReceiptSchema, await receiveEmail(source, body));
   }
 }
 

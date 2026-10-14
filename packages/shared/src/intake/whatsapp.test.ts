@@ -110,7 +110,7 @@ describe("the handshake and the source (A-268, A-271)", () => {
   it("registers a WhatsApp source only with the app secret, and a website one never with it", () => {
     const base = { name: "WhatsApp", channelId: id };
     const secret = "a".repeat(32);
-    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM"]);
+    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM", "EMAIL"]);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP", appSecret: secret }).success).toBe(true);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP" }).success).toBe(false);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP", appSecret: "short" }).success).toBe(false);

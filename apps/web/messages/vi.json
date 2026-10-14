@@ -3454,7 +3454,7 @@
   },
   "intake": {
     "title": "Nguồn nhận lead",
-    "description": "Các kết nối tự động chuyển lead vào hệ thống (form website, WhatsApp, Messenger, Instagram; sau này Gmail, Zalo). Mỗi nguồn có cách xác thực riêng.",
+    "description": "Các kết nối tự động chuyển lead vào hệ thống (form website, WhatsApp, Messenger, Instagram, Gmail; sau này Zalo). Mỗi nguồn có cách xác thực riêng.",
     "empty": "Chưa có nguồn nào. Thêm nguồn đầu tiên để nhận lead từ form website.",
     "note": "Khóa chỉ hiện một lần khi tạo hoặc đổi. Khóa phải nằm ở máy chủ của website (không để trong trang web mà khách xem được) và gửi trong tiêu đề x-intake-key đến /api/v1/intake/website.",
     "add": "Thêm nguồn",
@@ -3505,6 +3505,9 @@
     "pageTokenSave": "Lưu token",
     "pageTokenSaved": "Đã lưu token Trang.",
     "leadAdsOn": "Đang nhận",
-    "leadAdsOff": "Chưa có token"
+    "leadAdsOff": "Chưa có token",
+    "inboundUrl": "Địa chỉ nhận email (Inbound webhook URL)",
+    "inboundBody": "Dán địa chỉ này (đã chứa khóa) vào phần Inbound webhook của dịch vụ nhận email (Postmark). Rồi trong Gmail của phòng tập, thêm địa chỉ email nhận của dịch vụ làm địa chỉ chuyển tiếp; mã xác nhận Gmail gửi sẽ hiện dưới tên nguồn này.",
+    "notice": "Thông báo mới nhất"
   }
 }

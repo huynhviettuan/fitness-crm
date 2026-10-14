@@ -25,11 +25,12 @@ export function requestGuards(request: Request, response: Response, next: NextFu
     request.method === "POST" &&
     /\/checkin\/scans\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
     typeof request.headers["x-device-key"] === "string";
-  // A lead source (the website form, M10.1) is not a browser either: it proves itself with its intake key.
+  // A lead source (the website form, M10.1; forwarded email, M10.5) is not a browser either: it proves itself with its intake
+  // key, in a header or as the Basic password.
   const isSource =
     request.method === "POST" &&
-    /\/intake\/website\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
-    typeof request.headers["x-intake-key"] === "string";
+    /\/intake\/(website|email)\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
+    (typeof request.headers["x-intake-key"] === "string" || /^Basic /.test(request.headers.authorization ?? ""));
   // WhatsApp (M10.2), Messenger and Instagram (M10.3) post from Meta's servers, which send no Origin; its signature over the body is the proof, checked in the
   // service before anything is read. Only that route is open this way.
   const isWebhook =

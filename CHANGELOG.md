@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-11-10 — M10.5: Gmail forwarding
+
+- **Channel** (A-287 to A-293): an inbound-mail service posts each forwarded email with the source key as the Basic password; Gmail's confirmation for Admin; automatic mail skipped; the sender found by address, then by a written phone.
+- **Open**: OQ-076. Docs 04, 07, 13, 16, 18, 24, 28, 31 (§9).
+
 ## 2026-11-09 — M10.4: Lead Ads
 
 - **Forms** (A-281 to A-284): Lead Ads form leads on the Page's webhook; answers read from Meta with the sealed Page token; a lead or an inquiry with the answers.

@@ -41,7 +41,7 @@ describe("the website submission (A-262)", () => {
 
 describe("the sources (A-261)", () => {
   it("can be registered now for the website and the Meta channels; the others are known kinds still to build", () => {
-    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM"]);
+    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM", "EMAIL"]);
     expect(INTAKE_KINDS).toEqual(
       expect.arrayContaining(["WHATSAPP", "MESSENGER", "INSTAGRAM", "EMAIL", "ZALO", "TIKTOK"]),
     );

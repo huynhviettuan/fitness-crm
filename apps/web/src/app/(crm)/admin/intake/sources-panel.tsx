@@ -64,7 +64,17 @@ export function SourcesPanel({ sources, branches }: Props) {
     {
       id: "name",
       header: t("fields.name"),
-      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      cell: ({ row }) => (
+        <div>
+          <span className="font-medium">{row.original.name}</span>
+          {row.original.notice && (
+            <p className="mt-1 max-w-sm text-xs whitespace-pre-line text-muted-foreground" data-testid="intake-notice">
+              {t("notice")} (<DateTime value={row.original.notice.at} format="dateTime" />
+              ): {row.original.notice.text}
+            </p>
+          )}
+        </div>
+      ),
     },
     { id: "kind", header: t("fields.kind"), cell: ({ row }) => t(`kinds.${row.original.kind}`) },
     { id: "branch", header: t("fields.branch"), cell: ({ row }) => row.original.branch.name },
@@ -319,9 +329,20 @@ function KeyDialog({ shown, onClose }: { shown: Shown; onClose: () => void }) {
             </code>
           </>
         ) : (
-          <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-key">
-            {shown.key}
-          </code>
+          <>
+            <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-key">
+              {shown.key}
+            </code>
+            {shown.webhookPath && (
+              <>
+                <p className="text-sm font-medium">{t("inboundUrl")}</p>
+                <p className="text-sm text-muted-foreground">{t("inboundBody")}</p>
+                <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-inbound-url">
+                  {inboundUrl(shown.key ?? "", shown.webhookPath)}
+                </code>
+              </>
+            )}
+          </>
         )}
         <DialogFooter>
           <Button onClick={onClose}>{whatsapp ? t("webhookDone") : t("keyDone")}</Button>
@@ -378,4 +399,15 @@ function PageTokenDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/**
+ * The address an inbound-mail service posts to, with the key as the Basic password (M10.5): the service sends what is written in
+ * the address as HTTP Basic authentication. The user name is only a label.
+ */
+function inboundUrl(key: string, path: string): string {
+  const url = new URL(path, window.location.origin);
+  url.username = "flow";
+  url.password = key;
+  return url.toString();
 }

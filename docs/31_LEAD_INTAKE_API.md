@@ -1,7 +1,7 @@
 # 31. Lead intake API (website form)
 
 Brief §11, D-044, TS-007; built in M10.1. For whoever builds or configures the form on the gym's website (or a tool such as Make,
-Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7, Lead Ads forms in §8. The other channels (Messenger, Instagram, Gmail, Zalo)
+Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7, Lead Ads forms in §8, Gmail forwarding in §9. The other channels (Messenger, Instagram, Gmail, Zalo)
 will have their own endpoints in later slices (doc 30).
 
 ## 1. Get a key
@@ -129,3 +129,21 @@ What happens: for each new form lead the system asks Meta for the answers (with 
 from the name, phone and email, or adds an inquiry to the person who already has the phone. The other questions are kept as lines
 *question: answer* in the lead's note and in its messages. Set the Messenger source's **lead source** to the one that counts paid
 leads (for example *Paid*), so the lead analysis shows them. If Meta cannot answer, the delivery fails and Meta sends it again.
+
+## 9. Gmail forwarding (M10.5)
+
+The gym's Gmail forwards customer enquiries to an **inbound-mail service** (Postmark Inbound), which posts each email to the system.
+Nobody gives the system access to the mailbox.
+
+1. Admin opens **Cấu hình → Nguồn nhận lead**, **Thêm nguồn**, kind **Gmail**, and registers. The system shows once the **key** and
+   the **inbound address**: `https://flow:<key>@<web host>/api/v1/intake/email` (the key is the password in the address).
+2. In Postmark, create an inbound stream and paste the inbound address as its **webhook URL**. Postmark gives an inbound email address
+   (`…@inbound.postmarkapp.com`).
+3. In the gym's Gmail, **Settings → Forwarding**, add that Postmark address. Gmail sends it a confirmation email: it appears in the
+   system under the source's name (*Thông báo mới nhất*), with the code to type into Gmail. Then turn forwarding on (or create a Gmail
+   filter that forwards only the enquiries).
+
+What happens: an email a person wrote becomes a message of the person with that address, else of the person with the phone written
+in it (`0909 123 456`), else of a new lead named after the sender, with the address and that phone. Within 24 hours of their last
+email it joins the conversation; later it is an inquiry. Auto-replies, newsletters, bounces and Gmail's own confirmation make no lead.
+Attachments are listed by name, not kept. An email over 8 MB is refused.

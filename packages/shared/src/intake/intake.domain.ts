@@ -15,6 +15,7 @@ export const AVAILABLE_INTAKE_KINDS = [
   "WHATSAPP",
   "MESSENGER",
   "INSTAGRAM",
+  "EMAIL",
 ] as const satisfies readonly IntakeKind[];
 
 /** The kinds Meta delivers to, each proved by the signature of the app secret and set up with a verify token (A-268, A-275). */
@@ -124,6 +125,8 @@ export const intakeSourceSchema = z
     webhookPath: z.string().nullable(),
     /** Messenger: a Page token is set, so the Page's Lead Ads forms are read (M10.4). The token itself is never returned. */
     hasPageToken: z.boolean(),
+    /** Email: the last thing the forwarding sent for Admin to read (Gmail's confirmation of the rule, M10.5). */
+    notice: z.object({ text: z.string(), at: z.iso.datetime() }).nullable(),
   })
   .meta({ id: "IntakeSource" });
 export type IntakeSource = z.output<typeof intakeSourceSchema>;
