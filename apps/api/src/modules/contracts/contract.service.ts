@@ -895,7 +895,7 @@ function toView(
   const figures = contractFigures({
     totalSessions: entitledSessions(contract.totalSessions, contract.bonusSessions),
     openingSessionsUsed: contract.openingSessionsUsed,
-    completedSessions: contract._count.bookings,
+    completedSessions: repo.usedSessionsOf(contract),
     contractValue: Number(contract.contractValue),
     openingPaidAmount: Number(contract.openingPaidAmount),
     confirmedPaidAmount,

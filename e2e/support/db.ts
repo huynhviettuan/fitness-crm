@@ -79,8 +79,10 @@ export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
  * sessions with 60 months, so 24 sessions are "PT 24 buổi" worth 12,000,000, and a salesperson to name on it (A-115).
  * Made once, by the specs' setup, outside the API: they are configuration, not what a test is about.
  */
-let fixtures: Promise<{ serviceId: string; saleEmployeeId: string }> | undefined;
+let fixtures: Promise<{ serviceId: string; classServiceId: string; saleEmployeeId: string }> | undefined;
 export const E2E_SERVICE_NAME = "PT";
+/** The group-class service class contracts are sold under (M5.5): 100,000 a session. */
+export const E2E_CLASS_SERVICE_NAME = "Group Training";
 export const E2E_SALESPERSON_NAME = "Nhân viên bán hàng E2E";
 
 export function contractFixtures() {
@@ -119,6 +121,39 @@ async function makeContractFixtures() {
         service = await prisma.service.findUniqueOrThrow({ where: { name: E2E_SERVICE_NAME }, select: { id: true } });
       }
     }
+    let classService = await prisma.service.findUnique({
+      where: { name: E2E_CLASS_SERVICE_NAME },
+      select: { id: true },
+    });
+    if (!classService) {
+      try {
+        classService = await prisma.service.create({
+          data: {
+            name: E2E_CLASS_SERVICE_NAME,
+            kind: "CLASS",
+            branches: { create: [{ branchId: E2E_BRANCH_ID }] },
+            versions: {
+              create: {
+                version: 1,
+                effectiveFrom: new Date("2020-01-01T00:00:00Z"),
+                tiers: {
+                  create: [
+                    { minSessions: 1, maxSessions: 1000, unitPrice: 100_000, validityMonths: 60, validityDays: 0 },
+                  ],
+                },
+              },
+            },
+          },
+          select: { id: true },
+        });
+      } catch {
+        // Another worker made it first.
+        classService = await prisma.service.findUniqueOrThrow({
+          where: { name: E2E_CLASS_SERVICE_NAME },
+          select: { id: true },
+        });
+      }
+    }
     let sale = await prisma.employee.findFirst({ where: { fullName: E2E_SALESPERSON_NAME }, select: { id: true } });
     if (!sale) {
       const [{ value }] = await prisma.$queryRaw<{ value: bigint }[]>`SELECT nextval('employee_code_seq') AS value`;
@@ -132,7 +167,7 @@ async function makeContractFixtures() {
         select: { id: true },
       });
     }
-    return { serviceId: service.id, saleEmployeeId: sale.id };
+    return { serviceId: service.id, classServiceId: classService.id, saleEmployeeId: sale.id };
   } finally {
     await prisma.$disconnect();
   }

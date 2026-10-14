@@ -20,7 +20,9 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "lead.assign")) items.push("leadReceivers");
   if (can(user, "customer.view")) items.push("customers");
   if (can(user, "contract.view")) items.push("contracts");
-  if (can(user, "booking.view")) items.push("calendar", "sessions", "checkin");
+  if (can(user, "booking.view")) items.push("calendar", "sessions");
+  if (can(user, "class.view")) items.push("classes");
+  if (can(user, "booking.view")) items.push("checkin");
   if (can(user, "task.view")) items.push("tasks");
   if (can(user, "payment.view")) items.push("finance");
   if (can(user, "report.consulting")) items.push("consultingReport");

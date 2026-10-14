@@ -48,7 +48,8 @@
     "contractReport": "Contract report",
     "exceptionPriceReport": "Exception prices",
     "sessionStatuses": "Session statuses",
-    "checkin": "Check-in"
+    "checkin": "Check-in",
+    "classes": "Class schedule"
   },
   "status": {
     "customer": {
@@ -572,7 +573,12 @@
     "BOOKING_CUSTOMER_OVERLAP": "The customer already has a session at that time.",
     "BOOKING_SERVICE_DAILY_LIMIT": "The service allows no more sessions for this customer on that day.",
     "BOOKING_SERVICE_WEEKLY_LIMIT": "The service allows no more sessions for this customer in that week.",
-    "BOOKING_OUTSIDE_SERVICE_HOURS": "That time is outside the hours this service can be used."
+    "BOOKING_OUTSIDE_SERVICE_HOURS": "That time is outside the hours this service can be used.",
+    "CLASS_FULL": "The class is full.",
+    "CLASS_ALREADY_ENROLLED": "The customer already has a seat in this class session.",
+    "CLASS_SESSION_CANCELLED": "This class session is cancelled.",
+    "CLASS_NOT_STARTED": "The class has not started, so attendance cannot be marked yet.",
+    "CLASS_CONTRACT_MISMATCH": "The contract is not a group-class contract of this branch."
   },
   "validation": {
     "required": "Required.",
@@ -654,7 +660,9 @@
     "hoursOutOfRange": "The hours must be between 0 and 720.",
     "bookedNeverConsumes": "Booking never uses a session.",
     "secondsOutOfRange": "The seconds must be between 1 and 3600.",
-    "machineCodeTaken": "This code already belongs to someone else."
+    "machineCodeTaken": "This code already belongs to someone else.",
+    "weeksOutOfRange": "Weeks from 1 to 26.",
+    "belowEnrolled": "The capacity is below the customers already enrolled in an upcoming session."
   },
   "contracts": {
     "title": "Contracts",
@@ -1210,7 +1218,8 @@
       "reports": "Reports",
       "services": "Services and price tiers",
       "promotions": "Promotions and vouchers",
-      "checkin": "Check-in machines"
+      "checkin": "Check-in machines",
+      "classes": "Class schedule"
     },
     "labels": {
       "user": {
@@ -1328,6 +1337,12 @@
       "checkin": {
         "review": "Review hanging sessions and scan errors",
         "devices": "Manage check-in machines and user codes"
+      },
+      "class": {
+        "view": "View the class schedule",
+        "manage": "Add and edit classes",
+        "enroll": "Enroll customers in classes",
+        "attend": "Mark class attendance"
       }
     },
     "resources": {
@@ -1498,7 +1513,8 @@
       "scanWindowMinutes": "Pairing window around the session (minutes)",
       "scanRepeatSeconds": "Repeat scans counted once within (seconds)",
       "scanClockToleranceSeconds": "Machine clock tolerance (seconds)",
-      "hangingEscalationHours": "Hours before a hanging session is escalated (0 = off)"
+      "hangingEscalationHours": "Hours before a hanging session is escalated (0 = off)",
+      "classGenerateWeeks": "Weeks of class sessions made ahead"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1588,7 +1604,9 @@
       "cash_opening_balance": "Opening cash balance",
       "file": "File",
       "session_status": "Session status",
-      "checkin_device": "Check-in device"
+      "checkin_device": "Check-in device",
+      "class": "Class",
+      "class_session": "Class session"
     },
     "verbs": {
       "created": "Created",
@@ -2593,5 +2611,92 @@
     "save": "Save",
     "codeSaved": "Code saved",
     "codeTaken": "This code already belongs to someone else."
+  },
+  "classes": {
+    "title": "Class schedule",
+    "description": "The week's group classes: enroll customers and mark attendance.",
+    "views": {
+      "week": "Week",
+      "manage": "Classes"
+    },
+    "boardLabel": "Days of the week",
+    "noClasses": "No classes",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "today": "Today",
+    "weekOf": "Week from {from} to {to}",
+    "seats": "{taken}/{capacity} seats",
+    "taught": "Taught",
+    "loading": "Loading…",
+    "timeRange": "{start}–{end}",
+    "status": {
+      "SCHEDULED": "Scheduled",
+      "CANCELLED": "Cancelled"
+    },
+    "attendance": {
+      "ENROLLED": "Enrolled",
+      "PRESENT": "Present",
+      "ABSENT": "Absent"
+    },
+    "attendees": "Customers in the class",
+    "noAttendees": "Nobody is enrolled yet.",
+    "remaining": "{count} sessions left",
+    "present": "Present",
+    "absent": "Absent",
+    "remove": "Remove enrollment",
+    "markedPresent": "Marked present, 1 session used",
+    "markedAbsent": "Marked absent",
+    "removed": "Enrollment removed",
+    "enrollTitle": "Enroll a customer",
+    "enroll": "Enroll",
+    "enrolled": "Customer enrolled",
+    "full": "The class is full.",
+    "contract": "Group-class contract",
+    "choose": "Choose…",
+    "contractOption": "{code} · {package} · {remaining} left",
+    "noClassContracts": "The customer has no active group-class contract with sessions left.",
+    "manageLabel": "Classes",
+    "noClassesDefined": "No classes yet.",
+    "add": "Add class",
+    "addDescription": "A class is a time slot that repeats every week. Its sessions are made ahead for the coming weeks.",
+    "edit": "Edit",
+    "editTitle": "Edit {name}",
+    "editDescription": "The days and the time cannot change: switch this class off and make a new one. Changes reach the sessions to come.",
+    "created": "Class added",
+    "saved": "Class saved",
+    "on": "Running",
+    "off": "Off",
+    "actions": "Actions",
+    "activeHint": "Switching a class off cancels the coming sessions nobody is enrolled in.",
+    "fields": {
+      "name": "Class name",
+      "branch": "Branch",
+      "coach": "Coach",
+      "capacity": "Capacity",
+      "weekdays": "Days of the week",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "time": "Time",
+      "active": "Running",
+      "status": "Status"
+    },
+    "weekdays": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    },
+    "weekdaysShort": {
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat",
+      "7": "Sun"
+    }
   }
 }

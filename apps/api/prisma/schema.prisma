@@ -216,6 +216,8 @@ model User {
   leadNotes             LeadNote[]               @relation("LeadNoteAuthor")
   consultingAudits      ConsultingAudit[]        @relation("ConsultingAuditor")
   personMerges          PersonMerge[]
+  classEnrollments      ClassAttendance[]        @relation("ClassEnrolledBy")
+  classMarks            ClassAttendance[]        @relation("ClassMarkedBy")
 
   @@index([roleId])
   @@map("users")
@@ -251,6 +253,9 @@ model Branch {
   leadRoundRobin   LeadRoundRobin?
   leadTurns        LeadTurn[]
   leadInquiries    LeadInquiry[]
+
+  classes       GymClass[]
+  classSessions ClassSession[]
 
   @@map("branches")
 }
@@ -699,12 +704,13 @@ model Customer {
   consultingAudits  ConsultingAudit[]
 
   // Set when this record was merged into another (A-064): it is hidden everywhere, its codes stay reserved.
-  mergedIntoId     String?       @map("merged_into_id") @db.Uuid
-  mergedInto       Customer?     @relation("CustomerMergedInto", fields: [mergedIntoId], references: [id], onDelete: Restrict)
-  mergedFrom       Customer[]    @relation("CustomerMergedInto")
-  mergedAt         DateTime?     @map("merged_at") @db.Timestamptz(3)
-  mergesAsSurvivor PersonMerge[] @relation("MergeSurvivor")
-  mergeAsMerged    PersonMerge?  @relation("MergeMerged")
+  mergedIntoId     String?           @map("merged_into_id") @db.Uuid
+  mergedInto       Customer?         @relation("CustomerMergedInto", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  mergedFrom       Customer[]        @relation("CustomerMergedInto")
+  mergedAt         DateTime?         @map("merged_at") @db.Timestamptz(3)
+  mergesAsSurvivor PersonMerge[]     @relation("MergeSurvivor")
+  mergeAsMerged    PersonMerge?      @relation("MergeMerged")
+  classAttendances ClassAttendance[]
 
   @@index([phone])
   @@index([searchName])
@@ -1021,6 +1027,7 @@ model Contract {
   cashTransactions CashTransaction[]
   shares           ContractStaffShare[]
   companions       ContractCompanion[]
+  classAttendances ClassAttendance[]
 
   @@index([customerId])
   @@index([branchId])
@@ -1104,11 +1111,13 @@ model Employee {
   createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  bookings       Booking[]
-  contractShares ContractStaffShare[]
-  receiptsSold   Payment[]            @relation("PaymentSaleEmployee")
-  shifts         EmployeeShift[]
-  daysOff        EmployeeDayOff[]
+  bookings             Booking[]
+  contractShares       ContractStaffShare[]
+  receiptsSold         Payment[]            @relation("PaymentSaleEmployee")
+  shifts               EmployeeShift[]
+  daysOff              EmployeeDayOff[]
+  classesCoached       GymClass[]           @relation("ClassCoach")
+  classSessionsCoached ClassSession[]       @relation("ClassSessionCoach")
 
   @@index([branchId])
   @@index([searchName])
@@ -1795,4 +1804,81 @@ model CheckinScan {
   @@unique([deviceId, machineUserCode, scannedAt])
   @@index([result, scannedAt])
   @@map("checkin_scans")
+}
+
+// ---------------------------------------------------------------------------
+// Class schedule (M5.5, brief §6.4, D-031). A class is a weekly slot; its sessions are generated ahead of time; the
+// attendance of a customer who is present consumes one session of their group-class contract (T-050: the sessions
+// used are derived from these rows). The CHECKs are in migration SQL.
+// ---------------------------------------------------------------------------
+
+model GymClass {
+  id        String   @id @default(uuid()) @db.Uuid
+  branchId  String   @map("branch_id") @db.Uuid
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  name      String
+  coachId   String   @map("coach_id") @db.Uuid
+  coach     Employee @relation("ClassCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  capacity  Int
+  // ISO weekdays, 1 = Monday to 7 = Sunday; the time is "HH:mm" in the gym timezone.
+  weekdays  Int[]
+  startTime String   @map("start_time")
+  endTime   String   @map("end_time")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions ClassSession[]
+
+  @@index([branchId])
+  @@map("classes")
+}
+
+model ClassSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  classId   String   @map("class_id") @db.Uuid
+  gymClass  GymClass @relation(fields: [classId], references: [id], onDelete: Restrict)
+  branchId  String   @map("branch_id") @db.Uuid
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  coachId   String   @map("coach_id") @db.Uuid
+  coach     Employee @relation("ClassSessionCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  capacity  Int
+  startsAt  DateTime @map("starts_at") @db.Timestamptz(3)
+  endsAt    DateTime @map("ends_at") @db.Timestamptz(3)
+  // SCHEDULED or CANCELLED (the class was switched off before it took place).
+  status    String   @default("SCHEDULED")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  attendances ClassAttendance[]
+
+  @@unique([classId, startsAt])
+  @@index([startsAt])
+  @@index([branchId, startsAt])
+  @@index([coachId])
+  @@map("class_sessions")
+}
+
+model ClassAttendance {
+  id             String       @id @default(uuid()) @db.Uuid
+  classSessionId String       @map("class_session_id") @db.Uuid
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Restrict)
+  customerId     String       @map("customer_id") @db.Uuid
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  contractId     String       @map("contract_id") @db.Uuid
+  contract       Contract     @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  // ENROLLED, PRESENT (consumes one session), or ABSENT.
+  status         String       @default("ENROLLED")
+  consumes       Boolean      @default(false)
+  enrolledById   String       @map("enrolled_by") @db.Uuid
+  enrolledBy     User         @relation("ClassEnrolledBy", fields: [enrolledById], references: [id], onDelete: Restrict)
+  enrolledAt     DateTime     @default(now()) @map("enrolled_at") @db.Timestamptz(3)
+  markedById     String?      @map("marked_by") @db.Uuid
+  markedBy       User?        @relation("ClassMarkedBy", fields: [markedById], references: [id], onDelete: Restrict)
+  markedAt       DateTime?    @map("marked_at") @db.Timestamptz(3)
+
+  @@unique([classSessionId, customerId])
+  @@index([contractId])
+  @@index([customerId])
+  @@map("class_attendances")
 }

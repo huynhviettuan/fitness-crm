@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-19 — M5.5: class schedule and attendance
+
+- **Classes** (A-160, A-161): weekly slots with a coach and a capacity; sessions made eight weeks ahead (parameter `classGenerateWeeks`).
+- **Enrollment and attendance** (A-162, A-163): on a group-class contract, refused when full, expired or out of sessions; present uses one session, absent none; a mark is final.
+- **Coach credit** (A-164) and **the week board** (A-165). Sessions used of a contract now include class attendance.
+- **Open**: OQ-052. Docs 04, 07, 09, 13, 16, 18, 28; E2E-110.
+
 ## 2026-10-18 — M5.4: delete from the check-in history, Burn Show
 
 - **Delete a trained session** (A-157): Admin, with a reason; one session refunded, the PT credit removed, to the trash, audited. The payroll adjustment waits for M5.7.

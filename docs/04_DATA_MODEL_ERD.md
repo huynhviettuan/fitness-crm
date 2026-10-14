@@ -116,6 +116,9 @@ erDiagram
 | `checkin_devices` (M5.3b) | id, branch_id, name, key_hash (SHA-256 of the key, which is never stored), active, last_seen_at, clock_offset_seconds |
 | `checkin_scans` (M5.3b) | id, device_id, branch_id, machine_user_code, scanned_at (real time), received_at, subject_type, customer_id or employee_id, result (WAITING, PAIRED, ERROR, REPEAT), error_code, booking_id; unique (device, code, scanned_at) |
 | `customers.machine_user_code`, `employees.machine_user_code` (M5.3b) | the code on the machine, unique; `bookings.customer_scan_id` and `pt_scan_id` (unique: a scan serves one session), `scan_requested_at/by`, `hanging_escalated_at`; `sessions.checked_in_by` may be empty for a device confirmation |
+| `classes` (M5.5) | id, branch_id, name, coach_id, capacity, weekdays (ISO 1 to 7), start_time, end_time, active |
+| `class_sessions` (M5.5) | id, class_id, branch_id, coach_id, capacity, starts_at, ends_at, status (SCHEDULED or CANCELLED); unique (class, start) |
+| `class_attendances` (M5.5) | id, class_session_id, customer_id, contract_id, status (ENROLLED, PRESENT, ABSENT), consumes (= present), enrolled_by/at, marked_by/at; unique (session, customer); a contract's sessions used = its consuming bookings + its consuming attendances (T-050) |
 | `bookings.added_by_hand`, `added_reason_option_id`, `added_reason_note` (M5.4) | Burn Show: a session added by hand and why (a CHECK: an added session has a reason); the list `burnShowReasons` |
 | `bookings.history_deleted_at`, `history_deleted_by` (M5.4) | a trained session deleted from the check-in history (status `DELETED`); with the session's `completed_at` they feed the PT's payroll adjustment (D-027, M5.7) |
 | `sessions.confirmation_method` (M5.3) | `MANUAL` or `DEVICE`; the status `DELETED` (Xóa) is a fifth row of `session_statuses` |

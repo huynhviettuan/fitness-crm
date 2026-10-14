@@ -79,6 +79,7 @@ const NAV_ITEMS: Record<NavItemKey, { href: string; icon: typeof LayoutDashboard
   contracts: { href: "/contracts", icon: FileTextIcon },
   calendar: { href: "/calendar", icon: CalendarDaysIcon },
   sessions: { href: "/sessions", icon: ClipboardCheckIcon },
+  classes: { href: "/classes", icon: DumbbellIcon },
   checkin: { href: "/checkin", icon: FingerprintPatternIcon },
   tasks: { href: "/tasks", icon: ListTodoIcon },
   finance: { href: "/finance", icon: BanknoteIcon },

@@ -10015,6 +10015,500 @@
         "x-permission": "checkin.devices"
       }
     },
+    "/api/v1/classes": {
+      "get": {
+        "operationId": "ClassesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GymClassList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.view"
+      },
+      "post": {
+        "operationId": "ClassesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "branchId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "coachId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500
+                  },
+                  "weekdays": {
+                    "minItems": 1,
+                    "maxItems": 7,
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "branchId",
+                  "coachId",
+                  "capacity",
+                  "weekdays",
+                  "startTime",
+                  "endTime"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GymClass"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.manage"
+      }
+    },
+    "/api/v1/classes/{id}": {
+      "patch": {
+        "operationId": "ClassesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "coachId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "coachId",
+                  "capacity",
+                  "active"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GymClass"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.manage"
+      }
+    },
+    "/api/v1/class-sessions": {
+      "get": {
+        "operationId": "ClassSessionsController_list",
+        "parameters": [
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "coachId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "classId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSessionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.view"
+      }
+    },
+    "/api/v1/class-sessions/{id}": {
+      "get": {
+        "operationId": "ClassSessionsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.view"
+      }
+    },
+    "/api/v1/class-sessions/{id}/attendees": {
+      "post": {
+        "operationId": "ClassSessionsController_enroll",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "contractId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "customerId",
+                  "contractId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.enroll"
+      }
+    },
+    "/api/v1/class-sessions/{id}/attendees/{attendeeId}": {
+      "delete": {
+        "operationId": "ClassSessionsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attendeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.enroll"
+      }
+    },
+    "/api/v1/class-sessions/{id}/attendees/{attendeeId}/mark": {
+      "post": {
+        "operationId": "ClassSessionsController_mark",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attendeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PRESENT",
+                      "ABSENT"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "classes"
+        ],
+        "x-permission": "class.attend"
+      }
+    },
     "/api/v1/payments": {
       "get": {
         "operationId": "PaymentsController_list",
@@ -11336,6 +11830,10 @@
                             "session.complete",
                             "session.deleteHistory",
                             "session.burn",
+                            "class.view",
+                            "class.manage",
+                            "class.enroll",
+                            "class.attend",
                             "checkin.review",
                             "checkin.devices",
                             "employee.view",
@@ -11766,6 +12264,10 @@
                         "session.complete",
                         "session.deleteHistory",
                         "session.burn",
+                        "class.view",
+                        "class.manage",
+                        "class.enroll",
+                        "class.attend",
                         "checkin.review",
                         "checkin.devices",
                         "employee.view",
@@ -12044,6 +12546,10 @@
                         "session.complete",
                         "session.deleteHistory",
                         "session.burn",
+                        "class.view",
+                        "class.manage",
+                        "class.enroll",
+                        "class.attend",
                         "checkin.review",
                         "checkin.devices",
                         "employee.view",
@@ -12838,6 +13344,10 @@
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
                   },
+                  "classGenerateWeeks": {
+                    "type": "string",
+                    "pattern": "^\\d{1,2}$"
+                  },
                   "runningOutSessions": {
                     "type": "string",
                     "pattern": "^\\d{1,3}$"
@@ -12929,6 +13439,7 @@
                   "scanRepeatSeconds",
                   "scanClockToleranceSeconds",
                   "hangingEscalationHours",
+                  "classGenerateWeeks",
                   "runningOutSessions",
                   "studioDepartmentId",
                   "receptionDepartmentId",
@@ -14464,6 +14975,11 @@
               "BOOKING_SERVICE_DAILY_LIMIT",
               "BOOKING_SERVICE_WEEKLY_LIMIT",
               "BOOKING_CANCEL_TOO_LATE",
+              "CLASS_FULL",
+              "CLASS_ALREADY_ENROLLED",
+              "CLASS_SESSION_CANCELLED",
+              "CLASS_NOT_STARTED",
+              "CLASS_CONTRACT_MISMATCH",
               "IDEMPOTENCY_KEY_REUSED",
               "APPROVAL_NOT_PENDING",
               "APPROVAL_ALREADY_PENDING",
@@ -14649,6 +15165,10 @@
                 "session.complete",
                 "session.deleteHistory",
                 "session.burn",
+                "class.view",
+                "class.manage",
+                "class.enroll",
+                "class.attend",
                 "checkin.review",
                 "checkin.devices",
                 "employee.view",
@@ -20587,6 +21107,220 @@
           "key"
         ]
       },
+      "GymClassList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GymClass"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "GymClass": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "coach": {
+            "$ref": "#/components/schemas/EmployeeRef"
+          },
+          "capacity": {
+            "type": "integer"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "branch",
+          "coach",
+          "capacity",
+          "weekdays",
+          "startTime",
+          "endTime",
+          "active"
+        ]
+      },
+      "ClassSessionList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassSession"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ClassSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "classId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "coach": {
+            "$ref": "#/components/schemas/EmployeeRef"
+          },
+          "capacity": {
+            "type": "integer"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "CANCELLED"
+            ]
+          },
+          "seatsTaken": {
+            "type": "integer"
+          },
+          "present": {
+            "type": "integer"
+          },
+          "taught": {
+            "type": "boolean"
+          },
+          "attendees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassAttendee"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "classId",
+          "name",
+          "branch",
+          "coach",
+          "capacity",
+          "startsAt",
+          "endsAt",
+          "status",
+          "seatsTaken",
+          "present",
+          "taught"
+        ]
+      },
+      "ClassAttendee": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerRef"
+          },
+          "contract": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              },
+              "packageName": {
+                "type": "string"
+              },
+              "remainingSessions": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode",
+              "packageName",
+              "remainingSessions"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENROLLED",
+              "PRESENT",
+              "ABSENT"
+            ]
+          },
+          "consumes": {
+            "type": "boolean"
+          },
+          "enrolledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "markedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "markedBy": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customer",
+          "contract",
+          "status",
+          "consumes",
+          "enrolledAt",
+          "markedAt",
+          "markedBy"
+        ]
+      },
       "Collected": {
         "type": "object",
         "properties": {
@@ -20928,6 +21662,10 @@
                     "session.complete",
                     "session.deleteHistory",
                     "session.burn",
+                    "class.view",
+                    "class.manage",
+                    "class.enroll",
+                    "class.attend",
                     "checkin.review",
                     "checkin.devices",
                     "employee.view",
@@ -21199,6 +21937,10 @@
                 "session.complete",
                 "session.deleteHistory",
                 "session.burn",
+                "class.view",
+                "class.manage",
+                "class.enroll",
+                "class.attend",
                 "checkin.review",
                 "checkin.devices",
                 "employee.view",
@@ -21490,6 +22232,9 @@
           "hangingEscalationHours": {
             "type": "string"
           },
+          "classGenerateWeeks": {
+            "type": "string"
+          },
           "runningOutSessions": {
             "type": "string"
           },
@@ -21539,6 +22284,7 @@
           "scanRepeatSeconds",
           "scanClockToleranceSeconds",
           "hangingEscalationHours",
+          "classGenerateWeeks",
           "runningOutSessions",
           "studioDepartmentId",
           "receptionDepartmentId",

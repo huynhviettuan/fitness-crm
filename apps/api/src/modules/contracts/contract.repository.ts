@@ -6,11 +6,19 @@ import type { ChosenOption } from "@flow/shared/options";
 import { chosen, chosenSelect } from "../../platform/options/option.service.js";
 import { readParameter } from "../../platform/parameters/parameter.service.js";
 
+/** The sessions of a contract used so far by what happened in the gym (T-050), not counting those brought over. */
+export function usedSessionsOf(contract: { _count: { bookings: number; classAttendances: number } }): number {
+  return contract._count.bookings + contract._count.classAttendances;
+}
+
 const withRefs = {
   customer: { select: { id: true, customerCode: true, fullName: true, phone: true } },
   branch: { select: { id: true, name: true } },
-  // T-050: the sessions used are the contract's bookings whose status consumed when it was set.
-  _count: { select: { bookings: { where: { consumes: true } } } },
+  // T-050: the sessions used are the contract's bookings whose status consumed when it was set, and the class
+  // attendances marked present (M5.5).
+  _count: {
+    select: { bookings: { where: { consumes: true } }, classAttendances: { where: { consumes: true } } },
+  },
   service: {
     select: { id: true, name: true, kind: true, allowedFrom: true, allowedTo: true, maxPerDay: true, maxPerWeek: true },
   },
@@ -190,7 +198,7 @@ export async function approvalsOf(db: Db, ids: string[]): Promise<Map<string, Ap
 
 /** What blocks deleting a contract (A-125): its receipts that count or may count, and its recorded sessions. */
 export async function findDependents(db: Db, contractId: string) {
-  const [payments, bookings] = await Promise.all([
+  const [payments, sessions, attendances] = await Promise.all([
     db.payment.findMany({
       where: { contractId, deletedAt: null, approvalStatus: { not: "REJECTED" } },
       select: { id: true, amount: true, paidOn: true },
@@ -203,7 +211,18 @@ export async function findDependents(db: Db, contractId: string) {
       orderBy: { scheduledStart: "asc" },
       take: 20,
     }),
+    // A class seat is a session of the contract too (M5.5): enrolled, present, or absent.
+    db.classAttendance.findMany({
+      where: { contractId },
+      select: { id: true, status: true, classSession: { select: { startsAt: true } } },
+      orderBy: { enrolledAt: "asc" },
+      take: 20,
+    }),
   ]);
+  const bookings = [
+    ...sessions,
+    ...attendances.map((row) => ({ id: row.id, scheduledStart: row.classSession.startsAt, status: row.status })),
+  ];
   return { payments, bookings };
 }
 

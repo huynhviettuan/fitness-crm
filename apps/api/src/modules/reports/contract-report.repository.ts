@@ -54,7 +54,8 @@ export async function contractGroups(
              c.contract_value, c.opening_paid_amount, c.opening_sessions_used,
              c.total_sessions + c.bonus_sessions AS entitled,
              COALESCE(paid.total, 0) AS paid, COALESCE(paid.received, 0) AS received,
-             (SELECT COUNT(*) FROM bookings k WHERE k.contract_id = c.id AND k.consumes) AS completed
+             (SELECT COUNT(*) FROM bookings k WHERE k.contract_id = c.id AND k.consumes)
+               + (SELECT COUNT(*) FROM class_attendances a WHERE a.contract_id = c.id AND a.consumes) AS completed
       FROM contracts c
       LEFT JOIN price_tiers t ON t.id = c.price_tier_id
       LEFT JOIN LATERAL (

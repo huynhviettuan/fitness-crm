@@ -40,6 +40,8 @@ export const PARAMETER_DEFAULTS = {
   scanClockToleranceSeconds: "120",
   /** A session still hanging after this many hours is reported to the Studio Manager with a task (D-071). */
   hangingEscalationHours: "24",
+  /** How many weeks ahead the sessions of a class are generated (A-161, M5.5). */
+  classGenerateWeeks: "8",
   /** A running contract with this many sessions left or fewer is "running out" in the contract report (A-023, M4.7). */
   runningOutSessions: "3",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
@@ -120,6 +122,14 @@ const seconds = z
   .refine((value) => Number(value) >= 1 && Number(value) <= 3600, { error: "secondsOutOfRange" })
   .transform((value) => String(Number(value)));
 
+/** Whole weeks, 1 to 26. */
+const weeks = z
+  .string()
+  .trim()
+  .regex(/^\d{1,2}$/, { error: "invalidNumber" })
+  .refine((value) => Number(value) >= 1 && Number(value) <= 26, { error: "weeksOutOfRange" })
+  .transform((value) => String(Number(value)));
+
 /** Whole hours, 0 to 720; 0 switches the limit off. */
 const hours = z
   .string()
@@ -147,6 +157,7 @@ export const parametersInputSchema = z
     scanRepeatSeconds: seconds,
     scanClockToleranceSeconds: seconds,
     hangingEscalationHours: hours,
+    classGenerateWeeks: weeks,
     runningOutSessions: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
@@ -186,6 +197,7 @@ export const parametersSchema = z
     scanRepeatSeconds: z.string(),
     scanClockToleranceSeconds: z.string(),
     hangingEscalationHours: z.string(),
+    classGenerateWeeks: z.string(),
     runningOutSessions: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),

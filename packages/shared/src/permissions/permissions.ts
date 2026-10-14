@@ -53,6 +53,9 @@ export const PERMISSION_GROUPS = {
     "session.deleteHistory",
     "session.burn",
   ],
+  // The class schedule (M5.5, brief §6.4): Admin and Fitness Manager manage classes; reception and coaches enroll;
+  // Admin, Fitness Manager, and the coach of a class mark attendance.
+  classes: ["class.view", "class.manage", "class.enroll", "class.attend"],
   // Fingerprint-ready check-in (M5.3b, D-069 to D-072): the machines are Admin's; reviewing scans is Admin's and Fitness Manager's.
   checkin: ["checkin.review", "checkin.devices"],
   // Employee profiles and working schedules (brief §8.4).

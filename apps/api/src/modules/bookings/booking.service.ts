@@ -149,7 +149,7 @@ export async function createBooking(actor: Actor, input: unknown): Promise<Booki
       const remaining =
         entitledSessions(contract.totalSessions, contract.bonusSessions) -
         contract.openingSessionsUsed -
-        contract._count.bookings;
+        contractRepo.usedSessionsOf(contract);
       const open = await repo.countBookingsOfContract(tx, contract.id, OPEN_BOOKING_STATUSES);
       if (!hasSessionForNewBooking(remaining, open)) throw new AppError("CONTRACT_NO_REMAINING_SESSIONS");
 
@@ -481,7 +481,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
       remainingSessions:
         entitledSessions(contract.totalSessions, contract.bonusSessions) -
         contract.openingSessionsUsed -
-        contract._count.bookings,
+        contractRepo.usedSessionsOf(contract),
       frozen: contract.status === "FROZEN",
     },
     trainer: booking.trainer,

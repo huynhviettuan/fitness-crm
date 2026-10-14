@@ -5,7 +5,7 @@ import type { ErrorCode } from "@flow/shared/errors";
 import { assertCan } from "../../platform/permissions/assert.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { recordAudit } from "../../platform/audit/audit.repository.js";
-import { findContract } from "../contracts/contract.repository.js";
+import { findContract, usedSessionsOf } from "../contracts/contract.repository.js";
 import { contractView, type ContractView } from "../contracts/contract.service.js";
 import { findStatusRule, setStatus, type BookingRecord } from "../bookings/booking.repository.js";
 import {
@@ -91,7 +91,7 @@ export async function sessionProblem(
   const remaining =
     entitledSessions(contract.totalSessions, contract.bonusSessions) -
     contract.openingSessionsUsed -
-    contract._count.bookings;
+    usedSessionsOf(contract);
   const found = (code: ErrorCode | null) => ({ code, remaining, contractId: contract.id });
   // Cannot happen while D-010 holds (a contract with a checked-in booking cannot be cancelled); kept so a session is
   // never consumed from a cancelled contract.

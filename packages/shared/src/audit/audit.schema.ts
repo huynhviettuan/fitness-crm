@@ -19,6 +19,8 @@ export const AUDIT_ENTITY_TYPES = [
   "file",
   "session_status",
   "checkin_device",
+  "class",
+  "class_session",
   "approval_request",
   "approval_rule",
   "task",

@@ -316,7 +316,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Tests:** E2E-109 (without the email delivery); integration for exactly one outbox event per change under concurrent requests.
 - **Depends on:** M5.3.
 
-### M5.5 Class schedule and attendance
+### M5.5 Class schedule and attendance (done 2026-10-19: A-160 to A-165, OQ-052)
 
 - **Builds:**
   - **Classes:** coach, branch, time slot, capacity, weekly recurrence. Sessions are generated ahead of time.

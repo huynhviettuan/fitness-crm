@@ -17,6 +17,10 @@
       "types": "./dist/checkin/index.d.ts",
       "default": "./dist/checkin/index.js"
     },
+    "./classes": {
+      "types": "./dist/classes/index.d.ts",
+      "default": "./dist/classes/index.js"
+    },
     "./bookings": {
       "types": "./dist/bookings/index.d.ts",
       "default": "./dist/bookings/index.js"

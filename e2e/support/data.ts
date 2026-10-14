@@ -60,6 +60,52 @@ export async function createContractViaApi(
   return contract;
 }
 
+/**
+ * A customer with an active group-class contract (12 sessions unless `sessions` says otherwise) and a coach with a class
+ * that runs every day from 00:01 to 00:59, so today's session has started and tomorrow's has not (M5.5). Everything
+ * carries the tag. Returns today's and tomorrow's class sessions.
+ */
+export async function classSetup(
+  apiAs: (role: "RECEPTIONIST" | "FITNESS_MANAGER" | "ADMIN") => Promise<APIRequestContext>,
+  tag: string,
+  options: { sessions?: number; capacity?: number } = {},
+) {
+  const { classServiceId } = await contractFixtures();
+  const customer = await createCustomerViaApi(await apiAs("RECEPTIONIST"), tag);
+  const contract = await createContractViaApi(await apiAs("FITNESS_MANAGER"), customer.id, {
+    activateWith: await apiAs("ADMIN"),
+    data: { serviceId: classServiceId, sessions: options.sessions ?? 12 },
+  });
+  const admin = await apiAs("ADMIN");
+  const coach = await createTrainerViaApi(await apiAs("FITNESS_MANAGER"), tag);
+  const me = (await (await admin.get("/api/v1/me")).json()) as { branches: { id: string }[] };
+  const created = await admin.post("/api/v1/classes", {
+    data: {
+      name: `Lớp ${tag}`,
+      branchId: me.branches[0]!.id,
+      coachId: coach.id,
+      capacity: options.capacity ?? 10,
+      weekdays: [1, 2, 3, 4, 5, 6, 7],
+      startTime: "00:01",
+      endTime: "00:59",
+    },
+  });
+  if (created.status() !== 201) throw new Error(`Class setup failed: ${created.status()} ${await created.text()}`);
+  const gymClass = (await created.json()) as { id: string; name: string };
+  const sessionOn = async (date: string) => {
+    const response = await admin.get(`/api/v1/class-sessions?date=${encodeURIComponent(date)}&classId=${gymClass.id}`);
+    return ((await response.json()) as { items: { id: string }[] }).items[0]!;
+  };
+  return {
+    customer,
+    contract,
+    coach,
+    gymClass,
+    today: await sessionOn(gymDay(0)),
+    tomorrow: await sessionOn(gymDay(1)),
+  };
+}
+
 /** Every day around the clock, so a test's slots are inside working hours (D-030). */
 export const ALL_DAY_SHIFTS = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start: "00:00", end: "24:00" }));
 

@@ -40,6 +40,14 @@ export const ERROR_HTTP_STATUS = {
   BOOKING_SERVICE_DAILY_LIMIT: 409,
   BOOKING_SERVICE_WEEKLY_LIMIT: 409,
   BOOKING_CANCEL_TOO_LATE: 409,
+  // M5.5, BR-411: the class is full, the customer already has a seat, or the class session was cancelled.
+  CLASS_FULL: 409,
+  CLASS_ALREADY_ENROLLED: 409,
+  CLASS_SESSION_CANCELLED: 409,
+  // M5.5, A-163: attendance is marked once the class has started, and only the coach of the class marks it.
+  CLASS_NOT_STARTED: 409,
+  // M5.5, A-162: the contract is not a group-class contract, or belongs to another branch than the class.
+  CLASS_CONTRACT_MISMATCH: 422,
   IDEMPOTENCY_KEY_REUSED: 409,
   APPROVAL_NOT_PENDING: 409,
   APPROVAL_ALREADY_PENDING: 409,

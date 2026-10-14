@@ -48,7 +48,8 @@
     "contractReport": "Báo cáo hợp đồng",
     "exceptionPriceReport": "Giá ngoại lệ",
     "sessionStatuses": "Trạng thái buổi tập",
-    "checkin": "Check-in"
+    "checkin": "Check-in",
+    "classes": "Lịch lớp"
   },
   "status": {
     "customer": {
@@ -572,7 +573,12 @@
     "BOOKING_CUSTOMER_OVERLAP": "Khách đã có buổi tập khác vào giờ này.",
     "BOOKING_SERVICE_DAILY_LIMIT": "Dịch vụ không cho thêm buổi nào cho khách trong ngày này.",
     "BOOKING_SERVICE_WEEKLY_LIMIT": "Dịch vụ không cho thêm buổi nào cho khách trong tuần này.",
-    "BOOKING_OUTSIDE_SERVICE_HOURS": "Giờ này nằm ngoài khung giờ được dùng dịch vụ."
+    "BOOKING_OUTSIDE_SERVICE_HOURS": "Giờ này nằm ngoài khung giờ được dùng dịch vụ.",
+    "CLASS_FULL": "Lớp đã đầy.",
+    "CLASS_ALREADY_ENROLLED": "Khách đã có chỗ trong buổi lớp này.",
+    "CLASS_SESSION_CANCELLED": "Buổi lớp này đã hủy.",
+    "CLASS_NOT_STARTED": "Buổi lớp chưa bắt đầu nên chưa điểm danh được.",
+    "CLASS_CONTRACT_MISMATCH": "Hợp đồng không phải hợp đồng lớp nhóm của chi nhánh này."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -654,7 +660,9 @@
     "hoursOutOfRange": "Số giờ từ 0 đến 720.",
     "bookedNeverConsumes": "Đặt lịch không bao giờ trừ buổi.",
     "secondsOutOfRange": "Số giây phải từ 1 đến 3600.",
-    "machineCodeTaken": "Mã này đã thuộc về người khác."
+    "machineCodeTaken": "Mã này đã thuộc về người khác.",
+    "weeksOutOfRange": "Số tuần từ 1 đến 26.",
+    "belowEnrolled": "Sức chứa thấp hơn số khách đã đăng ký ở một buổi sắp tới."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1210,7 +1218,8 @@
       "reports": "Báo cáo",
       "services": "Dịch vụ và bậc giá",
       "promotions": "Khuyến mãi và voucher",
-      "checkin": "Máy chấm công"
+      "checkin": "Máy chấm công",
+      "classes": "Lịch lớp"
     },
     "labels": {
       "user": {
@@ -1328,6 +1337,12 @@
       "checkin": {
         "review": "Xem buổi thiếu check-in và lỗi quét",
         "devices": "Quản lý máy chấm công và mã người dùng"
+      },
+      "class": {
+        "view": "Xem lịch lớp",
+        "manage": "Thêm và sửa lớp",
+        "enroll": "Đăng ký khách vào lớp",
+        "attend": "Điểm danh lớp"
       }
     },
     "resources": {
@@ -1498,7 +1513,8 @@
       "scanWindowMinutes": "Khung ghép cặp quanh buổi tập (phút)",
       "scanRepeatSeconds": "Quét lặp tính một lần trong (giây)",
       "scanClockToleranceSeconds": "Sai lệch đồng hồ máy cho phép (giây)",
-      "hangingEscalationHours": "Số giờ trước khi báo buổi treo (0 = tắt)"
+      "hangingEscalationHours": "Số giờ trước khi báo buổi treo (0 = tắt)",
+      "classGenerateWeeks": "Số tuần tạo sẵn buổi lớp"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1588,7 +1604,9 @@
       "cash_opening_balance": "Số dư quỹ đầu kỳ",
       "file": "Tệp",
       "session_status": "Trạng thái buổi tập",
-      "checkin_device": "Máy chấm công"
+      "checkin_device": "Máy chấm công",
+      "class": "Lớp",
+      "class_session": "Buổi lớp"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2593,5 +2611,92 @@
     "save": "Lưu",
     "codeSaved": "Đã lưu mã",
     "codeTaken": "Mã này đã thuộc về người khác."
+  },
+  "classes": {
+    "title": "Lịch lớp",
+    "description": "Các buổi lớp nhóm trong tuần: đăng ký khách và điểm danh.",
+    "views": {
+      "week": "Lịch tuần",
+      "manage": "Danh sách lớp"
+    },
+    "boardLabel": "Các ngày trong tuần",
+    "noClasses": "Không có lớp",
+    "previousWeek": "Tuần trước",
+    "nextWeek": "Tuần sau",
+    "today": "Hôm nay",
+    "weekOf": "Tuần từ {from} đến {to}",
+    "seats": "{taken}/{capacity} chỗ",
+    "taught": "Đã dạy",
+    "loading": "Đang tải…",
+    "timeRange": "{start}–{end}",
+    "status": {
+      "SCHEDULED": "Đã lên lịch",
+      "CANCELLED": "Đã hủy"
+    },
+    "attendance": {
+      "ENROLLED": "Đã đăng ký",
+      "PRESENT": "Có mặt",
+      "ABSENT": "Vắng"
+    },
+    "attendees": "Khách trong lớp",
+    "noAttendees": "Chưa có khách đăng ký.",
+    "remaining": "còn {count} buổi",
+    "present": "Có mặt",
+    "absent": "Vắng",
+    "remove": "Bỏ đăng ký",
+    "markedPresent": "Đã điểm danh có mặt, trừ 1 buổi",
+    "markedAbsent": "Đã điểm danh vắng",
+    "removed": "Đã bỏ đăng ký",
+    "enrollTitle": "Đăng ký khách",
+    "enroll": "Đăng ký",
+    "enrolled": "Đã đăng ký khách vào lớp",
+    "full": "Lớp đã đầy.",
+    "contract": "Hợp đồng lớp nhóm",
+    "choose": "Chọn…",
+    "contractOption": "{code} · {package} · còn {remaining} buổi",
+    "noClassContracts": "Khách chưa có hợp đồng lớp nhóm còn hiệu lực và còn buổi.",
+    "manageLabel": "Danh sách lớp",
+    "noClassesDefined": "Chưa có lớp nào.",
+    "add": "Thêm lớp",
+    "addDescription": "Một lớp là một khung giờ lặp lại hằng tuần. Buổi lớp được tạo sẵn cho những tuần tới.",
+    "edit": "Sửa",
+    "editTitle": "Sửa lớp {name}",
+    "editDescription": "Ngày và giờ không đổi được: tắt lớp này và tạo lớp mới. Thay đổi áp dụng cho các buổi sắp tới.",
+    "created": "Đã thêm lớp",
+    "saved": "Đã lưu lớp",
+    "on": "Đang chạy",
+    "off": "Đã tắt",
+    "actions": "Thao tác",
+    "activeHint": "Tắt lớp sẽ hủy các buổi sắp tới chưa có ai đăng ký.",
+    "fields": {
+      "name": "Tên lớp",
+      "branch": "Chi nhánh",
+      "coach": "Huấn luyện viên",
+      "capacity": "Sức chứa",
+      "weekdays": "Các ngày trong tuần",
+      "startTime": "Giờ bắt đầu",
+      "endTime": "Giờ kết thúc",
+      "time": "Giờ",
+      "active": "Đang chạy",
+      "status": "Trạng thái"
+    },
+    "weekdays": {
+      "1": "Thứ Hai",
+      "2": "Thứ Ba",
+      "3": "Thứ Tư",
+      "4": "Thứ Năm",
+      "5": "Thứ Sáu",
+      "6": "Thứ Bảy",
+      "7": "Chủ nhật"
+    },
+    "weekdaysShort": {
+      "1": "T2",
+      "2": "T3",
+      "3": "T4",
+      "4": "T5",
+      "5": "T6",
+      "6": "T7",
+      "7": "CN"
+    }
   }
 }

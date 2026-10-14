@@ -10,6 +10,7 @@ import { AuditPage, TrashPage } from "./pages/history";
 import { ApprovalRulesPage, ApprovalsPage } from "./pages/approvals";
 import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/bookings";
 import { CheckinPage } from "./pages/checkin";
+import { ClassesPage } from "./pages/classes";
 import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
@@ -38,6 +39,7 @@ type Fixtures = {
   calendarPage: CalendarPage;
   sessionsPage: SessionsPage;
   checkinPage: CheckinPage;
+  classesPage: ClassesPage;
   employeesPage: EmployeesPage;
   tasksPage: TasksPage;
   leadsPage: LeadsPage;
@@ -106,6 +108,7 @@ export const test = base.extend<Fixtures>({
   calendarPage: async ({ page }, use) => use(new CalendarPage(page)),
   sessionsPage: async ({ page }, use) => use(new SessionsPage(page)),
   checkinPage: async ({ page }, use) => use(new CheckinPage(page)),
+  classesPage: async ({ page }, use) => use(new ClassesPage(page)),
   employeesPage: async ({ page }, use) => use(new EmployeesPage(page)),
   tasksPage: async ({ page }, use) => use(new TasksPage(page)),
   leadsPage: async ({ page }, use) => use(new LeadsPage(page)),
@@ -337,6 +340,23 @@ export const test = base.extend<Fixtures>({
       });
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: deviceIds } } });
       await prisma.checkinDevice.deleteMany({ where: { id: { in: deviceIds } } });
+      // Classes named with the tag or taught by a tagged coach, their sessions and seats, and the seats of tagged
+      // customers (M5.5).
+      const classIds = ids(
+        await prisma.gymClass.findMany({
+          where: { OR: [{ name: { contains: tag } }, { coachId: { in: trainerIds } }] },
+          select: { id: true },
+        }),
+      );
+      const classSessionIds = ids(
+        await prisma.classSession.findMany({ where: { classId: { in: classIds } }, select: { id: true } }),
+      );
+      await prisma.classAttendance.deleteMany({
+        where: { OR: [{ classSessionId: { in: classSessionIds } }, { customerId: { in: customerIds } }] },
+      });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: [...classIds, ...classSessionIds] } } });
+      await prisma.classSession.deleteMany({ where: { classId: { in: classIds } } });
+      await prisma.gymClass.deleteMany({ where: { id: { in: classIds } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).

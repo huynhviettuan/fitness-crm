@@ -13,7 +13,7 @@ export const NAV_SECTIONS = [
       "dashboard",
       { group: "leads", items: ["leads", "leadsToday", "leadsRecare", "leadsAudit", "leadReceivers"] },
       { group: "customers", items: ["customers", "contracts"] },
-      { group: "schedule", items: ["calendar", "sessions", "checkin"] },
+      { group: "schedule", items: ["calendar", "sessions", "classes", "checkin"] },
       "tasks",
       "finance",
       {

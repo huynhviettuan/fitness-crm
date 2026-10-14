@@ -13,8 +13,11 @@ const bookingInclude = {
       totalSessions: true,
       bonusSessions: true,
       openingSessionsUsed: true,
-      // T-050: the sessions used are the contract's bookings whose status consumed when it was set.
-      _count: { select: { bookings: { where: { consumes: true } } } },
+      // T-050: the sessions used are the contract's bookings whose status consumed when it was set, and the class
+      // attendances marked present (M5.5).
+      _count: {
+        select: { bookings: { where: { consumes: true } }, classAttendances: { where: { consumes: true } } },
+      },
     },
   },
   trainer: { select: { id: true, employeeCode: true, fullName: true } },
