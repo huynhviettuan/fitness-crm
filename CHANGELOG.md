@@ -1,5 +1,21 @@
 # Documentation Changelog
 
+## 2026-11-05 — M10.0: lead channel survey
+
+- **Survey** (A-260, doc 30, Vietnamese docx for the owner): feasibility, cost and review of each channel, a proposed order, and what the developer needs from the owner.
+- **Open**: OQ-071. Docs 16, 18, 28, 30.
+
+## 2026-11-05 — M9.3: reconciliation and cut-over (M9 close)
+
+- **Reconciliation** (A-256, A-257): customers, contracts, value, paid and sessions left compared three ways, with a failing exit.
+- **Production guard** (A-258) and the **cut-over and parallel-run checklist** (A-259, doc 29 §6).
+- **Open**: OQ-070. Docs 13, 16, 18, 28, 29.
+
+## 2026-11-04 — M9.2: GymMaster import
+
+- **Import command** (A-249 to A-255, doc 29): customers, staff and contracts from a workbook, dry run by default, legacy codes kept, opening balances (D-011), contracts renamed by real session count, cleanup list for the owner, report and run record.
+- **Open**: OQ-069 (the real export formats). Docs 04, 13, 16, 18, 28, 29.
+
 ## 2026-11-03 — M9.1: tasks report, revenue by year, export check
 
 - **Tasks report** (A-245, A-246): given, done on time, done late, overdue, by person and department, with its export.

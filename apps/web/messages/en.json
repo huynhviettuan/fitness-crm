@@ -1721,7 +1721,8 @@
       "workout_plan": "Workout plan",
       "workout_log": "Session log",
       "workout_escalation": "Workout escalation",
-      "contract_change_voucher": "Change voucher"
+      "contract_change_voucher": "Change voucher",
+      "import_run": "Data import"
     },
     "verbs": {
       "created": "Created",
@@ -1768,7 +1769,8 @@
       "transferred_by_voucher": "Transferred (change voucher)",
       "branch_transferred_by_voucher": "Moved branch (change voucher)",
       "created_by_transfer": "Created by a transfer",
-      "cancelled_by_voucher": "Cancelled (change voucher)"
+      "cancelled_by_voucher": "Cancelled (change voucher)",
+      "imported": "Imported from the old system"
     },
     "fields": {
       "at": "When",

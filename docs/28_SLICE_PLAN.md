@@ -459,14 +459,14 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 | Slice | Builds | Source |
 |---|---|---|
 | M9.1 Overview dashboard and remaining reports (done 2026-11-03: A-245 to A-248, OQ-068) | The final overview dashboard, the tasks report (A-045), and a check of every export against AC-01 | brief §9; doc 10 |
-| M9.2 GymMaster import | A staging-first command: customers, active contracts, sessions used, receipts, staff, booking history; legacy codes kept; dry run; a cleanup list (session count different from the package name, price different from the tier) for the owner to confirm | brief §10, §11; D-039; FR-IMP-001 |
-| M9.3 Reconciliation and cut-over | Totals of customers, contract value, paid, and sessions left against GymMaster; a parallel-run checklist; production import only after OQ-014 | AC-22 |
+| M9.2 GymMaster import (done 2026-11-04: A-249 to A-255, OQ-069, doc 29) | A staging-first command: customers, active contracts, sessions used, receipts, staff, booking history; legacy codes kept; dry run; a cleanup list (session count different from the package name, price different from the tier) for the owner to confirm | brief §10, §11; D-039; FR-IMP-001 |
+| M9.3 Reconciliation and cut-over (done 2026-11-05: A-256 to A-259, OQ-070, doc 29) | Totals of customers, contract value, paid, and sessions left against GymMaster; a parallel-run checklist; production import only after OQ-014 | AC-22 |
 
 ## M10 — Lead channel APIs (after the survey, TS-007)
 
 | Slice | Builds |
 |---|---|
-| M10.0 Survey | Feasibility, cost, and app review for each channel, reported to the owner before building |
+| M10.0 Survey (done 2026-11-05: A-260, OQ-071, doc 30; waits for the owner's order) | Feasibility, cost, and app review for each channel, reported to the owner before building |
 | M10.1 Intake gateway | Webhooks with signature checks, idempotency, stored messages, and mapping to the lead intake with its channel; the conversation is kept on the lead (M11 needs it) |
 | M10.2 onward | One channel per slice in the survey's order: WhatsApp Business, Messenger and Instagram, Gmail forwarding and website form, Zalo OA (receive only), TikTok and Threads when available |
 

@@ -248,6 +248,7 @@ model User {
   escalationsRaised           WorkoutEscalation[]        @relation("WorkoutEscalationRaisedBy")
   escalationsSeen             WorkoutEscalation[]        @relation("WorkoutEscalationSeenBy")
   vouchersCreated             ContractChangeVoucher[]    @relation("VoucherCreatedBy")
+  importRuns                  ImportRun[]                @relation("ImportRunCreatedBy")
   vouchersApproved            ContractChangeVoucher[]    @relation("VoucherApprovedBy")
 
   @@index([roleId])
@@ -294,6 +295,7 @@ model Branch {
   workoutLogs  WorkoutLog[]
   vouchers     ContractChangeVoucher[] @relation("VoucherBranch")
   vouchersTo   ContractChangeVoucher[] @relation("VoucherToBranch")
+  importRuns   ImportRun[]
 
   @@map("branches")
 }
@@ -661,6 +663,8 @@ model Customer {
   customerCode          String?              @unique @map("customer_code")
   // The user code on the fingerprint machine (M5.3b, D-072); never a fingerprint.
   machineUserCode       String?              @unique @map("machine_user_code")
+  // The code the record had in GymMaster, kept by the import (D-039); never reused.
+  legacyCode            String?              @unique @map("legacy_code")
   // The lead journey (D-020); null for customers who never were leads.
   leadStatus            LeadStatus?          @map("lead_status")
   fullName              String               @map("full_name")
@@ -1070,6 +1074,7 @@ model Contract {
   deleteReasonId      String?        @map("delete_reason_option_id") @db.Uuid
   deleteReason        Option?        @relation("ContractDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
   deleteReasonNote    String?        @map("delete_reason_note")
+  legacyCode          String?        @unique @map("legacy_code")
   // Derived from the approved change vouchers by a database trigger, never written by the app (M8, T-050).
   voucherSessions     Int            @default(0) @map("voucher_sessions")
   voucherValue        Decimal        @default(0) @map("voucher_value") @db.Decimal(14, 0)
@@ -1141,6 +1146,7 @@ model Employee {
   // Generated from the employee_code_seq sequence (T-019, D-038). Never updated.
   employeeCode    String         @unique @map("employee_code")
   machineUserCode String?        @unique @map("machine_user_code")
+  legacyCode      String?        @unique @map("legacy_code")
   fullName        String         @map("full_name")
   // fullName lowercased without Vietnamese diacritics, for accent-insensitive search.
   searchName      String         @map("search_name")
@@ -2525,4 +2531,19 @@ model ContractChangeVoucher {
   @@index([customerId])
   @@index([branchId])
   @@map("contract_change_vouchers")
+}
+
+// One real run of the GymMaster import (brief §11, D-039; M9.2): the file, what was made, and the cleanup list.
+model ImportRun {
+  id          String   @id @db.Uuid
+  source      String
+  branchId    String   @map("branch_id") @db.Uuid
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdById String   @map("created_by") @db.Uuid
+  createdBy   User     @relation("ImportRunCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  counts      Json
+  cleanup     Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("import_runs")
 }

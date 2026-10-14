@@ -1721,7 +1721,8 @@
       "workout_plan": "Giáo án",
       "workout_log": "Nhật ký buổi tập",
       "workout_escalation": "Escalation buổi tập",
-      "contract_change_voucher": "Phiếu biến động"
+      "contract_change_voucher": "Phiếu biến động",
+      "import_run": "Lần nhập dữ liệu"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1768,7 +1769,8 @@
       "transferred_by_voucher": "Chuyển nhượng (phiếu biến động)",
       "branch_transferred_by_voucher": "Chuyển chi nhánh (phiếu biến động)",
       "created_by_transfer": "Tạo từ chuyển nhượng",
-      "cancelled_by_voucher": "Hủy hợp đồng (phiếu biến động)"
+      "cancelled_by_voucher": "Hủy hợp đồng (phiếu biến động)",
+      "imported": "Nhập từ hệ thống cũ"
     },
     "fields": {
       "at": "Thời điểm",
