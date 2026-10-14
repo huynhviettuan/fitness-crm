@@ -11115,6 +11115,366 @@
         "x-permission": "payout.view"
       }
     },
+    "/api/v1/notification-preferences": {
+      "get": {
+        "operationId": "NotificationPreferencesController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      },
+      "put": {
+        "operationId": "NotificationPreferencesController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "maxItems": 7,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "taskDueSoon",
+                            "taskOverdue",
+                            "approvalSubmitted",
+                            "approvalOverdue",
+                            "leadAssigned",
+                            "leadReclaimed",
+                            "sessionHanging"
+                          ]
+                        },
+                        "email": {
+                          "type": "boolean"
+                        },
+                        "push": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "email",
+                        "push"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/notification-settings": {
+      "get": {
+        "operationId": "NotificationSettingsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "config.manage"
+      },
+      "put": {
+        "operationId": "NotificationSettingsController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "maxItems": 7,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "taskDueSoon",
+                            "taskOverdue",
+                            "approvalSubmitted",
+                            "approvalOverdue",
+                            "leadAssigned",
+                            "leadReclaimed",
+                            "sessionHanging"
+                          ]
+                        },
+                        "emailMandatory": {
+                          "type": "boolean"
+                        },
+                        "pushMandatory": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "emailMandatory",
+                        "pushMandatory"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "items"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "config.manage"
+      }
+    },
+    "/api/v1/push/key": {
+      "get": {
+        "operationId": "PushController_key",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushKey"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/push/subscription": {
+      "put": {
+        "operationId": "PushController_subscribe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "minLength": 16,
+                        "maxLength": 256
+                      },
+                      "auth": {
+                        "type": "string",
+                        "minLength": 8,
+                        "maxLength": 128
+                      }
+                    },
+                    "required": [
+                      "p256dh",
+                      "auth"
+                    ]
+                  }
+                },
+                "required": [
+                  "endpoint",
+                  "keys"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The device is remembered"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
+    "/api/v1/push/unsubscribe": {
+      "post": {
+        "operationId": "PushController_unsubscribe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "endpoint"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The device is forgotten"
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "x-permission": "authenticated"
+      }
+    },
     "/api/v1/email-templates": {
       "get": {
         "operationId": "EmailTemplatesController_list",
@@ -11227,6 +11587,9 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 5000
+                  },
+                  "enabled": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -22920,6 +23283,107 @@
           "lines"
         ]
       },
+      "NotificationPreferences": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "taskDueSoon",
+                    "taskOverdue",
+                    "approvalSubmitted",
+                    "approvalOverdue",
+                    "leadAssigned",
+                    "leadReclaimed",
+                    "sessionHanging"
+                  ]
+                },
+                "email": {
+                  "type": "boolean"
+                },
+                "push": {
+                  "type": "boolean"
+                },
+                "emailMandatory": {
+                  "type": "boolean"
+                },
+                "pushMandatory": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "email",
+                "push",
+                "emailMandatory",
+                "pushMandatory"
+              ]
+            }
+          },
+          "pushDevices": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "pushDevices"
+        ]
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "taskDueSoon",
+                    "taskOverdue",
+                    "approvalSubmitted",
+                    "approvalOverdue",
+                    "leadAssigned",
+                    "leadReclaimed",
+                    "sessionHanging"
+                  ]
+                },
+                "emailMandatory": {
+                  "type": "boolean"
+                },
+                "pushMandatory": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "emailMandatory",
+                "pushMandatory"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PushKey": {
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "publicKey"
+        ]
+      },
       "EmailTemplateList": {
         "type": "object",
         "properties": {
@@ -22987,6 +23451,9 @@
           "bodyEn": {
             "type": "string"
           },
+          "enabled": {
+            "type": "boolean"
+          },
           "updatedAt": {
             "nullable": true,
             "type": "string",
@@ -23007,6 +23474,7 @@
           "bodyVi",
           "subjectEn",
           "bodyEn",
+          "enabled",
           "updatedAt",
           "updatedBy"
         ]

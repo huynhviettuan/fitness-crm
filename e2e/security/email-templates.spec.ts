@@ -52,10 +52,13 @@ test.describe("A03 and A10 the inputs", () => {
       // A placeholder the event does not offer, and a body without the reason it must give.
       { ...base, bodyVi: "{remaining} {reason} {className}" },
       { ...base, bodyEn: "Left: {remaining}" },
+      // A mandatory email cannot be switched off, and the switch is a boolean.
+      { ...base, enabled: false },
+      { ...base, enabled: "no" },
     ]) {
       expect((await put(data)).status(), JSON.stringify(data).slice(0, 60)).toBe(400);
     }
-    expect((await put(base, "contract.activated")).status()).toBe(404);
+    expect((await put(base, "contract.upgraded")).status()).toBe(404);
     expect((await admin.get("/api/v1/email-templates/nope")).status()).toBe(404);
     expect((await admin.get("/api/v1/email-templates/..%2Fadmin")).status()).toBe(404);
   });

@@ -78,7 +78,9 @@ export async function queueSessionEmail(tx: Db, cause: Cause): Promise<void> {
     remaining,
     reason: cause.reason ? (cause.reason.note ?? (locale === "vi" ? cause.reason.labelVi : cause.reason.labelEn)) : "",
   };
-  const { subject, body } = await renderEmail(tx, cause.event, locale, values);
+  const rendered = await renderEmail(tx, cause.event, locale, values);
+  if (!rendered) return;
+  const { subject, body } = rendered;
   await queueEmail(tx, {
     personId: cause.customerId,
     event: cause.event,

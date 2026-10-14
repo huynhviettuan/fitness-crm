@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FieldGroup } from "@/components/ui/field";
-import { TextField, applyFieldErrors } from "@/components/form-fields";
+import { SwitchField, TextField, applyFieldErrors } from "@/components/form-fields";
 import { notify } from "@/components/notify";
 import { useErrorMessage } from "@/components/use-error-message";
 import {
@@ -21,7 +21,7 @@ import {
 } from "@flow/shared/mail";
 import { updateEmailTemplateAction } from "../actions";
 
-type Values = { subjectVi: string; bodyVi: string; subjectEn: string; bodyEn: string };
+type Values = { subjectVi: string; bodyVi: string; subjectEn: string; bodyEn: string; enabled: boolean };
 
 const LANGUAGES = [
   { locale: "vi", subject: "subjectVi", body: "bodyVi" },
@@ -43,13 +43,18 @@ export function TemplateEditor({ template }: { template: EmailTemplateView }) {
       bodyVi: template.bodyVi,
       subjectEn: template.subjectEn,
       bodyEn: template.bodyEn,
+      enabled: template.enabled,
     },
   });
   const values = useWatch({ control: form.control });
 
   const onSubmit = form.handleSubmit((input) =>
     startTransition(async () => {
-      const result = await updateEmailTemplateAction(template.event, input);
+      // A mandatory email has no switch (D-036).
+      const result = await updateEmailTemplateAction(
+        template.event,
+        template.mandatory ? { ...input, enabled: undefined } : input,
+      );
       if (!result.ok) {
         applyFieldErrors(form.setError, result.fieldErrors);
         notify.error(errorMessage(result.code));
@@ -62,6 +67,15 @@ export function TemplateEditor({ template }: { template: EmailTemplateView }) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="max-w-4xl space-y-6">
+      {!template.mandatory && (
+        <Card role="region" aria-label={t("enabled")}>
+          <CardContent>
+            <FieldGroup>
+              <SwitchField control={form.control} name="enabled" label={t("enabled")} description={t("enabledHint")} />
+            </FieldGroup>
+          </CardContent>
+        </Card>
+      )}
       <Card role="region" aria-label={t("placeholders")}>
         <CardHeader>
           <CardTitle>{t("placeholders")}</CardTitle>

@@ -11,6 +11,7 @@ import type { Actor } from "../auth/session.js";
 import { prisma, type Db } from "../db/prisma.js";
 import { AppError } from "../errors/app-error.js";
 import { parseInput } from "../validation/parse.js";
+import { scheduleDeliveries } from "./delivery.service.js";
 
 // In-app notifications (FR-PLT-009). Written in the transaction of what caused them, so
 // nobody is told about a change that was rolled back. Each user sees only their own.
@@ -25,14 +26,17 @@ export async function notify(
 ): Promise<void> {
   const ids = [...new Set([...userIds].filter((id): id is string => Boolean(id)))];
   if (ids.length === 0) return;
-  await db.notification.createMany({
+  const created = await db.notification.createManyAndReturn({
     data: ids.map((userId) => ({
       userId,
       kind: notification.kind,
       params: notification.params,
       link: notification.link,
     })),
+    select: { id: true, userId: true, kind: true },
   });
+  // The important ones also go out by email and to the phone, as each employee chose (D-053, M6.4).
+  await scheduleDeliveries(db, created);
 }
 
 /** Active users who work in the branch: every-branch users, and those granted it (D-014). */

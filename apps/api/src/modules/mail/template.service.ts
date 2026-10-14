@@ -30,6 +30,16 @@ function textsOf(record: repo.TemplateRecord | null, event: EmailEvent): EmailTe
     : EMAIL_TEMPLATE_DEFAULTS[event];
 }
 
+/** Whether the event goes out: a mandatory one always does, an optional one when Admin has it on (D-036). */
+function isSent(event: EmailEvent, record: repo.TemplateRecord | null): boolean {
+  return EMAIL_EVENTS[event].mandatory || (record?.enabled ?? true);
+}
+
+/** Whether the event goes out now: a mandatory one always, an optional one when Admin has it on (D-036). */
+export async function isEventSent(db: Db, event: EmailEvent): Promise<boolean> {
+  return isSent(event, await repo.findTemplate(db, event));
+}
+
 function toView(event: EmailEvent, record: repo.TemplateRecord | null): EmailTemplateView {
   const definition = EMAIL_EVENTS[event];
   const required: readonly string[] = definition.required;
@@ -45,6 +55,7 @@ function toView(event: EmailEvent, record: repo.TemplateRecord | null): EmailTem
       required: required.includes(name),
     })),
     ...textsOf(record, event),
+    enabled: isSent(event, record),
     updatedAt: record?.updatedAt?.toISOString() ?? null,
     updatedBy: record?.updatedBy?.name ?? null,
   };
@@ -77,32 +88,40 @@ export async function updateTemplate(actor: Actor, event: string, rawInput: unkn
   assertCan(actor, "mail.template");
   const key = eventOf(event);
   const data = parseInput(emailTemplateInputSchema, rawInput);
-  const problems = templateProblems(key, data);
+  const { enabled, ...texts } = data;
+  const problems: Record<string, string[]> = { ...templateProblems(key, texts) };
+  // A mandatory email cannot be switched off (D-036).
+  if (enabled === false && EMAIL_EVENTS[key].mandatory) problems.enabled = ["mandatoryEvent"];
   if (Object.keys(problems).length > 0) throw new AppError("VALIDATION_FAILED", { fieldErrors: problems });
   return prisma.$transaction(async (tx) => {
     const before = await repo.findTemplate(tx, key);
-    const saved = await repo.saveTemplate(tx, key, data, actor.id);
+    const saved = await repo.saveTemplate(tx, key, { ...texts, enabled }, actor.id);
     await recordAudit(tx, {
       actorUserId: actor.id,
       entityType: "email_template",
       entityId: saved.id,
       action: "email_template.updated",
-      before: textsOf(before, key),
-      after: textsOf(saved, key),
+      before: { ...textsOf(before, key), enabled: isSent(key, before) },
+      after: { ...textsOf(saved, key), enabled: isSent(key, saved) },
       context: { event: key },
     });
     return toView(key, saved);
   });
 }
 
-/** The subject and body of an event for a customer, with their values filled in; the default text if no row is left. */
+/**
+ * The subject and body of an event for a customer, with their values filled in; the default text if no row is left.
+ * Null when Admin has switched an optional event off: nothing is sent (D-036).
+ */
 export async function renderEmail(
   db: Db,
   event: EmailEvent,
   locale: EmailLocale,
   values: EmailValues,
-): Promise<{ subject: string; body: string }> {
-  const texts = textsOf(await repo.findTemplate(db, event), event);
+): Promise<{ subject: string; body: string } | null> {
+  const record = await repo.findTemplate(db, event);
+  if (!isSent(event, record)) return null;
+  const texts = textsOf(record, event);
   return locale === "vi"
     ? { subject: renderTemplate(texts.subjectVi, values), body: renderTemplate(texts.bodyVi, values) }
     : { subject: renderTemplate(texts.subjectEn, values), body: renderTemplate(texts.bodyEn, values) };

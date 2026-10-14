@@ -94,11 +94,50 @@ test.describe("email templates as admin", () => {
     await page.goto("/admin/email-templates");
 
     const list = page.getByRole("list", { name: e.title });
-    await expect(list.getByRole("listitem")).toHaveCount(5);
+    await expect(list.getByRole("listitem")).toHaveCount(13);
     await expect(list.getByRole("listitem").filter({ hasText: e.mandatory })).toHaveCount(5);
     await expect(list.getByRole("listitem").filter({ hasText: "Hoàn lại buổi tập" })).toContainText(
       /Nội dung gốc|Sửa bởi/,
     );
+  });
+});
+
+test.describe("the switch of an optional email", () => {
+  test.use(signedInAs("ADMIN"));
+
+  const OPTIONAL = "contract.cancelled";
+  let original: (Template & { enabled: boolean }) | null = null;
+
+  test.beforeEach(async ({ apiAs }) => {
+    original = (await (await (await apiAs("ADMIN")).get(`/api/v1/email-templates/${OPTIONAL}`)).json()) as Template & {
+      enabled: boolean;
+    };
+  });
+
+  test.afterEach(async ({ apiAs }) => {
+    if (!original) return;
+    const { subjectVi, bodyVi, subjectEn, bodyEn, enabled } = original;
+    await (
+      await apiAs("ADMIN")
+    ).put(`/api/v1/email-templates/${OPTIONAL}`, {
+      data: { subjectVi, bodyVi, subjectEn, bodyEn, enabled },
+    });
+  });
+
+  test("@smoke E2E-114: admin switches an optional email off and the list says so; a mandatory one has no switch", async ({
+    page,
+  }) => {
+    await page.goto(`/admin/email-templates/${OPTIONAL}`);
+    await page.getByRole("switch", { name: e.enabled }).click();
+    await page.getByRole("button", { name: labels.common.save, exact: true }).click();
+    await expect(page.getByRole("region", { name: labels.common.notifications }).getByText(e.saved)).toBeVisible();
+
+    await page.goto("/admin/email-templates");
+    const item = page.getByRole("list", { name: e.title }).getByRole("listitem").filter({ hasText: "Hợp đồng đã hủy" });
+    await expect(item).toContainText(e.off);
+
+    await page.goto(`/admin/email-templates/${EVENT}`);
+    await expect(page.getByRole("switch", { name: e.enabled })).toHaveCount(0);
   });
 });
 

@@ -1,6 +1,8 @@
 // Direct database access for E2E setup and teardown only. Tests never assert on it;
 // they assert on what the UI shows.
 import { randomUUID } from "node:crypto";
+import { EMAIL_TEMPLATE_DEFAULTS } from "@flow/shared/mail";
+import { EXTERNAL_NOTIFICATION_KINDS } from "@flow/shared/notifications";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaClient } from "../../apps/api/src/generated/prisma/client";
@@ -43,6 +45,23 @@ export async function resetAndSeedUsers(prisma: PrismaClient): Promise<void> {
     `TRUNCATE TABLE "services", "promotions", "notifications", "email_messages", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
+  // The truncate above also clears the tables that point at users: the customer email templates (M6.2, M6.3) and the
+  // mandatory marks of staff notifications (M6.4) go back to what the migrations start with.
+  for (const [event, texts] of Object.entries(EMAIL_TEMPLATE_DEFAULTS)) {
+    await prisma.emailTemplate.upsert({
+      where: { event },
+      update: { ...texts, enabled: true, updatedById: null, updatedAt: null },
+      create: { event, ...texts },
+    });
+  }
+  for (const kind of EXTERNAL_NOTIFICATION_KINDS) {
+    const emailMandatory = ["taskOverdue", "approvalOverdue", "sessionHanging"].includes(kind);
+    await prisma.staffNotificationSetting.upsert({
+      where: { kind },
+      update: { emailMandatory, pushMandatory: false, updatedById: null, updatedAt: null },
+      create: { kind, emailMandatory, pushMandatory: false },
+    });
+  }
   // Checklist versions the specs saved; version 1 is the migration's (D-020).
   await prisma.consultingStepTemplate.deleteMany({ where: { checklist: { version: { gt: 1 } } } });
   await prisma.consultingChecklist.deleteMany({ where: { version: { gt: 1 } } });

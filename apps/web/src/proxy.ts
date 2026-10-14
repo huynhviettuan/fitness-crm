@@ -42,6 +42,8 @@ function contentSecurityPolicy(nonce: string, https: boolean): string {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    // The one service worker is this site's own (public/sw.js, M6.4); without this the nonce rules would apply to it.
+    "worker-src 'self'",
     "frame-ancestors 'none'",
     ...(https ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
@@ -50,7 +52,7 @@ function contentSecurityPolicy(nonce: string, https: boolean): string {
 export const config = {
   matcher: [
     {
-      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      source: "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/).*)",
       // Prefetches render no HTML, so they need neither a nonce nor a redirect.
       missing: [
         { type: "header", key: "next-router-prefetch" },

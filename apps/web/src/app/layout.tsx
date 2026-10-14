@@ -17,7 +17,12 @@ export const instant = false;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
-  return { title: { default: t("name"), template: `%s · ${t("name")}` } };
+  return {
+    title: { default: t("name"), template: `%s · ${t("name")}` },
+    // The home-screen app on an iPhone (M6.4).
+    appleWebApp: { capable: true, title: "Flow CRM", statusBarStyle: "default" },
+    icons: { apple: "/icons/apple-touch-icon.png" },
+  };
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

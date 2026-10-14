@@ -53,7 +53,13 @@ export default async function EmailTemplatesPage() {
                     )}
                   </p>
                 </div>
-                {template.mandatory && <Badge variant="info">{t("mandatory")}</Badge>}
+                {template.mandatory ? (
+                  <Badge variant="info">{t("mandatory")}</Badge>
+                ) : (
+                  <Badge variant={template.enabled ? "success" : "muted"}>
+                    {template.enabled ? t("on") : t("off")}
+                  </Badge>
+                )}
               </CardContent>
             </Card>
           </li>

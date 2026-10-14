@@ -377,13 +377,13 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 - **Tests:** E2E-109's email part; integration for one email per change in the right language.
 - **Depends on:** M6.1.
 
-### M6.3 Optional events
+### M6.3 Optional events (done 2026-10-23: A-181, A-182, OQ-056)
 
 - **Builds:** the events of D-059, each with its template and an admin on/off switch: a confirmed session (Đã tập, Khách không đến, Burn Show) with sessions taken and left, a refunded session, contract activated, receipt, renewal, upgrade, hold, transfer, cancellation, deactivation and reactivation with the new end date, and a contract expiring or running out of sessions (D-012 thresholds). Each event is attached when its feature is built (M4, M5, M8); this slice is closed when the last one is.
 - **Source:** brief §8.3; D-012.
 - **Depends on:** M6.2.
 
-### M6.4 Staff notifications (email and phone)
+### M6.4 Staff notifications (email and phone) (done 2026-10-24: A-183 to A-187, doc 29)
 
 - **Builds:**
   - **Email to staff** for the important events: a task near its reminder points, an overdue task, an approval waiting, an escalation from a workout session, a lead newly assigned or moved (D-053).

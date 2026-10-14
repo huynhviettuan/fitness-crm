@@ -107,7 +107,7 @@ export function findTemplate(db: Db, event: string): Promise<TemplateRecord | nu
 export function saveTemplate(
   db: Db,
   event: string,
-  data: { subjectVi: string; bodyVi: string; subjectEn: string; bodyEn: string },
+  data: { subjectVi: string; bodyVi: string; subjectEn: string; bodyEn: string; enabled?: boolean },
   by: string,
 ): Promise<TemplateRecord> {
   return db.emailTemplate.upsert({

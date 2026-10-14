@@ -1,3 +1,4 @@
+import { queueContractEmail } from "./contract-email.js";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { customerRef } from "../customers/person.service.js";
@@ -323,6 +324,13 @@ export async function decideContract(tx: Db, decider: Actor, id: string, to: "AP
     after: { status: "ACTIVE" },
   });
   await markContracted(tx, decider, contract.customerId, now);
+  // D-059: the customer is told the contract is active (a renewal has its own words), if Admin has it on.
+  await queueContractEmail(tx, {
+    event: contract.contractType === "RENEW" ? "contract.renewed" : "contract.activated",
+    causeId: id,
+    contractId: id,
+    by: decider.id,
+  });
 }
 
 /** A-123: the lead status of a customer with an approved contract is "Đã ký hợp đồng" (CONTRACTED). */
@@ -621,6 +629,7 @@ export async function cancelContract(actor: Actor, id: string): Promise<Contract
       after: { status: "CANCELLED" },
       context: { cancelledBookings: cancelledBookingIds.length },
     });
+    await queueContractEmail(tx, { event: "contract.cancelled", causeId: id, contractId: id, by: actor.id });
     return presentOne(tx, await getOrThrow(tx, actor, id), today, actor);
   }, LOCKING_TRANSACTION);
 }

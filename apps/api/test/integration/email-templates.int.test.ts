@@ -206,7 +206,7 @@ describe("the templates admin edits (FR-MAIL-001)", () => {
     await expect(updateTemplate(admin, "session.refunded", { ...base, bodyVi: "" })).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
     });
-    await expect(updateTemplate(admin, "contract.activated", base)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(updateTemplate(admin, "contract.upgraded", base)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(getTemplate(admin, "nope")).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect((await getTemplate(admin, "session.refunded")).updatedAt).toBeNull();
   });

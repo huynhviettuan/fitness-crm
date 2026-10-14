@@ -5,9 +5,11 @@ import { remindTasks } from "./modules/tasks/task.service.js";
 import { lockOverdueSteps, remindDueSteps } from "./modules/leads/checklist.service.js";
 import { reclaimLeads } from "./modules/leads/lead-reclaim.service.js";
 import { sendDueEmails } from "./modules/mail/mail.service.js";
+import { sendDueDeliveries } from "./platform/notifications/delivery.service.js";
 import { remindLongFreezes } from "./modules/contracts/contract-freeze.service.js";
 import { escalateHangingSessions } from "./modules/checkin/checkin.service.js";
 import { generateAllSessions } from "./modules/classes/class.service.js";
+import { emailContractNotices } from "./modules/contracts/contract-email.js";
 
 // Background work (T-045, T-059): pg-boss queues in PostgreSQL, no Redis. The same code
 // runs inside the API (RUN_JOBS=true, the default for development) or in the worker
@@ -33,6 +35,8 @@ export async function sendReminders(now: Date = new Date()): Promise<void> {
   await escalateHangingSessions(now);
   // Class sessions are made ahead, every hour on the hour (A-161).
   if (now.getMinutes() === 0) await generateAllSessions();
+  // Customers whose contract is ending or running out of sessions are told, once each, if Admin has it on (M6.3).
+  if (now.getMinutes() === 0) await emailContractNotices(now);
 }
 
 export type Jobs = { stop(): Promise<void> };
@@ -61,6 +65,8 @@ export async function startJobs(): Promise<Jobs> {
   await boss.schedule(MAIL, "* * * * *", null, { tz: env.GYM_TIMEZONE });
   await boss.work(MAIL, async () => {
     await sendDueEmails();
+    // Staff get the important notifications by email and on their phone too (D-053, M6.4).
+    await sendDueDeliveries();
   });
   if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
     console.warn(

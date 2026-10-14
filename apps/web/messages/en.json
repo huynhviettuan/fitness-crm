@@ -53,7 +53,8 @@
     "ptRevenueReport": "PT revenue",
     "bookingReport": "Booking report",
     "ptPayouts": "PT payouts",
-    "emailTemplates": "Email templates"
+    "emailTemplates": "Email templates",
+    "notificationSettings": "Staff notifications"
   },
   "status": {
     "customer": {
@@ -185,7 +186,8 @@
     "label": "Account",
     "language": "Language",
     "vi": "Tiếng Việt",
-    "en": "English"
+    "en": "English",
+    "notifications": "My notifications"
   },
   "search": {
     "trigger": "Search customers",
@@ -670,7 +672,10 @@
     "belowEnrolled": "The capacity is below the customers already enrolled in an upcoming session.",
     "percentOutOfRange": "A rate from 0 to 100.",
     "unknownPlaceholder": "A placeholder is used that this email does not offer.",
-    "missingPlaceholder": "What the customer must be told is missing (see the placeholders marked required)."
+    "missingPlaceholder": "What the customer must be told is missing (see the placeholders marked required).",
+    "mandatoryEvent": "A mandatory email cannot be switched off.",
+    "tooMany": "Too many items.",
+    "invalidUrl": "Not a valid address."
   },
   "contracts": {
     "title": "Contracts",
@@ -2847,6 +2852,53 @@
     "body": "Body",
     "preview": "Preview",
     "previewOf": "Preview ({language})",
-    "saved": "Email template saved"
+    "saved": "Email template saved",
+    "enabled": "Send this email to customers",
+    "enabledHint": "Off, customers no longer get it; the words are kept. Mandatory emails have no switch.",
+    "on": "On",
+    "off": "Off"
+  },
+  "staffNotifications": {
+    "title": "Email and phone notifications",
+    "description": "Choose which important notifications reach you by email and on your phone, as well as in the app. A type Admin made mandatory is always sent.",
+    "choices": "Types of notification",
+    "choicesHint": "Tasks due soon or overdue, requests waiting for approval, leads assigned or moved, and sessions without a full check-in. Both are on by default.",
+    "fields": {
+      "kind": "Type",
+      "email": "Email",
+      "push": "Phone"
+    },
+    "mandatory": "Mandatory",
+    "saved": "Notification choices saved",
+    "device": {
+      "title": "This device",
+      "description": "Get push notifications on this phone or browser while you are signed in.",
+      "state": {
+        "checking": "Checking this device…",
+        "notSetUp": "Push notifications are not set up for this system.",
+        "unsupported": "This browser does not support push notifications.",
+        "needsInstall": "On an iPhone, push notifications work only for an app added to the Home Screen.",
+        "denied": "You blocked notifications for this site. Allow them again in the browser's settings.",
+        "off": "This device does not get push notifications yet.",
+        "on": "This device gets push notifications."
+      },
+      "devices": "Your account has {count} devices that get push notifications.",
+      "turnOn": "Turn on notifications on this device",
+      "turnOff": "Turn off notifications on this device",
+      "turnedOn": "Notifications are on for this device",
+      "turnedOff": "Notifications are off for this device",
+      "failed": "That did not work. Please try again.",
+      "installHint": "Open this page in Safari, tap Share, then Add to Home Screen. Then open the app from its new icon and turn notifications on here."
+    }
+  },
+  "notificationSettings": {
+    "title": "Staff notifications",
+    "description": "Mark which notifications must go by email or to the phone even when an employee turned them off. A push reaches only employees who turned it on on a phone.",
+    "fields": {
+      "kind": "Type",
+      "emailMandatory": "Email mandatory",
+      "pushMandatory": "Phone mandatory"
+    },
+    "saved": "Notification settings saved"
   }
 }

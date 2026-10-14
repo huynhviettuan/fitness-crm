@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-24 — M6.3 and M6.4: optional customer emails and staff notifications
+
+- **Optional customer emails** (A-181, A-182): activated, renewal, receipt, hold, active again, cancelled, ending soon, running out; each with a template and an on/off switch.
+- **Staff notifications** (A-183 to A-187): the important ones also by email and by push to the phone; each employee's choices, Admin's mandatory marks; the home-screen app and Web Push. New doc 29 (proposal and limits on iPhone and Android).
+- **Open**: OQ-056. Docs 04, 07, 09, 13, 15, 16, 18, 24, 28, 29; E2E-114, E2E-115.
+
 ## 2026-10-22 — M6.2: email templates and the session emails
 
 - **Templates** (A-177): the wording of each customer email in Vietnamese and English, edited by Admin with placeholders and a preview; mandatory content is enforced.

@@ -129,7 +129,9 @@ test.describe("A01 scope and personal data", () => {
     const team = (await (await (await apiAs("FITNESS_MANAGER")).get("/api/v1/reports/consulting")).json()) as Report;
 
     expect(own.items.every((row) => row.consultant?.id === consultantId)).toBe(true);
-    expect(own.team.leads).toBeLessThanOrEqual(team.team.leads);
+    // Other specs add and move leads while this runs, so the two totals are not compared; the manager's report never has
+    // fewer rows than the consultant's, which holds only their own.
+    expect(own.items.length).toBeLessThanOrEqual(team.items.length);
     expect(own.team.leads).toBe(own.items.reduce((sum, row) => sum + row.leads, 0));
   });
 

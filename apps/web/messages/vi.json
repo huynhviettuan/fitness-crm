@@ -53,7 +53,8 @@
     "ptRevenueReport": "Doanh thu PT",
     "bookingReport": "Báo cáo booking",
     "ptPayouts": "Chi trả PT",
-    "emailTemplates": "Mẫu email"
+    "emailTemplates": "Mẫu email",
+    "notificationSettings": "Thông báo cho nhân viên"
   },
   "status": {
     "customer": {
@@ -185,7 +186,8 @@
     "label": "Tài khoản",
     "language": "Ngôn ngữ",
     "vi": "Tiếng Việt",
-    "en": "English"
+    "en": "English",
+    "notifications": "Thông báo của tôi"
   },
   "search": {
     "trigger": "Tìm khách hàng",
@@ -670,7 +672,10 @@
     "belowEnrolled": "Sức chứa thấp hơn số khách đã đăng ký ở một buổi sắp tới.",
     "percentOutOfRange": "Tỷ lệ từ 0 đến 100.",
     "unknownPlaceholder": "Có trường thay thế không dùng được cho email này.",
-    "missingPlaceholder": "Thiếu thông tin bắt buộc khách phải biết (xem các trường được đánh dấu bắt buộc)."
+    "missingPlaceholder": "Thiếu thông tin bắt buộc khách phải biết (xem các trường được đánh dấu bắt buộc).",
+    "mandatoryEvent": "Email bắt buộc không tắt được.",
+    "tooMany": "Có quá nhiều mục.",
+    "invalidUrl": "Địa chỉ không hợp lệ."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -2847,6 +2852,53 @@
     "body": "Nội dung",
     "preview": "Xem trước",
     "previewOf": "Xem trước ({language})",
-    "saved": "Đã lưu mẫu email"
+    "saved": "Đã lưu mẫu email",
+    "enabled": "Gửi email này cho khách",
+    "enabledHint": "Tắt thì khách không nhận email này nữa; nội dung được giữ lại. Email bắt buộc không có công tắc.",
+    "on": "Đang bật",
+    "off": "Đang tắt"
+  },
+  "staffNotifications": {
+    "title": "Thông báo qua email và điện thoại",
+    "description": "Chọn thông báo quan trọng nào đến bạn qua email và qua điện thoại, ngoài thông báo trong ứng dụng. Loại bắt buộc do quản trị viên đặt vẫn luôn được gửi.",
+    "choices": "Loại thông báo",
+    "choicesHint": "Việc sắp đến hạn hay quá hạn, yêu cầu chờ duyệt, lead được giao hoặc chuyển người, buổi tập thiếu check-in. Mặc định bật cả hai.",
+    "fields": {
+      "kind": "Loại",
+      "email": "Email",
+      "push": "Điện thoại"
+    },
+    "mandatory": "Bắt buộc",
+    "saved": "Đã lưu lựa chọn thông báo",
+    "device": {
+      "title": "Thiết bị này",
+      "description": "Nhận thông báo đẩy trên điện thoại hoặc trình duyệt này khi bạn đã đăng nhập.",
+      "state": {
+        "checking": "Đang kiểm tra thiết bị…",
+        "notSetUp": "Thông báo đẩy chưa được cấu hình cho hệ thống này.",
+        "unsupported": "Trình duyệt này không hỗ trợ thông báo đẩy.",
+        "needsInstall": "Trên iPhone, thông báo đẩy chỉ hoạt động khi ứng dụng được thêm vào Màn hình chính.",
+        "denied": "Bạn đã chặn thông báo cho trang này. Hãy cho phép lại trong cài đặt của trình duyệt.",
+        "off": "Thiết bị này chưa nhận thông báo đẩy.",
+        "on": "Thiết bị này đang nhận thông báo đẩy."
+      },
+      "devices": "Tài khoản của bạn có {count} thiết bị nhận thông báo đẩy.",
+      "turnOn": "Bật thông báo trên thiết bị này",
+      "turnOff": "Tắt thông báo trên thiết bị này",
+      "turnedOn": "Đã bật thông báo trên thiết bị này",
+      "turnedOff": "Đã tắt thông báo trên thiết bị này",
+      "failed": "Chưa thực hiện được. Hãy thử lại.",
+      "installHint": "Mở trang này trong Safari, chọn Chia sẻ, rồi Thêm vào Màn hình chính. Sau đó mở ứng dụng từ biểu tượng mới và bật thông báo tại đây."
+    }
+  },
+  "notificationSettings": {
+    "title": "Thông báo cho nhân viên",
+    "description": "Đánh dấu loại thông báo nào bắt buộc gửi qua email hoặc điện thoại, kể cả khi nhân viên đã tắt. Thông báo đẩy chỉ đến nhân viên đã bật trên điện thoại.",
+    "fields": {
+      "kind": "Loại",
+      "emailMandatory": "Email bắt buộc",
+      "pushMandatory": "Điện thoại bắt buộc"
+    },
+    "saved": "Đã lưu thiết lập thông báo"
   }
 }

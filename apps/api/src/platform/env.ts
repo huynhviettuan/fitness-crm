@@ -49,12 +49,25 @@ const envSchema = z
     EMAIL_PROVIDER: z.enum(["log", "resend"]).default("log"),
     EMAIL_FROM: z.string().min(3).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
+    // D-053, D-056: how staff get a push on their phone. "log" only records that one would go out (development, tests);
+    // "webpush" sends through the Web Push protocol (the browsers' own push services) signed with the VAPID key pair.
+    PUSH_PROVIDER: z.enum(["log", "webpush"]).default("log"),
+    VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+    VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+    // A mailto: or https: address the push services can reach the operator at.
+    VAPID_SUBJECT: z.string().min(1).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.FILE_STORAGE === "r2") {
       for (const key of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"] as const) {
         if (!value[key])
           ctx.addIssue({ code: "custom", path: [key], message: `${key} is required with FILE_STORAGE=r2` });
+      }
+    }
+    if (value.PUSH_PROVIDER === "webpush") {
+      for (const key of ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"] as const) {
+        if (!value[key])
+          ctx.addIssue({ code: "custom", path: [key], message: `${key} is required with PUSH_PROVIDER=webpush` });
       }
     }
     if (value.EMAIL_PROVIDER !== "resend") return;

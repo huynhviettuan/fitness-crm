@@ -19,6 +19,19 @@ export const EMAIL_PLACEHOLDERS = {
   used: { vi: "Số buổi đã dùng", en: "Sessions used", sample: { vi: "10", en: "10" } },
   remaining: { vi: "Số buổi còn lại", en: "Sessions left", sample: { vi: "14", en: "14" } },
   reason: { vi: "Lý do", en: "Reason", sample: { vi: "Ghi nhầm buổi tập", en: "Recorded by mistake" } },
+  startDate: { vi: "Ngày bắt đầu hợp đồng", en: "Contract start date", sample: { vi: "01/10/2026", en: "01/10/2026" } },
+  endDate: { vi: "Ngày hết hạn hợp đồng", en: "Contract end date", sample: { vi: "01/10/2027", en: "01/10/2027" } },
+  totalSessions: {
+    vi: "Tổng số buổi của hợp đồng",
+    en: "Total sessions of the contract",
+    sample: { vi: "24", en: "24" },
+  },
+  amount: { vi: "Số tiền", en: "Amount", sample: { vi: "3.000.000 ₫", en: "VND 3,000,000" } },
+  receiptNumber: { vi: "Số phiếu thu", en: "Receipt number", sample: { vi: "PT000012", en: "PT000012" } },
+  paidTotal: { vi: "Tổng đã thanh toán", en: "Total paid", sample: { vi: "3.000.000 ₫", en: "VND 3,000,000" } },
+  debt: { vi: "Còn nợ", en: "Still owed", sample: { vi: "9.000.000 ₫", en: "VND 9,000,000" } },
+  addedDays: { vi: "Số ngày được cộng thêm", en: "Days added", sample: { vi: "10", en: "10" } },
+  daysLeft: { vi: "Số ngày còn lại", en: "Days left", sample: { vi: "14", en: "14" } },
 } as const;
 export type EmailPlaceholder = keyof typeof EMAIL_PLACEHOLDERS;
 
@@ -32,6 +45,16 @@ type EventDefinition = {
   /** The placeholders every text must contain: what the customer must be told (D-036). */
   required: readonly EmailPlaceholder[];
 };
+
+const CONTRACT = [
+  "customerName",
+  "contractCode",
+  "packageName",
+  "startDate",
+  "endDate",
+  "totalSessions",
+  "remaining",
+] as const;
 
 const SESSION = [
   "customerName",
@@ -91,6 +114,73 @@ export const EMAIL_EVENTS = {
     ],
     required: ["used", "remaining"],
   },
+  // The optional events of D-059 (M6.3): Admin switches each on or off. Upgrade and transfer come with the change
+  // vouchers (M8); a hold is the deactivation of a contract (D-023).
+  "contract.activated": {
+    vi: "Hợp đồng đã được kích hoạt",
+    en: "Contract activated",
+    mandatory: false,
+    placeholders: [...CONTRACT, "amount", "paidTotal", "debt"],
+    required: ["contractCode"],
+  },
+  "contract.renewed": {
+    vi: "Hợp đồng tái ký đã được kích hoạt",
+    en: "Renewal contract activated",
+    mandatory: false,
+    placeholders: [...CONTRACT, "amount", "paidTotal", "debt"],
+    required: ["contractCode"],
+  },
+  "payment.received": {
+    vi: "Đã nhận thanh toán (phiếu thu)",
+    en: "Payment received (receipt)",
+    mandatory: false,
+    placeholders: [
+      "customerName",
+      "contractCode",
+      "packageName",
+      "day",
+      "receiptNumber",
+      "amount",
+      "paidTotal",
+      "debt",
+    ],
+    required: ["receiptNumber", "amount"],
+  },
+  "contract.deactivated": {
+    vi: "Hợp đồng được tạm ngưng (bảo lưu)",
+    en: "Contract put on hold",
+    mandatory: false,
+    placeholders: [...CONTRACT, "day", "reason"],
+    required: [],
+  },
+  "contract.reactivated": {
+    vi: "Hợp đồng hoạt động lại, ngày hết hạn mới",
+    en: "Contract active again, new end date",
+    mandatory: false,
+    placeholders: [...CONTRACT, "day", "reason", "addedDays"],
+    required: ["endDate"],
+  },
+  "contract.cancelled": {
+    vi: "Hợp đồng đã hủy",
+    en: "Contract cancelled",
+    mandatory: false,
+    placeholders: [...CONTRACT, "day"],
+    required: [],
+  },
+  "contract.expiring": {
+    vi: "Hợp đồng sắp hết hạn",
+    en: "Contract expiring soon",
+    mandatory: false,
+    placeholders: [...CONTRACT, "daysLeft"],
+    required: ["endDate"],
+  },
+  "contract.runningOut": {
+    vi: "Hợp đồng sắp hết buổi",
+    en: "Contract running out of sessions",
+    mandatory: false,
+    placeholders: CONTRACT,
+    required: ["remaining"],
+  },
 } as const satisfies Record<string, EventDefinition>;
 export type EmailEvent = keyof typeof EMAIL_EVENTS;
 export const EMAIL_EVENT_KEYS = Object.keys(EMAIL_EVENTS) as EmailEvent[];
@@ -137,6 +227,54 @@ export const EMAIL_TEMPLATE_DEFAULTS: Record<EmailEvent, EmailTemplate> = {
     bodyVi: `Chào {customerName},\n\nBạn đã có mặt ở lớp {className} ngày {day} lúc {time} (HLV {trainerName}); buổi này được tính vào hợp đồng {contractCode}. Số buổi đã dùng: {used}. Số buổi còn lại: {remaining}.${FOOTER.vi}`,
     subjectEn: "1 class session recorded ({className}), contract {contractCode}",
     bodyEn: `Hello {customerName},\n\nYou attended {className} on {day} at {time} (coach {trainerName}); it was counted on contract {contractCode}. Sessions used: {used}. Sessions left: {remaining}.${FOOTER.en}`,
+  },
+  "contract.activated": {
+    subjectVi: "Hợp đồng {contractCode} đã được kích hoạt",
+    bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} ({packageName}) đã được kích hoạt. Hiệu lực từ {startDate} đến {endDate}, tổng {totalSessions} buổi.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} is active",
+    bodyEn: `Hello {customerName},\n\nContract {contractCode} ({packageName}) is now active, from {startDate} to {endDate}, {totalSessions} sessions in all.${FOOTER.en}`,
+  },
+  "contract.renewed": {
+    subjectVi: "Hợp đồng tái ký {contractCode} đã được kích hoạt",
+    bodyVi: `Chào {customerName},\n\nCảm ơn bạn đã tái ký. Hợp đồng {contractCode} ({packageName}) đã được kích hoạt, hiệu lực từ {startDate} đến {endDate}, tổng {totalSessions} buổi.${FOOTER.vi}`,
+    subjectEn: "Renewal {contractCode} is active",
+    bodyEn: `Hello {customerName},\n\nThank you for renewing. Contract {contractCode} ({packageName}) is now active, from {startDate} to {endDate}, {totalSessions} sessions in all.${FOOTER.en}`,
+  },
+  "payment.received": {
+    subjectVi: "Đã nhận {amount}, phiếu thu {receiptNumber}",
+    bodyVi: `Chào {customerName},\n\nPhòng tập đã nhận {amount} ngày {day} cho hợp đồng {contractCode} (phiếu thu {receiptNumber}). Tổng đã thanh toán: {paidTotal}. Còn lại: {debt}.${FOOTER.vi}`,
+    subjectEn: "Received {amount}, receipt {receiptNumber}",
+    bodyEn: `Hello {customerName},\n\nThe gym received {amount} on {day} for contract {contractCode} (receipt {receiptNumber}). Total paid: {paidTotal}. Still owed: {debt}.${FOOTER.en}`,
+  },
+  "contract.deactivated": {
+    subjectVi: "Hợp đồng {contractCode} được tạm ngưng",
+    bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} được tạm ngưng từ {day}. Lý do: {reason}. Trong thời gian này không có buổi tập nào bị tính. Khi hoạt động lại, phòng tập sẽ báo ngày hết hạn mới.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} is on hold",
+    bodyEn: `Hello {customerName},\n\nContract {contractCode} is on hold from {day}. Reason: {reason}. No session is counted meanwhile. The gym will tell you the new end date when it is active again.${FOOTER.en}`,
+  },
+  "contract.reactivated": {
+    subjectVi: "Hợp đồng {contractCode} hoạt động lại, hết hạn {endDate}",
+    bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} đã hoạt động lại từ {day}. Số ngày được cộng thêm: {addedDays}. Ngày hết hạn mới: {endDate}. Số buổi còn lại: {remaining}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} is active again, ends {endDate}",
+    bodyEn: `Hello {customerName},\n\nContract {contractCode} is active again from {day}. Days added: {addedDays}. New end date: {endDate}. Sessions left: {remaining}.${FOOTER.en}`,
+  },
+  "contract.cancelled": {
+    subjectVi: "Hợp đồng {contractCode} đã hủy",
+    bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} ({packageName}) đã được hủy ngày {day}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} cancelled",
+    bodyEn: `Hello {customerName},\n\nContract {contractCode} ({packageName}) was cancelled on {day}.${FOOTER.en}`,
+  },
+  "contract.expiring": {
+    subjectVi: "Hợp đồng {contractCode} sắp hết hạn",
+    bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} ({packageName}) sẽ hết hạn ngày {endDate}, còn {daysLeft} ngày. Số buổi còn lại: {remaining}. Hãy liên hệ phòng tập để sắp xếp lịch hoặc tái ký.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} is ending soon",
+    bodyEn: `Hello {customerName},\n\nContract {contractCode} ({packageName}) ends on {endDate}, in {daysLeft} days. Sessions left: {remaining}. Please contact the gym to book your sessions or renew.${FOOTER.en}`,
+  },
+  "contract.runningOut": {
+    subjectVi: "Hợp đồng {contractCode} sắp hết buổi",
+    bodyVi: `Chào {customerName},\n\nHợp đồng {contractCode} ({packageName}) chỉ còn {remaining} buổi, hiệu lực đến {endDate}. Hãy liên hệ phòng tập để tái ký.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} is running out of sessions",
+    bodyEn: `Hello {customerName},\n\nContract {contractCode} ({packageName}) has only {remaining} sessions left and runs until {endDate}. Please contact the gym to renew.${FOOTER.en}`,
   },
 };
 
@@ -186,6 +324,8 @@ export const emailTemplateInputSchema = z.object({
   bodyVi: body,
   subjectEn: subject,
   bodyEn: body,
+  /** The switch of an optional event (D-036); left out, it stays as it is. A mandatory event cannot be switched off. */
+  enabled: z.boolean({ error: "invalidChoice" }).optional(),
 });
 export type EmailTemplateInput = z.input<typeof emailTemplateInputSchema>;
 
@@ -228,6 +368,8 @@ export const emailTemplateSchema = z
     bodyVi: z.string(),
     subjectEn: z.string(),
     bodyEn: z.string(),
+    /** Sent when true; a mandatory event is always sent. */
+    enabled: z.boolean(),
     /** Null while the template is still the one the system started with. */
     updatedAt: z.iso.datetime().nullable(),
     updatedBy: z.string().nullable(),

@@ -1,3 +1,5 @@
+import { queueContractEmail } from "./contract-email.js";
+import { reasonText } from "../sessions/session-email.js";
 import { z } from "zod";
 import {
   canDeactivate,
@@ -55,6 +57,16 @@ export async function deactivateContract(actor: Actor, id: string, input: unknow
       after: { status: "FROZEN" },
       context: { reason: { optionId: reason.optionId, note: reason.note } },
     });
+    const openFreeze = await repo.findOpenFreeze(tx, id);
+    if (openFreeze) {
+      await queueContractEmail(tx, {
+        event: "contract.deactivated",
+        causeId: openFreeze.id,
+        contractId: id,
+        by: actor.id,
+        reason: await reasonText(tx, reason),
+      });
+    }
     return presentOne(tx, await getOrThrow(tx, actor, id), today, actor);
   }, LOCKING_TRANSACTION);
 }
@@ -112,6 +124,14 @@ export async function reactivateContract(actor: Actor, id: string, input: unknow
         addedDays,
         extension: data.extension,
       },
+    });
+    await queueContractEmail(tx, {
+      event: "contract.reactivated",
+      causeId: open.id,
+      contractId: id,
+      by: actor.id,
+      reason: await reasonText(tx, reason),
+      addedDays,
     });
     return presentOne(tx, await getOrThrow(tx, actor, id), today, actor);
   }, LOCKING_TRANSACTION);

@@ -169,57 +169,61 @@ model User {
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions              AuthSession[]
-  accounts              AuthAccount[]
-  auditEvents           AuditEvent[]
-  contractsCreated      Contract[]               @relation("ContractCreatedBy")
-  contractsApproved     Contract[]               @relation("ContractApprovedBy")
-  contractsDeleted      Contract[]               @relation("ContractDeletedBy")
-  freezesStarted        ContractFreeze[]         @relation("FreezeStartedBy")
-  freezesEnded          ContractFreeze[]         @relation("FreezeEndedBy")
+  sessions                    AuthSession[]
+  accounts                    AuthAccount[]
+  auditEvents                 AuditEvent[]
+  contractsCreated            Contract[]                 @relation("ContractCreatedBy")
+  contractsApproved           Contract[]                 @relation("ContractApprovedBy")
+  contractsDeleted            Contract[]                 @relation("ContractDeletedBy")
+  freezesStarted              ContractFreeze[]           @relation("FreezeStartedBy")
+  freezesEnded                ContractFreeze[]           @relation("FreezeEndedBy")
   // Brief §8.4: the employee this login belongs to, at most one.
-  employee              Employee?
-  sessionsCheckedIn     Session[]                @relation("SessionCheckedInBy")
-  sessionsCompleted     Session[]                @relation("SessionCompletedBy")
-  paymentsRecorded      Payment[]                @relation("PaymentCreatedBy")
-  paymentsDeleted       Payment[]                @relation("PaymentDeletedBy")
-  cashRecorded          CashTransaction[]        @relation("CashTransactionCreatedBy")
-  cashOpeningsSet       CashOpeningBalance[]     @relation("CashOpeningUpdatedBy")
-  filesUploaded         StoredFile[]             @relation("FileUploadedBy")
-  bookingStatusesSet    Booking[]                @relation("BookingStatusSetBy")
-  bookingHistoryDeletes Booking[]                @relation("BookingHistoryDeletedBy")
-  cashDeleted           CashTransaction[]        @relation("CashTransactionDeletedBy")
-  trashEntries          TrashEntry[]
-  approvalsSubmitted    ApprovalRequest[]        @relation("ApprovalSubmittedBy")
-  approvalsDecided      ApprovalRequest[]        @relation("ApprovalDecidedBy")
-  customersCreated      Customer[]
-  leadsInCharge         Customer[]               @relation("PersonPic")
-  dataConsentsTaken     Customer[]               @relation("PersonDataConsent")
-  branches              UserBranch[]
-  overrides             UserPermissionOverride[]
-  accessWindows         UserAccessWindow[]
-  loginEvents           LoginEvent[]
-  leadTurns             LeadTurn[]
-  tasksAssigned         Task[]                   @relation("TaskAssigner")
-  tasksReceived         Task[]                   @relation("TaskAssignee")
-  taskComments          TaskComment[]
-  notifications         Notification[]
-  emailsCaused          EmailMessage[]           @relation("EmailCreatedBy")
-  priceTierVersions     PriceTierVersion[]       @relation("PriceTierVersionCreatedBy")
-  leadStatusChanges     LeadStatusChange[]
-  leadAssignedFrom      LeadAssignment[]         @relation("LeadAssignmentFrom")
-  leadAssignedTo        LeadAssignment[]         @relation("LeadAssignmentTo")
-  leadAssignedBy        LeadAssignment[]         @relation("LeadAssignmentBy")
-  leadRoundRobins       LeadRoundRobin[]
-  leadStepsDone         LeadStep[]
-  leadInquiries         LeadInquiry[]
-  leadNotes             LeadNote[]               @relation("LeadNoteAuthor")
-  consultingAudits      ConsultingAudit[]        @relation("ConsultingAuditor")
-  personMerges          PersonMerge[]
-  classEnrollments      ClassAttendance[]        @relation("ClassEnrolledBy")
-  classMarks            ClassAttendance[]        @relation("ClassMarkedBy")
-  ptPayoutsCreated      PtPayout[]               @relation("PtPayoutCreatedBy")
-  emailTemplatesUpdated EmailTemplate[]          @relation("EmailTemplateUpdatedBy")
+  employee                    Employee?
+  sessionsCheckedIn           Session[]                  @relation("SessionCheckedInBy")
+  sessionsCompleted           Session[]                  @relation("SessionCompletedBy")
+  paymentsRecorded            Payment[]                  @relation("PaymentCreatedBy")
+  paymentsDeleted             Payment[]                  @relation("PaymentDeletedBy")
+  cashRecorded                CashTransaction[]          @relation("CashTransactionCreatedBy")
+  cashOpeningsSet             CashOpeningBalance[]       @relation("CashOpeningUpdatedBy")
+  filesUploaded               StoredFile[]               @relation("FileUploadedBy")
+  bookingStatusesSet          Booking[]                  @relation("BookingStatusSetBy")
+  bookingHistoryDeletes       Booking[]                  @relation("BookingHistoryDeletedBy")
+  cashDeleted                 CashTransaction[]          @relation("CashTransactionDeletedBy")
+  trashEntries                TrashEntry[]
+  approvalsSubmitted          ApprovalRequest[]          @relation("ApprovalSubmittedBy")
+  approvalsDecided            ApprovalRequest[]          @relation("ApprovalDecidedBy")
+  customersCreated            Customer[]
+  leadsInCharge               Customer[]                 @relation("PersonPic")
+  dataConsentsTaken           Customer[]                 @relation("PersonDataConsent")
+  branches                    UserBranch[]
+  overrides                   UserPermissionOverride[]
+  accessWindows               UserAccessWindow[]
+  loginEvents                 LoginEvent[]
+  leadTurns                   LeadTurn[]
+  tasksAssigned               Task[]                     @relation("TaskAssigner")
+  tasksReceived               Task[]                     @relation("TaskAssignee")
+  taskComments                TaskComment[]
+  notifications               Notification[]
+  emailsCaused                EmailMessage[]             @relation("EmailCreatedBy")
+  priceTierVersions           PriceTierVersion[]         @relation("PriceTierVersionCreatedBy")
+  leadStatusChanges           LeadStatusChange[]
+  leadAssignedFrom            LeadAssignment[]           @relation("LeadAssignmentFrom")
+  leadAssignedTo              LeadAssignment[]           @relation("LeadAssignmentTo")
+  leadAssignedBy              LeadAssignment[]           @relation("LeadAssignmentBy")
+  leadRoundRobins             LeadRoundRobin[]
+  leadStepsDone               LeadStep[]
+  leadInquiries               LeadInquiry[]
+  leadNotes                   LeadNote[]                 @relation("LeadNoteAuthor")
+  consultingAudits            ConsultingAudit[]          @relation("ConsultingAuditor")
+  personMerges                PersonMerge[]
+  classEnrollments            ClassAttendance[]          @relation("ClassEnrolledBy")
+  classMarks                  ClassAttendance[]          @relation("ClassMarkedBy")
+  ptPayoutsCreated            PtPayout[]                 @relation("PtPayoutCreatedBy")
+  emailTemplatesUpdated       EmailTemplate[]            @relation("EmailTemplateUpdatedBy")
+  notificationPreferences     NotificationPreference[]
+  notificationSettingsUpdated StaffNotificationSetting[] @relation("StaffNotificationSettingUpdatedBy")
+  pushSubscriptions           PushSubscription[]
+  notificationDeliveries      NotificationDelivery[]
 
   @@index([roleId])
   @@map("users")
@@ -1432,14 +1436,15 @@ model TaskComment {
 // One user's in-app notification. The kind and params are turned into text by the
 // web app in the user's language.
 model Notification {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind      String
-  params    Json      @default("{}")
-  link      String?
-  readAt    DateTime? @map("read_at") @db.Timestamptz(3)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  id         String                 @id @default(uuid()) @db.Uuid
+  userId     String                 @map("user_id") @db.Uuid
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  params     Json                   @default("{}")
+  link       String?
+  readAt     DateTime?              @map("read_at") @db.Timestamptz(3)
+  createdAt  DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  deliveries NotificationDelivery[]
 
   @@index([userId, createdAt])
   @@map("notifications")
@@ -1958,9 +1963,74 @@ model EmailTemplate {
   bodyVi      String    @map("body_vi")
   subjectEn   String    @map("subject_en")
   bodyEn      String    @map("body_en")
+  // The switch of an optional event (D-036); a mandatory event is sent whatever it says.
+  enabled     Boolean   @default(true)
   updatedById String?   @map("updated_by") @db.Uuid
   updatedBy   User?     @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   updatedAt   DateTime? @map("updated_at") @db.Timestamptz(3)
 
   @@map("email_templates")
+}
+
+// ---------------------------------------------------------------------------
+// Staff notifications outside the system (M6.4, D-053, D-056)
+// ---------------------------------------------------------------------------
+
+// What an employee chose for one kind of notification; no row means both channels are on.
+model NotificationPreference {
+  userId String  @map("user_id") @db.Uuid
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   String
+  email  Boolean
+  push   Boolean
+
+  @@id([userId, kind])
+  @@map("notification_preferences")
+}
+
+// What Admin made mandatory for one kind: it goes out by that channel whatever the employee chose.
+model StaffNotificationSetting {
+  kind           String    @id
+  emailMandatory Boolean   @default(false) @map("email_mandatory")
+  pushMandatory  Boolean   @default(false) @map("push_mandatory")
+  updatedById    String?   @map("updated_by") @db.Uuid
+  updatedBy      User?     @relation("StaffNotificationSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt      DateTime? @map("updated_at") @db.Timestamptz(3)
+
+  @@map("staff_notification_settings")
+}
+
+// A phone or browser that accepted push (the Web Push API).
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+// One channel (EMAIL or PUSH) of one notification, with its status and retries.
+model NotificationDelivery {
+  id             String       @id @default(uuid()) @db.Uuid
+  notificationId String       @map("notification_id") @db.Uuid
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String       @map("user_id") @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel        String
+  status         String       @default("QUEUED")
+  attempts       Int          @default(0)
+  nextAttemptAt  DateTime     @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  failure        String?
+  sentAt         DateTime?    @map("sent_at") @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([notificationId, channel])
+  @@index([status, nextAttemptAt])
+  @@map("notification_deliveries")
 }

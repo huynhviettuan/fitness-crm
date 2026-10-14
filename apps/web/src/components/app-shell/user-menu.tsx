@@ -3,7 +3,8 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
+import Link from "next/link";
+import { BellRingIcon, ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,6 +78,12 @@ export function UserMenu({ user }: UserMenuProps) {
           ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/account/notifications">
+            <BellRingIcon />
+            {t("userMenu.notifications")}
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={signOut}>
           <LogOutIcon />
           {t("auth.signOut")}

@@ -1,4 +1,5 @@
 import { EMAIL_TEMPLATE_DEFAULTS } from "@flow/shared/mail";
+import { EXTERNAL_NOTIFICATION_KINDS } from "@flow/shared/notifications";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS, SEEDED_SCRIPTS } from "./factories.js";
 
@@ -49,8 +50,17 @@ export async function resetDatabase(): Promise<void> {
   for (const [event, texts] of Object.entries(EMAIL_TEMPLATE_DEFAULTS)) {
     await prisma.emailTemplate.upsert({
       where: { event },
-      update: { ...texts, updatedById: null, updatedAt: null },
+      update: { ...texts, enabled: true, updatedById: null, updatedAt: null },
       create: { event, ...texts },
+    });
+  }
+  // Admin's mandatory marks for staff notifications back to the migration's (the truncate above clears them, M6.4).
+  for (const kind of EXTERNAL_NOTIFICATION_KINDS) {
+    const emailMandatory = ["taskOverdue", "approvalOverdue", "sessionHanging"].includes(kind);
+    await prisma.staffNotificationSetting.upsert({
+      where: { kind },
+      update: { emailMandatory, pushMandatory: false, updatedById: null, updatedAt: null },
+      create: { kind, emailMandatory, pushMandatory: false },
     });
   }
   // The approval matrix back to the migration's (09_RBAC.md).

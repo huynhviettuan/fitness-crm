@@ -1,3 +1,4 @@
+import { queueContractEmail } from "../contracts/contract-email.js";
 import { z } from "zod";
 import { customerRef } from "../customers/person.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
@@ -219,7 +220,26 @@ export async function recordPaymentIn(
       payload: { contractId },
     });
   }
+  // D-059: a receipt that has effect tells the customer; one waiting for approval does when it is approved.
+  if (!rule.required) await emailReceipt(tx, payment.id, actor.id);
   return { payment: view, replayed: false };
+}
+
+/** The optional receipt email of a payment that now counts (M6.3, A-181); once per payment. */
+async function emailReceipt(tx: TxDb, paymentId: string, by: string): Promise<void> {
+  const payment = await tx.payment.findUnique({
+    where: { id: paymentId },
+    select: { contractId: true, receiptNumber: true, amount: true, paidOn: true },
+  });
+  if (!payment) return;
+  await queueContractEmail(tx, {
+    event: "payment.received",
+    causeId: paymentId,
+    contractId: payment.contractId,
+    by,
+    day: payment.paidOn,
+    payment: { receiptNumber: payment.receiptNumber, amount: Number(payment.amount) },
+  });
 }
 
 /**
@@ -324,6 +344,7 @@ export async function decidePayment(
     before: { approvalStatus: "PENDING" },
     after: { approvalStatus: to },
   });
+  if (to === "APPROVED") await emailReceipt(tx, id, decider.id);
 }
 
 function titleOf(view: PaymentView): string {
