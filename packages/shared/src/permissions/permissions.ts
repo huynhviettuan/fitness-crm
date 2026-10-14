@@ -108,6 +108,7 @@ export const PERMISSION_GROUPS = {
     "cash.opening",
     "payout.view",
     "payout.create",
+    "mail.template",
   ],
 } as const;
 

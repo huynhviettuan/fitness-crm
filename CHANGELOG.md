@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-22 — M6.2: email templates and the session emails
+
+- **Templates** (A-177): the wording of each customer email in Vietnamese and English, edited by Admin with placeholders and a preview; mandatory content is enforced.
+- **Language** (A-178, answers OQ-051): follows the nationality group.
+- **Session emails** (A-179): credited (Đã tập), counted no-show, Burn Show, refund with the reason, and class attendance, exactly one per change.
+- **Open**: OQ-055. Docs 04, 07, 09, 13, 16, 18, 28; E2E-113.
+
 ## 2026-10-21 — M5.7: PT payouts and adjustments
 
 - **Payouts** (A-173, A-174, A-176): an expense voucher per PT and period, the amount worked out from the allocation report, the sessions it paid recorded so none is paid twice, also under concurrent requests; a voided voucher releases its sessions.

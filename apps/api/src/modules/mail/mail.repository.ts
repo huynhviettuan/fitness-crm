@@ -93,3 +93,27 @@ export function findFallbackAuthor(db: Db) {
     select: { id: true },
   });
 }
+
+export type TemplateRecord = Prisma.EmailTemplateGetPayload<{ include: { updatedBy: { select: { name: true } } } }>;
+
+export function listTemplates(db: Db): Promise<TemplateRecord[]> {
+  return db.emailTemplate.findMany({ include: { updatedBy: { select: { name: true } } } });
+}
+
+export function findTemplate(db: Db, event: string): Promise<TemplateRecord | null> {
+  return db.emailTemplate.findUnique({ where: { event }, include: { updatedBy: { select: { name: true } } } });
+}
+
+export function saveTemplate(
+  db: Db,
+  event: string,
+  data: { subjectVi: string; bodyVi: string; subjectEn: string; bodyEn: string },
+  by: string,
+): Promise<TemplateRecord> {
+  return db.emailTemplate.upsert({
+    where: { event },
+    create: { event, ...data, updatedById: by, updatedAt: new Date() },
+    update: { ...data, updatedById: by, updatedAt: new Date() },
+    include: { updatedBy: { select: { name: true } } },
+  });
+}

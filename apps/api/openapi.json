@@ -11115,6 +11115,158 @@
         "x-permission": "payout.view"
       }
     },
+    "/api/v1/email-templates": {
+      "get": {
+        "operationId": "EmailTemplatesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplateList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "email-templates"
+        ],
+        "x-permission": "mail.template"
+      }
+    },
+    "/api/v1/email-templates/{event}": {
+      "get": {
+        "operationId": "EmailTemplatesController_get",
+        "parameters": [
+          {
+            "name": "event",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplate"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "email-templates"
+        ],
+        "x-permission": "mail.template"
+      },
+      "put": {
+        "operationId": "EmailTemplatesController_update",
+        "parameters": [
+          {
+            "name": "event",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subjectVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[^\\r\\n\\t]*$"
+                  },
+                  "bodyVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "subjectEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[^\\r\\n\\t]*$"
+                  },
+                  "bodyEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  }
+                },
+                "required": [
+                  "subjectVi",
+                  "bodyVi",
+                  "subjectEn",
+                  "bodyEn"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplate"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "email-templates"
+        ],
+        "x-permission": "mail.template"
+      }
+    },
     "/api/v1/payments": {
       "get": {
         "operationId": "PaymentsController_list",
@@ -12482,7 +12634,8 @@
                             "cash.delete",
                             "cash.opening",
                             "payout.view",
-                            "payout.create"
+                            "payout.create",
+                            "mail.template"
                           ]
                         },
                         "granted": {
@@ -12923,7 +13076,8 @@
                         "cash.delete",
                         "cash.opening",
                         "payout.view",
-                        "payout.create"
+                        "payout.create",
+                        "mail.template"
                       ]
                     }
                   },
@@ -13212,7 +13366,8 @@
                         "cash.delete",
                         "cash.opening",
                         "payout.view",
-                        "payout.create"
+                        "payout.create",
+                        "mail.template"
                       ]
                     }
                   },
@@ -15844,7 +15999,8 @@
                 "cash.delete",
                 "cash.opening",
                 "payout.view",
-                "payout.create"
+                "payout.create",
+                "mail.template"
               ]
             }
           },
@@ -22764,6 +22920,97 @@
           "lines"
         ]
       },
+      "EmailTemplateList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailTemplate"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "EmailTemplate": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string"
+          },
+          "nameVi": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "placeholders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "labelVi": {
+                  "type": "string"
+                },
+                "labelEn": {
+                  "type": "string"
+                },
+                "required": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "labelVi",
+                "labelEn",
+                "required"
+              ]
+            }
+          },
+          "subjectVi": {
+            "type": "string"
+          },
+          "bodyVi": {
+            "type": "string"
+          },
+          "subjectEn": {
+            "type": "string"
+          },
+          "bodyEn": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "event",
+          "nameVi",
+          "nameEn",
+          "mandatory",
+          "placeholders",
+          "subjectVi",
+          "bodyVi",
+          "subjectEn",
+          "bodyEn",
+          "updatedAt",
+          "updatedBy"
+        ]
+      },
       "Collected": {
         "type": "object",
         "properties": {
@@ -23151,7 +23398,8 @@
                     "cash.delete",
                     "cash.opening",
                     "payout.view",
-                    "payout.create"
+                    "payout.create",
+                    "mail.template"
                   ]
                 },
                 "granted": {
@@ -23433,7 +23681,8 @@
                 "cash.delete",
                 "cash.opening",
                 "payout.view",
-                "payout.create"
+                "payout.create",
+                "mail.template"
               ]
             }
           },

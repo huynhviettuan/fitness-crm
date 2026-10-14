@@ -22,6 +22,7 @@ export const AUDIT_ENTITY_TYPES = [
   "class",
   "class_session",
   "pt_payout",
+  "email_template",
   "approval_request",
   "approval_rule",
   "task",

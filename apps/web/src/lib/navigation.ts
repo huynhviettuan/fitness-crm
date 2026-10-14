@@ -43,6 +43,7 @@ export const NAV_SECTIONS = [
           "promotions",
           "options",
           "sessionStatuses",
+          "emailTemplates",
           "parameters",
           "checklist",
           "auditCriteria",

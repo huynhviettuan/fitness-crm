@@ -52,7 +52,8 @@
     "classes": "Lịch lớp",
     "ptRevenueReport": "Doanh thu PT",
     "bookingReport": "Báo cáo booking",
-    "ptPayouts": "Chi trả PT"
+    "ptPayouts": "Chi trả PT",
+    "emailTemplates": "Mẫu email"
   },
   "status": {
     "customer": {
@@ -667,7 +668,9 @@
     "machineCodeTaken": "Mã này đã thuộc về người khác.",
     "weeksOutOfRange": "Số tuần từ 1 đến 26.",
     "belowEnrolled": "Sức chứa thấp hơn số khách đã đăng ký ở một buổi sắp tới.",
-    "percentOutOfRange": "Tỷ lệ từ 0 đến 100."
+    "percentOutOfRange": "Tỷ lệ từ 0 đến 100.",
+    "unknownPlaceholder": "Có trường thay thế không dùng được cho email này.",
+    "missingPlaceholder": "Thiếu thông tin bắt buộc khách phải biết (xem các trường được đánh dấu bắt buộc)."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1357,6 +1360,9 @@
       "payout": {
         "view": "Xem chi trả PT",
         "create": "Chi trả PT"
+      },
+      "mail": {
+        "template": "Soạn mẫu email gửi khách"
       }
     },
     "resources": {
@@ -1624,7 +1630,8 @@
       "checkin_device": "Máy chấm công",
       "class": "Lớp",
       "class_session": "Buổi lớp",
-      "pt_payout": "Chi trả PT"
+      "pt_payout": "Chi trả PT",
+      "email_template": "Mẫu email"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2821,5 +2828,25 @@
       "status": "Trạng thái",
       "created": "Tạo lúc"
     }
+  },
+  "emailTemplates": {
+    "title": "Mẫu email gửi khách",
+    "description": "Nội dung từng email tự động gửi khách hàng, bằng tiếng Việt và tiếng Anh. Khách nước ngoài nhận bản tiếng Anh, còn lại nhận bản tiếng Việt.",
+    "editDescription": "Viết tiêu đề và nội dung bằng cả hai ngôn ngữ. Dùng trường thay thế trong dấu ngoặc nhọn; xem trước bên dưới dùng dữ liệu mẫu.",
+    "mandatory": "Bắt buộc gửi",
+    "original": "Nội dung gốc của hệ thống",
+    "editedBy": "Sửa bởi {name},",
+    "placeholders": "Trường thay thế",
+    "placeholdersHint": "Chỉ dùng các trường dưới đây. Trường bắt buộc phải có trong nội dung của cả hai ngôn ngữ.",
+    "required": "bắt buộc",
+    "languages": {
+      "vi": "Tiếng Việt",
+      "en": "Tiếng Anh"
+    },
+    "subject": "Tiêu đề",
+    "body": "Nội dung",
+    "preview": "Xem trước",
+    "previewOf": "Xem trước ({language})",
+    "saved": "Đã lưu mẫu email"
   }
 }

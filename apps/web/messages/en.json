@@ -52,7 +52,8 @@
     "classes": "Class schedule",
     "ptRevenueReport": "PT revenue",
     "bookingReport": "Booking report",
-    "ptPayouts": "PT payouts"
+    "ptPayouts": "PT payouts",
+    "emailTemplates": "Email templates"
   },
   "status": {
     "customer": {
@@ -667,7 +668,9 @@
     "machineCodeTaken": "This code already belongs to someone else.",
     "weeksOutOfRange": "Weeks from 1 to 26.",
     "belowEnrolled": "The capacity is below the customers already enrolled in an upcoming session.",
-    "percentOutOfRange": "A rate from 0 to 100."
+    "percentOutOfRange": "A rate from 0 to 100.",
+    "unknownPlaceholder": "A placeholder is used that this email does not offer.",
+    "missingPlaceholder": "What the customer must be told is missing (see the placeholders marked required)."
   },
   "contracts": {
     "title": "Contracts",
@@ -1357,6 +1360,9 @@
       "payout": {
         "view": "View PT payouts",
         "create": "Pay out PTs"
+      },
+      "mail": {
+        "template": "Write the emails sent to customers"
       }
     },
     "resources": {
@@ -1624,7 +1630,8 @@
       "checkin_device": "Check-in device",
       "class": "Class",
       "class_session": "Class session",
-      "pt_payout": "PT payout"
+      "pt_payout": "PT payout",
+      "email_template": "Email template"
     },
     "verbs": {
       "created": "Created",
@@ -2821,5 +2828,25 @@
       "status": "Status",
       "created": "Created"
     }
+  },
+  "emailTemplates": {
+    "title": "Customer email templates",
+    "description": "The words of each automatic email to customers, in Vietnamese and English. Customers of a foreign nationality group get the English one, the others the Vietnamese one.",
+    "editDescription": "Write the subject and body in both languages. Use placeholders in curly braces; the preview below uses sample data.",
+    "mandatory": "Always sent",
+    "original": "The system's original words",
+    "editedBy": "Edited by {name},",
+    "placeholders": "Placeholders",
+    "placeholdersHint": "Use only the placeholders below. A required one must be in the body of both languages.",
+    "required": "required",
+    "languages": {
+      "vi": "Vietnamese",
+      "en": "English"
+    },
+    "subject": "Subject",
+    "body": "Body",
+    "preview": "Preview",
+    "previewOf": "Preview ({language})",
+    "saved": "Email template saved"
   }
 }

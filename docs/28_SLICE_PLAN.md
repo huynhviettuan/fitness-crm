@@ -368,7 +368,7 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 - **Decide first:** the provider (TS in doc 26) and the sending domain; the owner adds the DNS records.
 - **Depends on:** — (moved to the start of M4, P-6).
 
-### M6.2 Templates and session emails
+### M6.2 Templates and session emails (done 2026-10-22: A-177 to A-180, OQ-055)
 
 - **Builds:**
   - **Templates** per event in Vietnamese and English, with placeholders and a preview; admin edits them. The language follows the nationality group.

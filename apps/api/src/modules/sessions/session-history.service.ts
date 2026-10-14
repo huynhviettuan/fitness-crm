@@ -1,4 +1,3 @@
-import type { Prisma } from "../../generated/prisma/client.js";
 import { LOCKING_TRANSACTION, prisma } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
@@ -12,26 +11,18 @@ import { deleteSchema } from "@flow/shared/trash";
 import { bookingSchema, burnShowSchema, canDeleteFromHistory } from "@flow/shared/bookings";
 import { findContract, lockContract } from "../contracts/contract.repository.js";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
-import {
-  createTrainedBooking,
-  findStatusRule,
-  markHistoryDeleted,
-  setStatus,
-  type BookingRecord,
-} from "../bookings/booking.repository.js";
+import { createTrainedBooking, findStatusRule, markHistoryDeleted, setStatus } from "../bookings/booking.repository.js";
 import {
   assertBookable,
   bookingView,
   changeLockedBooking,
   factsOf,
-  sessionDay,
   toBookingView,
   toSlot,
   withOverlapMapped,
   type BookingView,
 } from "../bookings/booking.service.js";
-import { queueEmail } from "../mail/mail.service.js";
-import { formatDay, sessionChangeEmail } from "./session-email.js";
+import { queueBookingEmail } from "./session-email.js";
 import { sessionProblem } from "./session.service.js";
 import { createSession, recordCompletion } from "./session.repository.js";
 
@@ -86,7 +77,8 @@ export async function deleteTrainedSession(actor: Actor, bookingId: string, rawI
         reason: reasonNote,
       },
     });
-    await emailSessionChange(tx, actor, booking, "refunded", problem.remaining);
+    // D-036: the customer is told, with the reason, once.
+    await queueBookingEmail(tx, "session.refunded", bookingId, actor.id, reason);
   });
 }
 
@@ -152,36 +144,8 @@ export async function burnShow(actor: Actor, rawInput: unknown): Promise<Booking
         },
         context: { contractId: contract.id, remainingSessions: remaining, reason: reason.note },
       });
-      await emailSessionChange(tx, actor, booking, "added", remaining);
+      await queueBookingEmail(tx, "session.added", booking.id, actor.id, reason);
       return bookingView(tx, actor, booking.id);
     }, LOCKING_TRANSACTION),
   );
-}
-
-/** D-036: the customer is told of a change in their session count, once per session and kind, in the transaction. */
-async function emailSessionChange(
-  tx: Prisma.TransactionClient,
-  actor: Actor,
-  booking: Pick<BookingRecord, "id" | "customerId" | "scheduledStart" | "customer" | "contract">,
-  kind: "refunded" | "added",
-  remaining: number,
-): Promise<void> {
-  // The customer has no language of their own yet (OQ-051), so the email is in Vietnamese.
-  const locale = "vi";
-  const { subject, body } = sessionChangeEmail(locale, {
-    kind,
-    customerName: booking.customer.fullName,
-    contractCode: booking.contract.contractCode,
-    day: formatDay(sessionDay(booking.scheduledStart)),
-    remaining,
-  });
-  await queueEmail(tx, {
-    personId: booking.customerId,
-    event: `session.${kind}`,
-    dedupeKey: `session.${kind}:${booking.id}`,
-    locale,
-    subject,
-    body,
-    by: actor.id,
-  });
 }

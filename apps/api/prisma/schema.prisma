@@ -219,6 +219,7 @@ model User {
   classEnrollments      ClassAttendance[]        @relation("ClassEnrolledBy")
   classMarks            ClassAttendance[]        @relation("ClassMarkedBy")
   ptPayoutsCreated      PtPayout[]               @relation("PtPayoutCreatedBy")
+  emailTemplatesUpdated EmailTemplate[]          @relation("EmailTemplateUpdatedBy")
 
   @@index([roleId])
   @@map("users")
@@ -1941,4 +1942,25 @@ model PtPayoutLine {
   @@index([payoutId])
   @@index([bookingId])
   @@map("pt_payout_lines")
+}
+
+// ---------------------------------------------------------------------------
+// Email templates (M6.2, D-036, D-059)
+// ---------------------------------------------------------------------------
+
+// The words of one customer email event in both languages, as admin wrote them. The events are in the code
+// (packages/shared/src/mail/template.ts); the migration starts each with its default text.
+model EmailTemplate {
+  event       String    @id
+  // For the audit trail, whose records point at a UUID.
+  id          String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectVi   String    @map("subject_vi")
+  bodyVi      String    @map("body_vi")
+  subjectEn   String    @map("subject_en")
+  bodyEn      String    @map("body_en")
+  updatedById String?   @map("updated_by") @db.Uuid
+  updatedBy   User?     @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime? @map("updated_at") @db.Timestamptz(3)
+
+  @@map("email_templates")
 }

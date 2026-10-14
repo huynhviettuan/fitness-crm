@@ -26,6 +26,7 @@ import {
   type BookingView,
 } from "../bookings/booking.service.js";
 import { createSession, recordCompletion } from "./session.repository.js";
+import { queueBookingEmail } from "./session-email.js";
 
 export type CompletionResult = { booking: BookingView; contract: ContractView };
 
@@ -147,6 +148,8 @@ export async function confirmBooking(
       ...confirmation.context,
     },
   });
+  // D-036: every session credited tells the customer how many are used and left, once, in this transaction.
+  await queueBookingEmail(tx, "session.credited", booking.id, confirmation.actorId);
 }
 
 /**

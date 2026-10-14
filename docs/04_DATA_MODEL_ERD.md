@@ -105,6 +105,7 @@ erDiagram
 
 | Table | Key fields |
 |---|---|
+| `email_templates` (M6.2) | event (key), id, subject_vi, body_vi, subject_en, body_en, updated_by/at; one row per event in the code (A-177) |
 | `pt_payouts` (M5.7) | id, branch_id, trainer_id, period_from, period_to, amount (= session_amount + adjustment_amount, above zero), session_amount, adjustment_amount, session_count, adjustment_count, cash_transaction_id (the expense voucher, unique), idempotency_key (unique), created_by/at |
 | `pt_payout_lines` (M5.7) | id, payout_id, booking_id, contract_id, kind (SESSION, or ADJUSTMENT: negative), amount, released_at; unique (booking, kind) while released_at is empty; released by a trigger when the voucher is deleted, rejected or cancelled (A-174) |
 | `services` | name, image, kind (PT, CLASS, MEMBER), branches, allowed_hours, commission_rate (percent of the allocation paid to the PT, 100 initially, A-167), is_group, max_members, max_per_week, max_per_day, active_from, active_to, notes |

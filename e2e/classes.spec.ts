@@ -115,7 +115,7 @@ test.describe("classes as reception", () => {
 
     // The class definitions are the manager's.
     await classesPage.goto("manage");
-    await expect(classesPage.card(gymClass.name)).toHaveCount(0);
+    await expect(classesPage.row(gymClass.name)).toHaveCount(0);
     await expect(sheet.root).toBeHidden();
   });
 });

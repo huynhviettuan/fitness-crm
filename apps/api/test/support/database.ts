@@ -1,3 +1,4 @@
+import { EMAIL_TEMPLATE_DEFAULTS } from "@flow/shared/mail";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { DEFAULT_BRANCH_ID, SEEDED_APPROVAL_RULES, SEEDED_OPTIONS, SEEDED_SCRIPTS } from "./factories.js";
 
@@ -42,6 +43,14 @@ export async function resetDatabase(): Promise<void> {
     await prisma.sessionStatus.update({
       where: { code },
       data: { consumes, creditsPt, holdsSlot, locksOnSet, color, labelVi, labelEn },
+    });
+  }
+  // The customer email templates back to the texts the migration starts with (M6.2).
+  for (const [event, texts] of Object.entries(EMAIL_TEMPLATE_DEFAULTS)) {
+    await prisma.emailTemplate.upsert({
+      where: { event },
+      update: { ...texts, updatedById: null, updatedAt: null },
+      create: { event, ...texts },
     });
   }
   // The approval matrix back to the migration's (09_RBAC.md).

@@ -21,6 +21,7 @@ import { effectiveStatus, entitledSessions } from "@flow/shared/contracts";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { findBookableTrainer } from "../employees/employee.service.js";
 import { isoWeekday, minutesOfTime } from "@flow/shared/employees";
+import { queueBookingEmail } from "../sessions/session-email.js";
 import * as repo from "./booking.repository.js";
 import {
   OPEN_BOOKING_STATUSES,
@@ -265,7 +266,16 @@ export async function deleteBooking(actor: Actor, id: string, input: unknown): P
 /** Khách không đến: a Booked session not yet checked in (A-006). Consumes and credits the PT by its rule (D-025). */
 export async function markNoShow(actor: Actor, id: string): Promise<BookingView> {
   assertCan(actor, "booking.manage");
-  return transitionBooking(actor, id, { to: "NO_SHOW", allowed: canMarkNoShow, action: "booking.no_show" });
+  return transitionBooking(actor, id, {
+    to: "NO_SHOW",
+    allowed: canMarkNoShow,
+    action: "booking.no_show",
+    // D-036: a no-show that uses a session tells the customer, once.
+    apply: async (tx) => {
+      const counted = await tx.booking.findUnique({ where: { id }, select: { consumes: true } });
+      if (counted?.consumes) await queueBookingEmail(tx, "session.noShow", id, actor.id);
+    },
+  });
 }
 
 /**

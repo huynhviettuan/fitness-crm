@@ -29,6 +29,7 @@ import {
 import { findContract, lockContract, usedSessionsOf } from "../contracts/contract.repository.js";
 import { contractsVisibleTo } from "../contracts/contract.service.js";
 import { findBookableTrainer } from "../employees/employee.service.js";
+import { queueSessionEmail } from "../sessions/session-email.js";
 import * as repo from "./class.repository.js";
 
 // The class schedule (brief §6.4, D-031, BR-411; A-160 to A-164). Lock order: contract, then the class session (the
@@ -396,6 +397,23 @@ export async function markAttendance(
         remainingSessions: remaining === null ? null : remaining - 1,
       },
     });
+    if (status === "PRESENT") {
+      // D-036: a class session that uses a session tells the customer, once.
+      const held = await tx.classSession.findUniqueOrThrow({
+        where: { id: sessionId },
+        select: { startsAt: true, gymClass: { select: { name: true } }, coach: { select: { fullName: true } } },
+      });
+      await queueSessionEmail(tx, {
+        event: "class.attended",
+        causeId: attendanceId,
+        customerId: attendance.customerId,
+        contractId: attendance.contractId,
+        start: held.startsAt,
+        trainerName: held.coach.fullName,
+        className: held.gymClass.name,
+        by: actor.id,
+      });
+    }
     return toSessionView((await repo.findSession(tx, sessionId))!, true);
   }, LOCKING_TRANSACTION);
 }

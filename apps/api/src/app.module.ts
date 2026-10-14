@@ -16,6 +16,7 @@ import { BookingsController, ScheduleController } from "./modules/bookings/booki
 import { CheckinController, CheckinDevicesController } from "./modules/checkin/checkin.controller.js";
 import { ClassSessionsController, ClassesController } from "./modules/classes/classes.controller.js";
 import { PayoutsController } from "./modules/payouts/payouts.controller.js";
+import { EmailTemplatesController } from "./modules/mail/templates.controller.js";
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
 import { CustomersController } from "./modules/customers/customers.controller.js";
 import { LeadsController } from "./modules/leads/leads.controller.js";
@@ -68,6 +69,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
     ClassesController,
     ClassSessionsController,
     PayoutsController,
+    EmailTemplatesController,
     PaymentsController,
     DebtsController,
     CashTransactionsController,
