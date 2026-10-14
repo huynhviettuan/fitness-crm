@@ -3,6 +3,7 @@
 ## 2026-10-30 — Fingerprint machines are ZKTeco
 
 - **A-218**: the customer uses ZKTeco; the scan API stays the only entrance and a small bridge (a ZKBio Time poller or an ADMS receiver) is to be built once the software is known. TS-009 updated.
+- The machine seen in a photo is a **TX628** on Ethernet: a third bridge kind, a small program on the gym's LAN reading the machine directly, is added.
 - **Open**: OQ-062 (model, software, network, ZKTeco's API and ADMS documents). Doc 18.
 
 ## 2026-10-29 — M7.5: workout progress and the weekly dashboard
