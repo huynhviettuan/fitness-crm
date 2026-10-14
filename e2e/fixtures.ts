@@ -255,7 +255,22 @@ export const test = base.extend<Fixtures>({
     const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
     try {
       const tagged = { fullName: { contains: tag } };
-      const customerIds = ids(await prisma.customer.findMany({ where: tagged, select: { id: true } }));
+      // A lead made from Messenger or Instagram carries no name of the test's (M10.3): it is the test's when a tagged source made it.
+      const fromTaggedSources = await prisma.intakeMessage.findMany({
+        where: { source: { name: { contains: tag } }, personId: { not: null } },
+        select: { personId: true },
+      });
+      const customerIds = ids(
+        await prisma.customer.findMany({
+          where: {
+            OR: [
+              tagged,
+              { id: { in: fromTaggedSources.map((message) => message.personId).filter((id) => id !== null) } },
+            ],
+          },
+          select: { id: true },
+        }),
+      );
       // Employees, trainers among them; their shifts and days off go with them (cascade).
       const trainerIds = ids(await prisma.employee.findMany({ where: tagged, select: { id: true } }));
       const contractIds = ids(

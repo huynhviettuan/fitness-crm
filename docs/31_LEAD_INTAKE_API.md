@@ -1,7 +1,7 @@
 # 31. Lead intake API (website form)
 
 Brief §11, D-044, TS-007; built in M10.1. For whoever builds or configures the form on the gym's website (or a tool such as Make,
-Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6. The other channels (Messenger, Instagram, Gmail, Zalo)
+Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7. The other channels (Messenger, Instagram, Gmail, Zalo)
 will have their own endpoints in later slices (doc 30).
 
 ## 1. Get a key
@@ -95,3 +95,20 @@ kept. The App Secret is stored encrypted and is not shown again; the Verify toke
 register the webhook again). To change the App Secret, register a new source and switch the old one off. WhatsApp's own rules (a
 business account, an approved display name, billing for template messages we may send in a later slice) are the gym's to handle with
 Meta (doc 30).
+
+## 7. Messenger and Instagram (M10.3)
+
+The same Meta app can carry the Facebook Page's messages (Messenger) and the Instagram account's (Instagram messaging). Register **one
+source per Page and one per Instagram account**, each with the app's App Secret.
+
+1. In the Meta app add the **Messenger** product (and **Instagram** for the account), connect the Page or the account, and ask for the
+   messaging permissions in App Review (`pages_messaging`, `instagram_manage_messages`).
+2. Admin registers a source of kind **Messenger** or **Instagram** with the App Secret; the system shows once the **Callback URL**
+   (`https://<web host>/api/v1/intake/meta/<source id>`) and the **Verify token**.
+3. Paste both into the product's **Webhooks** and subscribe the Page (or account) to the **messages** field.
+
+What happens: Messenger and Instagram give no phone and no name, only an id of the sender for that Page or account. A new sender
+becomes a lead called *Messenger 654321* (the last six digits of the id), with no phone; the consultant renames it and adds the
+phone once they know the person, or merges it into the record the person already has. Later messages of the same sender go to that
+person, also after a merge. Within 24 hours a message joins the conversation; after that it is a new inquiry. The Page's own
+replies are not taken in. Lead Ads forms are not read yet.

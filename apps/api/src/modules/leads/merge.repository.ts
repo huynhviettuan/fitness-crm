@@ -114,6 +114,7 @@ export async function moveChildren(
   steps: number;
   closedSteps: number;
   tasks: number;
+  messages: number;
 }> {
   const statusChanges = (
     await db.leadStatusChange.updateMany({ where: { customerId: mergedId }, data: { customerId: survivor.id } })
@@ -123,6 +124,11 @@ export async function moveChildren(
   ).count;
   const inquiries = (
     await db.leadInquiry.updateMany({ where: { personId: mergedId }, data: { personId: survivor.id } })
+  ).count;
+  // The conversation received through the lead channels (M10.1, M10.3): a Messenger sender merged into the customer it turned out
+  // to be keeps writing to that customer (A-279).
+  const messages = (
+    await db.intakeMessage.updateMany({ where: { personId: mergedId }, data: { personId: survivor.id } })
   ).count;
 
   // A step of a template the survivor already has stays on the merged record: closed "merged" when open.
@@ -162,5 +168,5 @@ export async function moveChildren(
   await db.$executeRaw`
     UPDATE "notifications" SET "link" = ${`/${path}/${survivor.id}`}
     WHERE "link" = ${`/leads/${mergedId}`} OR "link" = ${`/customers/${mergedId}`}`;
-  return { statusChanges, assignments, inquiries, steps: moved, closedSteps, tasks };
+  return { statusChanges, assignments, inquiries, steps: moved, closedSteps, tasks, messages };
 }

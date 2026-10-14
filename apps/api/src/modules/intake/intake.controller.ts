@@ -34,12 +34,12 @@ import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiResult } from "../../platform/http/openapi.js";
 import { clientIp, logSecurityEvent } from "../../platform/security/log.js";
 import {
-  answerWhatsAppHandshake,
+  answerMetaHandshake,
   authenticateSource,
   createSource,
   listSources,
   receiveWebsiteLead,
-  receiveWhatsApp,
+  receiveMetaDelivery,
   rotateSourceKey,
   updateSource,
   withinRate,
@@ -113,7 +113,7 @@ export class WhatsAppController {
   @DeviceKeyEndpoint()
   @Header("content-type", "text/plain; charset=utf-8")
   async handshake(@Param("sourceId") sourceId: string, @Query() query: Record<string, unknown>) {
-    return answerWhatsAppHandshake(sourceId, query);
+    return answerMetaHandshake("whatsapp", sourceId, query);
   }
 
   @Post(":sourceId")
@@ -122,7 +122,40 @@ export class WhatsAppController {
   @ApiResult(whatsAppReceiptSchema)
   async delivery(@Param("sourceId") sourceId: string, @Req() request: WebhookRequest, @Body() body: unknown) {
     const signature = request.headers["x-hub-signature-256"];
-    const receipt = await receiveWhatsApp(
+    const receipt = await receiveMetaDelivery(
+      "whatsapp",
+      sourceId,
+      request.rawBody,
+      typeof signature === "string" ? signature : undefined,
+      body,
+    );
+    return encode(whatsAppReceiptSchema, receipt);
+  }
+}
+
+/**
+ * What Messenger and Instagram call (M10.3): like WhatsApp, the source is named in the path and proved by Meta's signature over the
+ * body; one address serves both kinds, the source says which.
+ */
+@ApiTags("intake")
+@ApiErrors()
+@Controller("intake/meta")
+export class MessagingController {
+  @Get(":sourceId")
+  @DeviceKeyEndpoint()
+  @Header("content-type", "text/plain; charset=utf-8")
+  async handshake(@Param("sourceId") sourceId: string, @Query() query: Record<string, unknown>) {
+    return answerMetaHandshake("meta", sourceId, query);
+  }
+
+  @Post(":sourceId")
+  @DeviceKeyEndpoint()
+  @HttpCode(200)
+  @ApiResult(whatsAppReceiptSchema)
+  async delivery(@Param("sourceId") sourceId: string, @Req() request: WebhookRequest, @Body() body: unknown) {
+    const signature = request.headers["x-hub-signature-256"];
+    const receipt = await receiveMetaDelivery(
+      "meta",
       sourceId,
       request.rawBody,
       typeof signature === "string" ? signature : undefined,

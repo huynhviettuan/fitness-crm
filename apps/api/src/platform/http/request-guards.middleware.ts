@@ -30,11 +30,11 @@ export function requestGuards(request: Request, response: Response, next: NextFu
     request.method === "POST" &&
     /\/intake\/website\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
     typeof request.headers["x-intake-key"] === "string";
-  // WhatsApp (M10.2) posts from Meta's servers, which send no Origin; its signature over the body is the proof, checked in the
+  // WhatsApp (M10.2), Messenger and Instagram (M10.3) post from Meta's servers, which send no Origin; its signature over the body is the proof, checked in the
   // service before anything is read. Only that route is open this way.
   const isWebhook =
     request.method === "POST" &&
-    /\/intake\/whatsapp\/[0-9a-f-]{36}\/?$/i.test(request.originalUrl.split("?")[0] ?? "") &&
+    /\/intake\/(whatsapp|meta)\/[0-9a-f-]{36}\/?$/i.test(request.originalUrl.split("?")[0] ?? "") &&
     typeof request.headers["x-hub-signature-256"] === "string";
   if (origin !== appOrigin && !isMachine && !isSource && !isWebhook) {
     logSecurityEvent("request.cross_origin_rejected", {

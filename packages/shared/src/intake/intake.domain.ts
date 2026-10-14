@@ -10,7 +10,17 @@ export const INTAKE_KINDS = ["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM", "E
 export type IntakeKind = (typeof INTAKE_KINDS)[number];
 
 /** The kinds that can be registered now. */
-export const AVAILABLE_INTAKE_KINDS = ["WEBSITE", "WHATSAPP"] as const satisfies readonly IntakeKind[];
+export const AVAILABLE_INTAKE_KINDS = [
+  "WEBSITE",
+  "WHATSAPP",
+  "MESSENGER",
+  "INSTAGRAM",
+] as const satisfies readonly IntakeKind[];
+
+/** The kinds Meta delivers to, each proved by the signature of the app secret and set up with a verify token (A-268, A-275). */
+export const META_KINDS = ["WHATSAPP", "MESSENGER", "INSTAGRAM"] as const satisfies readonly IntakeKind[];
+export const isMetaKind = (kind: string): kind is (typeof META_KINDS)[number] =>
+  (META_KINDS as readonly string[]).includes(kind);
 
 /** A message came in from the person, or was sent to them (later, when staff reply from the system). */
 export const MESSAGE_DIRECTIONS = ["IN", "OUT"] as const;
@@ -43,7 +53,7 @@ export const intakeSourceInputSchema = z
     branchId: optionalUuid.prefault(""),
     channelId: z.uuid({ error: "required" }),
     sourceId: optionalUuid.prefault(""),
-    /** WhatsApp only (A-268): the Meta app secret that signs its webhooks. It is kept sealed and never shown again. */
+    /** Meta kinds only (A-268, A-275): the Meta app secret that signs its webhooks. It is kept sealed and never shown again. */
     appSecret: z
       .string()
       .trim()
@@ -52,10 +62,10 @@ export const intakeSourceInputSchema = z
       .prefault(""),
   })
   .superRefine((value, context) => {
-    if (value.kind === "WHATSAPP" && value.appSecret === null) {
+    if (isMetaKind(value.kind) && value.appSecret === null) {
       context.addIssue({ code: "custom", path: ["appSecret"], message: "required" });
     }
-    if (value.kind !== "WHATSAPP" && value.appSecret !== null) {
+    if (!isMetaKind(value.kind) && value.appSecret !== null) {
       context.addIssue({ code: "custom", path: ["appSecret"], message: "invalidChoice" });
     }
   });
@@ -110,7 +120,7 @@ export const intakeSourceSchema = z
     source: z.object({ id: z.uuid(), labelVi: z.string(), labelEn: z.string() }).nullable(),
     lastReceivedAt: z.iso.datetime().nullable(),
     received: z.int(),
-    /** Where Meta is told to post (WhatsApp); the address of the API is added in front by whoever reads it. */
+    /** Where Meta is told to post (WhatsApp, Messenger, Instagram); the address of the API is added in front by whoever reads it. */
     webhookPath: z.string().nullable(),
   })
   .meta({ id: "IntakeSource" });

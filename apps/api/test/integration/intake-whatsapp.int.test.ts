@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   CONVERSATION_WINDOW_MS,
-  answerWhatsAppHandshake,
+  answerMetaHandshake,
   createSource,
   listMessages,
-  receiveWhatsApp,
+  receiveMetaDelivery,
   rotateSourceKey,
   updateSource,
-  whatsAppSignature,
+  metaSignature,
 } from "../../src/modules/intake/intake.service.js";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { type AppError } from "../../src/platform/errors/app-error.js";
@@ -55,8 +55,8 @@ const text = (id: string, body = "Tôi muốn tập thử", extra: Record<string
 /** Posts a delivery the way Meta does: the body as bytes, signed. */
 function deliver(w: World, body: unknown, options: { secret?: string; signature?: string } = {}) {
   const raw = Buffer.from(JSON.stringify(body));
-  const signature = options.signature ?? whatsAppSignature(raw, options.secret ?? SECRET);
-  return receiveWhatsApp(w.source.id, raw, signature, body);
+  const signature = options.signature ?? metaSignature(raw, options.secret ?? SECRET);
+  return receiveMetaDelivery("whatsapp", w.source.id, raw, signature, body);
 }
 const failure = async (promise: Promise<unknown>) =>
   (await promise.then(
@@ -94,11 +94,13 @@ describe("registering a WhatsApp source (A-268)", () => {
   it("gets a new verify token when re-keyed, and the old one stops working", async () => {
     const w = await world();
     const query = (token: string) => ({ "hub.mode": "subscribe", "hub.verify_token": token, "hub.challenge": "42" });
-    expect(await answerWhatsAppHandshake(w.source.id, query(w.verifyToken))).toBe("42");
+    expect(await answerMetaHandshake("whatsapp", w.source.id, query(w.verifyToken))).toBe("42");
     const rotated = await rotateSourceKey(w.admin, w.source.id);
     expect(rotated.key).toBeNull();
-    expect((await failure(answerWhatsAppHandshake(w.source.id, query(w.verifyToken))))?.code).toBe("UNAUTHENTICATED");
-    expect(await answerWhatsAppHandshake(w.source.id, query(rotated.verifyToken!))).toBe("42");
+    expect((await failure(answerMetaHandshake("whatsapp", w.source.id, query(w.verifyToken))))?.code).toBe(
+      "UNAUTHENTICATED",
+    );
+    expect(await answerMetaHandshake("whatsapp", w.source.id, query(rotated.verifyToken!))).toBe("42");
   });
 });
 
@@ -106,18 +108,20 @@ describe("Meta's handshake (A-271)", () => {
   it("echoes the challenge for the right token only, and the same refusal for everything else", async () => {
     const w = await world();
     const ok = { "hub.mode": "subscribe", "hub.verify_token": w.verifyToken, "hub.challenge": "158772" };
-    expect(await answerWhatsAppHandshake(w.source.id, ok)).toBe("158772");
+    expect(await answerMetaHandshake("whatsapp", w.source.id, ok)).toBe("158772");
     const refused = [
-      await failure(answerWhatsAppHandshake(w.source.id, { ...ok, "hub.verify_token": "wrong" })),
-      await failure(answerWhatsAppHandshake(w.source.id, { ...ok, "hub.challenge": "<script>alert(1)</script>" })),
-      await failure(answerWhatsAppHandshake(w.source.id, { ...ok, "hub.mode": "unsubscribe" })),
-      await failure(answerWhatsAppHandshake(w.source.id, {})),
-      await failure(answerWhatsAppHandshake("00000000-0000-4000-8000-000000000000", ok)),
-      await failure(answerWhatsAppHandshake("not-a-uuid", ok)),
+      await failure(answerMetaHandshake("whatsapp", w.source.id, { ...ok, "hub.verify_token": "wrong" })),
+      await failure(
+        answerMetaHandshake("whatsapp", w.source.id, { ...ok, "hub.challenge": "<script>alert(1)</script>" }),
+      ),
+      await failure(answerMetaHandshake("whatsapp", w.source.id, { ...ok, "hub.mode": "unsubscribe" })),
+      await failure(answerMetaHandshake("whatsapp", w.source.id, {})),
+      await failure(answerMetaHandshake("whatsapp", "00000000-0000-4000-8000-000000000000", ok)),
+      await failure(answerMetaHandshake("whatsapp", "not-a-uuid", ok)),
     ];
     for (const error of refused) expect(error?.code).toBe("UNAUTHENTICATED");
     await updateSource(w.admin, w.source.id, { name: "WhatsApp", active: false, channelId: w.channelId });
-    expect((await failure(answerWhatsAppHandshake(w.source.id, ok)))?.code).toBe("UNAUTHENTICATED");
+    expect((await failure(answerMetaHandshake("whatsapp", w.source.id, ok)))?.code).toBe("UNAUTHENTICATED");
   });
 });
 
@@ -127,13 +131,21 @@ describe("the signature (A-270)", () => {
     const body = payload([text("wamid.1")]);
     const raw = Buffer.from(JSON.stringify(body));
     const attempts = [
-      () => receiveWhatsApp(w.source.id, raw, undefined, body),
-      () => receiveWhatsApp(w.source.id, raw, `sha256=${"0".repeat(64)}`, body),
-      () => receiveWhatsApp(w.source.id, raw, whatsAppSignature(raw, "another-secret-0123456789"), body),
-      () => receiveWhatsApp(w.source.id, raw, whatsAppSignature(Buffer.from(`${raw.toString()} `), SECRET), body),
-      () => receiveWhatsApp(w.source.id, raw, "garbage", body),
-      () => receiveWhatsApp(w.source.id, undefined, whatsAppSignature(raw, SECRET), body),
-      () => receiveWhatsApp("00000000-0000-4000-8000-000000000000", raw, whatsAppSignature(raw, SECRET), body),
+      () => receiveMetaDelivery("whatsapp", w.source.id, raw, undefined, body),
+      () => receiveMetaDelivery("whatsapp", w.source.id, raw, `sha256=${"0".repeat(64)}`, body),
+      () => receiveMetaDelivery("whatsapp", w.source.id, raw, metaSignature(raw, "another-secret-0123456789"), body),
+      () =>
+        receiveMetaDelivery(
+          "whatsapp",
+          w.source.id,
+          raw,
+          metaSignature(Buffer.from(`${raw.toString()} `), SECRET),
+          body,
+        ),
+      () => receiveMetaDelivery("whatsapp", w.source.id, raw, "garbage", body),
+      () => receiveMetaDelivery("whatsapp", w.source.id, undefined, metaSignature(raw, SECRET), body),
+      () =>
+        receiveMetaDelivery("whatsapp", "00000000-0000-4000-8000-000000000000", raw, metaSignature(raw, SECRET), body),
     ];
     for (const attempt of attempts) expect((await failure(attempt()))?.code).toBe("UNAUTHENTICATED");
     expect(await prisma.customer.count()).toBe(0);

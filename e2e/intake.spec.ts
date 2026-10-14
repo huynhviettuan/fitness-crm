@@ -150,6 +150,61 @@ test.describe("as an admin", () => {
     await page.goto("/leads");
     await expect(page.getByRole("link", { name: new RegExp(`Khách ${testTag}`) })).toHaveCount(1);
   });
+
+  test("@smoke E2E-181: a Messenger source is connected and a message from the page becomes a lead with its conversation", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const secret = "UiMessengerSecret0123456789abcdef";
+    await page.goto("/admin/intake");
+    await page.getByRole("button", { name: t.add }).click();
+    const dialog = page.getByRole("dialog", { name: t.add });
+    await dialog.getByLabel(t.fields.name).fill(`Messenger ${testTag}`);
+    await dialog.getByRole("combobox", { name: t.fields.kind }).click();
+    await page.getByRole("listbox").getByRole("option", { name: t.kinds.MESSENGER }).click();
+    await dialog.getByRole("combobox", { name: t.fields.channel }).click();
+    await page.getByRole("listbox").getByRole("option").first().click();
+    await dialog.getByLabel(t.fields.appSecret).fill(secret);
+    await dialog.getByRole("button", { name: t.register }).click();
+
+    const url = (await page.getByTestId("intake-webhook-url").textContent())?.trim() ?? "";
+    expect(url).toMatch(/\/api\/v1\/intake\/meta\/[0-9a-f-]{36}$/);
+    await page.getByRole("button", { name: t.webhookDone }).click();
+
+    const meta = await apiAs(null, { origin: null });
+    const sender = String(1_000_000_000_000_000 + Math.floor(Math.random() * 1_000_000_000));
+    const body = JSON.stringify({
+      object: "page",
+      entry: [
+        {
+          id: "PAGE",
+          messaging: [
+            {
+              sender: { id: sender },
+              timestamp: Date.now(),
+              message: { mid: `m.${testTag}`, text: `Giá PT ${testTag}` },
+            },
+          ],
+        },
+      ],
+    });
+    const signature = `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
+    const sent = await meta.post(new URL(url).pathname, {
+      headers: { "content-type": "application/json", "x-hub-signature-256": signature },
+      data: body,
+    });
+    expect(sent.status()).toBe(200);
+
+    await page.goto(`/leads?q=${encodeURIComponent(`Messenger ${sender.slice(-6)}`)}`);
+    await page
+      .getByRole("link", { name: `Messenger ${sender.slice(-6)}` })
+      .first()
+      .click();
+    const conversation = page.getByRole("region", { name: t.conversation });
+    await expect(conversation.getByText(`Giá PT ${testTag}`)).toBeVisible();
+    await expect(conversation.getByText(`Messenger ${testTag}`)).toBeVisible();
+  });
 });
 
 test.describe("as a receptionist", () => {

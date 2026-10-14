@@ -5,13 +5,15 @@ import {
   INTAKE_KEY_PREFIX,
   intakeSourceInputSchema,
   intakeSourceUpdateSchema,
+  isMetaKind,
+  parseMessagingPayload,
   parseWhatsAppPayload,
   websiteLeadSchema,
   whatsAppHandshakeSchema,
   type IntakeAnswer,
+  type IntakeKind,
   type IntakeMessage,
   type IntakeSource,
-  type WhatsAppMessage,
   type WhatsAppReceipt,
 } from "@flow/shared/intake";
 import type { Prisma } from "../../generated/prisma/client.js";
@@ -66,7 +68,7 @@ function present(record: SourceRecord): IntakeSource {
     ...rest,
     lastReceivedAt: lastReceivedAt?.toISOString() ?? null,
     received: _count.messages,
-    webhookPath: rest.kind === "WHATSAPP" ? `/api/v1/intake/whatsapp/${rest.id}` : null,
+    webhookPath: webhookPathOf(rest.kind, rest.id),
   };
 }
 
@@ -101,9 +103,9 @@ type Created = { source: IntakeSource; key: string | null; verifyToken: string |
 export async function createSource(actor: Actor, input: unknown): Promise<Created> {
   assertCan(actor, "intake.manage");
   const data = parseInput(intakeSourceInputSchema, input);
-  const whatsapp = data.kind === "WHATSAPP";
-  const key = whatsapp ? null : newKey();
-  const verifyToken = whatsapp ? newVerifyToken() : null;
+  const meta = isMetaKind(data.kind);
+  const key = meta ? null : newKey();
+  const verifyToken = meta ? newVerifyToken() : null;
   return prisma.$transaction(async (tx) => {
     const branchId = await resolveBranch(tx, actor, data.branchId ?? undefined);
     const chosen = await choices(tx, data);
@@ -114,7 +116,7 @@ export async function createSource(actor: Actor, input: unknown): Promise<Create
         branchId,
         ...chosen,
         keyHash: key ? hashKey(key) : null,
-        secretEnc: whatsapp ? seal(data.appSecret) : null,
+        secretEnc: meta ? seal(data.appSecret) : null,
         verifyTokenHash: verifyToken ? hashKey(verifyToken) : null,
         createdById: actor.id,
       },
@@ -174,16 +176,16 @@ export async function updateSource(actor: Actor, id: string, input: unknown): Pr
 }
 
 /**
- * A lost or leaked key is replaced; the old one stops working at once. A WhatsApp source has no key: it gets a new verify token,
+ * A lost or leaked key is replaced; the old one stops working at once. A Meta source (WhatsApp, Messenger, Instagram) has no key: it gets a new verify token,
  * for registering the webhook again (its messages stay proved by the signature).
  */
 export async function rotateSourceKey(actor: Actor, id: string): Promise<Created> {
   assertCan(actor, "intake.manage");
   return prisma.$transaction(async (tx) => {
     const before = await findVisible(tx, actor, id);
-    const whatsapp = before.kind === "WHATSAPP";
-    const key = whatsapp ? null : newKey();
-    const verifyToken = whatsapp ? newVerifyToken() : null;
+    const meta = isMetaKind(before.kind);
+    const key = meta ? null : newKey();
+    const verifyToken = meta ? newVerifyToken() : null;
     const source = await tx.intakeSource.update({
       where: { id },
       data: key ? { keyHash: hashKey(key) } : { verifyTokenHash: hashKey(verifyToken ?? "") },
@@ -300,7 +302,7 @@ export async function receiveWebsiteLead(source: AuthenticatedSource, rawBody: u
  */
 async function personFor(
   source: AuthenticatedSource,
-  data: { name: string; phone: string | null; email: string | null; note: string | null },
+  data: { name: string; phone: string | null; email: string | null; note: string | null; ownerId?: string | null },
 ): Promise<{ personId: string; existingPerson: boolean }> {
   const actor = await loadCurrentUser(prisma, source.createdById);
   if (!actor || !actor.permissions.has("lead.create")) {
@@ -308,9 +310,11 @@ async function personFor(
     logSecurityEvent("intake.actor_unusable", { sourceId: source.id }, "warn");
     throw new AppError("INTERNAL_ERROR");
   }
-  const owner = data.phone
-    ? await prisma.customer.findFirst({ where: { phone: data.phone }, select: { id: true } })
-    : null;
+  const owner = data.ownerId
+    ? { id: data.ownerId }
+    : data.phone
+      ? await prisma.customer.findFirst({ where: { phone: data.phone }, select: { id: true } })
+      : null;
   if (owner) {
     const result = await addInquiry(actor, owner.id, {
       channelId: source.channelId,
@@ -338,25 +342,38 @@ async function finishClaim(sourceId: string, claimId: string, personId: string):
   ]);
 }
 
-// ---------------------------------------------------------------------------------------------------------- WhatsApp
+// ------------------------------------------------------------------------------------------- Meta: WhatsApp, Messenger, Instagram
 
-/** WhatsApp may deliver this many messages a minute for one number before we say 429 (a chat is faster than a form). */
-export const WHATSAPP_PER_MINUTE = 600;
-/** A customer who wrote within this long is still in the same conversation (the 24-hour window of WhatsApp). */
+/** Meta may deliver this many times a minute for one source before we say 429 (a chat is faster than a form). */
+export const META_PER_MINUTE = 600;
+/** A person who wrote within this long is still in the same conversation (the 24-hour window of WhatsApp and Messenger). */
 export const CONVERSATION_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 const sameText = (a: string, b: string) => timingSafeEqual(digest(a), digest(b));
 
 /** The signature Meta puts in `x-hub-signature-256`: `sha256=` and the HMAC of the exact bytes received, keyed by the app secret. */
-export function whatsAppSignature(rawBody: Buffer, appSecret: string): string {
+export function metaSignature(rawBody: Buffer, appSecret: string): string {
   return `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
 }
 
-async function whatsAppSource(sourceId: string) {
+/** Which kinds each webhook address serves: WhatsApp has its own (M10.2), Messenger and Instagram share one (M10.3). */
+export const WEBHOOK_KINDS = {
+  whatsapp: ["WHATSAPP"],
+  meta: ["MESSENGER", "INSTAGRAM"],
+} as const satisfies Record<string, readonly IntakeKind[]>;
+export type WebhookRoute = keyof typeof WEBHOOK_KINDS;
+
+export function webhookPathOf(kind: IntakeKind, id: string): string | null {
+  if (kind === "WHATSAPP") return `/api/v1/intake/whatsapp/${id}`;
+  if (kind === "MESSENGER" || kind === "INSTAGRAM") return `/api/v1/intake/meta/${id}`;
+  return null;
+}
+
+async function metaSource(route: WebhookRoute, sourceId: string) {
   if (!z.uuid().safeParse(sourceId).success) return null;
   return prisma.intakeSource.findFirst({
-    where: { id: sourceId, kind: "WHATSAPP", active: true },
+    where: { id: sourceId, kind: { in: [...WEBHOOK_KINDS[route]] }, active: true },
     select: {
       id: true,
       name: true,
@@ -372,60 +389,111 @@ async function whatsAppSource(sourceId: string) {
 }
 
 /**
- * Meta's handshake when the webhook is registered (A-271): the challenge is echoed only for the source's own verify token. A
- * source that does not exist, is off, or gets a wrong token is answered the same way, so nothing is learnt by guessing.
+ * Meta's handshake when the webhook is registered (A-271, A-275): the challenge is echoed only for the source's own verify token.
+ * A source that does not exist, is off, is of another kind, or gets a wrong token is answered the same way, so nothing is learnt by
+ * guessing.
  */
-export async function answerWhatsAppHandshake(sourceId: string, query: unknown): Promise<string> {
+export async function answerMetaHandshake(route: WebhookRoute, sourceId: string, query: unknown): Promise<string> {
   const refused = () => {
     logSecurityEvent("intake.webhook_refused", { sourceId, reason: "handshake" }, "warn");
     return new AppError("UNAUTHENTICATED");
   };
   const parsed = whatsAppHandshakeSchema.safeParse(query);
-  const source = await whatsAppSource(sourceId);
+  const source = await metaSource(route, sourceId);
   if (!parsed.success || !source?.verifyTokenHash) throw refused();
   if (!sameText(hashKey(parsed.data["hub.verify_token"]), source.verifyTokenHash)) throw refused();
   return parsed.data["hub.challenge"];
 }
 
+/** One message as the channels hand it over: WhatsApp gives a phone, Messenger and Instagram only the sender's id (A-277). */
+type ChannelMessage = {
+  externalId: string;
+  phone: string | null;
+  senderRef: string | null;
+  name: string;
+  body: string;
+  receivedAt: Date | null;
+};
+
+function messagesOf(kind: IntakeKind, payload: unknown): ChannelMessage[] {
+  if (kind === "WHATSAPP") return parseWhatsAppPayload(payload).map((message) => ({ ...message, senderRef: null }));
+  if (kind === "MESSENGER" || kind === "INSTAGRAM") {
+    return parseMessagingPayload(kind, payload).map((message) => ({ ...message, phone: null }));
+  }
+  return [];
+}
+
 /**
- * A delivery from WhatsApp (A-270 to A-274). Its signature is checked over the exact bytes against the sealed app secret before
- * anything is read. Each customer message is taken in once (Meta's message id is unique per source): a customer who wrote within
- * 24 hours only adds to the conversation and the consultant is told; otherwise it is a new lead or an inquiry like a form. A
- * failure is a 5xx, so Meta delivers again; what was already taken in is then recognised.
+ * A delivery from Meta (A-270, A-276). Its signature is checked over the exact bytes against the sealed app secret before anything
+ * is read. Each message is taken in once (Meta's message id is unique per source): a person who wrote within 24 hours only adds to
+ * the conversation and the consultant is told; otherwise it is a new lead or an inquiry. A failure is a 5xx, so Meta delivers
+ * again; what was already taken in is then recognised.
  */
-export async function receiveWhatsApp(
+export async function receiveMetaDelivery(
+  route: WebhookRoute,
   sourceId: string,
   rawBody: Buffer | undefined,
   signature: string | undefined,
   payload: unknown,
 ): Promise<WhatsAppReceipt> {
-  const source = await whatsAppSource(sourceId);
+  const source = await metaSource(route, sourceId);
   const secret = source?.secretEnc ? unseal(source.secretEnc) : null;
   const valid =
     source !== null &&
     secret !== null &&
     rawBody !== undefined &&
     typeof signature === "string" &&
-    sameText(signature, whatsAppSignature(rawBody, secret));
+    sameText(signature, metaSignature(rawBody, secret));
   if (!valid || !source) {
     logSecurityEvent("intake.webhook_refused", { sourceId, reason: "signature" }, "warn");
     throw new AppError("UNAUTHENTICATED");
   }
-  if (!withinRate(source.id, Date.now(), WHATSAPP_PER_MINUTE)) {
+  if (!withinRate(source.id, Date.now(), META_PER_MINUTE)) {
     logSecurityEvent("intake.rate_limited", { sourceId: source.id }, "warn");
     throw new AppError("RATE_LIMITED");
   }
   let received = 0;
   let duplicates = 0;
-  for (const message of parseWhatsAppPayload(payload)) {
-    if (await takeInWhatsApp(source, message)) received += 1;
+  for (const message of messagesOf(source.kind, payload)) {
+    if (await takeIn(source, message)) received += 1;
     else duplicates += 1;
   }
   return { received, duplicates };
 }
 
-/** One customer message; false when it had been taken in before. */
-async function takeInWhatsApp(source: AuthenticatedSource, message: WhatsAppMessage): Promise<boolean> {
+const ownerSelect = {
+  id: true,
+  stage: true,
+  fullName: true,
+  leadCode: true,
+  customerCode: true,
+  picUserId: true,
+  mergedIntoId: true,
+} as const satisfies Prisma.CustomerSelect;
+
+/**
+ * The person a message belongs to: whoever has the phone (WhatsApp), or the person the same sender's earlier messages went to
+ * (Messenger, Instagram; A-277). A person merged away is followed to the one they were merged into (A-279).
+ */
+async function ownerOf(sourceId: string, message: ChannelMessage) {
+  if (message.phone) return prisma.customer.findFirst({ where: { phone: message.phone }, select: ownerSelect });
+  if (!message.senderRef) return null;
+  const earlier = await prisma.intakeMessage.findFirst({
+    where: { sourceId, senderRef: message.senderRef, personId: { not: null } },
+    orderBy: [{ receivedAt: "desc" }, { id: "desc" }],
+    select: { personId: true },
+  });
+  let id = earlier?.personId ?? null;
+  for (let hops = 0; id && hops < 5; hops += 1) {
+    const person = await prisma.customer.findUnique({ where: { id }, select: ownerSelect });
+    if (!person?.mergedIntoId) return person;
+    id = person.mergedIntoId;
+  }
+  return null;
+}
+
+/** One message; false when it had been taken in before. */
+async function takeIn(source: AuthenticatedSource, message: ChannelMessage): Promise<boolean> {
   let claim: { id: string };
   try {
     claim = await prisma.intakeMessage.create({
@@ -433,6 +501,7 @@ async function takeInWhatsApp(source: AuthenticatedSource, message: WhatsAppMess
         sourceId: source.id,
         externalId: message.externalId,
         senderName: message.name,
+        senderRef: message.senderRef,
         body: message.body || null,
         ...(message.receivedAt && message.receivedAt.getTime() <= Date.now() ? { receivedAt: message.receivedAt } : {}),
       },
@@ -449,10 +518,7 @@ async function takeInWhatsApp(source: AuthenticatedSource, message: WhatsAppMess
     return false;
   }
   try {
-    const owner = await prisma.customer.findFirst({
-      where: { phone: message.phone },
-      select: { id: true, stage: true, fullName: true, leadCode: true, customerCode: true, picUserId: true },
-    });
+    const owner = await ownerOf(source.id, message);
     const recent = owner
       ? await prisma.intakeMessage.findFirst({
           where: {
@@ -485,6 +551,7 @@ async function takeInWhatsApp(source: AuthenticatedSource, message: WhatsAppMess
       phone: message.phone,
       email: null,
       note: message.body ? message.body.slice(0, 2000) : null,
+      ownerId: owner?.id ?? null,
     });
     await finishClaim(source.id, claim.id, personId);
     return true;

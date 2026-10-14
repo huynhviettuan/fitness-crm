@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-11-08 — M10.3: Messenger and Instagram
+
+- **Channels** (A-275 to A-278): Messenger and Instagram sources at a shared Meta address; the sender id ties a person's messages; a new sender is a lead named after the channel.
+- **Merge** (A-279): merging two records moves the received messages to the survivor (also fixes M10.1).
+- **Open**: OQ-074. Docs 04, 07, 13, 16, 18, 24, 28, 31 (§7).
+
 ## 2026-11-07 — M10.2: WhatsApp
 
 - **Channel** (A-268 to A-274): WhatsApp sources with the App Secret sealed; Meta's handshake and signed deliveries (HMAC over the exact bytes); the phone in the gym's form; one message once; one conversation within 24 hours.

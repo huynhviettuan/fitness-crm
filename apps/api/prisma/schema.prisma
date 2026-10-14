@@ -2609,11 +2609,14 @@ model IntakeMessage {
   person     Customer?        @relation("PersonMessages", fields: [personId], references: [id], onDelete: Restrict)
   direction  MessageDirection @default(IN)
   senderName String?          @map("sender_name")
+  // Messenger and Instagram (M10.3): the sender's id for the page or account, the only thing that ties a person's messages.
+  senderRef  String?          @map("sender_ref")
   body       String?
   receivedAt DateTime         @default(now()) @map("received_at") @db.Timestamptz(3)
   createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([sourceId, externalId])
   @@index([personId, receivedAt])
+  @@index([sourceId, senderRef])
   @@map("intake_messages")
 }

@@ -76,6 +76,8 @@ test.describe("a coach stops a session", () => {
       await expect(dialog.getByText(labels.validation.required)).toBeVisible();
       await dialog.getByLabel(e.fields.direction, { exact: true }).fill("Nghỉ buổi này, khám lại lưng");
       await dialog.getByRole("button", { name: e.confirmSeen, exact: true }).click();
+      // The open dialog hides the table from the accessibility tree, so the row is only gone once the dialog has closed.
+      await expect(dialog).toBeHidden();
       await expect(managerPage.getByRole("row").filter({ hasText: customer.fullName })).toHaveCount(0);
       await managerPage.goto("/workouts/escalations?status=SEEN");
       await expect(managerPage.getByRole("row").filter({ hasText: customer.fullName })).toContainText(

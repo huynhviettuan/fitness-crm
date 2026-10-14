@@ -22,7 +22,7 @@ import { notify } from "@/components/notify";
 import { optionLabel } from "@/components/option-select";
 import { useErrorMessage } from "@/components/use-error-message";
 import { useOptions } from "@/components/use-options";
-import { AVAILABLE_INTAKE_KINDS, type IntakeSource } from "@flow/shared/intake";
+import { AVAILABLE_INTAKE_KINDS, isMetaKind, type IntakeSource } from "@flow/shared/intake";
 import { createSourceAction, rotateSourceKeyAction, updateSourceAction, type Shown } from "./actions";
 
 type Props = { sources: IntakeSource[]; branches: { id: string; name: string }[] };
@@ -147,7 +147,8 @@ function AddSourceDialog({
   const channels = useOptions("leadChannels");
   const sources = useOptions("leadSources");
   const [name, setName] = useState("");
-  const [kind, setKind] = useState<"WEBSITE" | "WHATSAPP">("WEBSITE");
+  const [kind, setKind] = useState<(typeof AVAILABLE_INTAKE_KINDS)[number]>("WEBSITE");
+  const meta = isMetaKind(kind);
   const [appSecret, setAppSecret] = useState("");
   const [branchId, setBranchId] = useState(branches.length === 1 ? (branches[0]?.id ?? "") : "");
   const [channelId, setChannelId] = useState("");
@@ -162,7 +163,7 @@ function AddSourceDialog({
       branchId,
       channelId,
       sourceId,
-      appSecret: kind === "WHATSAPP" ? appSecret : "",
+      appSecret: meta ? appSecret : "",
     });
     setBusy(false);
     if (!result.ok) return notify.error(errorMessage(result.code));
@@ -234,7 +235,7 @@ function AddSourceDialog({
               ))}
           </SelectContent>
         </Select>
-        {kind === "WHATSAPP" && (
+        {meta && (
           <div className="space-y-1">
             <Input
               type="password"
@@ -250,7 +251,7 @@ function AddSourceDialog({
         <DialogFooter>
           <Button
             onClick={submit}
-            disabled={busy || !name.trim() || !branchId || !channelId || (kind === "WHATSAPP" && !appSecret.trim())}
+            disabled={busy || !name.trim() || !branchId || !channelId || (meta && !appSecret.trim())}
           >
             {t("register")}
           </Button>
@@ -260,7 +261,7 @@ function AddSourceDialog({
   );
 }
 
-/** The key (or, for WhatsApp, the verify token with the address to post to) is shown once and never again (like the machines). */
+/** The key (or, for the Meta channels, the verify token with the address to post to) is shown once and never again (like the machines). */
 function KeyDialog({ shown, onClose }: { shown: Shown; onClose: () => void }) {
   const t = useTranslations("intake");
   const whatsapp = shown.verifyToken !== null;

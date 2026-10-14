@@ -10848,6 +10848,79 @@
         "x-permission": "device-key"
       }
     },
+    "/api/v1/intake/meta/{sourceId}": {
+      "get": {
+        "operationId": "MessagingController_handshake",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      },
+      "post": {
+        "operationId": "MessagingController_delivery",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      }
+    },
     "/api/v1/intake/sources": {
       "get": {
         "operationId": "IntakeSourcesController_list",
@@ -10897,7 +10970,9 @@
                     "type": "string",
                     "enum": [
                       "WEBSITE",
-                      "WHATSAPP"
+                      "WHATSAPP",
+                      "MESSENGER",
+                      "INSTAGRAM"
                     ]
                   },
                   "branchId": {
