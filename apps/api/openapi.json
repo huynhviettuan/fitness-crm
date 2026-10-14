@@ -10775,6 +10775,79 @@
         "x-permission": "device-key"
       }
     },
+    "/api/v1/intake/whatsapp/{sourceId}": {
+      "get": {
+        "operationId": "WhatsAppController_handshake",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      },
+      "post": {
+        "operationId": "WhatsAppController_delivery",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      }
+    },
     "/api/v1/intake/sources": {
       "get": {
         "operationId": "IntakeSourcesController_list",
@@ -10823,7 +10896,8 @@
                   "kind": {
                     "type": "string",
                     "enum": [
-                      "WEBSITE"
+                      "WEBSITE",
+                      "WHATSAPP"
                     ]
                   },
                   "branchId": {
@@ -10841,6 +10915,10 @@
                     "nullable": true,
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "appSecret": {
+                    "default": "",
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -27493,6 +27571,21 @@
           "existingPerson"
         ]
       },
+      "WhatsAppReceipt": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "integer"
+          },
+          "duplicates": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "received",
+          "duplicates"
+        ]
+      },
       "IntakeSourceList": {
         "type": "object",
         "properties": {
@@ -27596,6 +27689,10 @@
           },
           "received": {
             "type": "integer"
+          },
+          "webhookPath": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
@@ -27607,7 +27704,8 @@
           "channel",
           "source",
           "lastReceivedAt",
-          "received"
+          "received",
+          "webhookPath"
         ]
       },
       "IntakeSourceCreated": {
@@ -27617,12 +27715,18 @@
             "$ref": "#/components/schemas/IntakeSource"
           },
           "key": {
+            "nullable": true,
+            "type": "string"
+          },
+          "verifyToken": {
+            "nullable": true,
             "type": "string"
           }
         },
         "required": [
           "source",
-          "key"
+          "key",
+          "verifyToken"
         ]
       },
       "GymClassList": {

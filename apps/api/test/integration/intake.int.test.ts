@@ -23,8 +23,8 @@ async function world() {
   const { actor: admin } = await createTestUser("ADMIN", { allBranches: true });
   const channelId = await optionId("leadChannels", "WhatsApp");
   const { source, key } = await createSource(admin, { name: "Website", kind: "WEBSITE", channelId });
-  const authenticated = (await authenticateSource(key))!;
-  return { admin, channelId, source, key, authenticated };
+  const authenticated = (await authenticateSource(key!))!;
+  return { admin, channelId, source, key: key!, authenticated };
 }
 type World = Awaited<ReturnType<typeof world>>;
 
@@ -92,13 +92,13 @@ describe("the sources", () => {
     expect(await authenticateSource(w.key)).not.toBeNull();
     const rotated = await rotateSourceKey(w.admin, w.source.id);
     expect(await authenticateSource(w.key)).toBeNull();
-    expect(await authenticateSource(rotated.key)).not.toBeNull();
+    expect(await authenticateSource(rotated.key!)).not.toBeNull();
   });
 
   it("recognise only a well-formed key", async () => {
     expect(await authenticateSource("")).toBeNull();
     expect(await authenticateSource("fci_short")).toBeNull();
-    expect(await authenticateSource("fcd_" + "a".repeat(40))).toBeNull();
+    expect(await authenticateSource(`fcd_${"a".repeat(40)}`)).toBeNull();
     expect(await authenticateSource("' OR 1=1 --")).toBeNull();
   });
 });

@@ -3454,7 +3454,7 @@
   },
   "intake": {
     "title": "Lead sources",
-    "description": "The connections that hand leads to the system (the website form, later WhatsApp, Messenger, Instagram, Gmail and Zalo). Each source has a key of its own.",
+    "description": "The connections that hand leads to the system (the website form, WhatsApp; later Messenger, Instagram, Gmail and Zalo). Each source has its own way of proving itself.",
     "empty": "No source yet. Add the first to receive leads from the website form.",
     "note": "The key is shown once, when it is made or replaced. It belongs on the website's server (never in a page a visitor can read) and goes in the x-intake-key header to /api/v1/intake/website.",
     "add": "Add a source",
@@ -3489,7 +3489,14 @@
       "status": "Status",
       "received": "Received",
       "lastReceived": "Last received",
-      "actions": "Actions"
-    }
+      "actions": "Actions",
+      "appSecret": "Meta App Secret"
+    },
+    "appSecretHint": "The App Secret of the Meta app, used to check the signature of every message. It is stored encrypted and not shown again.",
+    "webhookTitle": "Connect WhatsApp",
+    "webhookBody": "Paste this address and verify token into the Webhook settings of the Meta app (the messages field). They are not shown again; if lost, use New key to get a new verify token.",
+    "webhookUrl": "Callback URL",
+    "verifyToken": "Verify token",
+    "webhookDone": "I have saved them"
   }
 }

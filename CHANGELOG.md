@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-11-07 — M10.2: WhatsApp
+
+- **Channel** (A-268 to A-274): WhatsApp sources with the App Secret sealed; Meta's handshake and signed deliveries (HMAC over the exact bytes); the phone in the gym's form; one message once; one conversation within 24 hours.
+- **Open**: OQ-073. Docs 04, 07, 13, 16, 18, 24, 28, 31 (§6).
+
 ## 2026-11-06 — M10.1: lead intake gateway
 
 - **Gateway** (A-261 to A-265): sources with their own keys, the website form as the first channel, idempotent, rate limited; an existing phone becomes an inquiry.

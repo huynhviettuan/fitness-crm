@@ -2580,8 +2580,11 @@ model IntakeSource {
   channel        Option     @relation("IntakeChannel", fields: [channelId], references: [id], onDelete: Restrict)
   sourceId       String?    @map("source_option_id") @db.Uuid
   source         Option?    @relation("IntakeSource", fields: [sourceId], references: [id], onDelete: Restrict)
-  // Only the hash of the key is kept; the key is shown once.
-  keyHash        String     @unique @map("key_hash")
+  // Only the hash of the key is kept; the key is shown once. A WhatsApp source has none: it is proved by Meta's signature.
+  keyHash        String?    @unique @map("key_hash")
+  // WhatsApp (M10.2): the Meta app secret, sealed, that signs the webhooks; and the hash of the token Meta echoes in the handshake.
+  secretEnc       String?    @map("secret_enc")
+  verifyTokenHash String?    @map("verify_token_hash")
   active         Boolean    @default(true)
   lastReceivedAt DateTime?  @map("last_received_at") @db.Timestamptz(3)
   createdById    String     @map("created_by") @db.Uuid

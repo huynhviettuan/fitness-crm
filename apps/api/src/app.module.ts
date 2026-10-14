@@ -14,7 +14,7 @@ import { ErrorFilter } from "./platform/http/error.filter.js";
 import { requestGuards } from "./platform/http/request-guards.middleware.js";
 import { BookingsController, ScheduleController } from "./modules/bookings/bookings.controller.js";
 import { CheckinController, CheckinDevicesController } from "./modules/checkin/checkin.controller.js";
-import { IntakeController, IntakeSourcesController } from "./modules/intake/intake.controller.js";
+import { IntakeController, IntakeSourcesController, WhatsAppController } from "./modules/intake/intake.controller.js";
 import { ClassSessionsController, ClassesController } from "./modules/classes/classes.controller.js";
 import {
   NotificationPreferencesController,
@@ -84,6 +84,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
     CheckinController,
     CheckinDevicesController,
     IntakeController,
+    WhatsAppController,
     IntakeSourcesController,
     ClassesController,
     ClassSessionsController,

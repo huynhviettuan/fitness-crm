@@ -3454,7 +3454,7 @@
   },
   "intake": {
     "title": "Nguồn nhận lead",
-    "description": "Các kết nối tự động chuyển lead vào hệ thống (form website, sau này là WhatsApp, Messenger, Instagram, Gmail, Zalo). Mỗi nguồn có khóa riêng.",
+    "description": "Các kết nối tự động chuyển lead vào hệ thống (form website, WhatsApp; sau này Messenger, Instagram, Gmail, Zalo). Mỗi nguồn có cách xác thực riêng.",
     "empty": "Chưa có nguồn nào. Thêm nguồn đầu tiên để nhận lead từ form website.",
     "note": "Khóa chỉ hiện một lần khi tạo hoặc đổi. Khóa phải nằm ở máy chủ của website (không để trong trang web mà khách xem được) và gửi trong tiêu đề x-intake-key đến /api/v1/intake/website.",
     "add": "Thêm nguồn",
@@ -3489,7 +3489,14 @@
       "status": "Trạng thái",
       "received": "Đã nhận",
       "lastReceived": "Lần nhận cuối",
-      "actions": "Thao tác"
-    }
+      "actions": "Thao tác",
+      "appSecret": "App Secret của Meta"
+    },
+    "appSecretHint": "Mã bí mật (App Secret) của ứng dụng Meta, dùng để kiểm tra chữ ký từng tin. Được mã hóa và không hiện lại.",
+    "webhookTitle": "Kết nối WhatsApp",
+    "webhookBody": "Dán địa chỉ và mã xác minh này vào phần Webhook của ứng dụng Meta (trường messages). Chúng không hiện lại; nếu mất, hãy đổi khóa để lấy mã xác minh mới.",
+    "webhookUrl": "Địa chỉ nhận (Callback URL)",
+    "verifyToken": "Mã xác minh (Verify token)",
+    "webhookDone": "Đã lưu thông tin"
   }
 }

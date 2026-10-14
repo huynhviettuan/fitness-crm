@@ -22,8 +22,8 @@ import { notify } from "@/components/notify";
 import { optionLabel } from "@/components/option-select";
 import { useErrorMessage } from "@/components/use-error-message";
 import { useOptions } from "@/components/use-options";
-import type { IntakeSource } from "@flow/shared/intake";
-import { createSourceAction, rotateSourceKeyAction, updateSourceAction } from "./actions";
+import { AVAILABLE_INTAKE_KINDS, type IntakeSource } from "@flow/shared/intake";
+import { createSourceAction, rotateSourceKeyAction, updateSourceAction, type Shown } from "./actions";
 
 type Props = { sources: IntakeSource[]; branches: { id: string; name: string }[] };
 
@@ -34,12 +34,12 @@ export function SourcesPanel({ sources, branches }: Props) {
   const router = useRouter();
   const errorMessage = useErrorMessage();
   const [adding, setAdding] = useState(false);
-  const [shownKey, setShownKey] = useState<string | null>(null);
+  const [shown, setShown] = useState<Shown | null>(null);
 
   const rotate = async (source: IntakeSource) => {
     const result = await rotateSourceKeyAction(source.id);
     if (!result.ok) return notify.error(errorMessage(result.code));
-    setShownKey(result.data.key);
+    setShown(result.data);
     router.refresh();
   };
   const toggle = async (source: IntakeSource) => {
@@ -120,14 +120,14 @@ export function SourcesPanel({ sources, branches }: Props) {
         <AddSourceDialog
           branches={branches}
           onClose={() => setAdding(false)}
-          onCreated={(key) => {
+          onCreated={(created) => {
             setAdding(false);
-            setShownKey(key);
+            setShown(created);
             router.refresh();
           }}
         />
       )}
-      {shownKey && <KeyDialog value={shownKey} onClose={() => setShownKey(null)} />}
+      {shown && <KeyDialog shown={shown} onClose={() => setShown(null)} />}
     </>
   );
 }
@@ -139,7 +139,7 @@ function AddSourceDialog({
 }: {
   branches: Props["branches"];
   onClose: () => void;
-  onCreated: (key: string) => void;
+  onCreated: (created: Shown) => void;
 }) {
   const t = useTranslations("intake");
   const locale = useLocale();
@@ -147,6 +147,8 @@ function AddSourceDialog({
   const channels = useOptions("leadChannels");
   const sources = useOptions("leadSources");
   const [name, setName] = useState("");
+  const [kind, setKind] = useState<"WEBSITE" | "WHATSAPP">("WEBSITE");
+  const [appSecret, setAppSecret] = useState("");
   const [branchId, setBranchId] = useState(branches.length === 1 ? (branches[0]?.id ?? "") : "");
   const [channelId, setChannelId] = useState("");
   const [sourceId, setSourceId] = useState("");
@@ -154,10 +156,17 @@ function AddSourceDialog({
 
   const submit = async () => {
     setBusy(true);
-    const result = await createSourceAction({ name, kind: "WEBSITE", branchId, channelId, sourceId });
+    const result = await createSourceAction({
+      name,
+      kind,
+      branchId,
+      channelId,
+      sourceId,
+      appSecret: kind === "WHATSAPP" ? appSecret : "",
+    });
     setBusy(false);
     if (!result.ok) return notify.error(errorMessage(result.code));
-    onCreated(result.data.key);
+    onCreated(result.data);
   };
 
   return (
@@ -173,6 +182,18 @@ function AddSourceDialog({
           aria-label={t("fields.name")}
           placeholder={t("fields.name")}
         />
+        <Select value={kind} onValueChange={(value) => setKind(value as typeof kind)}>
+          <SelectTrigger aria-label={t("fields.kind")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AVAILABLE_INTAKE_KINDS.map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(`kinds.${value}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={branchId} onValueChange={setBranchId}>
           <SelectTrigger aria-label={t("fields.branch")}>
             <SelectValue placeholder={t("fields.branch")} />
@@ -213,8 +234,24 @@ function AddSourceDialog({
               ))}
           </SelectContent>
         </Select>
+        {kind === "WHATSAPP" && (
+          <div className="space-y-1">
+            <Input
+              type="password"
+              autoComplete="off"
+              value={appSecret}
+              onChange={(event) => setAppSecret(event.target.value)}
+              aria-label={t("fields.appSecret")}
+              placeholder={t("fields.appSecret")}
+            />
+            <p className="text-xs text-muted-foreground">{t("appSecretHint")}</p>
+          </div>
+        )}
         <DialogFooter>
-          <Button onClick={submit} disabled={busy || !name.trim() || !branchId || !channelId}>
+          <Button
+            onClick={submit}
+            disabled={busy || !name.trim() || !branchId || !channelId || (kind === "WHATSAPP" && !appSecret.trim())}
+          >
             {t("register")}
           </Button>
         </DialogFooter>
@@ -223,21 +260,35 @@ function AddSourceDialog({
   );
 }
 
-/** The key is shown once and never again (like the machines'). */
-function KeyDialog({ value, onClose }: { value: string; onClose: () => void }) {
+/** The key (or, for WhatsApp, the verify token with the address to post to) is shown once and never again (like the machines). */
+function KeyDialog({ shown, onClose }: { shown: Shown; onClose: () => void }) {
   const t = useTranslations("intake");
+  const whatsapp = shown.verifyToken !== null;
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("keyTitle")}</DialogTitle>
-          <DialogDescription>{t("keyBody")}</DialogDescription>
+          <DialogTitle>{whatsapp ? t("webhookTitle") : t("keyTitle")}</DialogTitle>
+          <DialogDescription>{whatsapp ? t("webhookBody") : t("keyBody")}</DialogDescription>
         </DialogHeader>
-        <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-key">
-          {value}
-        </code>
+        {whatsapp ? (
+          <>
+            <p className="text-sm font-medium">{t("webhookUrl")}</p>
+            <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-webhook-url">
+              {`${window.location.origin}${shown.webhookPath ?? ""}`}
+            </code>
+            <p className="text-sm font-medium">{t("verifyToken")}</p>
+            <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-verify-token">
+              {shown.verifyToken}
+            </code>
+          </>
+        ) : (
+          <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-key">
+            {shown.key}
+          </code>
+        )}
         <DialogFooter>
-          <Button onClick={onClose}>{t("keyDone")}</Button>
+          <Button onClick={onClose}>{whatsapp ? t("webhookDone") : t("keyDone")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

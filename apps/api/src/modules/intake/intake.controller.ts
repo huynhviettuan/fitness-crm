@@ -2,11 +2,14 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   Injectable,
   Param,
   Patch,
   Post,
+  Query,
+  Req,
   UseGuards,
   createParamDecorator,
 } from "@nestjs/common";
@@ -22,6 +25,7 @@ import {
   intakeSourceSchema,
   intakeSourceUpdateSchema,
   websiteLeadSchema,
+  whatsAppReceiptSchema,
 } from "@flow/shared/intake";
 import { CurrentActor, DeviceKeyEndpoint, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
@@ -30,10 +34,12 @@ import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiResult } from "../../platform/http/openapi.js";
 import { clientIp, logSecurityEvent } from "../../platform/security/log.js";
 import {
+  answerWhatsAppHandshake,
   authenticateSource,
   createSource,
   listSources,
   receiveWebsiteLead,
+  receiveWhatsApp,
   rotateSourceKey,
   updateSource,
   withinRate,
@@ -90,6 +96,39 @@ export class IntakeController {
   async website(@CurrentSource() source: AuthenticatedSource, @Body({ schema: websiteLeadSchema }) body: unknown) {
     if (source.kind !== "WEBSITE") throw new AppError("FORBIDDEN");
     return encode(intakeAnswerSchema, await receiveWebsiteLead(source, body));
+  }
+}
+
+type WebhookRequest = Request & { rawBody?: Buffer };
+
+/**
+ * What WhatsApp calls (M10.2): no session, no key header; the source is named in the path and proved by Meta's signature over
+ * the body (checked in the service). A GET is Meta's handshake when the webhook is registered.
+ */
+@ApiTags("intake")
+@ApiErrors()
+@Controller("intake/whatsapp")
+export class WhatsAppController {
+  @Get(":sourceId")
+  @DeviceKeyEndpoint()
+  @Header("content-type", "text/plain; charset=utf-8")
+  async handshake(@Param("sourceId") sourceId: string, @Query() query: Record<string, unknown>) {
+    return answerWhatsAppHandshake(sourceId, query);
+  }
+
+  @Post(":sourceId")
+  @DeviceKeyEndpoint()
+  @HttpCode(200)
+  @ApiResult(whatsAppReceiptSchema)
+  async delivery(@Param("sourceId") sourceId: string, @Req() request: WebhookRequest, @Body() body: unknown) {
+    const signature = request.headers["x-hub-signature-256"];
+    const receipt = await receiveWhatsApp(
+      sourceId,
+      request.rawBody,
+      typeof signature === "string" ? signature : undefined,
+      body,
+    );
+    return encode(whatsAppReceiptSchema, receipt);
   }
 }
 

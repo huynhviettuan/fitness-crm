@@ -12,7 +12,8 @@ export type SecurityEvent =
   | "authz.denied"
   | "request.cross_origin_rejected"
   | "intake.rate_limited"
-  | "intake.actor_unusable";
+  | "intake.actor_unusable"
+  | "intake.webhook_refused";
 
 export function logSecurityEvent(event: SecurityEvent, fields: Record<string, unknown>, level: Level = "warn"): void {
   const minimum = (process.env.LOG_LEVEL as keyof typeof LEVEL_ORDER) ?? "info";

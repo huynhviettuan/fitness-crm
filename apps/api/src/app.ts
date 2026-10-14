@@ -20,6 +20,7 @@ export const API_PREFIX = "api/v1";
 export async function createApp(options: { logger?: false; docs?: boolean } = {}): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
+    rawBody: true,
     ...(options.logger === false ? { logger: false } : { logger: ["error", "warn", "log"] }),
   });
   app.disable("x-powered-by");
@@ -27,6 +28,7 @@ export async function createApp(options: { logger?: false; docs?: boolean } = {}
   app.use(clientAddress);
   // Better Auth reads the raw body itself, so it is mounted before the JSON parser (T-044).
   app.getHttpAdapter().getInstance().all("/api/auth/*splat", toNodeHandler(auth));
+  // `rawBody: true` above keeps the exact bytes of a JSON body: the signature of a WhatsApp delivery is over them (M10.2).
   app.useBodyParser("json", { limit: "200kb" });
   // A picture is the body of its upload (M4.1b); anything bigger than 5 MB is refused before it is read.
   app.useBodyParser("raw", { type: ["image/png", "image/jpeg", "image/webp"], limit: "5mb" });

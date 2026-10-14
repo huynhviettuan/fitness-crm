@@ -1,8 +1,8 @@
 # 31. Lead intake API (website form)
 
 Brief §11, D-044, TS-007; built in M10.1. For whoever builds or configures the form on the gym's website (or a tool such as Make,
-Zapier or a WordPress form plugin that can post to a URL). Other channels (WhatsApp, Messenger, Instagram, Gmail, Zalo) will have
-their own endpoints in later slices (doc 30).
+Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6. The other channels (Messenger, Instagram, Gmail, Zalo)
+will have their own endpoints in later slices (doc 30).
 
 ## 1. Get a key
 
@@ -71,3 +71,27 @@ page and the time, whoever later changes the lead's profile. The conversation st
 
 One API process counts the 60 a minute, so the limit is approximate if the API is scaled out. A browser posting directly to this
 endpoint is refused (it has no key and its Origin is not the app's); that is on purpose.
+
+## 6. WhatsApp (M10.2)
+
+For whoever holds the gym's Meta (Facebook) developer account. The system never calls WhatsApp in this slice; it only receives what
+customers write to the gym's WhatsApp Business number.
+
+1. In Meta's developer console create (or open) the app with the **WhatsApp** product and note its **App Secret** (App settings →
+   Basic).
+2. Admin opens **Cấu hình → Nguồn nhận lead**, **Thêm nguồn**, kind **WhatsApp**, pastes the App Secret and registers. The system shows
+   once the **Callback URL** (`https://<web host>/api/v1/intake/whatsapp/<source id>`) and the **Verify token**.
+3. In the app's WhatsApp → Configuration, paste both into **Webhook** and verify; then subscribe to the **messages** field.
+4. A customer's message to the number now arrives in the system.
+
+What happens: the number is stored the way the gym stores phones (`84909123456` → `0909123456`), a known phone is found, a new one
+becomes a lead named after the WhatsApp profile; a customer who writes again within 24 hours stays in the same conversation (one
+lead; the person in charge gets the *new inquiry* notification), and after 24 hours it is a new inquiry on the same person.
+Pictures, voice notes and locations are kept as their kind (`[image]`), without the file. Each message is taken in once, however many
+times Meta delivers it.
+
+Every delivery is checked against its `x-hub-signature-256` before anything is read; a delivery that fails is `401` and nothing is
+kept. The App Secret is stored encrypted and is not shown again; the Verify token is replaced with **Đổi khóa** (it is only needed to
+register the webhook again). To change the App Secret, register a new source and switch the old one off. WhatsApp's own rules (a
+business account, an approved display name, billing for template messages we may send in a later slice) are the gym's to handle with
+Meta (doc 30).

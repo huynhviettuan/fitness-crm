@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { hasNoControlCharacters, normalizePhone } from "../validation/index.js";
+import { whatsAppSecretSchema } from "./whatsapp.js";
 
 // The lead intake gateway (brief §11, D-044, TS-007; M10.1; A-261 to A-267): what a channel hands over, and the sources Admin
 // registers. A source is one connection (the website form, later WhatsApp and the others) with its own key.
@@ -9,7 +10,7 @@ export const INTAKE_KINDS = ["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM", "E
 export type IntakeKind = (typeof INTAKE_KINDS)[number];
 
 /** The kinds that can be registered now. */
-export const AVAILABLE_INTAKE_KINDS = ["WEBSITE"] as const satisfies readonly IntakeKind[];
+export const AVAILABLE_INTAKE_KINDS = ["WEBSITE", "WHATSAPP"] as const satisfies readonly IntakeKind[];
 
 /** A message came in from the person, or was sent to them (later, when staff reply from the system). */
 export const MESSAGE_DIRECTIONS = ["IN", "OUT"] as const;
@@ -35,13 +36,29 @@ const optionalUuid = z.preprocess(
 );
 
 /** Registering a source: its name, kind, branch, and the channel and source its leads are counted under (AC-06). */
-export const intakeSourceInputSchema = z.object({
-  name: text(100).pipe(z.string().min(1, { error: "required" })),
-  kind: z.enum(AVAILABLE_INTAKE_KINDS, { error: "invalidChoice" }),
-  branchId: optionalUuid.prefault(""),
-  channelId: z.uuid({ error: "required" }),
-  sourceId: optionalUuid.prefault(""),
-});
+export const intakeSourceInputSchema = z
+  .object({
+    name: text(100).pipe(z.string().min(1, { error: "required" })),
+    kind: z.enum(AVAILABLE_INTAKE_KINDS, { error: "invalidChoice" }),
+    branchId: optionalUuid.prefault(""),
+    channelId: z.uuid({ error: "required" }),
+    sourceId: optionalUuid.prefault(""),
+    /** WhatsApp only (A-268): the Meta app secret that signs its webhooks. It is kept sealed and never shown again. */
+    appSecret: z
+      .string()
+      .trim()
+      .transform(emptyToNull)
+      .pipe(z.union([z.null(), whatsAppSecretSchema]))
+      .prefault(""),
+  })
+  .superRefine((value, context) => {
+    if (value.kind === "WHATSAPP" && value.appSecret === null) {
+      context.addIssue({ code: "custom", path: ["appSecret"], message: "required" });
+    }
+    if (value.kind !== "WHATSAPP" && value.appSecret !== null) {
+      context.addIssue({ code: "custom", path: ["appSecret"], message: "invalidChoice" });
+    }
+  });
 export type IntakeSourceInput = z.input<typeof intakeSourceInputSchema>;
 
 export const intakeSourceUpdateSchema = z.object({
@@ -93,15 +110,20 @@ export const intakeSourceSchema = z
     source: z.object({ id: z.uuid(), labelVi: z.string(), labelEn: z.string() }).nullable(),
     lastReceivedAt: z.iso.datetime().nullable(),
     received: z.int(),
+    /** Where Meta is told to post (WhatsApp); the address of the API is added in front by whoever reads it. */
+    webhookPath: z.string().nullable(),
   })
   .meta({ id: "IntakeSource" });
 export type IntakeSource = z.output<typeof intakeSourceSchema>;
 
 export const intakeSourceListSchema = z.object({ items: z.array(intakeSourceSchema) }).meta({ id: "IntakeSourceList" });
 
-/** A source with its key, shown once when it is made or replaced. */
+/**
+ * A source with what is shown once when it is made or replaced: the key of a website source, or the verify token of a WhatsApp
+ * source (the app secret is never returned).
+ */
 export const intakeSourceCreatedSchema = z
-  .object({ source: intakeSourceSchema, key: z.string() })
+  .object({ source: intakeSourceSchema, key: z.string().nullable(), verifyToken: z.string().nullable() })
   .meta({ id: "IntakeSourceCreated" });
 
 /** The answer to the sender: which person the submission became, and whether it was a repeat. */

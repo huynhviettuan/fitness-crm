@@ -40,14 +40,14 @@ describe("the website submission (A-262)", () => {
 });
 
 describe("the sources (A-261)", () => {
-  it("can be registered now only for the website; the others are known kinds still to build", () => {
-    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE"]);
+  it("can be registered now for the website and WhatsApp; the others are known kinds still to build", () => {
+    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP"]);
     expect(INTAKE_KINDS).toEqual(
       expect.arrayContaining(["WHATSAPP", "MESSENGER", "INSTAGRAM", "EMAIL", "ZALO", "TIKTOK"]),
     );
     const base = { name: "Website", channelId: id };
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WEBSITE" }).success).toBe(true);
-    expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP" }).success).toBe(false);
+    expect(intakeSourceInputSchema.safeParse({ ...base, kind: "MESSENGER" }).success).toBe(false);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WEBSITE", name: "" }).success).toBe(false);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WEBSITE", channelId: "" }).success).toBe(false);
   });
