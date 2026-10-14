@@ -16,6 +16,7 @@ import { readPaging } from "@/lib/paging";
 import { listBookings, type BookingQuery } from "@/lib/api/bookings";
 import { bookingContext } from "../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../bookings/bookings-table";
+import { BurnShowButton } from "../bookings/burn-show";
 import { CompleteDayButton } from "../bookings/complete-day";
 
 // Reads per-user data on every request (see src/app/(crm)/layout.tsx).
@@ -48,6 +49,7 @@ export default async function SessionsPage({ searchParams }: PageProps<"/session
           {context.permissions.complete && (
             <CompleteDayButton today={formatDateOnly(calendarDateInTimeZone(env.GYM_TIMEZONE))} />
           )}
+          {context.permissions.burn && context.trainers.length > 0 && <BurnShowButton trainers={context.trainers} />}
           {context.permissions.manage && context.trainers.length > 0 && (
             <AddBookingButton trainers={context.trainers} />
           )}

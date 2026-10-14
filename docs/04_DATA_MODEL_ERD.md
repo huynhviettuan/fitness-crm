@@ -116,6 +116,8 @@ erDiagram
 | `checkin_devices` (M5.3b) | id, branch_id, name, key_hash (SHA-256 of the key, which is never stored), active, last_seen_at, clock_offset_seconds |
 | `checkin_scans` (M5.3b) | id, device_id, branch_id, machine_user_code, scanned_at (real time), received_at, subject_type, customer_id or employee_id, result (WAITING, PAIRED, ERROR, REPEAT), error_code, booking_id; unique (device, code, scanned_at) |
 | `customers.machine_user_code`, `employees.machine_user_code` (M5.3b) | the code on the machine, unique; `bookings.customer_scan_id` and `pt_scan_id` (unique: a scan serves one session), `scan_requested_at/by`, `hanging_escalated_at`; `sessions.checked_in_by` may be empty for a device confirmation |
+| `bookings.added_by_hand`, `added_reason_option_id`, `added_reason_note` (M5.4) | Burn Show: a session added by hand and why (a CHECK: an added session has a reason); the list `burnShowReasons` |
+| `bookings.history_deleted_at`, `history_deleted_by` (M5.4) | a trained session deleted from the check-in history (status `DELETED`); with the session's `completed_at` they feed the PT's payroll adjustment (D-027, M5.7) |
 | `sessions.confirmation_method` (M5.3) | `MANUAL` or `DEVICE`; the status `DELETED` (Xóa) is a fifth row of `session_statuses` |
 | `session_statuses` (M5.1) | code (key), id, label_vi, label_en, consumes, credits_pt, holds_slot, locks_on_set, color (a design token), sort_order; `bookings.status` is a key of it and `bookings` keep `consumes`, `credits_pt`, `holds_slot`, `status_set_at`, `status_set_by` (A-145) |
 | `files` (M4.1b) | id, purpose, content_type, size, sha256, storage_key (unique, never shown), uploaded_by, created_at; `services.image_file_id` and `payments.proof_file_id` point at it (A-143, A-144) |

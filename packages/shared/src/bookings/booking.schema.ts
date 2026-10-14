@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { calendarDate, hasNoControlCharacters, timeOfDay } from "../validation/index.js";
+import { optionChoice, optionNote } from "../options/option.schema.js";
 import { BOOKING_STATUSES, STATUS_COLORS } from "./booking.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
@@ -56,6 +57,20 @@ export const completeDaySchema = z.object({
   bookingIds: z.array(z.uuid()).min(1, { error: "required" }).max(200),
 });
 
+/**
+ * Burn Show (D-028): admin adds a trained session by hand. The customer and the branch come from the contract; the
+ * session happened on `date` between the two times and cannot be later than now. The reason is from `burnShowReasons`.
+ */
+export const burnShowSchema = z
+  .object({
+    contractId: reference,
+    trainerId: reference,
+    ...slot,
+    reasonId: optionChoice,
+    reasonNote: optionNote,
+  })
+  .refine(endsAfterStart, endTimeError);
+
 export const dayBookingsSchema = z.object({
   date: calendarDate,
   /** 1 for the day view, 7 for the week view starting at `date` (M5.2). */
@@ -65,6 +80,7 @@ export const dayBookingsSchema = z.object({
   branchId: z.uuid().optional(),
 });
 
+export type BurnShowInput = z.input<typeof burnShowSchema>;
 export type CompleteDayInput = z.input<typeof completeDaySchema>;
 export type BookingInput = z.input<typeof bookingInputSchema>;
 export type BookingData = z.output<typeof bookingInputSchema>;

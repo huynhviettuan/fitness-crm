@@ -6,13 +6,14 @@ import {
   canCheckIn,
   canComplete,
   canDeleteBooking,
+  canDeleteFromHistory,
   canMarkNoShow,
   canReschedule,
   hasSessionForNewBooking,
   isWithinContractPeriod,
   type BookingFacts,
 } from "./booking.domain.js";
-import { bookingInputSchema, rescheduleSchema, sessionStatusInputSchema } from "./booking.schema.js";
+import { bookingInputSchema, burnShowSchema, rescheduleSchema, sessionStatusInputSchema } from "./booking.schema.js";
 
 describe("allowed actions (A-006, D-025, D-026)", () => {
   const facts = (status: string, checkedIn: boolean) => ({ status, checkedIn });
@@ -28,6 +29,8 @@ describe("allowed actions (A-006, D-025, D-026)", () => {
     expect(allowed(canDeleteBooking)).toEqual(["BOOKED"]);
     expect(allowed(canCancelBooking)).toEqual(["BOOKED", "BOOKED+in"]);
     expect(allowed(canMarkNoShow)).toEqual(["BOOKED"]);
+    // D-026: Đã tập is corrected only from the check-in history.
+    expect(allowed(canDeleteFromHistory)).toEqual(["TRAINED", "TRAINED+in"]);
   });
 });
 
@@ -121,5 +124,28 @@ describe("sessionStatusInputSchema (D-025)", () => {
     expect(sessionStatusInputSchema.safeParse({ ...input, color: "#ff0000" }).success).toBe(false);
     expect(sessionStatusInputSchema.safeParse({ ...input, labelVi: " " }).success).toBe(false);
     expect(sessionStatusInputSchema.safeParse({ ...input, consumes: "yes" }).success).toBe(false);
+  });
+});
+
+describe("burnShowSchema (D-028)", () => {
+  const ids = {
+    contractId: "1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d",
+    trainerId: "2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f",
+    reasonId: "3d4e5f6a-7b8c-4d9e-8f0a-2b3c4d5e6f7a",
+  };
+  const valid = { ...ids, date: "15/10/2026", startTime: "9:00", endTime: "10:00" };
+
+  it("takes a contract, a trainer, the time, and a reason from the list", () => {
+    expect(burnShowSchema.parse(valid)).toMatchObject({ startTime: "09:00", endTime: "10:00", reasonNote: null });
+  });
+
+  it("refuses a missing reason, an end before the start, and a control character in the note", () => {
+    const errors = (input: unknown) => {
+      const result = burnShowSchema.safeParse(input);
+      return result.success ? {} : z.flattenError(result.error).fieldErrors;
+    };
+    expect(errors({ ...valid, reasonId: "" })).toHaveProperty("reasonId");
+    expect(errors({ ...valid, endTime: "09:00" })).toHaveProperty("endTime");
+    expect(errors({ ...valid, reasonNote: "ab" })).toHaveProperty("reasonNote");
   });
 });

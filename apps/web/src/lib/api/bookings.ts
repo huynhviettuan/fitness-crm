@@ -8,6 +8,7 @@ import {
   sessionStatusListSchema,
   sessionStatusSchema,
   type BookingInput,
+  type BurnShowInput,
   type BookingStatus,
   type RescheduleInput,
   type SessionStatusInput,
@@ -80,6 +81,18 @@ export async function completeSession(id: string) {
 /** Xóa: moves a Booked session to the trash; true never (no approval is involved). */
 export async function deleteBooking(id: string, input: DeleteInput) {
   return submittedOrDone((await api()).DELETE("/api/v1/bookings/{id}", { params: { path: { id } }, body: input }));
+}
+
+/** Deletes a trained session from the check-in history: refund, trash, email (M5.4, D-026). */
+export async function deleteTrainedSession(id: string, input: DeleteInput) {
+  return submittedOrDone(
+    (await api()).DELETE("/api/v1/bookings/{id}/history", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** Burn Show: adds a trained session by hand (M5.4, D-028). */
+export async function burnShow(input: BurnShowInput) {
+  return read(bookingSchema, (await api()).POST("/api/v1/bookings/burn", { body: input }));
 }
 
 /** Bulk "Đã tập" for a day: one result per session. */

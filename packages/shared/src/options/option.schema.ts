@@ -45,6 +45,8 @@ export const OPTION_LISTS = [
   // Why a contract was deactivated and reactivated (D-023), M4.6.
   "freezeReasons",
   "unfreezeReasons",
+  // Why admin added a trained session by hand (Burn Show, D-028), M5.4.
+  "burnShowReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

@@ -41,6 +41,11 @@ export function canDeleteBooking({ status, checkedIn }: BookingFacts): boolean {
   return status === "BOOKED" && !checkedIn;
 }
 
+/** D-026: only a trained session is corrected from the check-in history; it is the one status that locks. */
+export function canDeleteFromHistory({ status }: BookingFacts): boolean {
+  return status === "TRAINED";
+}
+
 /** A checked-in session may still be cancelled: the exceptional cancel. */
 export function canCancelBooking({ status }: BookingFacts): boolean {
   return status === "BOOKED";

@@ -42,6 +42,8 @@ export const bookingSchema = z
     consumes: z.boolean(),
     creditsPt: z.boolean(),
     holdsSlot: z.boolean(),
+    /** Burn Show: a trained session added by hand (D-028). */
+    addedByHand: z.boolean(),
     /** The customer checked in: a session record exists. */
     checkedIn: z.boolean(),
     scheduledStart: instant,

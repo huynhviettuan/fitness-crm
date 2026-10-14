@@ -11,7 +11,8 @@ export type OptionListKey =
   | "needDetails"
   | "stepReopenReasons"
   | "leadChannels"
-  | "unfreezeReasons";
+  | "unfreezeReasons"
+  | "burnShowReasons";
 
 type Option = { id: string; labelVi: string; active: boolean; isOther: boolean };
 

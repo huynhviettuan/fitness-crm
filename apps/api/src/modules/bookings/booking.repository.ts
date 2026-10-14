@@ -61,6 +61,45 @@ export function createBooking(
   return db.booking.create({ data, include: bookingInclude });
 }
 
+/** Burn Show (D-028): a booking born trained, by hand, with the rule of Đã tập applied now (T-050). */
+export function createTrainedBooking(
+  db: Db,
+  data: BookingSlot & {
+    customerId: string;
+    contractId: string;
+    branchId: string;
+    rule: StatusRule;
+    actorId: string;
+    reason: { optionId: string; note: string | null };
+  },
+): Promise<BookingRecord> {
+  const { rule, actorId, reason, ...slot } = data;
+  return db.booking.create({
+    data: {
+      ...slot,
+      status: rule.code,
+      consumes: rule.consumes,
+      creditsPt: rule.creditsPt,
+      holdsSlot: rule.holdsSlot,
+      statusSetAt: new Date(),
+      statusSetById: actorId,
+      addedByHand: true,
+      addedReasonId: reason.optionId,
+      addedReasonNote: reason.note,
+    },
+    include: bookingInclude,
+  });
+}
+
+/** Marks a trained session deleted from the check-in history, for the PT's payroll adjustment (D-027). */
+export function markHistoryDeleted(db: Db, id: string, at: Date, actorId: string) {
+  return db.booking.update({
+    where: { id },
+    data: { historyDeletedAt: at, historyDeletedById: actorId },
+    select: { id: true },
+  });
+}
+
 /** A session status and its rule, as configured now. */
 export type StatusRule = Prisma.SessionStatusGetPayload<object>;
 

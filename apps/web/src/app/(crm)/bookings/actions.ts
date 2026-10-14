@@ -4,14 +4,16 @@ import { runAction, type ActionResult } from "@/lib/actions/result";
 import {
   cancelBooking,
   completeDay,
+  burnShow,
   createBooking,
   deleteBooking,
+  deleteTrainedSession,
   markNoShow,
   rescheduleBooking,
   checkIn,
   completeSession,
 } from "@/lib/api/bookings";
-import type { BookingInput, CompleteDayResult, RescheduleInput } from "@flow/shared/bookings";
+import type { BookingInput, BurnShowInput, CompleteDayResult, RescheduleInput } from "@flow/shared/bookings";
 import type { DeleteInput } from "@flow/shared/trash";
 
 export async function createBookingAction(input: BookingInput): Promise<ActionResult> {
@@ -59,6 +61,25 @@ export async function deleteBookingAction(
   return runAction(async () => {
     await deleteBooking(id, input);
     return { submitted: false };
+  });
+}
+
+/** Delete a trained session from the check-in history (M5.4, D-026). */
+export async function deleteTrainedSessionAction(
+  id: string,
+  input: DeleteInput,
+): Promise<ActionResult<{ submitted: boolean }>> {
+  return runAction(async () => {
+    await deleteTrainedSession(id, input);
+    return { submitted: false };
+  });
+}
+
+/** Burn Show (M5.4, D-028); returns the contract's sessions left after it. */
+export async function burnShowAction(input: BurnShowInput): Promise<ActionResult<{ remaining: number }>> {
+  return runAction(async () => {
+    const booking = await burnShow(input);
+    return { remaining: booking.contract.remainingSessions };
   });
 }
 

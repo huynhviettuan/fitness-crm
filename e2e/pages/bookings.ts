@@ -100,6 +100,17 @@ export class BookingSheet {
     await dialog.waitFor({ state: "hidden" });
   }
 
+  /** Delete from the check-in history (D-026): the action, a reason ("Khác") with a note, and the delete button. */
+  async deleteFromHistory(note: string): Promise<void> {
+    await this.action(labels.bookings.deleteHistory).click();
+    const dialog = this.page.getByRole("alertdialog");
+    await dialog.getByRole("combobox", { name: labels.finance.deleteReason, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
+    await dialog.getByRole("button", { name: labels.finance.delete, exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+  }
+
   async openReschedule(): Promise<BookingFormDialog> {
     await this.action(labels.bookings.reschedule).click();
     return new BookingFormDialog(this.page, this.page.getByRole("dialog", { name: labels.bookings.reschedule }));
@@ -202,6 +213,19 @@ export class SessionsPage {
     await dialog.getByLabel(labels.bookings.completeDay.date, { exact: true }).fill(day);
     await dialog.getByRole("button", { name: labels.bookings.completeDay.load, exact: true }).click();
     return dialog;
+  }
+
+  /** Burn Show (D-028): opens the dialog; the reason is chosen with chooseBurnReason. */
+  async openBurnShow(): Promise<BookingFormDialog> {
+    await this.shell.main.getByRole("button", { name: labels.bookings.burn, exact: true }).click();
+    return new BookingFormDialog(this.page, this.page.getByRole("dialog", { name: labels.bookings.burnTitle }));
+  }
+
+  /** Chooses "Khác" as the reason of the open Burn Show dialog and writes its note. */
+  async chooseBurnReason(dialog: BookingFormDialog, note: string): Promise<void> {
+    await dialog.root.getByRole("combobox", { name: labels.bookings.burnReason, exact: true }).click();
+    await this.page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.root.getByLabel(labels.options.otherNote, { exact: true }).fill(note);
   }
 
   async showView(name: string): Promise<void> {

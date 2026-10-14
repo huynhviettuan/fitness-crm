@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTimeZone, useTranslations } from "next-intl";
-import { BanIcon, CalendarClockIcon, CheckCheckIcon, LogInIcon, TrashIcon, UserXIcon } from "lucide-react";
+import { BanIcon, CalendarClockIcon, CheckCheckIcon, HistoryIcon, LogInIcon, TrashIcon, UserXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -20,6 +20,7 @@ import {
   canCheckIn,
   canComplete,
   canDeleteBooking,
+  canDeleteFromHistory,
   canMarkNoShow,
   canReschedule,
 } from "@flow/shared/bookings";
@@ -29,6 +30,7 @@ import {
   checkInAction,
   completeSessionAction,
   deleteBookingAction,
+  deleteTrainedSessionAction,
   markNoShowAction,
 } from "./actions";
 import { BookingFormDialog } from "./booking-form";
@@ -90,6 +92,7 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
           <SessionStatusBadge rule={booking.statusRule} />
           {/* Check-in is a fact on a Booked session, not a status of its own (D-025). */}
           {booking.checkedIn && booking.status === "BOOKED" && <Badge variant="warning">{t("checkedInBadge")}</Badge>}
+          {booking.addedByHand && <Badge variant="muted">{t("addedByHand")}</Badge>}
         </span>
       ),
     },
@@ -137,7 +140,7 @@ function BookingDetails({ booking }: { booking: BookingRow }) {
   );
 }
 
-type Confirm = "complete" | "cancel" | "noShow" | "delete" | null;
+type Confirm = "complete" | "cancel" | "noShow" | "delete" | "deleteHistory" | null;
 
 function BookingActions({
   booking,
@@ -189,6 +192,12 @@ function BookingActions({
         <Button variant="outline" onClick={() => setConfirm("delete")}>
           <TrashIcon />
           {t("delete")}
+        </Button>
+      )}
+      {permissions.deleteHistory && canDeleteFromHistory(facts) && (
+        <Button variant="outline" onClick={() => setConfirm("deleteHistory")}>
+          <HistoryIcon />
+          {t("deleteHistory")}
         </Button>
       )}
       {permissions.checkIn && canCheckIn(facts) && (
@@ -265,6 +274,18 @@ function BookingActions({
         onDeleted={() => {
           setConfirm(null);
           notify.success(t("deleted"));
+          router.refresh();
+        }}
+      />
+      <DeleteDialog
+        open={confirm === "deleteHistory"}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        title={t("deleteHistoryTitle")}
+        description={t("deleteHistoryBody")}
+        onDelete={(input) => deleteTrainedSessionAction(booking.id, input)}
+        onDeleted={() => {
+          setConfirm(null);
+          notify.success(t("historyDeleted"));
           router.refresh();
         }}
       />

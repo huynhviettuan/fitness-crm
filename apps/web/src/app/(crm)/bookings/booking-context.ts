@@ -31,6 +31,8 @@ export async function bookingContext(
     delete: can(user, "booking.delete"),
     checkIn: can(user, "session.checkIn"),
     complete: can(user, "session.complete"),
+    deleteHistory: can(user, "session.deleteHistory"),
+    burn: can(user, "session.burn"),
   };
   // The API already keeps a PT to their own row (schedule scope "only mine").
   const days = await listTrainersOfDay(day);

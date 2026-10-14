@@ -52,6 +52,8 @@ export type BookingView = {
   consumes: boolean;
   creditsPt: boolean;
   holdsSlot: boolean;
+  /** Burn Show: a trained session added by hand (D-028). */
+  addedByHand: boolean;
   /** The customer checked in: a session record exists. */
   checkedIn: boolean;
   scheduledStart: Date;
@@ -358,7 +360,7 @@ export function sessionDay(scheduledStart: Date): Date {
  * still works here, the service allows the time, and neither the trainer nor the customer is busy. A shift
  * is never a limit (D-058).
  */
-async function assertBookable(
+export async function assertBookable(
   tx: Prisma.TransactionClient,
   contract: contractRepo.ContractRecord,
   slot: repo.BookingSlot,
@@ -429,7 +431,7 @@ function assertOwnTrainer(actor: Actor, trainerId: string): void {
 }
 
 /** Two overlapping bookings that passed the pre-check together: the constraint decides (T-014). */
-async function withOverlapMapped<T>(body: () => Promise<T>): Promise<T> {
+export async function withOverlapMapped<T>(body: () => Promise<T>): Promise<T> {
   try {
     return await body();
   } catch (error) {
@@ -444,7 +446,7 @@ async function withOverlapMapped<T>(body: () => Promise<T>): Promise<T> {
   }
 }
 
-function toSlot(data: { trainerId: string; date: Date; startTime: string; endTime: string }): repo.BookingSlot {
+export function toSlot(data: { trainerId: string; date: Date; startTime: string; endTime: string }): repo.BookingSlot {
   return {
     trainerId: data.trainerId,
     scheduledStart: instantAt(data.date, data.startTime, env.GYM_TIMEZONE),
@@ -466,6 +468,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
     consumes: booking.consumes,
     creditsPt: booking.creditsPt,
     holdsSlot: booking.holdsSlot,
+    addedByHand: booking.addedByHand,
     checkedIn: session !== null,
     scheduledStart: booking.scheduledStart,
     scheduledEnd: booking.scheduledEnd,
@@ -492,7 +495,7 @@ export function toBookingView(booking: repo.BookingRecord): BookingView {
   };
 }
 
-function startOfGymDay(day: Date): Date {
+export function startOfGymDay(day: Date): Date {
   return instantAt(day, "00:00", env.GYM_TIMEZONE);
 }
 

@@ -303,7 +303,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** nothing blocks (OQ-027 only blocks attaching a machine); the survey TS-009 is answered before M5 starts.
 - **Depends on:** M5.3; the notices to the PT and the Studio Manager use the in-app channel until M6.4 adds email and push.
 
-### M5.4 Delete from check-in history and Burn Show; email outbox
+### M5.4 Delete from check-in history and Burn Show; email outbox (done 2026-10-18: A-157 to A-159, OQ-051)
 
 > The outbox and the sender are built earlier, in M6.1 at the start of M4 (P-6); this slice only writes the refund event into them.
 

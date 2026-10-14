@@ -9044,6 +9044,147 @@
         "x-permission": "session.complete"
       }
     },
+    "/api/v1/bookings/burn": {
+      "post": {
+        "operationId": "BookingsController_burn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "trainerId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "date": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "contractId",
+                  "trainerId",
+                  "date",
+                  "startTime",
+                  "endTime",
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "bookings"
+        ],
+        "x-permission": "session.burn"
+      }
+    },
+    "/api/v1/bookings/{id}/history": {
+      "delete": {
+        "operationId": "BookingsController_removeFromHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "bookings"
+        ],
+        "x-permission": "session.deleteHistory"
+      }
+    },
     "/api/v1/bookings/{id}/cancel": {
       "post": {
         "operationId": "BookingsController_cancel",
@@ -11193,6 +11334,8 @@
                             "booking.delete",
                             "session.checkIn",
                             "session.complete",
+                            "session.deleteHistory",
+                            "session.burn",
                             "checkin.review",
                             "checkin.devices",
                             "employee.view",
@@ -11621,6 +11764,8 @@
                         "booking.delete",
                         "session.checkIn",
                         "session.complete",
+                        "session.deleteHistory",
+                        "session.burn",
                         "checkin.review",
                         "checkin.devices",
                         "employee.view",
@@ -11897,6 +12042,8 @@
                         "booking.delete",
                         "session.checkIn",
                         "session.complete",
+                        "session.deleteHistory",
+                        "session.burn",
                         "checkin.review",
                         "checkin.devices",
                         "employee.view",
@@ -14500,6 +14647,8 @@
                 "booking.delete",
                 "session.checkIn",
                 "session.complete",
+                "session.deleteHistory",
+                "session.burn",
                 "checkin.review",
                 "checkin.devices",
                 "employee.view",
@@ -19858,6 +20007,9 @@
           "holdsSlot": {
             "type": "boolean"
           },
+          "addedByHand": {
+            "type": "boolean"
+          },
           "checkedIn": {
             "type": "boolean"
           },
@@ -19952,6 +20104,7 @@
           "consumes",
           "creditsPt",
           "holdsSlot",
+          "addedByHand",
           "checkedIn",
           "scheduledStart",
           "scheduledEnd",
@@ -20773,6 +20926,8 @@
                     "booking.delete",
                     "session.checkIn",
                     "session.complete",
+                    "session.deleteHistory",
+                    "session.burn",
                     "checkin.review",
                     "checkin.devices",
                     "employee.view",
@@ -21042,6 +21197,8 @@
                 "booking.delete",
                 "session.checkIn",
                 "session.complete",
+                "session.deleteHistory",
+                "session.burn",
                 "checkin.review",
                 "checkin.devices",
                 "employee.view",
@@ -21213,7 +21370,8 @@
               "exceptionPriceReasons",
               "unapproveReasons",
               "freezeReasons",
-              "unfreezeReasons"
+              "unfreezeReasons",
+              "burnShowReasons"
             ]
           },
           "labelVi": {

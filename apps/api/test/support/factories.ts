@@ -212,6 +212,21 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
   { id: "c0000000-0000-4000-8000-000000000022", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000023", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   { id: "c0000000-0000-4000-8000-000000000024", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  { id: "c0000000-0000-4000-8000-000000000025", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  {
+    id: "c0000000-0000-4000-8000-000000000026",
+    labelVi: "Khôi phục buổi tập xóa nhầm",
+    labelEn: "Restore a session deleted by mistake",
+    sortOrder: 1,
+    active: true,
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000027",
+    labelVi: "Buổi tập diễn ra không có lịch hẹn",
+    labelEn: "The session took place without a booking",
+    sortOrder: 2,
+    active: true,
+  },
   ...[
     ["c0000000-0000-4000-8000-000000000201", "Ban điều hành", "Executive board"],
     ["c0000000-0000-4000-8000-000000000202", "Studio", "Studio"],

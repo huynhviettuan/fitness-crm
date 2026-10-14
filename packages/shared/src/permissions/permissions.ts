@@ -43,7 +43,16 @@ export const PERMISSION_GROUPS = {
     "contract.deactivate",
     "contract.reactivate",
   ],
-  schedule: ["booking.view", "booking.manage", "booking.delete", "session.checkIn", "session.complete"],
+  // Deleting a trained session from the check-in history and Burn Show are Admin's (D-026, D-028).
+  schedule: [
+    "booking.view",
+    "booking.manage",
+    "booking.delete",
+    "session.checkIn",
+    "session.complete",
+    "session.deleteHistory",
+    "session.burn",
+  ],
   // Fingerprint-ready check-in (M5.3b, D-069 to D-072): the machines are Admin's; reviewing scans is Admin's and Fitness Manager's.
   checkin: ["checkin.review", "checkin.devices"],
   // Employee profiles and working schedules (brief §8.4).

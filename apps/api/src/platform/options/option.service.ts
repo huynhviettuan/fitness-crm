@@ -181,6 +181,7 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     // The notes of a deactivation and of its end are on the freeze (D-023).
     freezeReasons: Prisma.sql`SELECT "reason_note" AS note, "frozen_at" AS at FROM "contract_freezes" WHERE "reason_option_id" = ${id}::uuid`,
     unfreezeReasons: Prisma.sql`SELECT "end_reason_note" AS note, "ended_at" AS at FROM "contract_freezes" WHERE "end_reason_option_id" = ${id}::uuid`,
+    burnShowReasons: Prisma.sql`SELECT "added_reason_note" AS note, "created_at" AS at FROM "bookings" WHERE "added_reason_option_id" = ${id}::uuid`,
     // The note of an unapproval is in its history entry (A-124).
     unapproveReasons: Prisma.sql`SELECT "metadata"->>'note' AS note, "created_at" AS at FROM "audit_events" WHERE "action" = 'contract.unapproved' AND "metadata"->>'reason' = (SELECT "label_vi" FROM "options" WHERE "id" = ${id}::uuid)`,
   };

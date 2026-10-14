@@ -1070,7 +1070,8 @@
       "completed": "Completed",
       "remainingSessions": "Remaining sessions",
       "branch": "Branch",
-      "confirmation": "Confirmed"
+      "confirmation": "Confirmed",
+      "addedByHand": "Source"
     },
     "checkedInBadge": "Checked in",
     "calendarViews": {
@@ -1108,7 +1109,17 @@
       "done": "{count} sessions completed",
       "someFailed": "{failed} could not be completed:",
       "item": "{time} · {customer} · {trainer}"
-    }
+    },
+    "deleteHistory": "Delete from history",
+    "deleteHistoryTitle": "Delete this trained session from the history?",
+    "deleteHistoryBody": "One session is refunded to the customer, the session is removed from the PT's credit, and it moves to the trash. The customer gets an email. If the PT's pay period was already paid, the session is deducted in the next period.",
+    "historyDeleted": "Session deleted from the history and 1 session refunded",
+    "burn": "Burn Show",
+    "burnTitle": "Add a session that took place",
+    "burnDescription": "Adds a trained session by hand, to restore one deleted by mistake or one that took place without a booking. It uses one session of the contract and credits the PT like Đã tập, and is marked as added by hand.",
+    "burnReason": "Reason for adding",
+    "burned": "Session added, {remaining} left",
+    "addedByHand": "Added by hand"
   },
   "finance": {
     "title": "Finance",
@@ -1237,7 +1248,9 @@
       },
       "session": {
         "checkIn": "Check in sessions",
-        "complete": "Complete sessions"
+        "complete": "Complete sessions",
+        "deleteHistory": "Delete a trained session from the history",
+        "burn": "Add a session that took place (Burn Show)"
       },
       "employee": {
         "view": "View employees and working schedules",
@@ -1414,7 +1427,8 @@
       "exceptionPriceReasons": "Exception price reasons",
       "unapproveReasons": "Reasons to unapprove a contract",
       "freezeReasons": "Reasons to deactivate a contract",
-      "unfreezeReasons": "Reasons to reactivate a contract"
+      "unfreezeReasons": "Reasons to reactivate a contract",
+      "burnShowReasons": "Reasons to add a session (Burn Show)"
     },
     "create": "Add option",
     "edit": "Edit option",

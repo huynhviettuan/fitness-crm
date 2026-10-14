@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTimeZone, useTranslations } from "next-intl";
-import { Controller, useForm, useWatch, type Control } from "react-hook-form";
+import { Controller, useForm, useWatch, type Control, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -222,10 +222,10 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-type BookableContract = { id: string; contractCode: string; packageName: string; remainingSessions: number };
+export type BookableContract = { id: string; contractCode: string; packageName: string; remainingSessions: number };
 
 /** The customer's active contracts with sessions left (BR-003), or null while loading. */
-function useBookableContracts(customerId: string): BookableContract[] | null {
+export function useBookableContracts(customerId: string): BookableContract[] | null {
   const [state, setState] = useState<{ customerId: string; contracts: BookableContract[] } | null>(null);
 
   useEffect(() => {
@@ -250,7 +250,13 @@ function useBookableContracts(customerId: string): BookableContract[] | null {
 }
 
 /** Search a customer by code, name, or phone and pick one (FR-CUS-002). */
-function CustomerPicker({ control, onPicked }: { control: Control<BookingFormValues>; onPicked: () => void }) {
+export function CustomerPicker<T extends FieldValues & { customerId: string }>({
+  control,
+  onPicked,
+}: {
+  control: Control<T>;
+  onPicked: () => void;
+}) {
   const t = useTranslations("bookings");
   const validationMessage = useValidationMessage();
   const [query, setQuery] = useState("");
@@ -261,7 +267,7 @@ function CustomerPicker({ control, onPicked }: { control: Control<BookingFormVal
   return (
     <Controller
       control={control}
-      name="customerId"
+      name={"customerId" as Path<T>}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid || undefined}>
           {/* cmdk names its input with its own `label`; this one is the visible label. */}

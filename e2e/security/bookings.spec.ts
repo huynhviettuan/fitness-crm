@@ -3,7 +3,7 @@
 // 401s are covered by the route inventory in access-control.spec.ts.
 import { randomUUID } from "node:crypto";
 import { expect, test } from "../fixtures";
-import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi } from "../support/data";
+import { BOOKING_DAY, bookingSetup, createBookingViaApi, createTrainerViaApi, gymDay } from "../support/data";
 import type { Role } from "../support/db";
 import { otherOptionId } from "../support/options";
 
@@ -303,5 +303,115 @@ test.describe("A10 booking input errors", () => {
         expect(response.status(), `${action} ${id}`).toBe(404);
       }
     }
+  });
+});
+
+// Delete from the check-in history and Burn Show (M5.4, D-026, D-028): Admin's only.
+test.describe("A01 the check-in history and Burn Show are Admin's (docs/09, A-157, A-158)", () => {
+  const PAST = { date: gymDay(-1), startTime: "09:00", endTime: "10:00" };
+  const roles: [Role, number][] = [
+    ["ADMIN", 204],
+    ["FITNESS_MANAGER", 403],
+    ["RECEPTIONIST", 403],
+    ["PT", 403],
+    ["ACCOUNTANT", 403],
+  ];
+  for (const [role, status] of roles) {
+    test(`${role} deleting a trained session from the history gets ${status}`, async ({ apiAs, testTag }) => {
+      const { refs } = await bookingSetup(apiAs, testTag);
+      const booking = await createBookingViaApi(await apiAs("RECEPTIONIST"), refs, PAST);
+      const admin = await apiAs("ADMIN");
+      await admin.post(`/api/v1/bookings/${booking.id}/complete`);
+      const reasonId = await otherOptionId(admin, "deleteReasons");
+
+      const response = await (
+        await apiAs(role)
+      ).delete(`/api/v1/bookings/${booking.id}/history`, { data: { reasonId, reasonNote: "Ghi nhầm" } });
+      expect(response.status()).toBe(status);
+    });
+
+    test(`${role} adding a session with Burn Show gets ${status === 204 ? 201 : status}`, async ({
+      apiAs,
+      testTag,
+    }) => {
+      const { refs } = await bookingSetup(apiAs, testTag);
+      const reasonId = await otherOptionId(await apiAs("ADMIN"), "burnShowReasons");
+
+      const response = await (
+        await apiAs(role)
+      ).post("/api/v1/bookings/burn", {
+        data: { contractId: refs.contractId, trainerId: refs.trainerId, ...PAST, reasonId, reasonNote: "Quên quét" },
+      });
+      expect(response.status()).toBe(status === 204 ? 201 : status);
+    });
+  }
+
+  test("the history keeps its locks: a booked session is refused, a repeat finds nothing, the reason is required", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const { refs, contract } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const booked = await createBookingViaApi(await apiAs("RECEPTIONIST"), refs, PAST);
+    const reason = { reasonId: await otherOptionId(admin, "deleteReasons"), reasonNote: "Ghi nhầm" };
+    const history = (id: string, data: unknown) => admin.delete(`/api/v1/bookings/${id}/history`, { data });
+
+    // Not trained yet: refused. Trained: a reason is needed, then it works once and the repeat finds nothing.
+    expect((await history(booked.id, reason)).status()).toBe(409);
+    await admin.post(`/api/v1/bookings/${booked.id}/complete`);
+    expect((await history(booked.id, {})).status()).toBe(400);
+    expect((await history(booked.id, { reasonId: reason.reasonId, reasonNote: "" })).status()).toBe(400);
+    expect((await history(booked.id, reason)).status()).toBe(204);
+    expect((await history(booked.id, reason)).status()).toBe(404);
+    expect((await history("not-a-uuid", reason)).status()).toBe(404);
+    expect((await admin.get(`/api/v1/contracts/${contract.id}`).then((r) => r.json())).remainingSessions).toBe(24);
+  });
+
+  test("Burn Show validates its input and runs the booking rules, never a 500", async ({ apiAs, testTag }) => {
+    const { refs } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const reasonId = await otherOptionId(admin, "burnShowReasons");
+    const valid = {
+      contractId: refs.contractId,
+      trainerId: refs.trainerId,
+      ...PAST,
+      reasonId,
+      reasonNote: "Quên quét",
+    };
+    const burn = (data: unknown) => admin.post("/api/v1/bookings/burn", { data });
+
+    for (const data of [
+      {},
+      { ...valid, reasonId: "" },
+      { ...valid, reasonNote: "" },
+      { ...valid, reasonNote: "a\u0007b" },
+      { ...valid, endTime: "08:00" },
+      { ...valid, date: "31/02/2026" },
+      { ...valid, contractId: "nope" },
+      { ...valid, date: "01/01/2099" },
+    ]) {
+      const response = await burn(data);
+      expect(response.status(), JSON.stringify(data).slice(0, 80)).toBeLessThan(500);
+    }
+    // Unknown contract: not found. The first valid one works; the same hour again clashes with it.
+    expect((await burn({ ...valid, contractId: randomUUID() })).status()).toBe(404);
+    // The customer, the status and the flags are never taken from the client.
+    const created = await burn({
+      ...valid,
+      customerId: randomUUID(),
+      status: "CANCELLED",
+      consumes: false,
+      creditsPt: false,
+      addedByHand: false,
+    });
+    expect(created.status()).toBe(201);
+    expect(await created.json()).toMatchObject({
+      status: "TRAINED",
+      consumes: true,
+      creditsPt: true,
+      addedByHand: true,
+      customer: { id: refs.customerId },
+    });
+    expect((await burn(valid)).status()).toBe(409);
   });
 });

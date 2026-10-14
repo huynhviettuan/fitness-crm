@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-18 — M5.4: delete from the check-in history, Burn Show
+
+- **Delete a trained session** (A-157): Admin, with a reason; one session refunded, the PT credit removed, to the trash, audited. The payroll adjustment waits for M5.7.
+- **Burn Show** (A-158): Admin adds a trained session by hand under the rules of a booking and of Đã tập, marked "added by hand".
+- **Customer emails** (A-159): both changes queue one email in the outbox; the other session emails come with M6.2.
+- **Open**: OQ-051. Docs 04, 07, 09, 13, 16, 18, 28; E2E-109.
+
 ## 2026-10-17 — M5.3b: fingerprint-ready check-in
 
 - **Machines and scans** (A-153): a key per machine, the scan API, raw scans, machine user codes; no fingerprint is stored. The Origin check has one documented exception for the machine route (doc 24).

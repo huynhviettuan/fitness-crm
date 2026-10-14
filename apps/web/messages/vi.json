@@ -1070,7 +1070,8 @@
       "completed": "Hoàn thành",
       "remainingSessions": "Buổi còn lại",
       "branch": "Chi nhánh",
-      "confirmation": "Xác nhận"
+      "confirmation": "Xác nhận",
+      "addedByHand": "Nguồn"
     },
     "checkedInBadge": "Đã check-in",
     "calendarViews": {
@@ -1108,7 +1109,17 @@
       "done": "Đã xác nhận {count} buổi",
       "someFailed": "{failed} buổi không xác nhận được:",
       "item": "{time} · {customer} · {trainer}"
-    }
+    },
+    "deleteHistory": "Xóa khỏi lịch sử tập",
+    "deleteHistoryTitle": "Xóa buổi đã tập khỏi lịch sử?",
+    "deleteHistoryBody": "Hoàn lại 1 buổi cho khách, bỏ buổi này khỏi công của PT và chuyển buổi vào thùng rác. Khách nhận một email. Nếu kỳ lương của PT đã chi, buổi bị trừ ở kỳ sau.",
+    "historyDeleted": "Đã xóa buổi khỏi lịch sử tập và hoàn lại 1 buổi",
+    "burn": "Burn Show",
+    "burnTitle": "Thêm buổi tập đã diễn ra",
+    "burnDescription": "Thêm tay một buổi Đã tập: khôi phục buổi xóa nhầm hoặc buổi tập không có lịch hẹn. Buổi này trừ một buổi của hợp đồng và tính cho PT như Đã tập, và được đánh dấu là thêm tay.",
+    "burnReason": "Lý do thêm",
+    "burned": "Đã thêm buổi tập, còn lại {remaining} buổi",
+    "addedByHand": "Thêm tay"
   },
   "finance": {
     "title": "Tài chính",
@@ -1237,7 +1248,9 @@
       },
       "session": {
         "checkIn": "Check-in buổi tập",
-        "complete": "Hoàn thành buổi tập"
+        "complete": "Hoàn thành buổi tập",
+        "deleteHistory": "Xóa buổi đã tập khỏi lịch sử",
+        "burn": "Thêm buổi tập đã diễn ra (Burn Show)"
       },
       "employee": {
         "view": "Xem nhân viên và lịch làm việc",
@@ -1414,7 +1427,8 @@
       "exceptionPriceReasons": "Lý do giá ngoại lệ",
       "unapproveReasons": "Lý do hủy duyệt hợp đồng",
       "freezeReasons": "Lý do hủy kích hoạt hợp đồng",
-      "unfreezeReasons": "Lý do kích hoạt lại hợp đồng"
+      "unfreezeReasons": "Lý do kích hoạt lại hợp đồng",
+      "burnShowReasons": "Lý do thêm buổi tập (Burn Show)"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",

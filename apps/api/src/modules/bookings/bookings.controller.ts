@@ -6,6 +6,7 @@ import {
   bookingListSchema,
   bookingPageSchema,
   bookingSchema,
+  burnShowSchema,
   completeDayResultSchema,
   completeDaySchema,
   rescheduleSchema,
@@ -17,6 +18,7 @@ import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
 import { checkIn, completeSession, completeSessions } from "../sessions/session.service.js";
+import { burnShow, deleteTrainedSession } from "../sessions/session-history.service.js";
 import { trainersOfDay } from "../employees/employee.service.js";
 import { trainerDayListSchema } from "@flow/shared/employees";
 import { deleteSchema } from "@flow/shared/trash";
@@ -105,6 +107,26 @@ export class BookingsController {
     @Body({ schema: deleteSchema }) body: unknown,
   ) {
     await deleteBooking(actor, id, body);
+  }
+
+  /** Burn Show: admin adds a trained session by hand, with a reason (M5.4, D-028). */
+  @Post("burn")
+  @RequirePermission("session.burn")
+  @ApiResult(bookingSchema, 201, "Created")
+  async burn(@CurrentActor() actor: CurrentUser, @Body({ schema: burnShowSchema }) body: unknown) {
+    return encode(bookingSchema, await burnShow(actor, body));
+  }
+
+  /** Delete a trained session from the check-in history: refund, trash, email (M5.4, D-026). */
+  @Delete(":id/history")
+  @RequirePermission("session.deleteHistory")
+  @HttpCode(204)
+  async removeFromHistory(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: deleteSchema }) body: unknown,
+  ) {
+    await deleteTrainedSession(actor, id, body);
   }
 
   @Post(":id/cancel")
