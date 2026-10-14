@@ -31,6 +31,10 @@ export const voucherSchema = z
     toCustomer: z.object({ id: z.uuid(), customerCode: z.string(), fullName: z.string() }).nullable(),
     newContract: z.object({ id: z.uuid(), contractCode: z.string() }).nullable(),
     toBranch: branchRefSchema.nullable(),
+    /** A cancellation: the value of the sessions used, the fee kept, and the expense voucher of the money given back. */
+    valueUsed: z.int().nullable(),
+    fee: z.int().nullable(),
+    refundVoucher: z.object({ id: z.uuid(), number: z.string() }).nullable(),
     reason: chosenOptionSchema.nullable(),
     note: z.string().nullable(),
     /** What approving it did, set at approval: sessions and value added to the contract and the end dates. */

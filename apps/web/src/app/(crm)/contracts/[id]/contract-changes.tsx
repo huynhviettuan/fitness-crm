@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ScrollTextIcon } from "lucide-react";
 import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
@@ -7,11 +7,19 @@ import { Money } from "@/components/money";
 import { StatusBadge } from "@/components/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Voucher } from "@flow/shared/changes";
-import { BranchTransferButton, ExchangeButton, HoldButton, RenewalButton, TransferButton } from "../change-dialogs";
+import {
+  BranchTransferButton,
+  CancellationButton,
+  ExchangeButton,
+  HoldButton,
+  RenewalButton,
+  TransferButton,
+} from "../change-dialogs";
 
 /** The change vouchers of a contract, newest first, with the buttons to raise one (M8, brief §5.6). */
 export async function ContractChanges({
   contract,
+  paid,
   vouchers,
   canRenew,
   canHold,
@@ -19,6 +27,8 @@ export async function ContractChanges({
   branches,
 }: {
   contract: { id: string; contractCode: string };
+  /** What was paid on it, shown when cancelling. */
+  paid: number;
   vouchers: Voucher[];
   canRenew: boolean;
   canHold: boolean;
@@ -42,6 +52,7 @@ export async function ContractChanges({
             <ExchangeButton kind="conversions" contract={contract} services={services} />
           )}
           {canHold && <TransferButton contract={contract} />}
+          {canHold && <CancellationButton contract={contract} paid={paid} />}
           {canHold && branches.length > 0 && <BranchTransferButton contract={contract} branches={branches} />}
         </div>
       </div>
@@ -103,6 +114,7 @@ export async function ContractChanges({
 
 async function VoucherSummary({ voucher }: { voucher: Voucher }) {
   const t = await getTranslations("contractChanges");
+  const locale = await getLocale();
   if (voucher.kind === "HOLD" && voucher.fromDate && voucher.toDate) {
     return (
       <span>
@@ -134,6 +146,21 @@ async function VoucherSummary({ voucher }: { voucher: Voucher }) {
     );
   }
   if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranch) return <span>{voucher.toBranch.name}</span>;
+  if (voucher.kind === "CANCELLATION") {
+    return (
+      <span>
+        {voucher.reason ? (locale === "vi" ? voucher.reason.labelVi : voucher.reason.labelEn) : "—"}
+        {voucher.refundVoucher && (
+          <>
+            {" · "}
+            <Link className="underline underline-offset-4" href="/finance/cash">
+              {voucher.refundVoucher.number}
+            </Link>
+          </>
+        )}
+      </span>
+    );
+  }
   const parts = [
     voucher.sessions ? t("sessionsCount", { count: voucher.sessions }) : null,
     voucher.months ? t("monthsCount", { count: voucher.months }) : null,

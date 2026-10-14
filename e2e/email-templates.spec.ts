@@ -94,8 +94,8 @@ test.describe("email templates as admin", () => {
     await page.goto("/admin/email-templates");
 
     const list = page.getByRole("list", { name: e.title });
-    await expect(list.getByRole("listitem")).toHaveCount(13);
-    await expect(list.getByRole("listitem").filter({ hasText: e.mandatory })).toHaveCount(5);
+    await expect(list.getByRole("listitem")).toHaveCount(20);
+    await expect(list.getByRole("listitem").filter({ hasText: e.mandatory })).toHaveCount(10);
     await expect(list.getByRole("listitem").filter({ hasText: "Hoàn lại buổi tập" })).toContainText(
       /Nội dung gốc|Sửa bởi/,
     );

@@ -383,6 +383,8 @@ export const SEEDED_OPTIONS: {
     code: "WORSE",
   },
   { id: "c0000000-0000-4000-8000-000000000434", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  // Why a customer cancels (M8.4).
+  { id: "c0000000-0000-4000-8000-000000000500", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   ...[
     ["c0000000-0000-4000-8000-000000000201", "Ban điều hành", "Executive board"],
     ["c0000000-0000-4000-8000-000000000202", "Studio", "Studio"],

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { calendarDate, hasNoControlCharacters, vndAmount } from "../validation/index.js";
+import { optionChoice, optionNote } from "../options/option.schema.js";
 import { VOUCHER_KINDS, VOUCHER_STATUSES } from "./change.domain.js";
 
 // Contract change vouchers (M8, brief §5.6): inputs. Error messages are i18n keys under `validation.*`.
@@ -91,6 +92,34 @@ export const branchTransferInputSchema = z.object({
   note,
 });
 
+/**
+ * A cancellation ends the contract at the customer's request (brief §5.6, A-240): why, the value of the sessions used, the
+ * fee kept, and the money given back, which becomes an expense voucher (method and expense type needed when it is more
+ * than nothing). What was paid is read from the receipts, never typed.
+ */
+export const cancellationInputSchema = z
+  .object({
+    contractId: z.uuid({ error: "required" }),
+    reasonId: optionChoice,
+    reasonNote: optionNote,
+    valueUsed: money,
+    fee: money,
+    refund: money,
+    refundMethodId: z.preprocess(blank, optionChoice.optional()),
+    refundMethodNote: optionNote,
+    refundCategoryId: z.preprocess(blank, optionChoice.optional()),
+    refundCategoryNote: optionNote,
+    note,
+  })
+  .refine((value) => value.refund === 0 || value.refundMethodId !== undefined, {
+    path: ["refundMethodId"],
+    error: "required",
+  })
+  .refine((value) => value.refund === 0 || value.refundCategoryId !== undefined, {
+    path: ["refundCategoryId"],
+    error: "required",
+  });
+
 export const voucherListQuerySchema = z.object({
   contractId: z.preprocess(blank, z.uuid({ error: "invalidChoice" }).optional()),
   customerId: z.preprocess(blank, z.uuid({ error: "invalidChoice" }).optional()),
@@ -104,4 +133,5 @@ export type RenewalInput = z.input<typeof renewalInputSchema>;
 export type ExchangeInput = z.input<typeof exchangeInputSchema>;
 export type TransferInput = z.input<typeof transferInputSchema>;
 export type BranchTransferInput = z.input<typeof branchTransferInputSchema>;
+export type CancellationInput = z.input<typeof cancellationInputSchema>;
 export type HoldInput = z.input<typeof holdInputSchema>;

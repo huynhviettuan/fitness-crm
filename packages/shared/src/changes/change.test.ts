@@ -5,11 +5,14 @@ import {
   canChangeContract,
   endDateAfterHold,
   branchTransferInputSchema,
+  cancellationEffect,
+  cancellationInputSchema,
   exchangeEffect,
   exchangeInputSchema,
   holdDays,
   holdInputSchema,
   isInRanges,
+  maxRefund,
   rangesOverlap,
   renewalInputSchema,
   renewalPeriod,
@@ -174,5 +177,35 @@ describe("a transfer and a branch transfer (M8.3, A-232, A-235)", () => {
     });
     expect(branchTransferInputSchema.safeParse({ contractId: id, fee: 1 }).success).toBe(false);
     expect(branchTransferInputSchema.safeParse({ contractId: id, toBranchId: id, fee: -1 }).success).toBe(false);
+  });
+});
+
+describe("a cancellation (M8.4, A-240)", () => {
+  it("leaves no session, and the value becomes what was received", () => {
+    expect(cancellationEffect({ remaining: 10, value: 12_000_000, paid: 8_000_000 })).toEqual({
+      sessionsDelta: -10,
+      valueDelta: -4_000_000,
+    });
+    // Money received above the value (after a transfer) raises the value to it.
+    expect(cancellationEffect({ remaining: 0, value: 6_000_000, paid: 12_000_000 })).toEqual({
+      sessionsDelta: 0,
+      valueDelta: 6_000_000,
+    });
+  });
+
+  it("gives back at most what was paid, less the value used and the fee", () => {
+    expect(maxRefund({ paid: 8_000_000, valueUsed: 2_000_000, fee: 1_000_000 })).toBe(5_000_000);
+    expect(maxRefund({ paid: 1_000_000, valueUsed: 2_000_000, fee: 0 })).toBe(0);
+  });
+
+  it("needs the reason, and how a refund is paid and its expense type", () => {
+    const base = { contractId: id, reasonId: id, valueUsed: "", fee: "", refund: "" };
+    expect(cancellationInputSchema.parse(base)).toMatchObject({ valueUsed: 0, fee: 0, refund: 0 });
+    expect(cancellationInputSchema.safeParse({ ...base, refund: "100" }).success).toBe(false);
+    expect(
+      cancellationInputSchema.safeParse({ ...base, refund: "100", refundMethodId: id, refundCategoryId: id }).success,
+    ).toBe(true);
+    expect(cancellationInputSchema.safeParse({ ...base, reasonId: "x" }).success).toBe(false);
+    expect(cancellationInputSchema.safeParse({ contractId: id }).success).toBe(false);
   });
 });

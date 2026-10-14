@@ -3,11 +3,14 @@ import { z } from "zod";
 import {
   VOUCHER_ACTIONS,
   branchTransferInputSchema,
+  cancellationEffect,
+  cancellationInputSchema,
   canChangeContract,
   exchangeEffect,
   exchangeInputSchema,
   endDateAfterHold,
   holdDays,
+  maxRefund,
   holdInputSchema,
   rangesOverlap,
   renewalInputSchema,
@@ -29,12 +32,14 @@ import { isUniqueViolation } from "../../platform/db/errors.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
+import { chosen, resolveChoice } from "../../platform/options/option.service.js";
 import { hasBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import * as bookingRepo from "../bookings/booking.repository.js";
 import { startOfGymDay } from "../bookings/booking.service.js";
 import { queueContractEmail } from "../contracts/contract-email.js";
 import * as contractRepo from "../contracts/contract.repository.js";
+import { createCashTransactionIn } from "../finance/cash.service.js";
 import { sumValidPayments } from "../finance/payment.repository.js";
 import { contractsVisibleTo, gymToday } from "../contracts/contract.service.js";
 import * as repo from "./voucher.repository.js";
@@ -75,7 +80,10 @@ function toView(record: repo.VoucherRecord, pendingRequestId: string | null): Vo
     toCustomer: record.toCustomer ? { ...record.toCustomer, customerCode: record.toCustomer.customerCode ?? "" } : null,
     newContract: record.newContract,
     toBranch: record.toBranch,
-    reason: null,
+    reason: record.reason ? chosen(record.reason, record.reasonNote) : null,
+    valueUsed: money(record.valueUsed),
+    fee: money(record.fee),
+    refundVoucher: record.refundTransaction,
     note: record.note,
     sessionsDelta: record.sessionsDelta,
     valueDelta: Number(record.valueDelta),
@@ -152,6 +160,14 @@ type Fields = Pick<
   | "credit"
   | "toCustomerId"
   | "toBranchId"
+  | "reasonOptionId"
+  | "reasonNote"
+  | "valueUsed"
+  | "fee"
+  | "refundMethodId"
+  | "refundMethodNote"
+  | "refundCategoryId"
+  | "refundCategoryNote"
 >;
 
 type Raised = { voucher: Voucher; replayed: boolean };
@@ -263,6 +279,7 @@ const AUDIT_VERBS: Partial<Record<VoucherKind, string>> = {
   CONVERSION: "contract.converted_by_voucher",
   TRANSFER: "contract.transferred_by_voucher",
   BRANCH_TRANSFER: "contract.branch_transferred_by_voucher",
+  CANCELLATION: "contract.cancelled_by_voucher",
 };
 
 const dayText = (day: Date) => day.toISOString().slice(0, 10);
@@ -375,6 +392,61 @@ export async function raiseBranchTransfer(actor: Actor, rawInput: unknown, idemp
   });
 }
 
+/**
+ * A cancellation ends a running contract at the customer's request (brief §5.6, D-010, A-240): the reason, the value of the
+ * sessions used, the fee kept, and the refund, which cannot be more than what was paid less those two.
+ */
+export async function raiseCancellation(actor: Actor, rawInput: unknown, idempotencyKey: unknown): Promise<Raised> {
+  const input = parseInput(cancellationInputSchema, rawInput);
+  return raise(actor, idempotencyKey, input.contractId, "CANCELLATION", input, async (tx, contract, today) => {
+    if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
+    if (!canChangeContract(effectiveStatus(contract, today))) throw new AppError("CONTRACT_NOT_ACTIVE");
+    if ((await bookingRepo.countCheckedInBookings(tx, contract.id)) > 0) {
+      throw new AppError("CONTRACT_HAS_CHECKED_IN_BOOKING");
+    }
+    if (
+      await tx.contractChangeVoucher.count({
+        where: { contractId: contract.id, kind: "CANCELLATION", status: "PENDING" },
+      })
+    ) {
+      throw invalid("contractId", "cancellationPending");
+    }
+    const reason = await resolveChoice(tx, "cancelReasons", "reasonId", {
+      optionId: input.reasonId,
+      note: input.reasonNote,
+    });
+    const now = await standing(tx, contract);
+    if (input.valueUsed > now.value) throw invalid("valueUsed", "valueUsedAboveValue");
+    if (input.refund > maxRefund({ paid: now.paid, valueUsed: input.valueUsed, fee: input.fee })) {
+      throw invalid("refund", "refundAbovePaid");
+    }
+    let method: { optionId: string; note: string | null } | null = null;
+    let category: { optionId: string; note: string | null } | null = null;
+    if (input.refund > 0) {
+      method = await resolveChoice(tx, "paymentMethods", "refundMethodId", {
+        optionId: input.refundMethodId!,
+        note: input.refundMethodNote,
+      });
+      category = await resolveChoice(tx, "expenseTypes", "refundCategoryId", {
+        optionId: input.refundCategoryId!,
+        note: input.refundCategoryNote,
+      });
+    }
+    return {
+      reasonOptionId: reason.optionId,
+      reasonNote: reason.note,
+      valueUsed: input.valueUsed,
+      fee: input.fee,
+      amount: input.refund,
+      refundMethodId: method?.optionId ?? null,
+      refundMethodNote: method?.note ?? null,
+      refundCategoryId: category?.optionId ?? null,
+      refundCategoryNote: category?.note ?? null,
+      note: input.note,
+    };
+  });
+}
+
 /** The branch moved to is active, the actor works there, and the service of the contract is sold there. */
 async function assertBranchFor(
   tx: Db,
@@ -469,12 +541,7 @@ export async function raiseHold(actor: Actor, rawInput: unknown, idempotencyKey:
  * the effect once: the sessions and value added, and the new end date; the database sums them into the contract. The
  * contract must still be approved and running; the kind's own rules are checked again as they stand now.
  */
-export async function decideVoucher(
-  tx: Db,
-  decider: Pick<Actor, "id">,
-  id: string,
-  to: "APPROVED" | "REJECTED",
-): Promise<void> {
+export async function decideVoucher(tx: Db, decider: Actor, id: string, to: "APPROVED" | "REJECTED"): Promise<void> {
   const voucher = await repo.findVoucher(tx, { id });
   if (!voucher) throw notFound();
   if (voucher.status !== "PENDING") throw new AppError("APPROVAL_NOT_PENDING");
@@ -511,6 +578,7 @@ export async function decideVoucher(
   let cancelled: string[] = [];
   let cancelledCount = 0;
   let newContractId: string | null = null;
+  let refundTransactionId: string | null = null;
 
   if (voucher.kind === "RENEWAL") {
     sessionsDelta = voucher.sessions ?? 0;
@@ -573,6 +641,59 @@ export async function decideVoucher(
       credit,
       today,
     });
+  } else if (voucher.kind === "CANCELLATION") {
+    // As the contract stands now: no sessions left, nothing owed, and the refund paid out as an expense voucher (A-240).
+    if ((await bookingRepo.countCheckedInBookings(tx, contract.id)) > 0) {
+      throw new AppError("CONTRACT_HAS_CHECKED_IN_BOOKING");
+    }
+    const now = await standing(tx, contract);
+    const refund = Number(voucher.amount ?? 0);
+    const valueUsed = Number(voucher.valueUsed ?? 0);
+    if (refund > maxRefund({ paid: now.paid, valueUsed, fee: Number(voucher.fee ?? 0) })) {
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { refund: ["refundAbovePaid"] } });
+    }
+    ({ sessionsDelta, valueDelta } = cancellationEffect({
+      remaining: now.remaining,
+      value: now.value,
+      paid: now.paid,
+    }));
+    const rule = await bookingRepo.findStatusRule(tx, "CANCELLED");
+    if (!rule) throw new AppError("INTERNAL_ERROR");
+    const ids = await bookingRepo.cancelBookedBookingsOfContract(tx, contract.id, rule, decider.id);
+    for (const bookingId of ids) {
+      await recordAudit(tx, {
+        actorUserId: decider.id,
+        entityType: "booking",
+        entityId: bookingId,
+        action: "booking.cancelled",
+        before: { status: "BOOKED" },
+        after: { status: "CANCELLED" },
+        context: { reason: "contract.cancelled", voucherNumber: voucher.voucherNumber, contractId: contract.id },
+      });
+    }
+    cancelledCount = ids.length;
+    if (refund > 0 && voucher.refundMethodId && voucher.refundCategoryId) {
+      const expense = await createCashTransactionIn(
+        tx,
+        decider,
+        {
+          branchId: contract.branchId,
+          type: "EXPENSE",
+          methodId: voucher.refundMethodId,
+          methodNote: voucher.refundMethodNote,
+          payee: voucher.customer.fullName,
+          contractId: contract.id,
+          categoryId: voucher.refundCategoryId,
+          categoryNote: voucher.refundCategoryNote,
+          amount: refund,
+          occurredOn: today,
+          reference: voucher.voucherNumber,
+          description: `Hoàn tiền hủy hợp đồng ${contract.contractCode}`,
+        },
+        voucher.id,
+      );
+      refundTransactionId = expense.id;
+    }
   } else if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranchId) {
     await assertBranchFor(tx, { branches: "ALL" }, contract, voucher.toBranchId);
     valueDelta = Number(voucher.amount ?? 0);
@@ -597,9 +718,13 @@ export async function decideVoucher(
     endDateBefore: endBefore,
     endDateAfter: endAfter,
     newContractId,
+    refundTransactionId,
   });
   if (!decided) throw new AppError("APPROVAL_NOT_PENDING");
   if (endAfter.getTime() !== endBefore.getTime()) await contractRepo.setEndDate(tx, contract.id, endAfter);
+  if (voucher.kind === "CANCELLATION") {
+    await contractRepo.moveStatus(tx, contract.id, contract.status, "CANCELLED");
+  }
   // The branch moves only once the voucher is approved: the database lock checks for it (A-235).
   if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranchId) {
     await contractRepo.setBranch(tx, contract.id, voucher.toBranchId);
@@ -676,6 +801,14 @@ export async function decideVoucher(
         amount: null,
         otherParty: voucher.customer.fullName,
       },
+    });
+  } else if (voucher.kind === "CANCELLATION") {
+    await queueContractEmail(tx, {
+      event: "contract.cancelled",
+      causeId: id,
+      contractId: contract.id,
+      by: decider.id,
+      day: today,
     });
   } else if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranch) {
     await queueContractEmail(tx, {

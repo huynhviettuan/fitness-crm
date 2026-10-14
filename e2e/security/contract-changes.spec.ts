@@ -58,7 +58,7 @@ test.describe("A01 who raises and reads vouchers", () => {
         if (role === "PT" || role === "ACCOUNTANT") expect(response.status(), `${path} ${role}`).toBe(403);
       }
     }
-    for (const path of ["transfers", "branch-transfers"]) {
+    for (const path of ["transfers", "branch-transfers", "cancellations"]) {
       for (const role of ["PT", "ACCOUNTANT"] as Role[]) {
         const response = await (
           await apiAs(role)
@@ -70,7 +70,7 @@ test.describe("A01 who raises and reads vouchers", () => {
       }
     }
     const anonymous = await apiAs(null);
-    for (const path of ["upgrades", "conversions", "transfers", "branch-transfers"]) {
+    for (const path of ["upgrades", "conversions", "transfers", "branch-transfers", "cancellations"]) {
       expect(
         (
           await anonymous.post(`/api/v1/contract-changes/${path}`, {
@@ -205,6 +205,16 @@ test.describe("A03 and A10 the inputs", () => {
     expect(
       (await send("branch-transfers", { contractId: randomUUID(), toBranchId: randomUUID(), fee: 0 })).status(),
     ).toBe(404);
+    for (const data of [
+      {},
+      { contractId: contract.id },
+      { contractId: contract.id, reasonId: "x" },
+      { contractId: contract.id, reasonId: randomUUID(), refund: 100 },
+      { contractId: contract.id, reasonId: randomUUID(), fee: -1 },
+    ]) {
+      expect((await send("cancellations", data)).status(), JSON.stringify(data)).toBe(400);
+    }
+    expect((await send("cancellations", { contractId: randomUUID(), reasonId: randomUUID() })).status()).toBe(404);
     const unpaid = await send("transfers", { contractId: contract.id, toCustomerId: randomUUID(), credit: 0 });
     expect(unpaid.status()).toBe(400);
 

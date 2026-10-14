@@ -397,6 +397,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
         <TabsContent value="history" className="space-y-8">
           <ContractChanges
             contract={contract}
+            paid={contract.paidAmount}
             vouchers={vouchers}
             canRenew={can(user, "contract.change") && (contract.status === "ACTIVE" || contract.status === "EXPIRED")}
             canHold={can(user, "contract.change") && contract.status === "ACTIVE"}

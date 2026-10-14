@@ -99,5 +99,22 @@ export function transferEffect(input: { remaining: number; credit: number }): {
   sessionsDelta: number;
   valueDelta: number;
 } {
-  return { sessionsDelta: -input.remaining, valueDelta: -input.credit };
+  return { sessionsDelta: 0 - input.remaining, valueDelta: 0 - input.credit };
+}
+
+/**
+ * What approving a cancellation does to the contract (A-240): no session is left, and its value becomes what was actually
+ * received, so nothing is owed on it any more (what the customer had not paid is not collected). The refund is a separate
+ * expense voucher.
+ */
+export function cancellationEffect(input: { remaining: number; value: number; paid: number }): {
+  sessionsDelta: number;
+  valueDelta: number;
+} {
+  return { sessionsDelta: 0 - input.remaining, valueDelta: input.paid - input.value };
+}
+
+/** The most that can be given back: what was paid, less the value of the sessions used and the cancellation fee. */
+export function maxRefund(input: { paid: number; valueUsed: number; fee: number }): number {
+  return Math.max(0, input.paid - input.valueUsed - input.fee);
 }

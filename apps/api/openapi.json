@@ -14488,6 +14488,154 @@
         "x-permission": "contract.change"
       }
     },
+    "/api/v1/contract-changes/cancellations": {
+      "post": {
+        "operationId": "ContractChangesController_cancellation",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A UUID generated when the form opens (T-015).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reasonNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "valueUsed": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "fee": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "refund": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "refundMethodId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "refundMethodNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "refundCategoryId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "refundCategoryNote": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "note": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "contractId",
+                  "reasonId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created and applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.change"
+      }
+    },
     "/api/v1/notification-preferences": {
       "get": {
         "operationId": "NotificationPreferencesController_get",
@@ -29179,6 +29327,31 @@
               }
             ]
           },
+          "valueUsed": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "fee": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "refundVoucher": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "number": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "number"
+            ]
+          },
           "reason": {
             "nullable": true,
             "allOf": [
@@ -29274,6 +29447,9 @@
           "toCustomer",
           "newContract",
           "toBranch",
+          "valueUsed",
+          "fee",
+          "refundVoucher",
           "reason",
           "note",
           "sessionsDelta",
@@ -30311,7 +30487,8 @@
               "workoutFlags",
               "workoutActions",
               "sessionImpacts",
-              "sessionSummaries"
+              "sessionSummaries",
+              "cancelReasons"
             ]
           },
           "labelVi": {

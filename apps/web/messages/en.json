@@ -724,7 +724,10 @@
     "hasDebt": "The contract still has debt; it must be paid in full before a transfer.",
     "nothingLeft": "The contract has no sessions left to transfer.",
     "sameBranch": "The contract is already at this branch.",
-    "serviceNotInBranch": "The contract's service is not sold at this branch."
+    "serviceNotInBranch": "The contract's service is not sold at this branch.",
+    "cancellationPending": "The contract already has a cancellation waiting for approval.",
+    "valueUsedAboveValue": "The value used is more than the contract's value.",
+    "refundAbovePaid": "The refund cannot be more than what was paid less the value used and the fee."
   },
   "contracts": {
     "title": "Contracts",
@@ -1537,7 +1540,8 @@
       "workoutFlags": "Flag of a set",
       "workoutActions": "Action of a set",
       "sessionImpacts": "Impact on the session",
-      "sessionSummaries": "Session summary"
+      "sessionSummaries": "Session summary",
+      "cancelReasons": "Why customers cancel a contract"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -1760,7 +1764,8 @@
       "converted_by_voucher": "Converted (change voucher)",
       "transferred_by_voucher": "Transferred (change voucher)",
       "branch_transferred_by_voucher": "Moved branch (change voucher)",
-      "created_by_transfer": "Created by a transfer"
+      "created_by_transfer": "Created by a transfer",
+      "cancelled_by_voucher": "Cancelled (change voucher)"
     },
     "fields": {
       "at": "When",
@@ -3382,7 +3387,14 @@
       "toCustomer": "Receiving customer",
       "transferValue": "Value transferred with the sessions",
       "toBranch": "New branch",
-      "fee": "Transfer fee"
+      "fee": "Transfer fee",
+      "paid": "Paid",
+      "cancelReason": "Reason for cancelling",
+      "valueUsed": "Value used",
+      "cancelFee": "Cancellation fee",
+      "refund": "Refund",
+      "refundMethod": "How the refund is paid",
+      "refundCategory": "Expense type"
     },
     "upgrade": "Upgrade",
     "conversion": "Convert",
@@ -3398,6 +3410,10 @@
     "branchTransferDescription": "Moves the contract to another branch for a fee that is added to what is owed. Sessions booked from today are cancelled when the voucher is approved; the customer books again at the new branch.",
     "customerSearch": "Search by code, name or phone",
     "changeCustomer": "Change",
-    "branchPlaceholder": "Choose the branch"
+    "branchPlaceholder": "Choose the branch",
+    "cancellation": "Cancel and refund",
+    "cancellationTitle": "Cancel contract {code}",
+    "cancellationDescription": "Ends the contract at the customer's request: no sessions left, booked sessions cancelled, nothing owed. The refund is recorded as an expense voucher when the voucher is approved. Not possible while a session is in progress.",
+    "noRefund": "No refund"
   }
 }

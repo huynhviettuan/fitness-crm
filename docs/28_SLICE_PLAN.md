@@ -450,7 +450,7 @@ All vouchers follow OQ-023's interim rule: Fitness Manager approval, with fees t
 | M8.1 Voucher framework, renewal, hold (done 2026-10-30: A-219 to A-226, OQ-063) | One voucher model (kind, original contract, own fields, approval); the Package history tab; renewal adds months, days, or sessions with an amount paid by receipts; a hold (Bảo lưu) sets the status and moves the end date | Does a hold count against the 10-day freeze reminder (proposed: no, holds are the customer's request)? |
 | M8.2 Upgrade and conversion (done 2026-10-31: A-227 to A-231, OQ-065) | The remaining value moves to a new service or contract type | How the remaining value converts (sessions left × allocation per session?) is an OQ for the owner: it changes money |
 | M8.3 Transfer and branch transfer (done 2026-11-01: A-232 to A-239, OQ-066) | Remaining days and sessions go to another customer; the branch of use changes with a value and a fee; future bookings are handled | Do future bookings move or cancel (proposed: cancel, with a list)? |
-| M8.4 Cancellation | Paid, value used, fee, refund (creates the refund expense voucher); the debt becomes zero; booked sessions are cancelled (OQ-030 interim); this replaces the cancellation of the first brief (D-010) | OQ-013 interim |
+| M8.4 Cancellation (done 2026-11-02: A-240 to A-244, OQ-067) | Paid, value used, fee, refund (creates the refund expense voucher); the debt becomes zero; booked sessions are cancelled (OQ-030 interim); this replaces the cancellation of the first brief (D-010) | OQ-013 interim |
 
 Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 

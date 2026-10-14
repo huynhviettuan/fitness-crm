@@ -1,8 +1,22 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { raiseBranchTransfer, raiseExchange, raiseHold, raiseRenewal, raiseTransfer } from "@/lib/api/changes";
-import type { BranchTransferInput, ExchangeInput, HoldInput, RenewalInput, TransferInput } from "@flow/shared/changes";
+import {
+  raiseBranchTransfer,
+  raiseCancellation,
+  raiseExchange,
+  raiseHold,
+  raiseRenewal,
+  raiseTransfer,
+} from "@/lib/api/changes";
+import type {
+  BranchTransferInput,
+  CancellationInput,
+  ExchangeInput,
+  HoldInput,
+  RenewalInput,
+  TransferInput,
+} from "@flow/shared/changes";
 
 // The writes of the change vouchers (M8): each answers whether the voucher waits for approval or already acts.
 
@@ -40,4 +54,11 @@ export async function raiseBranchTransferAction(
   idempotencyKey: string,
 ): Promise<ActionResult<{ pending: boolean }>> {
   return runAction(async () => ({ pending: (await raiseBranchTransfer(input, idempotencyKey)).status === "PENDING" }));
+}
+
+export async function raiseCancellationAction(
+  input: CancellationInput,
+  idempotencyKey: string,
+): Promise<ActionResult<{ pending: boolean }>> {
+  return runAction(async () => ({ pending: (await raiseCancellation(input, idempotencyKey)).status === "PENDING" }));
 }

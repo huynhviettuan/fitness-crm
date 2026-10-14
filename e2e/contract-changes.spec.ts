@@ -1,5 +1,6 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { approvePendingViaApi } from "./support/approvals";
+import { OTHER_OPTION_LABEL, otherOptionId } from "./support/options";
 import {
   bookingSetup,
   createBookingViaApi,
@@ -238,6 +239,98 @@ test.describe("a manager transfers the sessions left", () => {
     await page.reload();
     await page.getByRole("tab", { name: historyTab }).click();
     await expect(table.getByRole("link").first()).toBeVisible();
+  });
+});
+
+test.describe("a manager cancels a contract", () => {
+  test.use(signedInAs("FITNESS_MANAGER"));
+
+  test("a cancellation waits for the admin, then ends the contract and records the refund as an expense", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const { contract } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const manager = await apiAs("FITNESS_MANAGER");
+    await recordPaymentViaApi(manager, contract.id, "12000000", { approver: admin });
+    const read = async () =>
+      (await (await admin.get(`/api/v1/contracts/${contract.id}`)).json()) as {
+        status: string;
+        remainingSessions: number;
+        debt: number;
+      };
+
+    await page.goto(`/contracts/${contract.id}`);
+    await page.getByRole("tab", { name: historyTab }).click();
+    await page.getByRole("button", { name: c.cancellation, exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: fill(c.cancellationTitle, { code: contract.contractCode }) });
+    await dialog.getByRole("combobox", { name: c.fields.cancelReason, exact: true }).click();
+    await page.getByRole("listbox").getByRole("option", { name: OTHER_OPTION_LABEL, exact: true }).click();
+    await dialog.getByLabel(labels.options.otherNote, { exact: true }).fill(`Chuyển nhà ${testTag}`);
+    await dialog.getByLabel(c.fields.valueUsed, { exact: true }).fill("2000000");
+    await dialog.getByLabel(c.fields.cancelFee, { exact: true }).fill("1000000");
+    // A refund needs how it is paid and the expense type before anything is sent.
+    await dialog.getByLabel(c.fields.refund, { exact: true }).fill("9000000");
+    await dialog.getByRole("button", { name: c.raise, exact: true }).click();
+    await expect(dialog.getByText(labels.validation.required).first()).toBeVisible();
+    await dialog.getByLabel(c.fields.refund, { exact: true }).fill("0");
+    await dialog.getByRole("button", { name: c.raise, exact: true }).click();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(c.raisedPending),
+    ).toBeVisible();
+
+    const table = page.getByRole("table", { name: c.title, exact: true });
+    await expect(table.getByRole("row").nth(1)).toContainText(c.kinds.CANCELLATION);
+    expect(await read()).toMatchObject({ status: "ACTIVE", remainingSessions: 24 });
+    const listed = (await (await admin.get(`/api/v1/contract-changes?contractId=${contract.id}`)).json()) as {
+      items: { id: string }[];
+    };
+    await approvePendingViaApi(admin, listed.items[0]!.id, "voucher.cancellation");
+    expect(await read()).toMatchObject({ status: "CANCELLED", remainingSessions: 0, debt: 0 });
+
+    // The cancelled contract takes no new voucher.
+    await page.reload();
+    await page.getByRole("tab", { name: historyTab }).click();
+    await expect(page.getByRole("button", { name: c.cancellation, exact: true })).toHaveCount(0);
+  });
+
+  test("a refund becomes an expense voucher linked to the contract", async ({ apiAs, testTag }) => {
+    const { contract } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const manager = await apiAs("FITNESS_MANAGER");
+    await recordPaymentViaApi(manager, contract.id, "12000000", { approver: admin });
+    const response = await manager.post("/api/v1/contract-changes/cancellations", {
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      data: {
+        contractId: contract.id,
+        reasonId: await otherOptionId(manager, "cancelReasons"),
+        reasonNote: `Lý do ${testTag}`,
+        valueUsed: 2_000_000,
+        fee: 1_000_000,
+        refund: 9_000_000,
+        refundMethodId: await otherOptionId(manager, "paymentMethods"),
+        refundMethodNote: "E2E",
+        refundCategoryId: await otherOptionId(manager, "expenseTypes"),
+        refundCategoryNote: `Hoàn tiền ${testTag}`,
+      },
+    });
+    expect(response.status()).toBe(202);
+    const voucher = (await response.json()) as { id: string };
+    await approvePendingViaApi(admin, voucher.id, "voucher.cancellation");
+    const done = (await (await admin.get(`/api/v1/contract-changes/${voucher.id}`)).json()) as {
+      status: string;
+      refundVoucher: { id: string; number: string } | null;
+    };
+    expect(done.status).toBe("APPROVED");
+    expect(done.refundVoucher?.number).toBeTruthy();
+    const cash = (await (await admin.get("/api/v1/cash-transactions?type=EXPENSE&pageSize=100")).json()) as {
+      items: { number: string; amount: number; contract: { id: string } | null }[];
+    };
+    expect(cash.items.find((item) => item.number === done.refundVoucher!.number)).toMatchObject({
+      amount: 9_000_000,
+      contract: { id: contract.id },
+    });
   });
 });
 

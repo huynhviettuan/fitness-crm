@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import {
   branchTransferInputSchema,
+  cancellationInputSchema,
   exchangeInputSchema,
   holdInputSchema,
   renewalInputSchema,
@@ -19,6 +20,7 @@ import {
   getVoucher,
   listVouchers,
   raiseBranchTransfer,
+  raiseCancellation,
   raiseConversion,
   raiseHold,
   raiseRenewal,
@@ -152,6 +154,24 @@ export class ContractChangesController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { voucher, replayed } = await raiseBranchTransfer(actor, body, request.get("idempotency-key"));
+    response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
+    return encode(voucherSchema, voucher);
+  }
+
+  /** A cancellation ends the contract; the refund becomes an expense voucher when it is approved (A-240). */
+  @Post("cancellations")
+  @RequirePermission("contract.change")
+  @ApiIdempotencyKey()
+  @ApiResult(voucherSchema, 201, "Created and applied")
+  @ApiResult(voucherSchema, 202, "Waiting for approval (D-018)")
+  @ApiResult(voucherSchema, 200, "Replayed")
+  async cancellation(
+    @CurrentActor() actor: CurrentUser,
+    @Body({ schema: cancellationInputSchema }) body: unknown,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { voucher, replayed } = await raiseCancellation(actor, body, request.get("idempotency-key"));
     response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
     return encode(voucherSchema, voucher);
   }

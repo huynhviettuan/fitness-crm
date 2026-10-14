@@ -3,6 +3,7 @@ import {
   voucherPageSchema,
   voucherSchema,
   type BranchTransferInput,
+  type CancellationInput,
   type ExchangeInput,
   type HoldInput,
   type RenewalInput,
@@ -73,6 +74,16 @@ export async function raiseBranchTransfer(input: BranchTransferInput, idempotenc
   return read(
     voucherSchema,
     (await api()).POST("/api/v1/contract-changes/branch-transfers", {
+      params: { header: { "Idempotency-Key": idempotencyKey } },
+      body: input as never,
+    }),
+  );
+}
+
+export async function raiseCancellation(input: CancellationInput, idempotencyKey: string) {
+  return read(
+    voucherSchema,
+    (await api()).POST("/api/v1/contract-changes/cancellations", {
       params: { header: { "Idempotency-Key": idempotencyKey } },
       body: input as never,
     }),

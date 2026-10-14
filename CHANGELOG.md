@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-11-02 — M8.4: cancellation (M8 close)
+
+- **Cancellation** (A-240 to A-244): reason, value used, fee and refund; the contract ends with no sessions left and nothing owed; booked sessions are cancelled; the refund is an expense voucher linked to the contract.
+- **Open**: OQ-067. Docs 04, 07, 13, 16, 18, 28; E2E-177.
+
 ## 2026-11-01 — Pagination: go to a typed page
 
 - Every paginated list gets a box to type the page to go to when it has more than five pages (doc 23 `TablePagination`); the search and filters are kept.

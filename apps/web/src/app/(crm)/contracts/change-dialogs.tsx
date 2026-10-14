@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowRightLeftIcon,
+  BanIcon,
   BuildingIcon,
   GiftIcon,
   PauseCircleIcon,
@@ -25,15 +26,19 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { SelectField, TextField, applyFieldErrors, useValidationMessage } from "@/components/form-fields";
+import { Money } from "@/components/money";
 import { notify } from "@/components/notify";
+import { OptionSelect } from "@/components/option-select";
 import { useCustomerSearch } from "@/components/use-customer-search";
 import {
   branchTransferInputSchema,
+  cancellationInputSchema,
   exchangeInputSchema,
   holdInputSchema,
   renewalInputSchema,
   transferInputSchema,
   type BranchTransferInput,
+  type CancellationInput,
   type ExchangeInput,
   type HoldInput,
   type RenewalInput,
@@ -42,6 +47,7 @@ import {
 import { useSubmit } from "../admin/users/user-dialogs";
 import {
   raiseBranchTransferAction,
+  raiseCancellationAction,
   raiseExchangeAction,
   raiseHoldAction,
   raiseRenewalAction,
@@ -449,6 +455,100 @@ function BranchTransferDialog({
         options={branches.map((branch) => ({ value: branch.id, label: branch.name }))}
       />
       <TextField control={form.control} name="fee" label={t("fields.fee")} inputMode="numeric" />
+      <TextField control={form.control} name="note" label={t("fields.note")} multiline />
+    </VoucherDialog>
+  );
+}
+
+type CancellationValues = {
+  reasonId: string;
+  reasonNote: string;
+  valueUsed: string;
+  fee: string;
+  refund: string;
+  refundMethodId: string;
+  refundMethodNote: string;
+  refundCategoryId: string;
+  refundCategoryNote: string;
+  note: string;
+};
+
+/** A cancellation: the contract ends, the sessions left go, and the money given back becomes an expense voucher. */
+export function CancellationButton({ contract, paid }: { contract: ContractRef; paid: number }) {
+  const t = useTranslations("contractChanges");
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <BanIcon />
+        {t("cancellation")}
+      </Button>
+      {open && <CancellationDialog contract={contract} paid={paid} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function CancellationDialog({ contract, paid, onClose }: { contract: ContractRef; paid: number; onClose: () => void }) {
+  const t = useTranslations("contractChanges");
+  const form = useForm<CancellationValues>({
+    resolver: ((values: CancellationValues, context: unknown, options: never) =>
+      zodResolver(cancellationInputSchema as never, undefined, { raw: true })(
+        { contractId: contract.id, ...values } as never,
+        context as never,
+        options,
+      )) as never,
+    defaultValues: {
+      reasonId: "",
+      reasonNote: "",
+      valueUsed: "",
+      fee: "",
+      refund: "",
+      refundMethodId: "",
+      refundMethodNote: "",
+      refundCategoryId: "",
+      refundCategoryNote: "",
+      note: "",
+    },
+  });
+  return (
+    <VoucherDialog
+      title={t("cancellationTitle", { code: contract.contractCode })}
+      description={t("cancellationDescription")}
+      form={form}
+      run={(values, key) => raiseCancellationAction({ contractId: contract.id, ...values } as CancellationInput, key)}
+      onClose={onClose}
+    >
+      <p className="text-sm">
+        {t("fields.paid")}: <Money amount={paid} />
+      </p>
+      <OptionSelect
+        control={form.control}
+        name="reasonId"
+        noteName="reasonNote"
+        listKey="cancelReasons"
+        label={t("fields.cancelReason")}
+      />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <TextField control={form.control} name="valueUsed" label={t("fields.valueUsed")} inputMode="numeric" />
+        <TextField control={form.control} name="fee" label={t("fields.cancelFee")} inputMode="numeric" />
+        <TextField control={form.control} name="refund" label={t("fields.refund")} inputMode="numeric" />
+      </div>
+      <OptionSelect
+        control={form.control}
+        name="refundMethodId"
+        noteName="refundMethodNote"
+        listKey="paymentMethods"
+        label={t("fields.refundMethod")}
+        noneLabel={t("noRefund")}
+      />
+      <OptionSelect
+        control={form.control}
+        name="refundCategoryId"
+        noteName="refundCategoryNote"
+        listKey="expenseTypes"
+        label={t("fields.refundCategory")}
+        noneLabel={t("noRefund")}
+      />
       <TextField control={form.control} name="note" label={t("fields.note")} multiline />
     </VoucherDialog>
   );

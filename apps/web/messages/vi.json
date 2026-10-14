@@ -724,7 +724,10 @@
     "hasDebt": "Hợp đồng còn công nợ; thanh toán đủ trước khi chuyển.",
     "nothingLeft": "Hợp đồng không còn buổi nào để chuyển.",
     "sameBranch": "Hợp đồng đang ở chi nhánh này.",
-    "serviceNotInBranch": "Dịch vụ của hợp đồng không bán ở chi nhánh này."
+    "serviceNotInBranch": "Dịch vụ của hợp đồng không bán ở chi nhánh này.",
+    "cancellationPending": "Hợp đồng đã có một phiếu hủy đang chờ duyệt.",
+    "valueUsedAboveValue": "Giá trị đã dùng lớn hơn giá trị hợp đồng.",
+    "refundAbovePaid": "Tiền hoàn không được lớn hơn số đã thanh toán trừ giá trị đã dùng và phí hủy."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1537,7 +1540,8 @@
       "workoutFlags": "Flag của set tập",
       "workoutActions": "Action của set tập",
       "sessionImpacts": "Ảnh hưởng đến buổi tập",
-      "sessionSummaries": "Tổng kết buổi tập"
+      "sessionSummaries": "Tổng kết buổi tập",
+      "cancelReasons": "Lý do khách hủy hợp đồng"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -1760,7 +1764,8 @@
       "converted_by_voucher": "Chuyển đổi (phiếu biến động)",
       "transferred_by_voucher": "Chuyển nhượng (phiếu biến động)",
       "branch_transferred_by_voucher": "Chuyển chi nhánh (phiếu biến động)",
-      "created_by_transfer": "Tạo từ chuyển nhượng"
+      "created_by_transfer": "Tạo từ chuyển nhượng",
+      "cancelled_by_voucher": "Hủy hợp đồng (phiếu biến động)"
     },
     "fields": {
       "at": "Thời điểm",
@@ -3382,7 +3387,14 @@
       "toCustomer": "Khách nhận",
       "transferValue": "Giá trị chuyển cùng số buổi",
       "toBranch": "Chi nhánh mới",
-      "fee": "Phí chuyển"
+      "fee": "Phí chuyển",
+      "paid": "Đã thanh toán",
+      "cancelReason": "Lý do hủy",
+      "valueUsed": "Giá trị đã dùng",
+      "cancelFee": "Phí hủy",
+      "refund": "Tiền hoàn",
+      "refundMethod": "Hình thức hoàn tiền",
+      "refundCategory": "Loại phiếu chi"
     },
     "upgrade": "Nâng cấp",
     "conversion": "Chuyển đổi",
@@ -3398,6 +3410,10 @@
     "branchTransferDescription": "Chuyển hợp đồng sang chi nhánh khác, thu phí chuyển cộng vào công nợ. Các buổi đã đặt từ hôm nay sẽ bị hủy khi phiếu được duyệt; khách đặt lại tại chi nhánh mới.",
     "customerSearch": "Tìm theo mã, tên hoặc số điện thoại",
     "changeCustomer": "Chọn lại",
-    "branchPlaceholder": "Chọn chi nhánh"
+    "branchPlaceholder": "Chọn chi nhánh",
+    "cancellation": "Hủy và hoàn tiền",
+    "cancellationTitle": "Hủy hợp đồng {code}",
+    "cancellationDescription": "Chấm dứt hợp đồng theo yêu cầu của khách: hết buổi còn lại, các buổi đã đặt bị hủy, công nợ về 0. Tiền hoàn trả được ghi thành phiếu chi khi phiếu được duyệt. Không hủy được khi có buổi đang tập.",
+    "noRefund": "Không hoàn tiền"
   }
 }

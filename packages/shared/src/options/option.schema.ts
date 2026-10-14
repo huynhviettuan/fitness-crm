@@ -52,6 +52,8 @@ export const OPTION_LISTS = [
   "workoutActions",
   "sessionImpacts",
   "sessionSummaries",
+  // Why a customer cancelled a contract (brief §5.6, A-240), M8.4.
+  "cancelReasons",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

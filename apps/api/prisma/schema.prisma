@@ -457,6 +457,9 @@ model Option {
   contractExceptions   Contract[]                 @relation("ContractExceptionReason")
   contractsDeletedFor  Contract[]                 @relation("ContractDeleteReason")
   freezeReasons        ContractFreeze[]           @relation("FreezeReason")
+  voucherReasons       ContractChangeVoucher[]    @relation("VoucherReason")
+  voucherRefundMethods ContractChangeVoucher[]    @relation("VoucherRefundMethod")
+  voucherRefundTypes   ContractChangeVoucher[]    @relation("VoucherRefundType")
   freezeEndReasons     ContractFreeze[]           @relation("FreezeEndReason")
 
   @@unique([listKey, labelVi])
@@ -1362,41 +1365,42 @@ model CashOpeningBalance {
 }
 
 model CashTransaction {
-  id               String              @id @default(uuid()) @db.Uuid
-  branchId         String              @map("branch_id") @db.Uuid
-  branch           Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  id               String                  @id @default(uuid()) @db.Uuid
+  vouchers         ContractChangeVoucher[] @relation("VoucherRefund")
+  branchId         String                  @map("branch_id") @db.Uuid
+  branch           Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
   type             CashTransactionType
   // From "incomeCategories" or "expenseTypes", by type (D-016, D-034).
-  categoryId       String              @map("category_option_id") @db.Uuid
-  category         Option              @relation("CashCategory", fields: [categoryId], references: [id], onDelete: Restrict)
-  categoryNote     String?             @map("category_note")
-  amount           Decimal             @db.Decimal(14, 0)
+  categoryId       String                  @map("category_option_id") @db.Uuid
+  category         Option                  @relation("CashCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryNote     String?                 @map("category_note")
+  amount           Decimal                 @db.Decimal(14, 0)
   description      String?
   reference        String?
   // The gym day it happened (T-039).
-  occurredOn       DateTime            @map("occurred_on") @db.Date
+  occurredOn       DateTime                @map("occurred_on") @db.Date
   // D-018, D-034: counts toward the totals only when APPROVED.
-  approvalStatus   ApprovalStatus      @default(APPROVED) @map("approval_status")
-  idempotencyKey   String              @unique @map("idempotency_key")
+  approvalStatus   ApprovalStatus          @default(APPROVED) @map("approval_status")
+  idempotencyKey   String                  @unique @map("idempotency_key")
   // The voucher number (D-034): receipts without a contract share the receipt series, expenses have their own.
-  number           String              @unique
+  number           String                  @unique
   // An expense voucher's payee; the payer is who recorded it.
   payee            String?
-  methodId         String              @map("method_option_id") @db.Uuid
-  method           Option              @relation("CashMethod", fields: [methodId], references: [id], onDelete: Restrict)
-  methodNote       String?             @map("method_note")
+  methodId         String                  @map("method_option_id") @db.Uuid
+  method           Option                  @relation("CashMethod", fields: [methodId], references: [id], onDelete: Restrict)
+  methodNote       String?                 @map("method_note")
   // A refund on cancellation is an expense voucher linked to the contract (D-034).
-  contractId       String?             @map("contract_id") @db.Uuid
-  contract         Contract?           @relation(fields: [contractId], references: [id], onDelete: Restrict)
-  createdById      String              @map("created_by") @db.Uuid
-  createdBy        User                @relation("CashTransactionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
-  deletedAt        DateTime?           @map("deleted_at") @db.Timestamptz(3)
-  deletedById      String?             @map("deleted_by") @db.Uuid
-  deletedBy        User?               @relation("CashTransactionDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
-  deleteReasonId   String?             @map("delete_reason_option_id") @db.Uuid
-  deleteReason     Option?             @relation("CashDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
-  deleteReasonNote String?             @map("delete_reason_note")
+  contractId       String?                 @map("contract_id") @db.Uuid
+  contract         Contract?               @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  createdById      String                  @map("created_by") @db.Uuid
+  createdBy        User                    @relation("CashTransactionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedAt        DateTime?               @map("deleted_at") @db.Timestamptz(3)
+  deletedById      String?                 @map("deleted_by") @db.Uuid
+  deletedBy        User?                   @relation("CashTransactionDeletedBy", fields: [deletedById], references: [id], onDelete: Restrict)
+  deleteReasonId   String?                 @map("delete_reason_option_id") @db.Uuid
+  deleteReason     Option?                 @relation("CashDeleteReason", fields: [deleteReasonId], references: [id], onDelete: Restrict)
+  deleteReasonNote String?                 @map("delete_reason_note")
   ptPayout         PtPayout?
 
   @@index([occurredOn])
@@ -2456,51 +2460,66 @@ model WorkoutEscalation {
 // ---------------------------------------------------------------------------
 
 model ContractChangeVoucher {
-  id                 String        @id @default(uuid()) @db.Uuid
+  id                  String           @id @default(uuid()) @db.Uuid
   // From voucher_seq with the configured prefix (D-038); never reused.
-  voucherNumber      String        @unique @map("voucher_number")
-  kind               VoucherKind
-  status             VoucherStatus @default(PENDING)
-  contractId         String        @map("contract_id") @db.Uuid
-  contract           Contract      @relation("VoucherContract", fields: [contractId], references: [id], onDelete: Restrict)
-  branchId           String        @map("branch_id") @db.Uuid
-  branch             Branch        @relation("VoucherBranch", fields: [branchId], references: [id], onDelete: Restrict)
-  customerId         String        @map("customer_id") @db.Uuid
-  customer           Customer      @relation("VoucherCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  voucherNumber       String           @unique @map("voucher_number")
+  kind                VoucherKind
+  status              VoucherStatus    @default(PENDING)
+  contractId          String           @map("contract_id") @db.Uuid
+  contract            Contract         @relation("VoucherContract", fields: [contractId], references: [id], onDelete: Restrict)
+  branchId            String           @map("branch_id") @db.Uuid
+  branch              Branch           @relation("VoucherBranch", fields: [branchId], references: [id], onDelete: Restrict)
+  customerId          String           @map("customer_id") @db.Uuid
+  customer            Customer         @relation("VoucherCustomer", fields: [customerId], references: [id], onDelete: Restrict)
   // The kind's own fields (brief §5.6); the ones a kind does not have stay empty.
-  fromDate           DateTime?     @map("from_date") @db.Date
-  toDate             DateTime?     @map("to_date") @db.Date
-  months             Int?
-  days               Int?
-  sessions           Int?
-  amount             Decimal?      @db.Decimal(14, 0)
+  fromDate            DateTime?        @map("from_date") @db.Date
+  toDate              DateTime?        @map("to_date") @db.Date
+  months              Int?
+  days                Int?
+  sessions            Int?
+  amount              Decimal?         @db.Decimal(14, 0)
   // An upgrade or a conversion (M8.2): the service exchanged for, and the value credited for the sessions left.
-  targetServiceId    String?       @map("target_service_id") @db.Uuid
-  targetService      Service?      @relation("VoucherTargetService", fields: [targetServiceId], references: [id], onDelete: Restrict)
-  credit             Decimal?      @db.Decimal(14, 0)
+  targetServiceId     String?          @map("target_service_id") @db.Uuid
+  targetService       Service?         @relation("VoucherTargetService", fields: [targetServiceId], references: [id], onDelete: Restrict)
+  credit              Decimal?         @db.Decimal(14, 0)
   // A transfer (M8.3): who gets the sessions and the contract made for them; a branch transfer: the branch moved to.
-  toCustomerId       String?       @map("to_customer_id") @db.Uuid
-  toCustomer         Customer?     @relation("VoucherToCustomer", fields: [toCustomerId], references: [id], onDelete: Restrict)
-  newContractId      String?       @map("new_contract_id") @db.Uuid
-  newContract        Contract?     @relation("VoucherNewContract", fields: [newContractId], references: [id], onDelete: Restrict)
-  toBranchId         String?       @map("to_branch_id") @db.Uuid
-  toBranch           Branch?       @relation("VoucherToBranch", fields: [toBranchId], references: [id], onDelete: Restrict)
-  note               String?
+  toCustomerId        String?          @map("to_customer_id") @db.Uuid
+  toCustomer          Customer?        @relation("VoucherToCustomer", fields: [toCustomerId], references: [id], onDelete: Restrict)
+  newContractId       String?          @map("new_contract_id") @db.Uuid
+  newContract         Contract?        @relation("VoucherNewContract", fields: [newContractId], references: [id], onDelete: Restrict)
+  toBranchId          String?          @map("to_branch_id") @db.Uuid
+  // A cancellation (M8.4): why, the value of the sessions used, the fee kept (the refund is `amount`), how the refund is paid
+  // and the expense voucher it made when approved.
+  reasonOptionId      String?          @map("reason_option_id") @db.Uuid
+  reason              Option?          @relation("VoucherReason", fields: [reasonOptionId], references: [id], onDelete: Restrict)
+  reasonNote          String?          @map("reason_note")
+  valueUsed           Decimal?         @map("value_used") @db.Decimal(14, 0)
+  fee                 Decimal?         @db.Decimal(14, 0)
+  refundMethodId      String?          @map("refund_method_option_id") @db.Uuid
+  refundMethod        Option?          @relation("VoucherRefundMethod", fields: [refundMethodId], references: [id], onDelete: Restrict)
+  refundMethodNote    String?          @map("refund_method_note")
+  refundCategoryId    String?          @map("refund_category_option_id") @db.Uuid
+  refundCategory      Option?          @relation("VoucherRefundType", fields: [refundCategoryId], references: [id], onDelete: Restrict)
+  refundCategoryNote  String?          @map("refund_category_note")
+  refundTransactionId String?          @map("refund_transaction_id") @db.Uuid
+  refundTransaction   CashTransaction? @relation("VoucherRefund", fields: [refundTransactionId], references: [id], onDelete: Restrict)
+  toBranch            Branch?          @relation("VoucherToBranch", fields: [toBranchId], references: [id], onDelete: Restrict)
+  note                String?
   // What approving it did: set at approval, and summed into the contract by a trigger.
-  sessionsDelta      Int           @default(0) @map("sessions_delta")
-  valueDelta         Decimal       @default(0) @map("value_delta") @db.Decimal(14, 0)
-  endDateBefore      DateTime?     @map("end_date_before") @db.Date
-  endDateAfter       DateTime?     @map("end_date_after") @db.Date
+  sessionsDelta       Int              @default(0) @map("sessions_delta")
+  valueDelta          Decimal          @default(0) @map("value_delta") @db.Decimal(14, 0)
+  endDateBefore       DateTime?        @map("end_date_before") @db.Date
+  endDateAfter        DateTime?        @map("end_date_after") @db.Date
   // T-015: replaying a create with the same key returns this voucher.
-  idempotencyKey     String        @unique @map("idempotency_key")
-  requestFingerprint String?       @map("request_fingerprint")
-  createdById        String        @map("created_by") @db.Uuid
-  createdBy          User          @relation("VoucherCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  approvedById       String?       @map("approved_by") @db.Uuid
-  approvedBy         User?         @relation("VoucherApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
-  approvedAt         DateTime?     @map("approved_at") @db.Timestamptz(3)
-  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  idempotencyKey      String           @unique @map("idempotency_key")
+  requestFingerprint  String?          @map("request_fingerprint")
+  createdById         String           @map("created_by") @db.Uuid
+  createdBy           User             @relation("VoucherCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  approvedById        String?          @map("approved_by") @db.Uuid
+  approvedBy          User?            @relation("VoucherApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedAt          DateTime?        @map("approved_at") @db.Timestamptz(3)
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([contractId, status])
   @@index([customerId])
