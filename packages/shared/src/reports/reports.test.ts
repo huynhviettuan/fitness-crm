@@ -6,7 +6,9 @@ import {
   entitledSessions,
   ptAllocation,
   ptRevenueQuerySchema,
+  onTimeRate,
   startsInShift,
+  taskReportQuerySchema,
 } from "./index.js";
 
 describe("the PT allocation (D-032, A-026)", () => {
@@ -103,5 +105,21 @@ describe("the report queries", () => {
     expect(bookingReportQuerySchema.safeParse({ type: "CLASS" }).success).toBe(false);
     expect(bookingReportQuerySchema.safeParse({ pageSize: 101 }).success).toBe(false);
     expect(bookingReportQuerySchema.safeParse({ status: "x".repeat(41) }).success).toBe(false);
+  });
+});
+
+describe("the tasks report (M9.1)", () => {
+  it("rates the tasks done on time among those decided: done or overdue", () => {
+    expect(onTimeRate({ doneOnTime: 2, doneLate: 1, overdue: 1 })).toBe(50);
+    expect(onTimeRate({ doneOnTime: 3, doneLate: 0, overdue: 0 })).toBe(100);
+    // Nothing decided yet: no rate.
+    expect(onTimeRate({ doneOnTime: 0, doneLate: 0, overdue: 0 })).toBe(0);
+  });
+
+  it("reads the period, branch and person, and ignores a blank filter", () => {
+    const id = "3f2b8a64-5d1e-4c1b-9a7e-0b6f6f0c1a11";
+    expect(taskReportQuerySchema.parse({ userId: "", branchId: "" })).toEqual({});
+    expect(taskReportQuerySchema.parse({ userId: id, from: "01/06/2020" }).userId).toBe(id);
+    expect(taskReportQuerySchema.safeParse({ userId: "nope" }).success).toBe(false);
   });
 });

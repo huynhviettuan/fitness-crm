@@ -25,6 +25,8 @@ export const overviewSchema = z
     sessionsByHour: z.array(z.object({ hour: z.int(), sessions: z.int() })),
     /** Valid receipts by month, the 12 months up to the end of the period; null when the role has receipts hidden. */
     revenueByMonth: z.array(z.object({ month: z.string(), revenue: z.int() })).nullable(),
+    /** Valid receipts by calendar year, the three years up to the year the period ends in; null when hidden too. */
+    revenueByYear: z.array(z.object({ year: z.string(), revenue: z.int() })).nullable(),
   })
   .meta({ id: "Overview" });
 

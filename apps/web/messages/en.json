@@ -61,7 +61,8 @@
     "workoutTemplates": "Plan templates",
     "workoutLogs": "Session logs",
     "workoutEscalations": "Workout escalations",
-    "workoutReport": "Workout dashboard"
+    "workoutReport": "Workout dashboard",
+    "taskReport": "Tasks report"
   },
   "status": {
     "customer": {
@@ -1404,7 +1405,9 @@
         "bookings": "View the booking report",
         "bookingsExport": "Export the booking report",
         "overview": "View the overview",
-        "workouts": "View the weekly workout dashboard"
+        "workouts": "View the weekly workout dashboard",
+        "tasks": "View the tasks report",
+        "tasksExport": "Export the tasks report"
       },
       "service": {
         "view": "View services and price tiers",
@@ -2925,7 +2928,9 @@
     "byMonth": "Revenue of the last 12 months",
     "revenue": "Revenue",
     "revenueTotal": "Total of 12 months",
-    "note": "New leads count by the day they were created. Members who trained have a PT session or a class session used in the period. PT sessions are the ones that credit a PT, by the hour they started. Revenue is valid receipts by month, without opening balances."
+    "note": "New leads count by the day they were created. Members who trained have a PT session or a class session used in the period. PT sessions are the ones that credit a PT, by the hour they started. Revenue is valid receipts by month, without opening balances.",
+    "byYear": "Revenue by year",
+    "year": "Year"
   },
   "ptPayouts": {
     "title": "PT payouts",
@@ -3415,5 +3420,25 @@
     "cancellationTitle": "Cancel contract {code}",
     "cancellationDescription": "Ends the contract at the customer's request: no sessions left, booked sessions cancelled, nothing owed. The refund is recorded as an expense voucher when the voucher is approved. Not possible while a session is in progress.",
     "noRefund": "No refund"
+  },
+  "taskReport": {
+    "title": "Tasks",
+    "description": "Tasks given, done on time, done late and overdue, by person and by department. A task counts in the period its deadline falls in.",
+    "empty": "No task has a deadline in this period.",
+    "totals": "Totals of the period",
+    "byPerson": "By person",
+    "byDepartment": "By department",
+    "note": "On-time rate = tasks done on time / (tasks done + tasks overdue). Tasks still open and not yet due, and cancelled ones, are not in the rate. The department is the one on the person's employee record, or the one the task was given to.",
+    "fields": {
+      "person": "Person",
+      "department": "Department",
+      "assigned": "Assigned",
+      "doneOnTime": "Done on time",
+      "doneLate": "Done late",
+      "overdue": "Overdue",
+      "open": "Open",
+      "cancelled": "Cancelled",
+      "onTimeRate": "On-time rate"
+    }
   }
 }

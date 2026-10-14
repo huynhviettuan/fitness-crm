@@ -10,7 +10,7 @@ import {
   incomeExpenseSchema,
 } from "@flow/shared/finance";
 import { contractReportSchema, exceptionPriceReportSchema } from "@flow/shared/contracts";
-import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema } from "@flow/shared/reports";
+import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema, taskReportSchema } from "@flow/shared/reports";
 import { workoutDashboardSchema, workoutDrillSchema } from "@flow/shared/workouts";
 import { workoutDashboard, workoutDrill } from "../workouts/dashboard.service.js";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
@@ -32,6 +32,8 @@ import {
 import { bookingReport, overview, ptRevenueReport } from "./pt-report.service.js";
 import { BOOKING_REPORT_QUERY, bookingReportExport, PT_REVENUE_QUERY, ptRevenueExport } from "./pt-report.export.js";
 import { consultingReport, leadAnalysis } from "./report.service.js";
+import { TASK_REPORT_QUERY, taskReportExport } from "./task-report.export.js";
+import { taskReport } from "./task-report.service.js";
 
 /** The consulting reports (brief §9, D-041, A-089 to A-093): counts and rates of a cohort. */
 @ApiTags("reports")
@@ -154,6 +156,23 @@ export class ReportsController {
   @ApiExcelFile()
   async exportExceptionPrices(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
     await exportList(actor, response, exceptionPriceExport, queryOf(request, PERIOD_QUERY));
+  }
+
+  /** The tasks given, done on time, done late and overdue, by person and by department (FR-TASK-006). */
+  @Get("tasks")
+  @RequirePermission("report.tasks")
+  @ApiOptionalQuery(...TASK_REPORT_QUERY)
+  @ApiResult(taskReportSchema)
+  async tasks(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(taskReportSchema, await taskReport(actor, queryOf(request, TASK_REPORT_QUERY)));
+  }
+
+  @Get("tasks/export")
+  @RequirePermission("report.tasksExport")
+  @ApiOptionalQuery(...TASK_REPORT_QUERY)
+  @ApiExcelFile()
+  async exportTasks(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, taskReportExport, queryOf(request, TASK_REPORT_QUERY));
   }
 
   /** The PT revenue allocation: a row per PT and contract with the sessions that credited the PT (D-032, A-166). */

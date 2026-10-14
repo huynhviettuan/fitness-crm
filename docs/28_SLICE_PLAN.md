@@ -458,7 +458,7 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 
 | Slice | Builds | Source |
 |---|---|---|
-| M9.1 Overview dashboard and remaining reports | The final overview dashboard, the tasks report (A-045), and a check of every export against AC-01 | brief §9; doc 10 |
+| M9.1 Overview dashboard and remaining reports (done 2026-11-03: A-245 to A-248, OQ-068) | The final overview dashboard, the tasks report (A-045), and a check of every export against AC-01 | brief §9; doc 10 |
 | M9.2 GymMaster import | A staging-first command: customers, active contracts, sessions used, receipts, staff, booking history; legacy codes kept; dry run; a cleanup list (session count different from the package name, price different from the tier) for the owner to confirm | brief §10, §11; D-039; FR-IMP-001 |
 | M9.3 Reconciliation and cut-over | Totals of customers, contract value, paid, and sessions left against GymMaster; a parallel-run checklist; production import only after OQ-014 | AC-22 |
 

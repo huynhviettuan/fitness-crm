@@ -267,6 +267,22 @@ export async function revenueByMonth(
   return rows.map((row) => ({ month: row.month, revenue: Number(row.revenue) }));
 }
 
+/** The valid receipts by calendar year from `from` to `to` (brief §9: revenue by month and year). */
+export async function revenueByYear(
+  db: Db,
+  branches: string[] | "ALL",
+  period: Period,
+): Promise<{ year: string; revenue: number }[]> {
+  const rows = await db.$queryRaw<{ year: string; revenue: Prisma.Decimal }[]>`
+    SELECT to_char(date_trunc('year', p.paid_on), 'YYYY') AS year, SUM(p.amount) AS revenue
+    FROM payments p
+    WHERE p.deleted_at IS NULL AND p.approval_status = 'APPROVED'
+      AND p.paid_on >= ${period.from}::date AND p.paid_on <= ${period.to}::date
+      AND ${branchSql(Prisma.sql`p.branch_id`, branches)}
+    GROUP BY 1`;
+  return rows.map((row) => ({ year: row.year, revenue: Number(row.revenue) }));
+}
+
 const reportInclude = {
   customer: { select: { id: true, customerCode: true, fullName: true, phone: true } },
   contract: { select: { id: true, contractCode: true } },

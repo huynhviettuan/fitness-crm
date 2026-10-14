@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-11-03 — M9.1: tasks report, revenue by year, export check
+
+- **Tasks report** (A-245, A-246): given, done on time, done late, overdue, by person and department, with its export.
+- **Overview** (A-247): revenue by year. **AC-01 on exports** (A-248): a test over all 19 exports.
+- **Open**: OQ-068. Docs 07, 09, 13, 16, 18, 28; E2E-178.
+
 ## 2026-11-02 — M8.4: cancellation (M8 close)
 
 - **Cancellation** (A-240 to A-244): reason, value used, fee and refund; the contract ends with no sessions left and nothing owed; booked sessions are cancelled; the refund is an expense voucher linked to the contract.

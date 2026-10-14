@@ -31,6 +31,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "report.incomeExpense")) items.push("incomeExpenseReport");
   if (can(user, "report.contracts")) items.push("contractReport");
   if (can(user, "report.exceptionPrices")) items.push("exceptionPriceReport");
+  if (can(user, "report.tasks")) items.push("taskReport");
   if (can(user, "report.ptRevenue")) items.push("ptRevenueReport");
   if (can(user, "payout.view")) items.push("ptPayouts");
   if (can(user, "report.bookings")) items.push("bookingReport");

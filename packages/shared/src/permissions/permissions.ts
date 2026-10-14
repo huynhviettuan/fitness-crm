@@ -92,6 +92,8 @@ export const PERMISSION_GROUPS = {
     "report.contractsExport",
     "report.exceptionPrices",
     "report.exceptionPricesExport",
+    "report.tasks",
+    "report.tasksExport",
     "report.ptRevenue",
     "report.ptRevenueExport",
     "report.bookings",

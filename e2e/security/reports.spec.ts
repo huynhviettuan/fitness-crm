@@ -34,6 +34,8 @@ const CONTRACT_REPORTS = [
 /** The PT reports of M5.6 (A-166, A-171, A-172): PT pay is for those who run the gym and the books, bookings for the schedule. */
 const PT_REVENUE_REPORTS = ["reports/pt-revenue", "reports/pt-revenue/export"];
 const BOOKING_REPORTS = ["reports/bookings", "reports/bookings/export"];
+/** The tasks report of M9.1 (FR-TASK-006): for those who follow the work of others. */
+const TASK_REPORTS = ["reports/tasks", "reports/tasks/export"];
 
 /** Who holds each report permission by default (A-093); Marketing is signed in separately. */
 const REPORTS: { path: string; allowed: Role[]; marketing: boolean }[] = [
@@ -44,6 +46,7 @@ const REPORTS: { path: string; allowed: Role[]; marketing: boolean }[] = [
   ...MONEY_REPORTS.map((path) => ({ path, allowed: MONEY_ROLES, marketing: false })),
   ...CONTRACT_REPORTS.map((path) => ({ path, allowed: ["ADMIN", "FITNESS_MANAGER"] as Role[], marketing: false })),
   ...PT_REVENUE_REPORTS.map((path) => ({ path, allowed: MONEY_ROLES, marketing: false })),
+  ...TASK_REPORTS.map((path) => ({ path, allowed: ["ADMIN", "FITNESS_MANAGER"] as Role[], marketing: false })),
   ...BOOKING_REPORTS.map((path) => ({
     path,
     allowed: ["ADMIN", "FITNESS_MANAGER", "RECEPTIONIST"] as Role[],
@@ -295,12 +298,23 @@ test.describe("A01 and A10 the opening balance and the period (A-138)", () => {
       "reports/exception-prices",
       "reports/pt-revenue",
       "reports/bookings",
+      "reports/tasks",
       "reports/overview",
     ]) {
       for (const query of ["from=31/02/2026", "from=2026-10-01", "from=10/10/2026&to=01/10/2026", "branchId=nope"]) {
         const response = await manager.get(`/api/v1/${path}?${query}`);
         expect(response.status(), `${path}?${query}`).toBe(400);
       }
+    }
+  });
+});
+
+test.describe("A10 the tasks report refuses a bad person (M9.1)", () => {
+  test("a bad person or branch is a 400, never a 500", async ({ apiAs }) => {
+    const manager = await apiAs("FITNESS_MANAGER");
+    for (const query of ["userId=nope", "userId=%27%20OR%201=1", "branchId=nope"]) {
+      expect((await manager.get(`/api/v1/reports/tasks?${query}`)).status(), query).toBe(400);
+      expect((await manager.get(`/api/v1/reports/tasks/export?${query}`)).status(), query).toBe(400);
     }
   });
 });

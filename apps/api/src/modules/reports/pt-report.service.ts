@@ -266,7 +266,9 @@ export async function overview(actor: Actor, rawQuery: unknown): Promise<Overvie
   ).map(Number) as [number, number];
   const showRevenue = !isMasked(actor, "receipts.totals");
   const months = twelveMonths(to);
-  const [figures, hours, revenue] = await Promise.all([
+  const lastYear = to.getUTCFullYear();
+  const years = [lastYear - 2, lastYear - 1, lastYear].map(String);
+  const [figures, hours, revenue, yearly] = await Promise.all([
     repo.overviewFigures(prisma, branches, { from, to }, env.GYM_TIMEZONE, {
       today: calendarDateInTimeZone(env.GYM_TIMEZONE),
       expiringSoonDays,
@@ -277,6 +279,12 @@ export async function overview(actor: Actor, rawQuery: unknown): Promise<Overvie
       ? repo.revenueByMonth(prisma, branches, {
           from: months.first,
           to: new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth() + 1, 0)),
+        })
+      : Promise.resolve(null),
+    showRevenue
+      ? repo.revenueByYear(prisma, branches, {
+          from: new Date(Date.UTC(lastYear - 2, 0, 1)),
+          to: new Date(Date.UTC(lastYear, 11, 31)),
         })
       : Promise.resolve(null),
   ]);
@@ -297,6 +305,9 @@ export async function overview(actor: Actor, rawQuery: unknown): Promise<Overvie
     })),
     revenueByMonth: revenue
       ? months.months.map((month) => ({ month, revenue: revenue.find((entry) => entry.month === month)?.revenue ?? 0 }))
+      : null,
+    revenueByYear: yearly
+      ? years.map((year) => ({ year, revenue: yearly.find((entry) => entry.year === year)?.revenue ?? 0 }))
       : null,
   };
 }

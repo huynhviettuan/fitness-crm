@@ -8,7 +8,7 @@ import {
   type CashOpeningInput,
 } from "@flow/shared/finance";
 import { consultingReportSchema, leadAnalysisSchema } from "@flow/shared/leads";
-import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema } from "@flow/shared/reports";
+import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema, taskReportSchema } from "@flow/shared/reports";
 import { api, query, read } from "./client";
 
 // The consulting reports (brief §9, D-041; A-089 to A-094).
@@ -97,4 +97,9 @@ export async function getBookingReport(params: BookingReportParams) {
 
 export async function getOverview(params: PeriodParams) {
   return read(overviewSchema, (await api()).GET("/api/v1/reports/overview", { params: { query: query(params) } }));
+}
+
+/** The tasks report (brief §9, FR-TASK-006): tasks given, done on time, done late and overdue. */
+export async function getTaskReport(params: PeriodParams) {
+  return read(taskReportSchema, (await api()).GET("/api/v1/reports/tasks", { params: { query: query(params) } }));
 }

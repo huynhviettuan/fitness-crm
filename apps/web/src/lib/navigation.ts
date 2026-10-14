@@ -26,6 +26,7 @@ export const NAV_SECTIONS = [
           "incomeExpenseReport",
           "contractReport",
           "exceptionPriceReport",
+          "taskReport",
           "ptRevenueReport",
           "ptPayouts",
           "bookingReport",

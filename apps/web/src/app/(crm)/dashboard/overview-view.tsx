@@ -41,6 +41,8 @@ export function OverviewView({ overview }: { overview: Overview }) {
     revenue: entry.revenue,
   }));
 
+  const years = overview.revenueByYear?.map((entry) => ({ name: entry.year, revenue: entry.revenue }));
+
   return (
     <div className="min-w-0 space-y-6">
       <p className="text-sm text-muted-foreground">
@@ -94,6 +96,20 @@ export function OverviewView({ overview }: { overview: Overview }) {
               <p className="text-xs text-muted-foreground">
                 {t("revenueTotal")}: <Money amount={months.reduce((sum, entry) => sum + entry.revenue, 0)} />
               </p>
+            </CardContent>
+          </Card>
+        )}
+        {years && (
+          <Card role="region" aria-label={t("byYear")}>
+            <CardHeader>
+              <CardTitle>{t("byYear")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BarChart
+                data={years}
+                series={[{ key: "revenue", label: t("revenue"), color: "var(--chart-3)" }]}
+                label={t("byYear")}
+              />
             </CardContent>
           </Card>
         )}

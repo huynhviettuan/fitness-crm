@@ -103,6 +103,7 @@ Hideable customer fields so far: phone, email, ID document, health note, and (M2
 | Check-in | `checkin.review` (Admin, Fitness Manager), `checkin.devices` (Admin), `report.manualConfirmations` (Admin, Fitness Manager) |
 | Workout catalogs (M7.1) | `workout.view` (Admin, Fitness Manager, Master, PT), `workout.catalog` (Admin, Fitness Manager) |
 | Contract change vouchers (M8.1) | `contract.change` (the roles with `contract.create`) raises one; each kind is its own approval action (`voucher.renewal`, `voucher.upgrade`, `voucher.hold`, `voucher.transfer`, `voucher.branchTransfer`, `voucher.conversion`, `voucher.cancellation`), all approved by the Fitness Manager or Admin and switchable by Admin (OQ-023) |
+| Tasks report (M9.1) | `report.tasks`, `report.tasksExport`: Admin and the Fitness Manager; the whole scope of tasks is needed |
 | Workout dashboard (M7.5) | `report.workouts` (Admin, Fitness Manager, Master); a customer's progress with `workout.view` (a PT: their own customers) |
 | Workout escalations (M7.4) | read with `workout.view` (a PT: their own sessions'); mark seen with `workout.review`; told at once: users of the branch with `workout.review` |
 | Workout logs (M7.3) | `workout.log` (Admin, Fitness Manager, PT: own sessions); reads with `workout.view` |

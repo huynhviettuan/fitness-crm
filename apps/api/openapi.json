@@ -5096,6 +5096,137 @@
         "x-permission": "report.exceptionPricesExport"
       }
     },
+    "/api/v1/reports/tasks": {
+      "get": {
+        "operationId": "ReportsController_tasks",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskReport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.tasks"
+      }
+    },
+    "/api/v1/reports/tasks/export": {
+      "get": {
+        "operationId": "ReportsController_exportTasks",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list as an .xlsx file",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.tasksExport"
+      }
+    },
     "/api/v1/reports/pt-revenue": {
       "get": {
         "operationId": "ReportsController_ptRevenue",
@@ -16512,6 +16643,8 @@
                             "report.contractsExport",
                             "report.exceptionPrices",
                             "report.exceptionPricesExport",
+                            "report.tasks",
+                            "report.tasksExport",
                             "report.ptRevenue",
                             "report.ptRevenueExport",
                             "report.bookings",
@@ -16961,6 +17094,8 @@
                         "report.contractsExport",
                         "report.exceptionPrices",
                         "report.exceptionPricesExport",
+                        "report.tasks",
+                        "report.tasksExport",
                         "report.ptRevenue",
                         "report.ptRevenueExport",
                         "report.bookings",
@@ -17258,6 +17393,8 @@
                         "report.contractsExport",
                         "report.exceptionPrices",
                         "report.exceptionPricesExport",
+                        "report.tasks",
+                        "report.tasksExport",
                         "report.ptRevenue",
                         "report.ptRevenueExport",
                         "report.bookings",
@@ -19907,6 +20044,8 @@
                 "report.contractsExport",
                 "report.exceptionPrices",
                 "report.exceptionPricesExport",
+                "report.tasks",
+                "report.tasksExport",
                 "report.ptRevenue",
                 "report.ptRevenueExport",
                 "report.bookings",
@@ -23626,6 +23765,217 @@
           "totals"
         ]
       },
+      "TaskReport": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "byPerson": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "department": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "labelVi": {
+                      "type": "string"
+                    },
+                    "labelEn": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "labelVi",
+                    "labelEn"
+                  ]
+                },
+                "assigned": {
+                  "type": "integer"
+                },
+                "doneOnTime": {
+                  "type": "integer"
+                },
+                "doneLate": {
+                  "type": "integer"
+                },
+                "overdue": {
+                  "type": "integer"
+                },
+                "open": {
+                  "type": "integer"
+                },
+                "cancelled": {
+                  "type": "integer"
+                },
+                "onTimeRate": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "user",
+                "department",
+                "assigned",
+                "doneOnTime",
+                "doneLate",
+                "overdue",
+                "open",
+                "cancelled",
+                "onTimeRate"
+              ]
+            }
+          },
+          "byDepartment": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "department": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "labelVi": {
+                      "type": "string"
+                    },
+                    "labelEn": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "labelVi",
+                    "labelEn"
+                  ]
+                },
+                "assigned": {
+                  "type": "integer"
+                },
+                "doneOnTime": {
+                  "type": "integer"
+                },
+                "doneLate": {
+                  "type": "integer"
+                },
+                "overdue": {
+                  "type": "integer"
+                },
+                "open": {
+                  "type": "integer"
+                },
+                "cancelled": {
+                  "type": "integer"
+                },
+                "onTimeRate": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "user",
+                "department",
+                "assigned",
+                "doneOnTime",
+                "doneLate",
+                "overdue",
+                "open",
+                "cancelled",
+                "onTimeRate"
+              ]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "assigned": {
+                "type": "integer"
+              },
+              "doneOnTime": {
+                "type": "integer"
+              },
+              "doneLate": {
+                "type": "integer"
+              },
+              "overdue": {
+                "type": "integer"
+              },
+              "open": {
+                "type": "integer"
+              },
+              "cancelled": {
+                "type": "integer"
+              },
+              "onTimeRate": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "assigned",
+              "doneOnTime",
+              "doneLate",
+              "overdue",
+              "open",
+              "cancelled",
+              "onTimeRate"
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "byPerson",
+          "byDepartment",
+          "totals"
+        ]
+      },
       "PtRevenueReport": {
         "type": "object",
         "properties": {
@@ -24112,6 +24462,25 @@
                 "revenue"
               ]
             }
+          },
+          "revenueByYear": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "year": {
+                  "type": "string"
+                },
+                "revenue": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "year",
+                "revenue"
+              ]
+            }
           }
         },
         "required": [
@@ -24126,7 +24495,8 @@
           "expiringSoonDays",
           "runningOutSessions",
           "sessionsByHour",
-          "revenueByMonth"
+          "revenueByMonth",
+          "revenueByYear"
         ]
       },
       "WorkoutDashboard": {
@@ -30040,6 +30410,8 @@
                     "report.contractsExport",
                     "report.exceptionPrices",
                     "report.exceptionPricesExport",
+                    "report.tasks",
+                    "report.tasksExport",
                     "report.ptRevenue",
                     "report.ptRevenueExport",
                     "report.bookings",
@@ -30330,6 +30702,8 @@
                 "report.contractsExport",
                 "report.exceptionPrices",
                 "report.exceptionPricesExport",
+                "report.tasks",
+                "report.tasksExport",
                 "report.ptRevenue",
                 "report.ptRevenueExport",
                 "report.bookings",

@@ -61,7 +61,8 @@
     "workoutTemplates": "Template giáo án",
     "workoutLogs": "Nhật ký buổi tập",
     "workoutEscalations": "Escalation buổi tập",
-    "workoutReport": "Dashboard giáo án"
+    "workoutReport": "Dashboard giáo án",
+    "taskReport": "Báo cáo giao việc"
   },
   "status": {
     "customer": {
@@ -1404,7 +1405,9 @@
         "bookings": "Xem báo cáo booking",
         "bookingsExport": "Xuất báo cáo booking",
         "overview": "Xem tổng quan",
-        "workouts": "Xem dashboard giáo án theo tuần"
+        "workouts": "Xem dashboard giáo án theo tuần",
+        "tasks": "Xem báo cáo giao việc",
+        "tasksExport": "Xuất báo cáo giao việc"
       },
       "service": {
         "view": "Xem dịch vụ và bậc giá",
@@ -2925,7 +2928,9 @@
     "byMonth": "Doanh thu 12 tháng gần nhất",
     "revenue": "Doanh thu",
     "revenueTotal": "Tổng 12 tháng",
-    "note": "Lead mới tính theo ngày tạo. Hội viên đã tập là khách có buổi PT hoặc buổi lớp đã dùng trong kỳ. Buổi PT tính các buổi có tính công cho PT, theo giờ bắt đầu. Doanh thu là tiền đã thu có hiệu lực theo tháng, không gồm số dư đầu kỳ."
+    "note": "Lead mới tính theo ngày tạo. Hội viên đã tập là khách có buổi PT hoặc buổi lớp đã dùng trong kỳ. Buổi PT tính các buổi có tính công cho PT, theo giờ bắt đầu. Doanh thu là tiền đã thu có hiệu lực theo tháng, không gồm số dư đầu kỳ.",
+    "byYear": "Doanh thu theo năm",
+    "year": "Năm"
   },
   "ptPayouts": {
     "title": "Chi trả PT",
@@ -3415,5 +3420,25 @@
     "cancellationTitle": "Hủy hợp đồng {code}",
     "cancellationDescription": "Chấm dứt hợp đồng theo yêu cầu của khách: hết buổi còn lại, các buổi đã đặt bị hủy, công nợ về 0. Tiền hoàn trả được ghi thành phiếu chi khi phiếu được duyệt. Không hủy được khi có buổi đang tập.",
     "noRefund": "Không hoàn tiền"
+  },
+  "taskReport": {
+    "title": "Giao việc",
+    "description": "Việc đã giao, xong đúng hạn, xong trễ và quá hạn, theo người nhận và theo phòng ban. Một việc tính vào kỳ có hạn hoàn thành rơi vào đó.",
+    "empty": "Chưa có việc nào có hạn trong kỳ này.",
+    "totals": "Tổng của kỳ",
+    "byPerson": "Theo người nhận việc",
+    "byDepartment": "Theo phòng ban",
+    "note": "Tỷ lệ đúng hạn = số việc xong đúng hạn ÷ (số việc đã xong + số việc quá hạn). Việc đang làm chưa đến hạn và việc đã hủy không tính vào tỷ lệ. Phòng ban lấy từ hồ sơ nhân viên của người nhận việc, hoặc phòng ban được giao việc.",
+    "fields": {
+      "person": "Nhân viên",
+      "department": "Phòng ban",
+      "assigned": "Việc giao",
+      "doneOnTime": "Xong đúng hạn",
+      "doneLate": "Xong trễ",
+      "overdue": "Quá hạn",
+      "open": "Đang làm",
+      "cancelled": "Đã hủy",
+      "onTimeRate": "Tỷ lệ đúng hạn"
+    }
   }
 }
