@@ -2034,3 +2034,81 @@ model NotificationDelivery {
   @@index([status, nextAttemptAt])
   @@map("notification_deliveries")
 }
+
+// ---------------------------------------------------------------------------
+// Workout catalogs (M7.1, brief §7.1, D-033)
+// ---------------------------------------------------------------------------
+
+enum ExerciseKind {
+  STRENGTH
+  CARDIO
+}
+
+// Never deleted, only made inactive: plans keep pointing at them. Codes and names are unique whatever the capitals (the
+// migration's indexes).
+model WorkoutEquipment {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String
+  name      String
+  notes     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  exercises WorkoutExercise[]
+
+  @@map("workout_equipment")
+}
+
+// A body area, in a tree (brief §7.1).
+model WorkoutArea {
+  id        String        @id @default(uuid()) @db.Uuid
+  code      String
+  name      String
+  parentId  String?       @map("parent_id") @db.Uuid
+  parent    WorkoutArea?  @relation("WorkoutAreaTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  WorkoutArea[] @relation("WorkoutAreaTree")
+  notes     String?
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  exercises WorkoutExercise[]
+
+  @@index([parentId])
+  @@map("workout_areas")
+}
+
+// Strength (weight, reps, rest, RIR, tempo) or Cardio (time, speed, heart rate): Cardio is an exercise of the catalog.
+model WorkoutExercise {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String
+  // Lowercased without Vietnamese diacritics, for a search that ignores them.
+  searchName  String            @map("search_name")
+  areaId      String            @map("area_id") @db.Uuid
+  area        WorkoutArea       @relation(fields: [areaId], references: [id], onDelete: Restrict)
+  equipmentId String?           @map("equipment_id") @db.Uuid
+  equipment   WorkoutEquipment? @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  kind        ExerciseKind
+  description String?
+  videoUrl    String?           @map("video_url")
+  active      Boolean           @default(true)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([areaId])
+  @@index([equipmentId])
+  @@map("workout_exercises")
+}
+
+// A phase of a plan, e.g. Rehab.
+model WorkoutStage {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("workout_stages")
+}

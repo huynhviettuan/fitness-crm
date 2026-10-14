@@ -182,6 +182,11 @@ export async function otherNotes(actor: Actor, rawKey: string): Promise<OtherNot
     freezeReasons: Prisma.sql`SELECT "reason_note" AS note, "frozen_at" AS at FROM "contract_freezes" WHERE "reason_option_id" = ${id}::uuid`,
     unfreezeReasons: Prisma.sql`SELECT "end_reason_note" AS note, "ended_at" AS at FROM "contract_freezes" WHERE "end_reason_option_id" = ${id}::uuid`,
     burnShowReasons: Prisma.sql`SELECT "added_reason_note" AS note, "created_at" AS at FROM "bookings" WHERE "added_reason_option_id" = ${id}::uuid`,
+    // The log's own lists are used from M7.3, which names where their notes are kept; until then none are written.
+    workoutFlags: Prisma.sql`SELECT NULL::text AS note, NULL::timestamptz AS at WHERE false`,
+    workoutActions: Prisma.sql`SELECT NULL::text AS note, NULL::timestamptz AS at WHERE false`,
+    sessionImpacts: Prisma.sql`SELECT NULL::text AS note, NULL::timestamptz AS at WHERE false`,
+    sessionSummaries: Prisma.sql`SELECT NULL::text AS note, NULL::timestamptz AS at WHERE false`,
     // The note of an unapproval is in its history entry (A-124).
     unapproveReasons: Prisma.sql`SELECT "metadata"->>'note' AS note, "created_at" AS at FROM "audit_events" WHERE "action" = 'contract.unapproved' AND "metadata"->>'reason' = (SELECT "label_vi" FROM "options" WHERE "id" = ${id}::uuid)`,
   };

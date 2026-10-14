@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-25 — M7.1: workout catalogs
+
+- **Catalogs** (A-188 to A-190): equipment, a tree of body areas, Strength and Cardio exercises with a video link, and plan stages; kept by Admin and the Fitness Manager, read by the Master and the PT.
+- **Option lists of the log** (A-191): Flag, Action, impact and summary with the brief's values.
+- **Open**: OQ-057. Docs 04, 07, 09, 13, 16, 18, 28; E2E-116.
+
 ## 2026-10-24 — M6.3 and M6.4: optional customer emails and staff notifications
 
 - **Optional customer emails** (A-181, A-182): activated, renewal, receipt, hold, active again, cancelled, ending soon, running out; each with a template and an on/off switch.

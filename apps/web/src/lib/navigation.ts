@@ -45,6 +45,7 @@ export const NAV_SECTIONS = [
           "sessionStatuses",
           "emailTemplates",
           "notificationSettings",
+          "workoutCatalog",
           "parameters",
           "checklist",
           "auditCriteria",

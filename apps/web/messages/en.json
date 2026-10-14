@@ -54,7 +54,8 @@
     "bookingReport": "Booking report",
     "ptPayouts": "PT payouts",
     "emailTemplates": "Email templates",
-    "notificationSettings": "Staff notifications"
+    "notificationSettings": "Staff notifications",
+    "workoutCatalog": "Workout catalogs"
   },
   "status": {
     "customer": {
@@ -675,7 +676,8 @@
     "missingPlaceholder": "What the customer must be told is missing (see the placeholders marked required).",
     "mandatoryEvent": "A mandatory email cannot be switched off.",
     "tooMany": "Too many items.",
-    "invalidUrl": "Not a valid address."
+    "invalidUrl": "Not a valid address.",
+    "invalidCode": "A code has letters, digits, dots, dashes and underscores only."
   },
   "contracts": {
     "title": "Contracts",
@@ -1232,7 +1234,8 @@
       "services": "Services and price tiers",
       "promotions": "Promotions and vouchers",
       "checkin": "Check-in machines",
-      "classes": "Class schedule"
+      "classes": "Class schedule",
+      "workouts": "Workout plans"
     },
     "labels": {
       "user": {
@@ -1368,6 +1371,10 @@
       },
       "mail": {
         "template": "Write the emails sent to customers"
+      },
+      "workout": {
+        "view": "View the workout catalogs and plans",
+        "catalog": "Keep the workout catalogs"
       }
     },
     "resources": {
@@ -1468,7 +1475,11 @@
       "unapproveReasons": "Reasons to unapprove a contract",
       "freezeReasons": "Reasons to deactivate a contract",
       "unfreezeReasons": "Reasons to reactivate a contract",
-      "burnShowReasons": "Reasons to add a session (Burn Show)"
+      "burnShowReasons": "Reasons to add a session (Burn Show)",
+      "workoutFlags": "Flag of a set",
+      "workoutActions": "Action of a set",
+      "sessionImpacts": "Impact on the session",
+      "sessionSummaries": "Session summary"
     },
     "create": "Add option",
     "edit": "Edit option",
@@ -1636,7 +1647,11 @@
       "class": "Class",
       "class_session": "Class session",
       "pt_payout": "PT payout",
-      "email_template": "Email template"
+      "email_template": "Email template",
+      "workout_equipment": "Equipment",
+      "workout_area": "Body area",
+      "workout_exercise": "Exercise",
+      "workout_stage": "Plan stage"
     },
     "verbs": {
       "created": "Created",
@@ -2900,5 +2915,59 @@
       "pushMandatory": "Phone mandatory"
     },
     "saved": "Notification settings saved"
+  },
+  "workoutCatalog": {
+    "title": "Workout catalogs",
+    "description": "The equipment, body areas, exercises and stages that plans are made from. An entry that is no longer used cannot be chosen for a new plan but stays on the old ones.",
+    "tabs": {
+      "exercises": "Exercises",
+      "areas": "Body areas",
+      "equipment": "Equipment",
+      "stages": "Stages"
+    },
+    "add": "Add",
+    "edit": "Edit",
+    "rowActions": "Actions for {name}",
+    "saved": "Saved",
+    "showInactive": "Show entries no longer used",
+    "inactive": "Not used",
+    "empty": "Nothing here yet.",
+    "videoOpen": "Open video",
+    "search": "Search exercises",
+    "allAreas": "All areas",
+    "allEquipment": "All equipment",
+    "allKinds": "All kinds",
+    "noEquipment": "No equipment",
+    "noParent": "A top-level area",
+    "kinds": {
+      "STRENGTH": "Strength",
+      "CARDIO": "Cardio"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Name",
+      "notes": "Notes",
+      "active": "In use",
+      "parent": "Parent area",
+      "area": "Area",
+      "equipment": "Equipment",
+      "kind": "Kind of exercise",
+      "description": "Description",
+      "videoUrl": "Video link",
+      "exercises": "Exercises"
+    },
+    "titles": {
+      "equipmentAdd": "Add equipment",
+      "equipmentEdit": "Edit equipment",
+      "areaAdd": "Add a body area",
+      "areaEdit": "Edit a body area",
+      "exerciseAdd": "Add an exercise",
+      "exerciseEdit": "Edit an exercise",
+      "stageAdd": "Add a stage",
+      "stageEdit": "Edit a stage"
+    },
+    "hideInactive": "Hide entries no longer used",
+    "filters": "Exercise filters",
+    "apply": "Apply"
   }
 }

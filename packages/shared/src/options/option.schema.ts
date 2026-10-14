@@ -47,6 +47,11 @@ export const OPTION_LISTS = [
   "unfreezeReasons",
   // Why admin added a trained session by hand (Burn Show, D-028), M5.4.
   "burnShowReasons",
+  // The workout log (brief §7.3, M7.1): the Flag and Action of a set, the impact of the day on the session, and its summary.
+  "workoutFlags",
+  "workoutActions",
+  "sessionImpacts",
+  "sessionSummaries",
 ] as const;
 export type OptionListKey = (typeof OPTION_LISTS)[number];
 

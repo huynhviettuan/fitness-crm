@@ -54,7 +54,8 @@
     "bookingReport": "Báo cáo booking",
     "ptPayouts": "Chi trả PT",
     "emailTemplates": "Mẫu email",
-    "notificationSettings": "Thông báo cho nhân viên"
+    "notificationSettings": "Thông báo cho nhân viên",
+    "workoutCatalog": "Danh mục giáo án"
   },
   "status": {
     "customer": {
@@ -675,7 +676,8 @@
     "missingPlaceholder": "Thiếu thông tin bắt buộc khách phải biết (xem các trường được đánh dấu bắt buộc).",
     "mandatoryEvent": "Email bắt buộc không tắt được.",
     "tooMany": "Có quá nhiều mục.",
-    "invalidUrl": "Địa chỉ không hợp lệ."
+    "invalidUrl": "Địa chỉ không hợp lệ.",
+    "invalidCode": "Mã chỉ gồm chữ, số, dấu chấm, gạch ngang và gạch dưới."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1232,7 +1234,8 @@
       "services": "Dịch vụ và bậc giá",
       "promotions": "Khuyến mãi và voucher",
       "checkin": "Máy chấm công",
-      "classes": "Lịch lớp"
+      "classes": "Lịch lớp",
+      "workouts": "Giáo án"
     },
     "labels": {
       "user": {
@@ -1368,6 +1371,10 @@
       },
       "mail": {
         "template": "Soạn mẫu email gửi khách"
+      },
+      "workout": {
+        "view": "Xem danh mục và giáo án",
+        "catalog": "Soạn danh mục giáo án"
       }
     },
     "resources": {
@@ -1468,7 +1475,11 @@
       "unapproveReasons": "Lý do hủy duyệt hợp đồng",
       "freezeReasons": "Lý do hủy kích hoạt hợp đồng",
       "unfreezeReasons": "Lý do kích hoạt lại hợp đồng",
-      "burnShowReasons": "Lý do thêm buổi tập (Burn Show)"
+      "burnShowReasons": "Lý do thêm buổi tập (Burn Show)",
+      "workoutFlags": "Flag của set tập",
+      "workoutActions": "Action của set tập",
+      "sessionImpacts": "Ảnh hưởng đến buổi tập",
+      "sessionSummaries": "Tổng kết buổi tập"
     },
     "create": "Thêm lựa chọn",
     "edit": "Sửa lựa chọn",
@@ -1636,7 +1647,11 @@
       "class": "Lớp",
       "class_session": "Buổi lớp",
       "pt_payout": "Chi trả PT",
-      "email_template": "Mẫu email"
+      "email_template": "Mẫu email",
+      "workout_equipment": "Thiết bị",
+      "workout_area": "Khu vực cơ thể",
+      "workout_exercise": "Bài tập",
+      "workout_stage": "Stage giáo án"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -2900,5 +2915,59 @@
       "pushMandatory": "Điện thoại bắt buộc"
     },
     "saved": "Đã lưu thiết lập thông báo"
+  },
+  "workoutCatalog": {
+    "title": "Danh mục giáo án",
+    "description": "Thiết bị, khu vực cơ thể, bài tập và stage dùng để soạn giáo án. Mục ngừng dùng không còn chọn được khi soạn giáo án mới nhưng vẫn giữ trên giáo án cũ.",
+    "tabs": {
+      "exercises": "Bài tập",
+      "areas": "Khu vực cơ thể",
+      "equipment": "Thiết bị",
+      "stages": "Stage"
+    },
+    "add": "Thêm",
+    "edit": "Sửa",
+    "rowActions": "Thao tác cho {name}",
+    "saved": "Đã lưu",
+    "showInactive": "Hiện cả mục đã ngừng dùng",
+    "inactive": "Ngừng dùng",
+    "empty": "Chưa có mục nào.",
+    "videoOpen": "Mở video",
+    "search": "Tìm bài tập",
+    "allAreas": "Mọi khu vực",
+    "allEquipment": "Mọi thiết bị",
+    "allKinds": "Mọi loại",
+    "noEquipment": "Không dùng thiết bị",
+    "noParent": "Khu vực cấp cao nhất",
+    "kinds": {
+      "STRENGTH": "Sức mạnh",
+      "CARDIO": "Cardio"
+    },
+    "fields": {
+      "code": "Mã",
+      "name": "Tên",
+      "notes": "Ghi chú",
+      "active": "Đang dùng",
+      "parent": "Khu vực cha",
+      "area": "Khu vực",
+      "equipment": "Thiết bị",
+      "kind": "Loại bài tập",
+      "description": "Mô tả",
+      "videoUrl": "Link video",
+      "exercises": "Số bài tập"
+    },
+    "titles": {
+      "equipmentAdd": "Thêm thiết bị",
+      "equipmentEdit": "Sửa thiết bị",
+      "areaAdd": "Thêm khu vực cơ thể",
+      "areaEdit": "Sửa khu vực cơ thể",
+      "exerciseAdd": "Thêm bài tập",
+      "exerciseEdit": "Sửa bài tập",
+      "stageAdd": "Thêm stage",
+      "stageEdit": "Sửa stage"
+    },
+    "hideInactive": "Ẩn mục đã ngừng dùng",
+    "filters": "Bộ lọc bài tập",
+    "apply": "Áp dụng"
   }
 }

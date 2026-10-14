@@ -12,6 +12,10 @@ export async function resetDatabase(): Promise<void> {
     `TRUNCATE TABLE "services", "promotions", "notifications", "lead_steps", "lead_round_robin", "lead_assignments", "lead_status_changes", "task_comments", "tasks", "audit_events", "trash_entries", "approval_requests", "payments", "cash_transactions", "sessions", "bookings", "employee_days_off", "employee_shifts", "employees", "contracts", "customers", "auth_sessions",
      "auth_accounts", "auth_verifications", "auth_rate_limits", "login_history", "users" CASCADE`,
   );
+  // The workout catalogs the tests made (M7.1): the migration seeds only the option lists.
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE "workout_exercises", "workout_areas", "workout_equipment", "workout_stages" CASCADE`,
+  );
   // Checklist versions the tests saved; version 1 is the migration's (D-020).
   await prisma.consultingStepTemplate.deleteMany({ where: { checklist: { version: { gt: 1 } } } });
   await prisma.consultingChecklist.deleteMany({ where: { version: { gt: 1 } } });
@@ -20,8 +24,8 @@ export async function resetDatabase(): Promise<void> {
   await prisma.branch.deleteMany({ where: { id: { not: DEFAULT_BRANCH_ID } } });
   // Options and parameters back to the migration's initial configuration.
   await prisma.option.deleteMany({ where: { id: { notIn: SEEDED_OPTIONS.map((option) => option.id) } } });
-  for (const { id, ...initial } of SEEDED_OPTIONS) {
-    await prisma.option.update({ where: { id }, data: { ...initial, code: null } });
+  for (const { id, code, ...initial } of SEEDED_OPTIONS) {
+    await prisma.option.update({ where: { id }, data: { ...initial, code: code ?? null } });
   }
   await prisma.systemParameter.deleteMany();
   // The audit criteria back to all on with weight 1 (A-083).

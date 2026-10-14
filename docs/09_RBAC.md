@@ -101,6 +101,7 @@ Hideable customer fields so far: phone, email, ID document, health note, and (M2
 | Receipts (M4.5) | `payment.editDate` (edit a receipt's date, Admin only, always logged) besides `payment.view`, `payment.record`, and `payment.delete` |
 | Contract operations | `contract.view`, `contract.create`, `contract.approve` (and the matrix action `contract.create` decides who may), `contract.cancel`, `contract.unapprove` and `contract.delete` (Admin only, M4.4a), `contract.print` and `contract.note` (M4.4b: held by every role that sees contracts, and by every role that creates them) |
 | Check-in | `checkin.review` (Admin, Fitness Manager), `checkin.devices` (Admin), `report.manualConfirmations` (Admin, Fitness Manager) |
+| Workout catalogs (M7.1) | `workout.view` (Admin, Fitness Manager, Master, PT), `workout.catalog` (Admin, Fitness Manager) |
 | Staff notifications (M6.4) | each employee's own choices and devices: any signed-in user; the mandatory marks: `config.manage` (Admin) |
 | Email templates (M6.2) | `mail.template` (Admin only) |
 | PT payouts (M5.7) | `payout.view` and `payout.create` (Admin, Fitness Manager, Accountant); refused to a role with data scope "own" on the schedule or vouchers, or with receipt totals hidden |

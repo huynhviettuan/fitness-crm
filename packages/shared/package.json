@@ -85,6 +85,10 @@
       "types": "./dist/promotions/index.d.ts",
       "default": "./dist/promotions/index.js"
     },
+    "./workouts": {
+      "types": "./dist/workouts/index.d.ts",
+      "default": "./dist/workouts/index.js"
+    },
     "./payouts": {
       "types": "./dist/payouts/index.d.ts",
       "default": "./dist/payouts/index.js"

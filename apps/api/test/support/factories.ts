@@ -46,7 +46,14 @@ export async function createTestUser(
 }
 
 /** The options the migration creates (D-016, brief §8.1), as they are initially. */
-export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sortOrder: number; active: boolean }[] = [
+export const SEEDED_OPTIONS: {
+  id: string;
+  labelVi: string;
+  labelEn: string;
+  sortOrder: number;
+  active: boolean;
+  code?: string;
+}[] = [
   ...[1, 2, 3, 4, 5, 6, 7].map((n) => ({
     id: `c0000000-0000-4000-8000-00000000000${n}`,
     labelVi: "Khác",
@@ -227,6 +234,155 @@ export const SEEDED_OPTIONS: { id: string; labelVi: string; labelEn: string; sor
     sortOrder: 2,
     active: true,
   },
+  // The workout lists of M7.1 (Flag, Action, impact, summary), with the codes the log relies on.
+  {
+    id: "c0000000-0000-4000-8000-000000000401",
+    labelVi: "Normal",
+    labelEn: "Normal",
+    sortOrder: 1,
+    active: true,
+    code: "NORMAL",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000402",
+    labelVi: "Stress",
+    labelEn: "Stress",
+    sortOrder: 2,
+    active: true,
+    code: "STRESS",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000403",
+    labelVi: "Overload",
+    labelEn: "Overload",
+    sortOrder: 3,
+    active: true,
+    code: "OVERLOAD",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000404",
+    labelVi: "Pattern",
+    labelEn: "Pattern",
+    sortOrder: 4,
+    active: true,
+    code: "PATTERN",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000405",
+    labelVi: "Spike/Neuro",
+    labelEn: "Spike/Neuro",
+    sortOrder: 5,
+    active: true,
+    code: "SPIKE_NEURO",
+  },
+  { id: "c0000000-0000-4000-8000-000000000406", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  {
+    id: "c0000000-0000-4000-8000-000000000411",
+    labelVi: "None",
+    labelEn: "None",
+    sortOrder: 1,
+    active: true,
+    code: "NONE",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000412",
+    labelVi: "Theo dõi thêm",
+    labelEn: "Monitor further",
+    sortOrder: 2,
+    active: true,
+    code: "MONITOR",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000413",
+    labelVi: "Giảm tải",
+    labelEn: "Reduce load",
+    sortOrder: 3,
+    active: true,
+    code: "REDUCE",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000414",
+    labelVi: "Tăng tải",
+    labelEn: "Increase load",
+    sortOrder: 4,
+    active: true,
+    code: "INCREASE",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000415",
+    labelVi: "Đổi bài",
+    labelEn: "Swap exercise",
+    sortOrder: 5,
+    active: true,
+    code: "SWAP",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000416",
+    labelVi: "Dừng + Escalation",
+    labelEn: "Stop + Escalation",
+    sortOrder: 6,
+    active: true,
+    code: "STOP_ESCALATION",
+  },
+  { id: "c0000000-0000-4000-8000-000000000417", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  {
+    id: "c0000000-0000-4000-8000-000000000421",
+    labelVi: "Thấp",
+    labelEn: "Low",
+    sortOrder: 1,
+    active: true,
+    code: "LOW",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000422",
+    labelVi: "Trung bình",
+    labelEn: "Medium",
+    sortOrder: 2,
+    active: true,
+    code: "MEDIUM",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000423",
+    labelVi: "Cao",
+    labelEn: "High",
+    sortOrder: 3,
+    active: true,
+    code: "HIGH",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000424",
+    labelVi: "Không ảnh hưởng",
+    labelEn: "No impact",
+    sortOrder: 4,
+    active: true,
+    code: "NONE",
+  },
+  { id: "c0000000-0000-4000-8000-000000000425", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
+  {
+    id: "c0000000-0000-4000-8000-000000000431",
+    labelVi: "Không thay đổi",
+    labelEn: "Unchanged",
+    sortOrder: 1,
+    active: true,
+    code: "UNCHANGED",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000432",
+    labelVi: "Tốt hơn",
+    labelEn: "Better",
+    sortOrder: 2,
+    active: true,
+    code: "BETTER",
+  },
+  {
+    id: "c0000000-0000-4000-8000-000000000433",
+    labelVi: "Tệ hơn",
+    labelEn: "Worse",
+    sortOrder: 3,
+    active: true,
+    code: "WORSE",
+  },
+  { id: "c0000000-0000-4000-8000-000000000434", labelVi: "Khác", labelEn: "Other", sortOrder: 0, active: true },
   ...[
     ["c0000000-0000-4000-8000-000000000201", "Ban điều hành", "Executive board"],
     ["c0000000-0000-4000-8000-000000000202", "Studio", "Studio"],

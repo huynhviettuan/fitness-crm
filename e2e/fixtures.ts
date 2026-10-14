@@ -11,6 +11,7 @@ import { ApprovalRulesPage, ApprovalsPage } from "./pages/approvals";
 import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/bookings";
 import { CheckinPage } from "./pages/checkin";
 import { ClassesPage } from "./pages/classes";
+import { WorkoutCatalogPage } from "./pages/workout-catalog";
 import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
@@ -40,6 +41,7 @@ type Fixtures = {
   sessionsPage: SessionsPage;
   checkinPage: CheckinPage;
   classesPage: ClassesPage;
+  workoutCatalogPage: WorkoutCatalogPage;
   employeesPage: EmployeesPage;
   tasksPage: TasksPage;
   leadsPage: LeadsPage;
@@ -109,6 +111,7 @@ export const test = base.extend<Fixtures>({
   sessionsPage: async ({ page }, use) => use(new SessionsPage(page)),
   checkinPage: async ({ page }, use) => use(new CheckinPage(page)),
   classesPage: async ({ page }, use) => use(new ClassesPage(page)),
+  workoutCatalogPage: async ({ page }, use) => use(new WorkoutCatalogPage(page)),
   employeesPage: async ({ page }, use) => use(new EmployeesPage(page)),
   tasksPage: async ({ page }, use) => use(new TasksPage(page)),
   leadsPage: async ({ page }, use) => use(new LeadsPage(page)),
@@ -369,6 +372,27 @@ export const test = base.extend<Fixtures>({
       });
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: payoutIds } } });
       await prisma.ptPayout.deleteMany({ where: { id: { in: payoutIds } } });
+      // The workout catalog entries named with the tag, exercises first (M7.1).
+      const catalogNames = { name: { contains: tag } };
+      const exerciseIds = ids(
+        await prisma.workoutExercise.findMany({
+          where: { OR: [catalogNames, { area: catalogNames }, { equipment: catalogNames }] },
+          select: { id: true },
+        }),
+      );
+      await prisma.workoutExercise.deleteMany({ where: { id: { in: exerciseIds } } });
+      const areaIds = ids(await prisma.workoutArea.findMany({ where: catalogNames, select: { id: true } }));
+      const equipmentIds = ids(await prisma.workoutEquipment.findMany({ where: catalogNames, select: { id: true } }));
+      const stageIds = ids(await prisma.workoutStage.findMany({ where: catalogNames, select: { id: true } }));
+      await prisma.auditEvent.deleteMany({
+        where: { entityId: { in: [...exerciseIds, ...areaIds, ...equipmentIds, ...stageIds] } },
+      });
+      // Children before parents: the deepest tagged areas go first.
+      for (let pass = 0; pass < 5 && areaIds.length > 0; pass++) {
+        await prisma.workoutArea.deleteMany({ where: { id: { in: areaIds }, children: { none: {} } } });
+      }
+      await prisma.workoutEquipment.deleteMany({ where: { id: { in: equipmentIds } } });
+      await prisma.workoutStage.deleteMany({ where: { id: { in: stageIds } } });
       await prisma.session.deleteMany({ where: { bookingId: { in: bookingIds } } });
       await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
       // Teardown removes test data outright, outside the trash rules (docs/13).

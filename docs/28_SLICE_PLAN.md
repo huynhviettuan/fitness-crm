@@ -397,7 +397,7 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 
 ## M7 — Workout plans and logs
 
-### M7.1 Workout catalogs
+### M7.1 Workout catalogs (done 2026-10-25: A-188 to A-191, OQ-057)
 
 - **Builds:**
   - **Catalogs:** equipment; body areas as a tree; exercises with area, equipment, Strength or Cardio, video link, and validity; stages.
