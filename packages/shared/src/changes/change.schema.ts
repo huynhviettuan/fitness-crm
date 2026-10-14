@@ -72,6 +72,25 @@ export const exchangeInputSchema = z
   })
   .refine((value) => value.credit <= value.amount, { path: ["credit"], error: "creditAboveAmount" });
 
+/**
+ * A transfer gives the sessions left to another customer (brief §5.6, A-232): who gets them and the value that goes with
+ * them, which becomes the receiver's paid amount.
+ */
+export const transferInputSchema = z.object({
+  contractId: z.uuid({ error: "required" }),
+  toCustomerId: z.uuid({ error: "required" }),
+  credit: money,
+  note,
+});
+
+/** A branch transfer moves the contract to another branch for a fee that is added to what is owed (A-235). */
+export const branchTransferInputSchema = z.object({
+  contractId: z.uuid({ error: "required" }),
+  toBranchId: z.uuid({ error: "required" }),
+  fee: money,
+  note,
+});
+
 export const voucherListQuerySchema = z.object({
   contractId: z.preprocess(blank, z.uuid({ error: "invalidChoice" }).optional()),
   customerId: z.preprocess(blank, z.uuid({ error: "invalidChoice" }).optional()),
@@ -83,4 +102,6 @@ export const voucherListQuerySchema = z.object({
 
 export type RenewalInput = z.input<typeof renewalInputSchema>;
 export type ExchangeInput = z.input<typeof exchangeInputSchema>;
+export type TransferInput = z.input<typeof transferInputSchema>;
+export type BranchTransferInput = z.input<typeof branchTransferInputSchema>;
 export type HoldInput = z.input<typeof holdInputSchema>;

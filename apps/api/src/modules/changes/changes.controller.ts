@@ -2,9 +2,11 @@ import { Body, Controller, Get, Param, Post, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import {
+  branchTransferInputSchema,
   exchangeInputSchema,
   holdInputSchema,
   renewalInputSchema,
+  transferInputSchema,
   voucherPageSchema,
   voucherSchema,
 } from "@flow/shared/changes";
@@ -13,7 +15,16 @@ import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiIdempotencyKey, ApiOptionalQuery, ApiResult } from "../../platform/http/openapi.js";
 import { queryOf } from "../../platform/http/query.js";
-import { getVoucher, listVouchers, raiseConversion, raiseHold, raiseRenewal, raiseUpgrade } from "./voucher.service.js";
+import {
+  getVoucher,
+  listVouchers,
+  raiseBranchTransfer,
+  raiseConversion,
+  raiseHold,
+  raiseRenewal,
+  raiseTransfer,
+  raiseUpgrade,
+} from "./voucher.service.js";
 
 const FILTERS = ["contractId", "customerId", "kind", "status", "page", "pageSize"] as const;
 
@@ -105,6 +116,42 @@ export class ContractChangesController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { voucher, replayed } = await raiseConversion(actor, body, request.get("idempotency-key"));
+    response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
+    return encode(voucherSchema, voucher);
+  }
+
+  /** A transfer gives the sessions left to another customer (A-232). */
+  @Post("transfers")
+  @RequirePermission("contract.change")
+  @ApiIdempotencyKey()
+  @ApiResult(voucherSchema, 201, "Created and applied")
+  @ApiResult(voucherSchema, 202, "Waiting for approval (D-018)")
+  @ApiResult(voucherSchema, 200, "Replayed")
+  async transfer(
+    @CurrentActor() actor: CurrentUser,
+    @Body({ schema: transferInputSchema }) body: unknown,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { voucher, replayed } = await raiseTransfer(actor, body, request.get("idempotency-key"));
+    response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
+    return encode(voucherSchema, voucher);
+  }
+
+  /** A branch transfer moves the contract to another branch for a fee (A-235). */
+  @Post("branch-transfers")
+  @RequirePermission("contract.change")
+  @ApiIdempotencyKey()
+  @ApiResult(voucherSchema, 201, "Created and applied")
+  @ApiResult(voucherSchema, 202, "Waiting for approval (D-018)")
+  @ApiResult(voucherSchema, 200, "Replayed")
+  async branchTransfer(
+    @CurrentActor() actor: CurrentUser,
+    @Body({ schema: branchTransferInputSchema }) body: unknown,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { voucher, replayed } = await raiseBranchTransfer(actor, body, request.get("idempotency-key"));
     response.status(replayed ? 200 : voucher.status === "PENDING" ? 202 : 201);
     return encode(voucherSchema, voucher);
   }

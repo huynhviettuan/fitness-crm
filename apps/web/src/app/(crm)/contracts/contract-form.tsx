@@ -14,7 +14,7 @@ import { NO_OPTION, OptionSelect } from "@/components/option-select";
 import { useErrorMessage } from "@/components/use-error-message";
 import { useValidationMessage } from "@/components/form-fields";
 import type { ActionResult } from "@/lib/actions/result";
-import { CONTRACT_TYPES, sharesProblems } from "@flow/shared/contracts";
+import { SOLD_CONTRACT_TYPES, sharesProblems } from "@flow/shared/contracts";
 import { CompanionPicker, type Companion } from "./companion-picker";
 import { ContractPricePanel } from "./contract-price-panel";
 
@@ -219,7 +219,7 @@ export function ContractForm(props: Props) {
                   control={form.control}
                   name="contractType"
                   label={f("contractType")}
-                  options={CONTRACT_TYPES.map((type) => ({ value: type, label: t(`types.${type}`) }))}
+                  options={SOLD_CONTRACT_TYPES.map((type) => ({ value: type, label: t(`types.${type}`) }))}
                 />
               </div>
               {contractType === "RENEW" && (

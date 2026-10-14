@@ -186,7 +186,7 @@ describe("the switch of an optional email (D-036)", () => {
 
     expect(items.map((item) => item.event)).toEqual(EMAIL_EVENT_KEYS);
     const optional = items.filter((item) => !item.mandatory);
-    expect(optional).toHaveLength(9);
+    expect(optional).toHaveLength(10);
     expect(optional.every((item) => item.enabled && item.updatedAt === null)).toBe(true);
   });
 });

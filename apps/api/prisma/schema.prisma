@@ -292,7 +292,8 @@ model Branch {
 
   workoutPlans WorkoutPlan[]
   workoutLogs  WorkoutLog[]
-  vouchers     ContractChangeVoucher[]
+  vouchers     ContractChangeVoucher[] @relation("VoucherBranch")
+  vouchersTo   ContractChangeVoucher[] @relation("VoucherToBranch")
 
   @@map("branches")
 }
@@ -755,7 +756,8 @@ model Customer {
   classAttendances ClassAttendance[]
   workoutPlans     WorkoutPlan[]
   workoutLogs      WorkoutLog[]
-  vouchers         ContractChangeVoucher[]
+  vouchers         ContractChangeVoucher[] @relation("VoucherCustomer")
+  vouchersReceived ContractChangeVoucher[] @relation("VoucherToCustomer")
 
   @@index([phone])
   @@index([searchName])
@@ -1078,7 +1080,8 @@ model Contract {
   classAttendances ClassAttendance[]
   payoutLines      PtPayoutLine[]
   workoutPlans     WorkoutPlan[]
-  vouchers         ContractChangeVoucher[]
+  vouchers         ContractChangeVoucher[] @relation("VoucherContract")
+  vouchersMade     ContractChangeVoucher[] @relation("VoucherNewContract")
 
   @@index([customerId])
   @@index([branchId])
@@ -1090,6 +1093,7 @@ model Contract {
 enum ContractType {
   NEW
   RENEW
+  TRANSFER
 }
 
 enum StaffRole {
@@ -2458,11 +2462,11 @@ model ContractChangeVoucher {
   kind               VoucherKind
   status             VoucherStatus @default(PENDING)
   contractId         String        @map("contract_id") @db.Uuid
-  contract           Contract      @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  contract           Contract      @relation("VoucherContract", fields: [contractId], references: [id], onDelete: Restrict)
   branchId           String        @map("branch_id") @db.Uuid
-  branch             Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch             Branch        @relation("VoucherBranch", fields: [branchId], references: [id], onDelete: Restrict)
   customerId         String        @map("customer_id") @db.Uuid
-  customer           Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customer           Customer      @relation("VoucherCustomer", fields: [customerId], references: [id], onDelete: Restrict)
   // The kind's own fields (brief §5.6); the ones a kind does not have stay empty.
   fromDate           DateTime?     @map("from_date") @db.Date
   toDate             DateTime?     @map("to_date") @db.Date
@@ -2474,6 +2478,13 @@ model ContractChangeVoucher {
   targetServiceId    String?       @map("target_service_id") @db.Uuid
   targetService      Service?      @relation("VoucherTargetService", fields: [targetServiceId], references: [id], onDelete: Restrict)
   credit             Decimal?      @db.Decimal(14, 0)
+  // A transfer (M8.3): who gets the sessions and the contract made for them; a branch transfer: the branch moved to.
+  toCustomerId       String?       @map("to_customer_id") @db.Uuid
+  toCustomer         Customer?     @relation("VoucherToCustomer", fields: [toCustomerId], references: [id], onDelete: Restrict)
+  newContractId      String?       @map("new_contract_id") @db.Uuid
+  newContract        Contract?     @relation("VoucherNewContract", fields: [newContractId], references: [id], onDelete: Restrict)
+  toBranchId         String?       @map("to_branch_id") @db.Uuid
+  toBranch           Branch?       @relation("VoucherToBranch", fields: [toBranchId], references: [id], onDelete: Restrict)
   note               String?
   // What approving it did: set at approval, and summed into the contract by a trigger.
   sessionsDelta      Int           @default(0) @map("sessions_delta")

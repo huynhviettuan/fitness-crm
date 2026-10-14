@@ -90,3 +90,14 @@ export function exchangeEffect(input: { remaining: number; sessions: number; amo
 } {
   return { sessionsDelta: input.sessions - input.remaining, valueDelta: input.amount - input.credit };
 }
+
+/**
+ * What approving a transfer does to the contract given away (A-232): every session still left and the value moved with them
+ * leave it, so it has none left and is worth what was already used. The receiver gets a new contract of that many sessions.
+ */
+export function transferEffect(input: { remaining: number; credit: number }): {
+  sessionsDelta: number;
+  valueDelta: number;
+} {
+  return { sessionsDelta: -input.remaining, valueDelta: -input.credit };
+}

@@ -1,6 +1,12 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { approvePendingViaApi } from "./support/approvals";
-import { bookingSetup, createBookingViaApi, createServiceViaApi } from "./support/data";
+import {
+  bookingSetup,
+  createBookingViaApi,
+  createCustomerViaApi,
+  createServiceViaApi,
+  recordPaymentViaApi,
+} from "./support/data";
 import { fill, labels } from "./support/labels";
 
 // Contract change vouchers: renewal and hold (brief §5.6; FR-CHG-001, FR-CHG-002; D-024; docs/13 E2E-174). A voucher waits
@@ -175,6 +181,63 @@ test.describe("a manager exchanges a package", () => {
       remainingSessions: 10,
       contractValue: before.contractValue + 6_000_000,
     });
+  });
+});
+
+test.describe("a manager transfers the sessions left", () => {
+  test.use(signedInAs("FITNESS_MANAGER"));
+
+  test("a transfer waits for the admin, then the receiver has a contract of the sessions left and the giver has none", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const { contract } = await bookingSetup(apiAs, testTag);
+    const admin = await apiAs("ADMIN");
+    const receiver = await createCustomerViaApi(await apiAs("RECEPTIONIST"), `${testTag} nhan`);
+    await recordPaymentViaApi(await apiAs("FITNESS_MANAGER"), contract.id, "12000000", { approver: admin });
+    const read = async (id: string) =>
+      (await (await admin.get(`/api/v1/contracts/${id}`)).json()) as {
+        remainingSessions: number;
+        contractValue: number;
+      };
+
+    await page.goto(`/contracts/${contract.id}`);
+    await page.getByRole("tab", { name: historyTab }).click();
+    await page.getByRole("button", { name: c.transfer, exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: fill(c.transferTitle, { code: contract.contractCode }) });
+    // Nobody is chosen yet.
+    await dialog.getByRole("button", { name: c.raise, exact: true }).click();
+    await expect(dialog.getByText(labels.validation.required)).toBeVisible();
+    await dialog.getByLabel(c.fields.toCustomer, { exact: true }).fill(receiver.fullName);
+    await dialog.getByRole("button", { name: new RegExp(receiver.customerCode) }).click();
+    await dialog.getByLabel(c.fields.transferValue, { exact: true }).fill("6000000");
+    await dialog.getByRole("button", { name: c.raise, exact: true }).click();
+    await expect(
+      page.getByRole("region", { name: labels.common.notifications }).getByText(c.raisedPending),
+    ).toBeVisible();
+
+    const table = page.getByRole("table", { name: c.title, exact: true });
+    await expect(table.getByRole("row").nth(1)).toContainText(c.kinds.TRANSFER);
+    await expect(table.getByRole("row").nth(1)).toContainText(receiver.customerCode);
+    expect((await read(contract.id)).remainingSessions).toBe(24);
+
+    const listed = (await (await admin.get(`/api/v1/contract-changes?contractId=${contract.id}`)).json()) as {
+      items: { id: string }[];
+    };
+    await approvePendingViaApi(admin, listed.items[0]!.id, "voucher.transfer");
+    expect((await read(contract.id)).remainingSessions).toBe(0);
+    const theirs = (await (await admin.get(`/api/v1/contracts?customerId=${receiver.id}`)).json()) as {
+      items: { id: string; contractType: string; status: string }[];
+    };
+    expect(theirs.items).toHaveLength(1);
+    expect(theirs.items[0]).toMatchObject({ contractType: "TRANSFER", status: "ACTIVE" });
+    expect(await read(theirs.items[0]!.id)).toMatchObject({ remainingSessions: 24, contractValue: 6_000_000 });
+
+    // The history now links to the receiver's contract.
+    await page.reload();
+    await page.getByRole("tab", { name: historyTab }).click();
+    await expect(table.getByRole("link").first()).toBeVisible();
   });
 });
 

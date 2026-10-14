@@ -9,7 +9,13 @@ import {
   vndAmount,
   wholeNumber,
 } from "../validation/index.js";
-import { CONTRACT_TYPES, EXTENSION_CHOICES, LIST_STATUSES, PAYMENT_STATUSES } from "./contract.domain.js";
+import {
+  CONTRACT_TYPES,
+  EXTENSION_CHOICES,
+  LIST_STATUSES,
+  PAYMENT_STATUSES,
+  SOLD_CONTRACT_TYPES,
+} from "./contract.domain.js";
 
 // Error messages are i18n keys under `validation.*` in the web app's messages/*.json.
 // Forms send "" for an empty optional field; it is stored as null.
@@ -45,7 +51,7 @@ export const contractInputSchema = z
   .object({
     serviceId: z.uuid({ error: "invalidChoice" }),
     sessions: wholeNumber(1, 1000),
-    contractType: z.enum(CONTRACT_TYPES, { error: "invalidChoice" }).prefault("NEW"),
+    contractType: z.enum(SOLD_CONTRACT_TYPES, { error: "invalidChoice" }).prefault("NEW"),
     /** The contract a renewal follows (brief §5.2). */
     previousContractId: optionalUuid.prefault(""),
     /** The day prices apply; today when empty. */

@@ -14282,6 +14282,212 @@
         "x-permission": "contract.change"
       }
     },
+    "/api/v1/contract-changes/transfers": {
+      "post": {
+        "operationId": "ContractChangesController_transfer",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A UUID generated when the form opens (T-015).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "toCustomerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "credit": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "contractId",
+                  "toCustomerId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created and applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.change"
+      }
+    },
+    "/api/v1/contract-changes/branch-transfers": {
+      "post": {
+        "operationId": "ContractChangesController_branchTransfer",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A UUID generated when the form opens (T-015).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contractId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "toBranchId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fee": {
+                    "default": 0,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "contractId",
+                  "toBranchId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created and applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Waiting for approval (D-018)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeVoucher"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "contract-changes"
+        ],
+        "x-permission": "contract.change"
+      }
+    },
     "/api/v1/notification-preferences": {
       "get": {
         "operationId": "NotificationPreferencesController_get",
@@ -24532,7 +24738,8 @@
             "type": "string",
             "enum": [
               "NEW",
-              "RENEW"
+              "RENEW",
+              "TRANSFER"
             ]
           },
           "previousContract": {
@@ -28926,6 +29133,52 @@
             "nullable": true,
             "type": "integer"
           },
+          "toCustomer": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "customerCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "customerCode",
+              "fullName"
+            ]
+          },
+          "newContract": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode"
+            ]
+          },
+          "toBranch": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchRef"
+              }
+            ]
+          },
           "reason": {
             "nullable": true,
             "allOf": [
@@ -29018,6 +29271,9 @@
           "amount",
           "targetService",
           "credit",
+          "toCustomer",
+          "newContract",
+          "toBranch",
           "reason",
           "note",
           "sessionsDelta",

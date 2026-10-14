@@ -3,8 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowRightLeftIcon, PauseCircleIcon, RefreshCwIcon, TrendingUpIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
+import {
+  ArrowRightLeftIcon,
+  BuildingIcon,
+  GiftIcon,
+  PauseCircleIcon,
+  RefreshCwIcon,
+  TrendingUpIcon,
+} from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,19 +22,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FieldGroup } from "@/components/ui/field";
-import { SelectField, TextField, applyFieldErrors } from "@/components/form-fields";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { SelectField, TextField, applyFieldErrors, useValidationMessage } from "@/components/form-fields";
 import { notify } from "@/components/notify";
+import { useCustomerSearch } from "@/components/use-customer-search";
 import {
+  branchTransferInputSchema,
   exchangeInputSchema,
   holdInputSchema,
   renewalInputSchema,
+  transferInputSchema,
+  type BranchTransferInput,
   type ExchangeInput,
   type HoldInput,
   type RenewalInput,
+  type TransferInput,
 } from "@flow/shared/changes";
 import { useSubmit } from "../admin/users/user-dialogs";
-import { raiseExchangeAction, raiseHoldAction, raiseRenewalAction } from "./change-actions";
+import {
+  raiseBranchTransferAction,
+  raiseExchangeAction,
+  raiseHoldAction,
+  raiseRenewalAction,
+  raiseTransferAction,
+} from "./change-actions";
 
 type ContractRef = { id: string; contractCode: string };
 
@@ -248,6 +267,188 @@ function ExchangeDialog({
         <TextField control={form.control} name="amount" label={t("fields.newPrice")} inputMode="numeric" />
         <TextField control={form.control} name="credit" label={t("fields.credit")} inputMode="numeric" />
       </div>
+      <TextField control={form.control} name="note" label={t("fields.note")} multiline />
+    </VoucherDialog>
+  );
+}
+
+type TransferValues = { toCustomerId: string; credit: string; note: string };
+
+/** A transfer: the sessions left, and the value that goes with them, are given to another customer (brief §5.6). */
+export function TransferButton({ contract }: { contract: ContractRef }) {
+  const t = useTranslations("contractChanges");
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <GiftIcon />
+        {t("transfer")}
+      </Button>
+      {open && <TransferDialog contract={contract} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+/** Finds the customer who receives the sessions by code, name or phone; the API checks the branch. */
+function CustomerPickField({
+  control,
+  name,
+}: {
+  control: ReturnType<typeof useForm<TransferValues>>["control"];
+  name: "toCustomerId";
+}) {
+  const t = useTranslations("contractChanges");
+  const validationMessage = useValidationMessage();
+  const [query, setQuery] = useState("");
+  const [label, setLabel] = useState("");
+  const results = useCustomerSearch(query, 6);
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid || undefined}>
+          <FieldLabel htmlFor="transfer-customer">{t("fields.toCustomer")}</FieldLabel>
+          {field.value ? (
+            <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+              <span>{label}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  field.onChange("");
+                  setLabel("");
+                }}
+              >
+                {t("changeCustomer")}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Input
+                id="transfer-customer"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("customerSearch")}
+                autoComplete="off"
+                aria-invalid={fieldState.invalid}
+              />
+              {results.length > 0 && (
+                <ul className="divide-y rounded-md border">
+                  {results.map((customer) => (
+                    <li key={customer.id}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          field.onChange(customer.id);
+                          setLabel(`${customer.customerCode} · ${customer.fullName}`);
+                          setQuery("");
+                        }}
+                      >
+                        {customer.customerCode} · {customer.fullName}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+          {fieldState.error?.message && <FieldError>{validationMessage(fieldState.error.message)}</FieldError>}
+        </Field>
+      )}
+    />
+  );
+}
+
+function TransferDialog({ contract, onClose }: { contract: ContractRef; onClose: () => void }) {
+  const t = useTranslations("contractChanges");
+  const form = useForm<TransferValues>({
+    resolver: ((values: TransferValues, context: unknown, options: never) =>
+      zodResolver(transferInputSchema as never, undefined, { raw: true })(
+        { contractId: contract.id, ...values } as never,
+        context as never,
+        options,
+      )) as never,
+    defaultValues: { toCustomerId: "", credit: "", note: "" },
+  });
+  return (
+    <VoucherDialog
+      title={t("transferTitle", { code: contract.contractCode })}
+      description={t("transferDescription")}
+      form={form}
+      run={(values, key) => raiseTransferAction({ contractId: contract.id, ...values } as TransferInput, key)}
+      onClose={onClose}
+    >
+      <CustomerPickField control={form.control} name="toCustomerId" />
+      <TextField control={form.control} name="credit" label={t("fields.transferValue")} inputMode="numeric" />
+      <TextField control={form.control} name="note" label={t("fields.note")} multiline />
+    </VoucherDialog>
+  );
+}
+
+type BranchTransferValues = { toBranchId: string; fee: string; note: string };
+
+/** A branch transfer: the contract moves to another branch for a fee (brief §5.6). */
+export function BranchTransferButton({
+  contract,
+  branches,
+}: {
+  contract: ContractRef;
+  branches: { id: string; name: string }[];
+}) {
+  const t = useTranslations("contractChanges");
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <BuildingIcon />
+        {t("branchTransfer")}
+      </Button>
+      {open && <BranchTransferDialog contract={contract} branches={branches} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function BranchTransferDialog({
+  contract,
+  branches,
+  onClose,
+}: {
+  contract: ContractRef;
+  branches: { id: string; name: string }[];
+  onClose: () => void;
+}) {
+  const t = useTranslations("contractChanges");
+  const form = useForm<BranchTransferValues>({
+    resolver: ((values: BranchTransferValues, context: unknown, options: never) =>
+      zodResolver(branchTransferInputSchema as never, undefined, { raw: true })(
+        { contractId: contract.id, ...values } as never,
+        context as never,
+        options,
+      )) as never,
+    defaultValues: { toBranchId: "", fee: "", note: "" },
+  });
+  return (
+    <VoucherDialog
+      title={t("branchTransferTitle", { code: contract.contractCode })}
+      description={t("branchTransferDescription")}
+      form={form}
+      run={(values, key) =>
+        raiseBranchTransferAction({ contractId: contract.id, ...values } as BranchTransferInput, key)
+      }
+      onClose={onClose}
+    >
+      <SelectField
+        control={form.control}
+        name="toBranchId"
+        label={t("fields.toBranch")}
+        placeholder={t("branchPlaceholder")}
+        options={branches.map((branch) => ({ value: branch.id, label: branch.name }))}
+      />
+      <TextField control={form.control} name="fee" label={t("fields.fee")} inputMode="numeric" />
       <TextField control={form.control} name="note" label={t("fields.note")} multiline />
     </VoucherDialog>
   );

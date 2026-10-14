@@ -34,6 +34,8 @@ export const EMAIL_PLACEHOLDERS = {
   daysLeft: { vi: "Số ngày còn lại", en: "Days left", sample: { vi: "14", en: "14" } },
   voucherNumber: { vi: "Số phiếu biến động", en: "Change voucher number", sample: { vi: "BD000012", en: "BD000012" } },
   sessionsAdded: { vi: "Số buổi được cộng thêm", en: "Sessions added", sample: { vi: "12", en: "12" } },
+  otherParty: { vi: "Khách còn lại", en: "The other customer", sample: { vi: "Trần Thị Bình", en: "Tran Thi Binh" } },
+  targetBranch: { vi: "Chi nhánh mới", en: "New branch", sample: { vi: "Flow Quận 1", en: "Flow District 1" } },
   targetService: { vi: "Dịch vụ mới", en: "New service", sample: { vi: "PT 1-1 24 buổi", en: "PT 1-1 24 sessions" } },
   fromDate: { vi: "Từ ngày (dd/MM/yyyy)", en: "From day (dd/MM/yyyy)", sample: { vi: "01/11/2026", en: "01/11/2026" } },
   toDate: { vi: "Đến ngày (dd/MM/yyyy)", en: "To day (dd/MM/yyyy)", sample: { vi: "30/11/2026", en: "30/11/2026" } },
@@ -208,6 +210,27 @@ export const EMAIL_EVENTS = {
     placeholders: [...CONTRACT, "voucherNumber", "targetService", "sessionsAdded", "amount"],
     required: ["remaining", "targetService"],
   },
+  "change.transferOut": {
+    vi: "Chuyển nhượng hợp đồng đi (phiếu biến động)",
+    en: "Contract transferred away (change voucher)",
+    mandatory: true,
+    placeholders: [...CONTRACT, "voucherNumber", "otherParty", "sessionsAdded"],
+    required: ["otherParty", "remaining"],
+  },
+  "change.transferIn": {
+    vi: "Nhận chuyển nhượng hợp đồng (phiếu biến động)",
+    en: "Contract transferred to you (change voucher)",
+    mandatory: true,
+    placeholders: [...CONTRACT, "voucherNumber", "otherParty", "sessionsAdded"],
+    required: ["otherParty", "remaining"],
+  },
+  "change.branchTransfer": {
+    vi: "Chuyển chi nhánh (phiếu biến động)",
+    en: "Contract moved to another branch (change voucher)",
+    mandatory: false,
+    placeholders: [...CONTRACT, "voucherNumber", "targetBranch", "amount"],
+    required: ["targetBranch"],
+  },
   "change.hold": {
     vi: "Bảo lưu hợp đồng (phiếu biến động)",
     en: "Contract on hold (change voucher)",
@@ -339,6 +362,36 @@ Hợp đồng {contractCode} đã được chuyển đổi sang {targetService} 
     bodyEn: `Hello {customerName},
 
 Contract {contractCode} was converted to {targetService} by voucher {voucherNumber}. Sessions changed by {sessionsAdded}; sessions left: {remaining}. Extra amount to pay: {amount}. Valid until {endDate}.${FOOTER.en}`,
+  },
+  "change.transferOut": {
+    subjectVi: "Chuyển nhượng hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+Hợp đồng {contractCode} ({packageName}) đã được chuyển nhượng cho {otherParty} theo phiếu {voucherNumber}: {sessionsAdded} buổi còn lại không còn thuộc hợp đồng của bạn. Số buổi còn lại: {remaining}. Các buổi đã đặt từ hôm nay đã bị hủy.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} transferred, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+Contract {contractCode} ({packageName}) was transferred to {otherParty} by voucher {voucherNumber}: the {sessionsAdded} sessions left are no longer on your contract. Sessions left: {remaining}. Sessions booked from today were cancelled.${FOOTER.en}`,
+  },
+  "change.transferIn": {
+    subjectVi: "Bạn nhận chuyển nhượng hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+{otherParty} đã chuyển nhượng cho bạn hợp đồng {contractCode} ({packageName}) theo phiếu {voucherNumber}: {remaining} buổi, hiệu lực đến {endDate}.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} transferred to you, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+{otherParty} transferred contract {contractCode} ({packageName}) to you by voucher {voucherNumber}: {remaining} sessions, valid until {endDate}.${FOOTER.en}`,
+  },
+  "change.branchTransfer": {
+    subjectVi: "Chuyển chi nhánh hợp đồng {contractCode}, phiếu {voucherNumber}",
+    bodyVi: `Chào {customerName},
+
+Hợp đồng {contractCode} ({packageName}) được chuyển sang {targetBranch} theo phiếu {voucherNumber}. Phí chuyển: {amount}. Các buổi đã đặt từ hôm nay đã bị hủy, vui lòng đặt lại tại chi nhánh mới.${FOOTER.vi}`,
+    subjectEn: "Contract {contractCode} moved to another branch, voucher {voucherNumber}",
+    bodyEn: `Hello {customerName},
+
+Contract {contractCode} ({packageName}) was moved to {targetBranch} by voucher {voucherNumber}. Transfer fee: {amount}. Sessions booked from today were cancelled; please book again at the new branch.${FOOTER.en}`,
   },
   "change.hold": {
     subjectVi: "Bảo lưu hợp đồng {contractCode}, phiếu {voucherNumber}",

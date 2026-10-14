@@ -58,8 +58,19 @@ test.describe("A01 who raises and reads vouchers", () => {
         if (role === "PT" || role === "ACCOUNTANT") expect(response.status(), `${path} ${role}`).toBe(403);
       }
     }
+    for (const path of ["transfers", "branch-transfers"]) {
+      for (const role of ["PT", "ACCOUNTANT"] as Role[]) {
+        const response = await (
+          await apiAs(role)
+        ).post(`/api/v1/contract-changes/${path}`, {
+          headers: { "Idempotency-Key": randomUUID() },
+          data: { contractId: contract.id, toCustomerId: randomUUID(), toBranchId: randomUUID() },
+        });
+        expect(response.status(), `${path} ${role}`).toBe(403);
+      }
+    }
     const anonymous = await apiAs(null);
-    for (const path of ["upgrades", "conversions"]) {
+    for (const path of ["upgrades", "conversions", "transfers", "branch-transfers"]) {
       expect(
         (
           await anonymous.post(`/api/v1/contract-changes/${path}`, {
@@ -175,6 +186,27 @@ test.describe("A03 and A10 the inputs", () => {
     const exchanged = await exchange({ ...valid, note: script });
     expect(exchanged.status()).toBe(202);
     expect(await exchanged.json()).toMatchObject({ note: script, kind: "UPGRADE" });
+
+    // A transfer and a branch transfer: bad input is 400, an unknown contract 404, and an unpaid contract cannot be given away.
+    const send = (path: string, data: unknown) =>
+      manager.post(`/api/v1/contract-changes/${path}`, {
+        headers: { "Idempotency-Key": randomUUID() },
+        data: data as never,
+      });
+    for (const data of [{}, { contractId: contract.id }, { contractId: contract.id, toCustomerId: "x" }]) {
+      expect((await send("transfers", data)).status(), JSON.stringify(data)).toBe(400);
+    }
+    for (const data of [{}, { contractId: contract.id }, { contractId: contract.id, toBranchId: "x", fee: 1 }]) {
+      expect((await send("branch-transfers", data)).status(), JSON.stringify(data)).toBe(400);
+    }
+    expect(
+      (await send("transfers", { contractId: randomUUID(), toCustomerId: randomUUID(), credit: 0 })).status(),
+    ).toBe(404);
+    expect(
+      (await send("branch-transfers", { contractId: randomUUID(), toBranchId: randomUUID(), fee: 0 })).status(),
+    ).toBe(404);
+    const unpaid = await send("transfers", { contractId: contract.id, toCustomerId: randomUUID(), credit: 0 });
+    expect(unpaid.status()).toBe(400);
 
     expect((await manager.get("/api/v1/contract-changes/not-a-uuid")).status()).toBe(404);
     for (const query of ["kind=OTHER", "status=NOPE", "pageSize=101", "page=0", "contractId=nope"]) {

@@ -190,7 +190,9 @@
       "payment": "Receipt",
       "booking": "Session",
       "voucher": "Change voucher"
-    }
+    },
+    "pageNumber": "Page number",
+    "goToButton": "Go"
   },
   "auth": {
     "title": "Sign in",
@@ -717,7 +719,12 @@
     "overlapsHold": "Overlaps another hold of the contract.",
     "hasTrainedSessions": "A session was already counted in these days; they cannot be held.",
     "creditAboveAmount": "The credit cannot be more than the new price; giving money back is a cancellation.",
-    "creditAboveValue": "The credit is more than the contract's value."
+    "creditAboveValue": "The credit is more than the contract's value.",
+    "sameCustomer": "The receiver must be someone else.",
+    "hasDebt": "The contract still has debt; it must be paid in full before a transfer.",
+    "nothingLeft": "The contract has no sessions left to transfer.",
+    "sameBranch": "The contract is already at this branch.",
+    "serviceNotInBranch": "The contract's service is not sold at this branch."
   },
   "contracts": {
     "title": "Contracts",
@@ -800,7 +807,8 @@
     "paymentHistoryEmpty": "No payments yet",
     "types": {
       "NEW": "New",
-      "RENEW": "Renewal"
+      "RENEW": "Renewal",
+      "TRANSFER": "Transferred"
     },
     "sections": {
       "service": "Service and duration",
@@ -1749,7 +1757,10 @@
       "renewed_by_voucher": "Renewed (change voucher)",
       "held_by_voucher": "Held (change voucher)",
       "upgraded_by_voucher": "Upgraded (change voucher)",
-      "converted_by_voucher": "Converted (change voucher)"
+      "converted_by_voucher": "Converted (change voucher)",
+      "transferred_by_voucher": "Transferred (change voucher)",
+      "branch_transferred_by_voucher": "Moved branch (change voucher)",
+      "created_by_transfer": "Created by a transfer"
     },
     "fields": {
       "at": "When",
@@ -3367,13 +3378,26 @@
       "targetService": "New service",
       "newSessions": "Sessions of the new package",
       "newPrice": "Price of the new package",
-      "credit": "Value credited for the sessions left"
+      "credit": "Value credited for the sessions left",
+      "toCustomer": "Receiving customer",
+      "transferValue": "Value transferred with the sessions",
+      "toBranch": "New branch",
+      "fee": "Transfer fee"
     },
     "upgrade": "Upgrade",
     "conversion": "Convert",
     "upgradeTitle": "Upgrade contract {code}",
     "conversionTitle": "Convert contract {code}",
     "exchangeDescription": "Exchanges the sessions left for a new package. The sessions left become the new package's sessions; the new price less the value credited is added to what is owed. The voucher acts only once approved.",
-    "targetPlaceholder": "Choose the new service"
+    "targetPlaceholder": "Choose the new service",
+    "transfer": "Transfer",
+    "branchTransfer": "Move branch",
+    "transferTitle": "Transfer contract {code}",
+    "branchTransferTitle": "Move contract {code} to another branch",
+    "transferDescription": "Gives all the sessions left to another customer. This contract has none left; the receiver gets a new contract with the same end date, already paid to the value transferred. Nothing may be owed. Sessions booked from today are cancelled when the voucher is approved.",
+    "branchTransferDescription": "Moves the contract to another branch for a fee that is added to what is owed. Sessions booked from today are cancelled when the voucher is approved; the customer books again at the new branch.",
+    "customerSearch": "Search by code, name or phone",
+    "changeCustomer": "Change",
+    "branchPlaceholder": "Choose the branch"
   }
 }

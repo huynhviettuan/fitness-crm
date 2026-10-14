@@ -2,7 +2,11 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PAGE_SIZES, pagingHref, type PagingKeys, type SearchParams } from "@/lib/paging";
+import { GoToPage } from "@/components/go-to-page";
+import { PAGE_PLACEHOLDER, PAGE_SIZES, pagingHref, type PagingKeys, type SearchParams } from "@/lib/paging";
+
+/** A list with more pages than the numbers show gets a box to type the page to go to. */
+const JUMP_FROM_PAGES = 5;
 
 type TablePaginationProps = {
   page: number;
@@ -74,6 +78,9 @@ export function TablePagination({ page, pageSize, total, path, params, keys }: T
             <ChevronsRightIcon />
           </PageLink>
         </div>
+        {pages > JUMP_FROM_PAGES && (
+          <GoToPage pages={pages} firstHref={hrefFor(1)} template={hrefFor(PAGE_PLACEHOLDER)} />
+        )}
       </div>
     </nav>
   );

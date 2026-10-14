@@ -2,9 +2,11 @@ import "server-only";
 import {
   voucherPageSchema,
   voucherSchema,
+  type BranchTransferInput,
   type ExchangeInput,
   type HoldInput,
   type RenewalInput,
+  type TransferInput,
 } from "@flow/shared/changes";
 import { api, query, read } from "./client";
 
@@ -51,6 +53,26 @@ export async function raiseExchange(kind: "upgrades" | "conversions", input: Exc
   return read(
     voucherSchema,
     (await api()).POST(`/api/v1/contract-changes/${kind}` as "/api/v1/contract-changes/upgrades", {
+      params: { header: { "Idempotency-Key": idempotencyKey } },
+      body: input as never,
+    }),
+  );
+}
+
+export async function raiseTransfer(input: TransferInput, idempotencyKey: string) {
+  return read(
+    voucherSchema,
+    (await api()).POST("/api/v1/contract-changes/transfers", {
+      params: { header: { "Idempotency-Key": idempotencyKey } },
+      body: input as never,
+    }),
+  );
+}
+
+export async function raiseBranchTransfer(input: BranchTransferInput, idempotencyKey: string) {
+  return read(
+    voucherSchema,
+    (await api()).POST("/api/v1/contract-changes/branch-transfers", {
       params: { header: { "Idempotency-Key": idempotencyKey } },
       body: input as never,
     }),

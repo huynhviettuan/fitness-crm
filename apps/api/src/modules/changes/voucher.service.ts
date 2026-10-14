@@ -1,7 +1,8 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   VOUCHER_ACTIONS,
+  branchTransferInputSchema,
   canChangeContract,
   exchangeEffect,
   exchangeInputSchema,
@@ -11,6 +12,8 @@ import {
   rangesOverlap,
   renewalInputSchema,
   renewalPeriod,
+  transferEffect,
+  transferInputSchema,
   voucherListQuerySchema,
   type ExchangeKind,
   type Voucher,
@@ -26,11 +29,13 @@ import { isUniqueViolation } from "../../platform/db/errors.js";
 import { LOCKING_TRANSACTION, prisma, type Db } from "../../platform/db/prisma.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { assertCan } from "../../platform/permissions/assert.js";
+import { hasBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import * as bookingRepo from "../bookings/booking.repository.js";
 import { startOfGymDay } from "../bookings/booking.service.js";
 import { queueContractEmail } from "../contracts/contract-email.js";
 import * as contractRepo from "../contracts/contract.repository.js";
+import { sumValidPayments } from "../finance/payment.repository.js";
 import { contractsVisibleTo, gymToday } from "../contracts/contract.service.js";
 import * as repo from "./voucher.repository.js";
 
@@ -67,6 +72,9 @@ function toView(record: repo.VoucherRecord, pendingRequestId: string | null): Vo
     amount: money(record.amount),
     targetService: record.targetService,
     credit: money(record.credit),
+    toCustomer: record.toCustomer ? { ...record.toCustomer, customerCode: record.toCustomer.customerCode ?? "" } : null,
+    newContract: record.newContract,
+    toBranch: record.toBranch,
     reason: null,
     note: record.note,
     sessionsDelta: record.sessionsDelta,
@@ -133,7 +141,17 @@ export async function getVoucher(actor: Actor, id: string): Promise<Voucher> {
 
 type Fields = Pick<
   Prisma.ContractChangeVoucherUncheckedCreateInput,
-  "fromDate" | "toDate" | "months" | "days" | "sessions" | "amount" | "note" | "targetServiceId" | "credit"
+  | "fromDate"
+  | "toDate"
+  | "months"
+  | "days"
+  | "sessions"
+  | "amount"
+  | "note"
+  | "targetServiceId"
+  | "credit"
+  | "toCustomerId"
+  | "toBranchId"
 >;
 
 type Raised = { voucher: Voucher; replayed: boolean };
@@ -243,6 +261,8 @@ const AUDIT_VERBS: Partial<Record<VoucherKind, string>> = {
   HOLD: "contract.held_by_voucher",
   UPGRADE: "contract.upgraded_by_voucher",
   CONVERSION: "contract.converted_by_voucher",
+  TRANSFER: "contract.transferred_by_voucher",
+  BRANCH_TRANSFER: "contract.branch_transferred_by_voucher",
 };
 
 const dayText = (day: Date) => day.toISOString().slice(0, 10);
@@ -310,6 +330,100 @@ export const raiseUpgrade = (actor: Actor, rawInput: unknown, key: unknown) =>
   raiseExchange(actor, "UPGRADE", rawInput, key);
 export const raiseConversion = (actor: Actor, rawInput: unknown, key: unknown) =>
   raiseExchange(actor, "CONVERSION", rawInput, key);
+
+/** What is left on a contract and what is owed on it, as it stands in this transaction (A-232). */
+async function standing(tx: Db, contract: contractRepo.ContractRecord) {
+  const entitled = entitledSessions(contract.totalSessions, contract.bonusSessions, contract.voucherSessions);
+  const remaining = entitled - contract.openingSessionsUsed - contractRepo.usedSessionsOf(contract);
+  const value = valueOfContract(Number(contract.contractValue), Number(contract.voucherValue));
+  const paid = Number(contract.openingPaidAmount) + (await sumValidPayments(tx, { contractId: contract.id }));
+  return { remaining, value, paid, debt: Math.max(0, value - paid) };
+}
+
+/**
+ * A transfer gives the sessions left to another customer (brief §5.6, A-232): it needs a running contract with sessions left
+ * and nothing owed, since the debt would not move with the sessions.
+ */
+export async function raiseTransfer(actor: Actor, rawInput: unknown, idempotencyKey: unknown): Promise<Raised> {
+  const input = parseInput(transferInputSchema, rawInput);
+  return raise(actor, idempotencyKey, input.contractId, "TRANSFER", input, async (tx, contract, today) => {
+    if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
+    if (!canChangeContract(effectiveStatus(contract, today))) throw new AppError("CONTRACT_NOT_ACTIVE");
+    if (input.toCustomerId === contract.customerId) throw invalid("toCustomerId", "sameCustomer");
+    const receiver = await tx.customer.findFirst({
+      where: { id: input.toCustomerId, branchId: contract.branchId },
+      select: { id: true },
+    });
+    if (!receiver) throw invalid("toCustomerId");
+    const now = await standing(tx, contract);
+    if (now.remaining <= 0) throw invalid("contractId", "nothingLeft");
+    if (now.debt > 0) throw invalid("contractId", "hasDebt");
+    if (input.credit > now.value) throw invalid("credit", "creditAboveValue");
+    return { toCustomerId: receiver.id, credit: input.credit, note: input.note };
+  });
+}
+
+/** A branch transfer moves a running contract to another branch for a fee that is added to what is owed (A-235). */
+export async function raiseBranchTransfer(actor: Actor, rawInput: unknown, idempotencyKey: unknown): Promise<Raised> {
+  const input = parseInput(branchTransferInputSchema, rawInput);
+  return raise(actor, idempotencyKey, input.contractId, "BRANCH_TRANSFER", input, async (tx, contract, today) => {
+    if (contract.status === "FROZEN") throw new AppError("CONTRACT_FROZEN");
+    if (!canChangeContract(effectiveStatus(contract, today))) throw new AppError("CONTRACT_NOT_ACTIVE");
+    if (input.toBranchId === contract.branchId) throw invalid("toBranchId", "sameBranch");
+    await assertBranchFor(tx, actor, contract, input.toBranchId);
+    return { toBranchId: input.toBranchId, amount: input.fee, note: input.note };
+  });
+}
+
+/** The branch moved to is active, the actor works there, and the service of the contract is sold there. */
+async function assertBranchFor(
+  tx: Db,
+  actor: Pick<Actor, "branches">,
+  contract: { serviceId: string | null },
+  toBranchId: string,
+): Promise<void> {
+  const branch = await tx.branch.findFirst({ where: { id: toBranchId, active: true }, select: { id: true } });
+  if (!branch || !hasBranch(actor, toBranchId)) throw invalid("toBranchId");
+  if (contract.serviceId) {
+    const sold = await tx.serviceBranch.findFirst({
+      where: { serviceId: contract.serviceId, branchId: toBranchId },
+      select: { serviceId: true },
+    });
+    if (!sold) throw invalid("toBranchId", "serviceNotInBranch");
+  }
+}
+
+/** Cancels every session still Booked from today on, each audited (A-233, A-236); returns how many. */
+async function cancelFutureBookings(
+  tx: Db,
+  contractId: string,
+  today: Date,
+  decider: Pick<Actor, "id">,
+  reason: string,
+  voucherNumber: string,
+): Promise<number> {
+  const rule = await bookingRepo.findStatusRule(tx, "CANCELLED");
+  if (!rule) throw new AppError("INTERNAL_ERROR");
+  const ids = await bookingRepo.cancelBookedBookingsInRange(
+    tx,
+    contractId,
+    { from: startOfGymDay(today), to: new Date("9999-12-31T00:00:00Z") },
+    rule,
+    decider.id,
+  );
+  for (const bookingId of ids) {
+    await recordAudit(tx, {
+      actorUserId: decider.id,
+      entityType: "booking",
+      entityId: bookingId,
+      action: "booking.cancelled",
+      before: { status: "BOOKED" },
+      after: { status: "CANCELLED" },
+      context: { reason, voucherNumber, contractId },
+    });
+  }
+  return ids.length;
+}
 
 /** A hold stops a running contract for the days asked; they are added to its end when it is approved (brief §5.6). */
 export async function raiseHold(actor: Actor, rawInput: unknown, idempotencyKey: unknown): Promise<Raised> {
@@ -395,6 +509,8 @@ export async function decideVoucher(
   let sessionsDelta = 0;
   let valueDelta = 0;
   let cancelled: string[] = [];
+  let cancelledCount = 0;
+  let newContractId: string | null = null;
 
   if (voucher.kind === "RENEWAL") {
     sessionsDelta = voucher.sessions ?? 0;
@@ -436,6 +552,38 @@ export async function decideVoucher(
       amount: Number(voucher.amount ?? 0),
       credit,
     }));
+  } else if (voucher.kind === "TRANSFER") {
+    // As the contract stands now: what is left moves, and nothing may be owed (A-232, A-233).
+    const now = await standing(tx, contract);
+    const credit = Number(voucher.credit ?? 0);
+    if (now.remaining <= 0 || !voucher.toCustomerId) throw new AppError("CONTRACT_NOT_ACTIVE");
+    if (now.debt > 0) throw new AppError("VALIDATION_FAILED", { fieldErrors: { contractId: ["hasDebt"] } });
+    if (credit > now.value) throw new AppError("VALIDATION_FAILED", { fieldErrors: { credit: ["creditAboveValue"] } });
+    ({ sessionsDelta, valueDelta } = transferEffect({ remaining: now.remaining, credit }));
+    cancelledCount = await cancelFutureBookings(
+      tx,
+      contract.id,
+      today,
+      decider,
+      "contract.transfer",
+      voucher.voucherNumber,
+    );
+    newContractId = await createTransferredContract(tx, decider, contract, voucher.toCustomerId, {
+      sessions: now.remaining,
+      credit,
+      today,
+    });
+  } else if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranchId) {
+    await assertBranchFor(tx, { branches: "ALL" }, contract, voucher.toBranchId);
+    valueDelta = Number(voucher.amount ?? 0);
+    cancelledCount = await cancelFutureBookings(
+      tx,
+      contract.id,
+      today,
+      decider,
+      "contract.branchTransfer",
+      voucher.voucherNumber,
+    );
   } else {
     throw new AppError("INTERNAL_ERROR");
   }
@@ -448,9 +596,14 @@ export async function decideVoucher(
     valueDelta,
     endDateBefore: endBefore,
     endDateAfter: endAfter,
+    newContractId,
   });
   if (!decided) throw new AppError("APPROVAL_NOT_PENDING");
   if (endAfter.getTime() !== endBefore.getTime()) await contractRepo.setEndDate(tx, contract.id, endAfter);
+  // The branch moves only once the voucher is approved: the database lock checks for it (A-235).
+  if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranchId) {
+    await contractRepo.setBranch(tx, contract.id, voucher.toBranchId);
+  }
 
   await recordAudit(tx, {
     actorUserId: decider.id,
@@ -473,7 +626,7 @@ export async function decideVoucher(
       kind: voucher.kind,
       sessionsDelta,
       valueDelta,
-      cancelledBookings: cancelled.length,
+      cancelledBookings: cancelled.length + cancelledCount,
     },
   });
 
@@ -490,6 +643,54 @@ export async function decideVoucher(
         fromDate: voucher.fromDate,
         toDate: voucher.toDate,
         amount: valueDelta,
+      },
+    });
+  } else if (voucher.kind === "TRANSFER" && voucher.toCustomer && newContractId) {
+    // Both customers are told: the giver on the old contract, the receiver on the new one (A-234).
+    await queueContractEmail(tx, {
+      event: "change.transferOut",
+      causeId: id,
+      contractId: contract.id,
+      by: decider.id,
+      day: today,
+      voucher: {
+        voucherNumber: voucher.voucherNumber,
+        sessionsAdded: -sessionsDelta,
+        fromDate: null,
+        toDate: null,
+        amount: null,
+        otherParty: voucher.toCustomer.fullName,
+      },
+    });
+    await queueContractEmail(tx, {
+      event: "change.transferIn",
+      causeId: id,
+      contractId: newContractId,
+      by: decider.id,
+      day: today,
+      voucher: {
+        voucherNumber: voucher.voucherNumber,
+        sessionsAdded: -sessionsDelta,
+        fromDate: null,
+        toDate: null,
+        amount: null,
+        otherParty: voucher.customer.fullName,
+      },
+    });
+  } else if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranch) {
+    await queueContractEmail(tx, {
+      event: "change.branchTransfer",
+      causeId: id,
+      contractId: contract.id,
+      by: decider.id,
+      day: today,
+      voucher: {
+        voucherNumber: voucher.voucherNumber,
+        sessionsAdded: 0,
+        fromDate: null,
+        toDate: null,
+        amount: valueDelta,
+        targetBranch: voucher.toBranch.name,
       },
     });
   } else if (voucher.kind === "UPGRADE" || voucher.kind === "CONVERSION") {
@@ -525,6 +726,65 @@ export async function decideVoucher(
       },
     });
   }
+}
+
+/**
+ * The contract the receiver of a transfer gets (A-232): the sessions left, worth the credit that went with them and already
+ * paid, with the service, the validity end and the staff shares of the contract given away. It is approved at once, by the
+ * decision of the voucher, and its type says where it came from.
+ */
+async function createTransferredContract(
+  tx: Db,
+  decider: Pick<Actor, "id">,
+  from: contractRepo.ContractRecord,
+  toCustomerId: string,
+  moved: { sessions: number; credit: number; today: Date },
+): Promise<string> {
+  const row = await tx.contract.findUniqueOrThrow({ where: { id: from.id } });
+  const shares = await tx.contractStaffShare.findMany({ where: { contractId: from.id } });
+  const created = await contractRepo.createContract(
+    tx,
+    {
+      customerId: toCustomerId,
+      branchId: row.branchId,
+      contractCode: await contractRepo.nextContractCode(tx),
+      idempotencyKey: randomUUID(),
+      createdById: decider.id,
+      packageName: row.packageName,
+      serviceId: row.serviceId,
+      priceTierId: row.priceTierId,
+      contractType: "TRANSFER",
+      previousContractId: row.id,
+      contractDate: moved.today,
+      contractValue: moved.credit,
+      totalSessions: moved.sessions,
+      openingPaidAmount: moved.credit,
+      startDate: moved.today,
+      endDate: row.endDate,
+      tierUnitPrice: row.tierUnitPrice,
+      approvedUnitPrice: row.approvedUnitPrice,
+      isExceptionPrice: row.isExceptionPrice,
+      exceptionReasonId: row.exceptionReasonId,
+      exceptionNote: row.exceptionNote,
+      isImported: row.isImported,
+    },
+    shares.map((share) => ({ role: share.role, employeeId: share.employeeId, percent: Number(share.percent) })),
+    [],
+  );
+  if ((await contractRepo.approve(tx, created.id, decider.id, new Date())) !== 1) throw new AppError("INTERNAL_ERROR");
+  await recordAudit(tx, {
+    actorUserId: decider.id,
+    entityType: "contract",
+    entityId: created.id,
+    action: "contract.created_by_transfer",
+    after: {
+      contractCode: created.contractCode,
+      sessions: moved.sessions,
+      value: moved.credit,
+      from: from.contractCode,
+    },
+  });
+  return created.id;
 }
 
 /** The contract a pending voucher acts on, locked first when the decision runs (T-040). */

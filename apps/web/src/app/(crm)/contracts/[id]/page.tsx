@@ -26,6 +26,7 @@ import { getContract, getContractHistory, listContractStaff } from "@/lib/api/co
 import { listBookings } from "@/lib/api/bookings";
 import { listVouchers } from "@/lib/api/changes";
 import { listServices } from "@/lib/api/services";
+import { listBranches } from "@/lib/api/branches";
 import { listPayments } from "@/lib/api/finance";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
@@ -69,6 +70,13 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
     : [null, null];
   const packageHistory = await getContractHistory(contract.id);
   const vouchers = (await listVouchers({ contractId: contract.id, pageSize: 100 })).items;
+  // The other branches the viewer works in (A-235); a viewer who cannot read them gets no branch transfer.
+  const otherBranches =
+    can(user, "contract.change") && contract.status === "ACTIVE"
+      ? (await listBranches().catch(() => [])).filter(
+          (branch) => branch.id !== contract.branch.id && branch.active !== false,
+        )
+      : [];
   // The services a package can be exchanged for (A-227); a viewer who cannot read the catalog gets no exchange buttons.
   const exchangeServices =
     can(user, "contract.change") && contract.status === "ACTIVE"
@@ -393,6 +401,7 @@ export default async function ContractPage({ params }: PageProps<"/contracts/[id
             canRenew={can(user, "contract.change") && (contract.status === "ACTIVE" || contract.status === "EXPIRED")}
             canHold={can(user, "contract.change") && contract.status === "ACTIVE"}
             services={exchangeServices.map((service) => ({ id: service.id, name: service.name }))}
+            branches={otherBranches.map((branch) => ({ id: branch.id, name: branch.name }))}
           />
           <section aria-labelledby="package-history" className="max-w-5xl space-y-4">
             <h2 id="package-history" className="text-lg font-semibold">

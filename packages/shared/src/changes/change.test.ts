@@ -4,6 +4,7 @@ import {
   VOUCHER_KINDS,
   canChangeContract,
   endDateAfterHold,
+  branchTransferInputSchema,
   exchangeEffect,
   exchangeInputSchema,
   holdDays,
@@ -12,6 +13,8 @@ import {
   rangesOverlap,
   renewalInputSchema,
   renewalPeriod,
+  transferEffect,
+  transferInputSchema,
   voucherListQuerySchema,
 } from "./index.js";
 
@@ -148,5 +151,28 @@ describe("an upgrade or a conversion (M8.2, A-227)", () => {
     const over = bad({ amount: "1000000", credit: "2000000" });
     expect(over.success).toBe(false);
     expect(JSON.stringify(over.error?.issues)).toContain("creditAboveAmount");
+  });
+});
+
+describe("a transfer and a branch transfer (M8.3, A-232, A-235)", () => {
+  it("takes every session left and the value that goes with them out of the contract given away", () => {
+    expect(transferEffect({ remaining: 18, credit: 9_000_000 })).toEqual({
+      sessionsDelta: -18,
+      valueDelta: -9_000_000,
+    });
+  });
+
+  it("asks who receives the sessions and the value; blank money is zero", () => {
+    expect(transferInputSchema.parse({ contractId: id, toCustomerId: id, credit: "" })).toMatchObject({ credit: 0 });
+    expect(transferInputSchema.safeParse({ contractId: id, toCustomerId: "x", credit: 1 }).success).toBe(false);
+    expect(transferInputSchema.safeParse({ contractId: id, credit: 1 }).success).toBe(false);
+  });
+
+  it("asks which branch and the fee", () => {
+    expect(branchTransferInputSchema.parse({ contractId: id, toBranchId: id, fee: "500.000" })).toMatchObject({
+      fee: 500_000,
+    });
+    expect(branchTransferInputSchema.safeParse({ contractId: id, fee: 1 }).success).toBe(false);
+    expect(branchTransferInputSchema.safeParse({ contractId: id, toBranchId: id, fee: -1 }).success).toBe(false);
   });
 });

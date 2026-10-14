@@ -17,3 +17,12 @@ describe("pageWindow", () => {
     expect(pageWindow(3, 10)).toEqual([1, 2, 3, 4, null, 10]);
   });
 });
+
+describe("the jump to a page", () => {
+  it("can make a link for any page from one template", async () => {
+    const { PAGE_PLACEHOLDER, pagingHref } = await import("@/lib/paging");
+    const template = pagingHref("/contracts", { q: "an", pageSize: "20" }, PAGE_PLACEHOLDER, 20);
+    expect(template).toContain(`page=${PAGE_PLACEHOLDER}`);
+    expect(template.replace(String(PAGE_PLACEHOLDER), "7")).toBe("/contracts?q=an&pageSize=20&page=7");
+  });
+});

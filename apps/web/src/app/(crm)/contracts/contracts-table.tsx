@@ -15,7 +15,7 @@ export type ContractRow = {
   customer: { id: string; customerCode: string; fullName: string };
   customerPhone: string | null;
   branch: { id: string; name: string };
-  contractType: "NEW" | "RENEW";
+  contractType: "NEW" | "RENEW" | "TRANSFER";
   contractDate: Date;
   service: { id: string; name: string } | null;
   packageName: string;

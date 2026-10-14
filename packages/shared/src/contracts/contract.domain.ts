@@ -13,7 +13,9 @@ export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 export type EffectiveContractStatus = ContractStatus | "EXPIRED";
 
 /** A contract is new or the renewal of an earlier one (brief §5.2). */
-export const CONTRACT_TYPES = ["NEW", "RENEW"] as const;
+/** What a contract can be sold as; a transfer makes its own (M8.3). */
+export const SOLD_CONTRACT_TYPES = ["NEW", "RENEW"] as const;
+export const CONTRACT_TYPES = ["NEW", "RENEW", "TRANSFER"] as const;
 export type ContractType = (typeof CONTRACT_TYPES)[number];
 
 /** The staff who share a contract (brief §5.2): the PTs who train and the sales staff who sold it. */

@@ -27,6 +27,10 @@ export const voucherSchema = z
     /** An upgrade or a conversion: the service exchanged for, and the value credited for the sessions left. */
     targetService: z.object({ id: z.uuid(), name: z.string() }).nullable(),
     credit: z.int().nullable(),
+    /** A transfer: who the sessions went to and the contract made for them; a branch transfer: the branch moved to. */
+    toCustomer: z.object({ id: z.uuid(), customerCode: z.string(), fullName: z.string() }).nullable(),
+    newContract: z.object({ id: z.uuid(), contractCode: z.string() }).nullable(),
+    toBranch: branchRefSchema.nullable(),
     reason: chosenOptionSchema.nullable(),
     note: z.string().nullable(),
     /** What approving it did, set at approval: sessions and value added to the contract and the end dates. */

@@ -309,6 +309,11 @@ export async function reactivate(
 
 /** Moves the status only if it is still `from`, so concurrent requests cannot both win. */
 /** The end date moves by a freeze or a change voucher: the one date the lock after approval leaves open (A-122). */
+/** The branch of a contract after an approved branch transfer; the lock lets only that through (M8.3, A-235). */
+export function setBranch(db: Db, id: string, branchId: string) {
+  return db.contract.update({ where: { id }, data: { branchId }, select: { id: true } });
+}
+
 export function setEndDate(db: Db, id: string, endDate: Date) {
   return db.contract.update({ where: { id }, data: { endDate }, select: { id: true } });
 }
@@ -323,7 +328,7 @@ export type ContractFilters = {
   q: string;
   customerId?: string;
   branchId?: string;
-  contractType?: "NEW" | "RENEW";
+  contractType?: "NEW" | "RENEW" | "TRANSFER";
   from?: Date;
   to?: Date;
   serviceId?: string;

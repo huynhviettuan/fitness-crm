@@ -3,6 +3,9 @@
 export const PAGE_SIZES = [10, 20, 50, 100] as const;
 export const DEFAULT_PAGE_SIZE = 10;
 
+/** A page number no list reaches: a link made with it is the template the "go to page" box fills in. */
+export const PAGE_PLACEHOLDER = 2147483647;
+
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {

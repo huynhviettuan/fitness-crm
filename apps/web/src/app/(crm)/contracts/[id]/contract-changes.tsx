@@ -7,7 +7,7 @@ import { Money } from "@/components/money";
 import { StatusBadge } from "@/components/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Voucher } from "@flow/shared/changes";
-import { ExchangeButton, HoldButton, RenewalButton } from "../change-dialogs";
+import { BranchTransferButton, ExchangeButton, HoldButton, RenewalButton, TransferButton } from "../change-dialogs";
 
 /** The change vouchers of a contract, newest first, with the buttons to raise one (M8, brief §5.6). */
 export async function ContractChanges({
@@ -16,6 +16,7 @@ export async function ContractChanges({
   canRenew,
   canHold,
   services,
+  branches,
 }: {
   contract: { id: string; contractCode: string };
   vouchers: Voucher[];
@@ -23,6 +24,8 @@ export async function ContractChanges({
   canHold: boolean;
   /** The services an upgrade or a conversion can go to; empty when the viewer cannot raise one. */
   services: { id: string; name: string }[];
+  /** The other branches the viewer works in, for a branch transfer. */
+  branches: { id: string; name: string }[];
 }) {
   const t = await getTranslations("contractChanges");
   return (
@@ -38,6 +41,8 @@ export async function ContractChanges({
           {canHold && services.length > 0 && (
             <ExchangeButton kind="conversions" contract={contract} services={services} />
           )}
+          {canHold && <TransferButton contract={contract} />}
+          {canHold && branches.length > 0 && <BranchTransferButton contract={contract} branches={branches} />}
         </div>
       </div>
       {vouchers.length === 0 ? (
@@ -68,7 +73,13 @@ export async function ContractChanges({
                   <VoucherSummary voucher={voucher} />
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {voucher.amount !== null ? <Money amount={voucher.amount} /> : "—"}
+                  {voucher.kind === "TRANSFER" && voucher.credit !== null ? (
+                    <Money amount={voucher.credit} />
+                  ) : voucher.amount !== null ? (
+                    <Money amount={voucher.amount} />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell>
                   <StatusBadge entity="voucher" status={voucher.status} />
@@ -107,6 +118,22 @@ async function VoucherSummary({ voucher }: { voucher: Voucher }) {
       </span>
     );
   }
+  if (voucher.kind === "TRANSFER" && voucher.toCustomer) {
+    return (
+      <span>
+        {voucher.toCustomer.customerCode} · {voucher.toCustomer.fullName}
+        {voucher.newContract && (
+          <>
+            {" · "}
+            <Link className="underline underline-offset-4" href={`/contracts/${voucher.newContract.id}`}>
+              {voucher.newContract.contractCode}
+            </Link>
+          </>
+        )}
+      </span>
+    );
+  }
+  if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranch) return <span>{voucher.toBranch.name}</span>;
   const parts = [
     voucher.sessions ? t("sessionsCount", { count: voucher.sessions }) : null,
     voucher.months ? t("monthsCount", { count: voucher.months }) : null,

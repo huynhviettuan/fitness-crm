@@ -190,7 +190,9 @@
       "payment": "Phiếu thu",
       "booking": "Buổi tập",
       "voucher": "Phiếu biến động"
-    }
+    },
+    "pageNumber": "Số trang",
+    "goToButton": "Đi"
   },
   "auth": {
     "title": "Đăng nhập",
@@ -717,7 +719,12 @@
     "overlapsHold": "Trùng với một lần bảo lưu khác của hợp đồng.",
     "hasTrainedSessions": "Trong thời gian này đã có buổi tập được tính; không thể bảo lưu.",
     "creditAboveAmount": "Giá trị quy đổi không được lớn hơn giá gói mới; trả lại tiền là hủy hợp đồng.",
-    "creditAboveValue": "Giá trị quy đổi lớn hơn giá trị hợp đồng."
+    "creditAboveValue": "Giá trị quy đổi lớn hơn giá trị hợp đồng.",
+    "sameCustomer": "Khách nhận phải là người khác.",
+    "hasDebt": "Hợp đồng còn công nợ; thanh toán đủ trước khi chuyển.",
+    "nothingLeft": "Hợp đồng không còn buổi nào để chuyển.",
+    "sameBranch": "Hợp đồng đang ở chi nhánh này.",
+    "serviceNotInBranch": "Dịch vụ của hợp đồng không bán ở chi nhánh này."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -800,7 +807,8 @@
     "paymentHistoryEmpty": "Chưa có khoản thanh toán nào",
     "types": {
       "NEW": "Mới",
-      "RENEW": "Tái ký"
+      "RENEW": "Tái ký",
+      "TRANSFER": "Nhận chuyển nhượng"
     },
     "sections": {
       "service": "Dịch vụ và thời hạn",
@@ -1749,7 +1757,10 @@
       "renewed_by_voucher": "Gia hạn (phiếu biến động)",
       "held_by_voucher": "Bảo lưu (phiếu biến động)",
       "upgraded_by_voucher": "Nâng cấp (phiếu biến động)",
-      "converted_by_voucher": "Chuyển đổi (phiếu biến động)"
+      "converted_by_voucher": "Chuyển đổi (phiếu biến động)",
+      "transferred_by_voucher": "Chuyển nhượng (phiếu biến động)",
+      "branch_transferred_by_voucher": "Chuyển chi nhánh (phiếu biến động)",
+      "created_by_transfer": "Tạo từ chuyển nhượng"
     },
     "fields": {
       "at": "Thời điểm",
@@ -3367,13 +3378,26 @@
       "targetService": "Dịch vụ mới",
       "newSessions": "Số buổi của gói mới",
       "newPrice": "Giá gói mới",
-      "credit": "Giá trị quy đổi cho buổi còn lại"
+      "credit": "Giá trị quy đổi cho buổi còn lại",
+      "toCustomer": "Khách nhận",
+      "transferValue": "Giá trị chuyển cùng số buổi",
+      "toBranch": "Chi nhánh mới",
+      "fee": "Phí chuyển"
     },
     "upgrade": "Nâng cấp",
     "conversion": "Chuyển đổi",
     "upgradeTitle": "Nâng cấp hợp đồng {code}",
     "conversionTitle": "Chuyển đổi hợp đồng {code}",
     "exchangeDescription": "Đổi số buổi còn lại sang gói mới. Số buổi còn lại của hợp đồng sẽ bằng số buổi của gói mới; giá gói mới trừ giá trị quy đổi được cộng vào công nợ. Phiếu chỉ có hiệu lực sau khi duyệt.",
-    "targetPlaceholder": "Chọn dịch vụ mới"
+    "targetPlaceholder": "Chọn dịch vụ mới",
+    "transfer": "Chuyển nhượng",
+    "branchTransfer": "Chuyển chi nhánh",
+    "transferTitle": "Chuyển nhượng hợp đồng {code}",
+    "branchTransferTitle": "Chuyển chi nhánh hợp đồng {code}",
+    "transferDescription": "Chuyển toàn bộ số buổi còn lại cho khách khác. Hợp đồng này hết buổi; khách nhận có hợp đồng mới cùng ngày hết hạn, đã thanh toán đúng giá trị chuyển. Cần không còn công nợ. Các buổi đã đặt từ hôm nay sẽ bị hủy khi phiếu được duyệt.",
+    "branchTransferDescription": "Chuyển hợp đồng sang chi nhánh khác, thu phí chuyển cộng vào công nợ. Các buổi đã đặt từ hôm nay sẽ bị hủy khi phiếu được duyệt; khách đặt lại tại chi nhánh mới.",
+    "customerSearch": "Tìm theo mã, tên hoặc số điện thoại",
+    "changeCustomer": "Chọn lại",
+    "branchPlaceholder": "Chọn chi nhánh"
   }
 }

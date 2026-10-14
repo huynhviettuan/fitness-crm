@@ -1,5 +1,15 @@
 # Documentation Changelog
 
+## 2026-11-01 — Pagination: go to a typed page
+
+- Every paginated list gets a box to type the page to go to when it has more than five pages (doc 23 `TablePagination`); the search and filters are kept.
+
+## 2026-11-01 — M8.3: transfer and branch transfer
+
+- **Transfer** (A-232 to A-234, A-237, A-238): all the sessions left and a value go to another customer as a new contract of type TRANSFER; no debt allowed; booked sessions are cancelled; both customers are emailed.
+- **Branch transfer** (A-235, A-236, A-239): the one change the lock lets through, with an approved voucher; the fee is added to what is owed.
+- **Open**: OQ-066. Docs 04, 07, 13, 16, 18, 28; E2E-176.
+
 ## 2026-10-31 — M8.2: upgrade and conversion
 
 - **Exchange** (A-227 to A-231): the sessions left are exchanged for a new package on the same contract; the price less the credit is added to what is owed; counted at approval; always emailed.
