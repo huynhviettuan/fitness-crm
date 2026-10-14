@@ -89,6 +89,11 @@ export const PERMISSION_GROUPS = {
     "report.contractsExport",
     "report.exceptionPrices",
     "report.exceptionPricesExport",
+    "report.ptRevenue",
+    "report.ptRevenueExport",
+    "report.bookings",
+    "report.bookingsExport",
+    "report.overview",
     "report.manualConfirmations",
   ],
   // Deleting vouchers is its own permission (09_RBAC.md, D-035).

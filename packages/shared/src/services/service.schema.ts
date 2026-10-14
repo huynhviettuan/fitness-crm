@@ -46,7 +46,7 @@ export const serviceInputSchema = z
       .max(50, { error: "tooLong" }),
     allowedFrom: optionalTime.prefault(""),
     allowedTo: optionalTime.prefault(""),
-    commissionRate: commissionRate.prefault(0),
+    commissionRate: commissionRate.prefault(100),
     isGroup: z.boolean({ error: "invalidChoice" }).prefault(false),
     maxMembers: optionalWhole(2, 50).prefault(""),
     maxPerWeek: optionalWhole(1, 50).prefault(""),

@@ -85,6 +85,10 @@
       "types": "./dist/promotions/index.d.ts",
       "default": "./dist/promotions/index.js"
     },
+    "./reports": {
+      "types": "./dist/reports/index.d.ts",
+      "default": "./dist/reports/index.js"
+    },
     "./roles": {
       "types": "./dist/roles/index.d.ts",
       "default": "./dist/roles/index.js"

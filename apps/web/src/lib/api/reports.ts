@@ -8,6 +8,7 @@ import {
   type CashOpeningInput,
 } from "@flow/shared/finance";
 import { consultingReportSchema, leadAnalysisSchema } from "@flow/shared/leads";
+import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema } from "@flow/shared/reports";
 import { api, query, read } from "./client";
 
 // The consulting reports (brief §9, D-041; A-089 to A-094).
@@ -66,4 +67,34 @@ export async function getExceptionPrices(params: PeriodParams) {
     exceptionPriceReportSchema,
     (await api()).GET("/api/v1/reports/exception-prices", { params: { query: query(params) } }),
   );
+}
+
+// The PT revenue allocation, the booking report, and the overview dashboard (brief §6.5, §9; M5.6).
+
+/** The period and branch of a report plus the PT it is about. */
+export type TrainerParams = PeriodParams & { trainerId?: string };
+
+export async function getPtRevenue(params: TrainerParams) {
+  return read(
+    ptRevenueReportSchema,
+    (await api()).GET("/api/v1/reports/pt-revenue", { params: { query: query(params) } }),
+  );
+}
+
+export type BookingReportParams = TrainerParams & {
+  type?: "PT" | "BURN_SHOW";
+  status?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function getBookingReport(params: BookingReportParams) {
+  return read(
+    bookingReportPageSchema,
+    (await api()).GET("/api/v1/reports/bookings", { params: { query: query(params) } }),
+  );
+}
+
+export async function getOverview(params: PeriodParams) {
+  return read(overviewSchema, (await api()).GET("/api/v1/reports/overview", { params: { query: query(params) } }));
 }

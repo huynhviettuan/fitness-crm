@@ -107,7 +107,7 @@ describe("services (FR-SVC-001, D-021)", () => {
     });
     expect(update).toMatchObject({
       action: "service.updated",
-      before: { commissionRate: 0, active: true },
+      before: { commissionRate: 100, active: true },
       after: { commissionRate: 25, active: false },
     });
   });

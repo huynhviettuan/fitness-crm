@@ -98,7 +98,7 @@ describe("serviceInputSchema", () => {
   it("takes the minimum and fills the rest with empty values", () => {
     expect(serviceInputSchema.parse(base)).toMatchObject({
       name: "Hybrid Training",
-      commissionRate: 0,
+      commissionRate: 100,
       isGroup: false,
       maxMembers: null,
       allowedFrom: null,

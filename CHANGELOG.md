@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-20 — M5.6: PT revenue allocation, booking report, overview
+
+- **PT revenue allocation** (A-166 to A-170): a row per PT and contract, totals per PT, in and outside the shift, class sessions taught, Excel in GymMaster's column order. Service commission now starts at 100 (A-167); new parameter `ptTimesheetRate`.
+- **Booking report** (A-171) and **overview dashboard** (A-172).
+- **Open**: OQ-053 (the owner's `employee_pt_training` export for AC-18). Docs 04, 07, 09, 10, 13, 16, 18, 28; E2E-111.
+
 ## 2026-10-19 — M5.5: class schedule and attendance
 
 - **Classes** (A-160, A-161): weekly slots with a coach and a capacity; sessions made eight weeks ahead (parameter `classGenerateWeeks`).

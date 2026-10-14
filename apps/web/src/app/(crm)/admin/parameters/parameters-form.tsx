@@ -184,6 +184,16 @@ export function ParametersForm({ parameters, departments }: { parameters: Parame
           {field("hangingEscalationHours", "numeric")}
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("parameters.classesCard")}</CardTitle>
+          <CardDescription>{t("parameters.classesHint")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          {field("classGenerateWeeks", "numeric")}
+          {field("ptTimesheetRate", "numeric")}
+        </CardContent>
+      </Card>
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           {pending ? t("common.saving") : t("common.save")}

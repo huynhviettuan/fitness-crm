@@ -10,6 +10,7 @@ import {
   incomeExpenseSchema,
 } from "@flow/shared/finance";
 import { contractReportSchema, exceptionPriceReportSchema } from "@flow/shared/contracts";
+import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema } from "@flow/shared/reports";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { exportList } from "../../platform/export/export.service.js";
@@ -26,6 +27,8 @@ import {
   incomeExpenseExport,
   PERIOD_QUERY,
 } from "./money-report.export.js";
+import { bookingReport, overview, ptRevenueReport } from "./pt-report.service.js";
+import { BOOKING_REPORT_QUERY, bookingReportExport, PT_REVENUE_QUERY, ptRevenueExport } from "./pt-report.export.js";
 import { consultingReport, leadAnalysis } from "./report.service.js";
 
 /** The consulting reports (brief §9, D-041, A-089 to A-093): counts and rates of a cohort. */
@@ -149,5 +152,48 @@ export class ReportsController {
   @ApiExcelFile()
   async exportExceptionPrices(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
     await exportList(actor, response, exceptionPriceExport, queryOf(request, PERIOD_QUERY));
+  }
+
+  /** The PT revenue allocation: a row per PT and contract with the sessions that credited the PT (D-032, A-166). */
+  @Get("pt-revenue")
+  @RequirePermission("report.ptRevenue")
+  @ApiOptionalQuery(...PT_REVENUE_QUERY)
+  @ApiResult(ptRevenueReportSchema)
+  async ptRevenue(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(ptRevenueReportSchema, await ptRevenueReport(actor, queryOf(request, PT_REVENUE_QUERY)));
+  }
+
+  @Get("pt-revenue/export")
+  @RequirePermission("report.ptRevenueExport")
+  @ApiOptionalQuery(...PT_REVENUE_QUERY)
+  @ApiExcelFile()
+  async exportPtRevenue(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, ptRevenueExport, queryOf(request, PT_REVENUE_QUERY));
+  }
+
+  /** The PT sessions of a period, one row each, filtered by type and status (brief §9, A-171). */
+  @Get("bookings")
+  @RequirePermission("report.bookings")
+  @ApiOptionalQuery(...BOOKING_REPORT_QUERY)
+  @ApiResult(bookingReportPageSchema)
+  async bookings(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(bookingReportPageSchema, await bookingReport(actor, queryOf(request, BOOKING_REPORT_QUERY)));
+  }
+
+  @Get("bookings/export")
+  @RequirePermission("report.bookingsExport")
+  @ApiOptionalQuery(...BOOKING_REPORT_QUERY)
+  @ApiExcelFile()
+  async exportBookings(@CurrentActor() actor: CurrentUser, @Req() request: Request, @Res() response: Response) {
+    await exportList(actor, response, bookingReportExport, queryOf(request, BOOKING_REPORT_QUERY));
+  }
+
+  /** The overview dashboard: leads, members training, PTs, contracts ending soon, sessions by hour, revenue (A-172). */
+  @Get("overview")
+  @RequirePermission("report.overview")
+  @ApiOptionalQuery(...PERIOD_QUERY)
+  @ApiResult(overviewSchema)
+  async overview(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(overviewSchema, await overview(actor, queryOf(request, PERIOD_QUERY)));
   }
 }

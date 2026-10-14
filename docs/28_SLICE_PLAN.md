@@ -330,7 +330,7 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
   - How far ahead sessions are generated (proposed: 8 weeks, a parameter).
 - **Depends on:** M5.3.
 
-### M5.6 PT revenue allocation and booking report
+### M5.6 PT revenue allocation and booking report (done 2026-10-20: A-166 to A-172, OQ-053)
 
 - **Builds:**
   - **PT revenue allocation report:** one row per PT and contract with the columns of doc 10, a totals row per PT, and the adjustments column. The Excel keeps GymMaster's column order.

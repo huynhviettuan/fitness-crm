@@ -42,6 +42,8 @@ export const PARAMETER_DEFAULTS = {
   hangingEscalationHours: "24",
   /** How many weeks ahead the sessions of a class are generated (A-161, M5.5). */
   classGenerateWeeks: "8",
+  /** The share of the PT allocation paid out, in percent: the timesheet rate of D-032, until timesheets exist (A-167). */
+  ptTimesheetRate: "100",
   /** A running contract with this many sessions left or fewer is "running out" in the contract report (A-023, M4.7). */
   runningOutSessions: "3",
   /** The department whose task Báo Studio creates or updates (brief §4.1, OQ-032); "" for none yet. */
@@ -122,6 +124,15 @@ const seconds = z
   .refine((value) => Number(value) >= 1 && Number(value) <= 3600, { error: "secondsOutOfRange" })
   .transform((value) => String(Number(value)));
 
+/** A percent, 0 to 100, with up to two decimals. */
+const percent = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}([.,]\d{1,2})?$/, { error: "invalidNumber" })
+  .transform((value) => Number(value.replace(",", ".")))
+  .refine((value) => value >= 0 && value <= 100, { error: "percentOutOfRange" })
+  .transform((value) => String(value));
+
 /** Whole weeks, 1 to 26. */
 const weeks = z
   .string()
@@ -158,6 +169,7 @@ export const parametersInputSchema = z
     scanClockToleranceSeconds: seconds,
     hangingEscalationHours: hours,
     classGenerateWeeks: weeks,
+    ptTimesheetRate: percent,
     runningOutSessions: days,
     studioDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
     receptionDepartmentId: z.union([z.literal(""), z.uuid({ error: "invalidChoice" })]),
@@ -198,6 +210,7 @@ export const parametersSchema = z
     scanClockToleranceSeconds: z.string(),
     hangingEscalationHours: z.string(),
     classGenerateWeeks: z.string(),
+    ptTimesheetRate: z.string(),
     runningOutSessions: z.string(),
     studioDepartmentId: z.string(),
     receptionDepartmentId: z.string(),

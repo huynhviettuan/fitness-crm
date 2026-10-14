@@ -1549,8 +1549,8 @@ model Service {
   // The window of the day it may be used, "HH:mm"; both or neither.
   allowedFrom    String?     @map("allowed_from")
   allowedTo      String?     @map("allowed_to")
-  // A percent of the session's value credited to the PT (brief §5.1).
-  commissionRate Decimal     @default(0) @map("commission_rate") @db.Decimal(5, 2)
+  // A percent of the session's value credited to the PT (brief §5.1); 100 until the owner says otherwise (A-167).
+  commissionRate Decimal     @default(100) @map("commission_rate") @db.Decimal(5, 2)
   isGroup        Boolean     @default(false) @map("is_group")
   maxMembers     Int?        @map("max_members")
   maxPerWeek     Int?        @map("max_per_week")

@@ -50,7 +50,7 @@ export function ServiceDialog({ service, branches, onClose }: Props) {
       branchIds: service?.branches.map((branch) => branch.id) ?? (branches.length === 1 ? [branches[0]!.id] : []),
       allowedFrom: service?.allowedFrom ?? "",
       allowedTo: service?.allowedTo ?? "",
-      commissionRate: String(service?.commissionRate ?? 0),
+      commissionRate: String(service?.commissionRate ?? 100),
       isGroup: service?.isGroup ?? false,
       maxMembers: service?.maxMembers?.toString() ?? "",
       maxPerWeek: service?.maxPerWeek?.toString() ?? "",

@@ -31,6 +31,10 @@ const CONTRACT_REPORTS = [
   "reports/exception-prices/export",
 ];
 
+/** The PT reports of M5.6 (A-166, A-171, A-172): PT pay is for those who run the gym and the books, bookings for the schedule. */
+const PT_REVENUE_REPORTS = ["reports/pt-revenue", "reports/pt-revenue/export"];
+const BOOKING_REPORTS = ["reports/bookings", "reports/bookings/export"];
+
 /** Who holds each report permission by default (A-093); Marketing is signed in separately. */
 const REPORTS: { path: string; allowed: Role[]; marketing: boolean }[] = [
   { path: "reports/consulting", allowed: ["ADMIN", "FITNESS_MANAGER", "CONSULTING"], marketing: false },
@@ -39,6 +43,17 @@ const REPORTS: { path: string; allowed: Role[]; marketing: boolean }[] = [
   { path: "reports/lead-analysis/export", allowed: ["ADMIN", "FITNESS_MANAGER"], marketing: true },
   ...MONEY_REPORTS.map((path) => ({ path, allowed: MONEY_ROLES, marketing: false })),
   ...CONTRACT_REPORTS.map((path) => ({ path, allowed: ["ADMIN", "FITNESS_MANAGER"] as Role[], marketing: false })),
+  ...PT_REVENUE_REPORTS.map((path) => ({ path, allowed: MONEY_ROLES, marketing: false })),
+  ...BOOKING_REPORTS.map((path) => ({
+    path,
+    allowed: ["ADMIN", "FITNESS_MANAGER", "RECEPTIONIST"] as Role[],
+    marketing: false,
+  })),
+  {
+    path: "reports/overview",
+    allowed: ["ADMIN", "FITNESS_MANAGER", "RECEPTIONIST", "ACCOUNTANT"],
+    marketing: false,
+  },
 ];
 
 async function marketing(
@@ -276,11 +291,47 @@ test.describe("A01 and A10 the opening balance and the period (A-138)", () => {
       "reports/income-expense",
       "reports/contracts",
       "reports/exception-prices",
+      "reports/pt-revenue",
+      "reports/bookings",
+      "reports/overview",
     ]) {
       for (const query of ["from=31/02/2026", "from=2026-10-01", "from=10/10/2026&to=01/10/2026", "branchId=nope"]) {
         const response = await manager.get(`/api/v1/${path}?${query}`);
         expect(response.status(), `${path}?${query}`).toBe(400);
       }
+    }
+  });
+});
+
+test.describe("A10 the PT reports refuse bad filters (M5.6)", () => {
+  test("a bad PT, type, status or page is a 400, never a 500", async ({ apiAs }) => {
+    const manager = await apiAs("FITNESS_MANAGER");
+
+    for (const query of ["trainerId=nope", "trainerId=00000000-0000-4000-8000-00000000dead&branchId=nope"]) {
+      expect((await manager.get(`/api/v1/reports/pt-revenue?${query}`)).status(), query).toBe(400);
+    }
+    for (const query of [
+      "type=CLASS",
+      "trainerId=nope",
+      `status=${"x".repeat(41)}`,
+      "page=0",
+      "pageSize=101",
+      "pageSize=abc",
+    ]) {
+      expect((await manager.get(`/api/v1/reports/bookings?${query}`)).status(), query).toBe(400);
+    }
+    // An unknown PT or status is a valid filter with nothing in it.
+    const none = await manager.get(
+      "/api/v1/reports/bookings?trainerId=00000000-0000-4000-8000-00000000dead&status=NOPE&from=01/01/2026&to=02/01/2026",
+    );
+    expect(await none.json()).toMatchObject({ items: [], total: 0 });
+  });
+
+  test("a PT cannot read the pay of PTs, however the request is built", async ({ apiAs }) => {
+    const pt = await apiAs("PT");
+
+    for (const path of ["reports/pt-revenue?trainerId=nope", "reports/pt-revenue/export", "reports/overview"]) {
+      expect((await pt.get(`/api/v1/${path}`)).status(), path).toBe(403);
     }
   });
 });

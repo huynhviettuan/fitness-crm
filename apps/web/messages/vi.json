@@ -49,7 +49,9 @@
     "exceptionPriceReport": "Giá ngoại lệ",
     "sessionStatuses": "Trạng thái buổi tập",
     "checkin": "Check-in",
-    "classes": "Lịch lớp"
+    "classes": "Lịch lớp",
+    "ptRevenueReport": "Doanh thu PT",
+    "bookingReport": "Báo cáo booking"
   },
   "status": {
     "customer": {
@@ -662,7 +664,8 @@
     "secondsOutOfRange": "Số giây phải từ 1 đến 3600.",
     "machineCodeTaken": "Mã này đã thuộc về người khác.",
     "weeksOutOfRange": "Số tuần từ 1 đến 26.",
-    "belowEnrolled": "Sức chứa thấp hơn số khách đã đăng ký ở một buổi sắp tới."
+    "belowEnrolled": "Sức chứa thấp hơn số khách đã đăng ký ở một buổi sắp tới.",
+    "percentOutOfRange": "Tỷ lệ từ 0 đến 100."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1325,7 +1328,12 @@
         "contractsExport": "Xuất báo cáo hợp đồng",
         "exceptionPrices": "Xem báo cáo giá ngoại lệ",
         "exceptionPricesExport": "Xuất báo cáo giá ngoại lệ",
-        "manualConfirmations": "Báo cáo buổi xác nhận thủ công"
+        "manualConfirmations": "Báo cáo buổi xác nhận thủ công",
+        "ptRevenue": "Xem doanh thu phân bổ PT",
+        "ptRevenueExport": "Xuất doanh thu phân bổ PT",
+        "bookings": "Xem báo cáo booking",
+        "bookingsExport": "Xuất báo cáo booking",
+        "overview": "Xem tổng quan"
       },
       "service": {
         "view": "Xem dịch vụ và bậc giá",
@@ -1514,7 +1522,8 @@
       "scanRepeatSeconds": "Quét lặp tính một lần trong (giây)",
       "scanClockToleranceSeconds": "Sai lệch đồng hồ máy cho phép (giây)",
       "hangingEscalationHours": "Số giờ trước khi báo buổi treo (0 = tắt)",
-      "classGenerateWeeks": "Số tuần tạo sẵn buổi lớp"
+      "classGenerateWeeks": "Số tuần tạo sẵn buổi lớp",
+      "ptTimesheetRate": "Tỷ lệ công của PT (%)"
     },
     "saved": "Đã lưu tham số",
     "tasks": "Công việc",
@@ -1530,7 +1539,9 @@
     "contractsCard": "Hợp đồng",
     "contractsHint": "Khi nào khách được coi là sắp hết hạn, và khi nào hợp đồng bị khóa lâu nhắc quản lý.",
     "checkinCard": "Máy chấm công",
-    "checkinHint": "Cách ghép lần quét từ máy vân tay với buổi tập đã đặt (D-070 đến D-072)."
+    "checkinHint": "Cách ghép lần quét từ máy vân tay với buổi tập đã đặt (D-070 đến D-072).",
+    "classesCard": "Lớp và PT",
+    "classesHint": "Lịch lớp và doanh thu phân bổ cho PT."
   },
   "trash": {
     "title": "Thùng rác",
@@ -2147,7 +2158,9 @@
     "branch": "Chi nhánh",
     "allBranches": "Tất cả chi nhánh",
     "staff": "Người phụ trách",
-    "allStaff": "Tất cả"
+    "allStaff": "Tất cả",
+    "trainer": "PT",
+    "allTrainers": "Tất cả PT"
   },
   "consultingReport": {
     "title": "Dashboard tư vấn",
@@ -2698,5 +2711,79 @@
       "6": "T7",
       "7": "CN"
     }
+  },
+  "ptRevenue": {
+    "title": "Doanh thu phân bổ PT",
+    "description": "Mỗi PT và hợp đồng một dòng: giá trị phân bổ, số buổi đã dạy trong kỳ và doanh thu PT, theo cột của GymMaster.",
+    "empty": "Chưa có buổi nào được tính cho PT trong kỳ này.",
+    "totals": "Tổng của kỳ",
+    "totalsOf": {
+      "credited": "Show dạy",
+      "classSessions": "Buổi lớp đã dạy",
+      "allocation": "Doanh thu PT",
+      "adjustments": "Điều chỉnh"
+    },
+    "trainerTotals": "Tổng của {name}",
+    "noRows": "PT này chỉ có buổi dạy lớp trong kỳ.",
+    "noService": "Chưa có dịch vụ",
+    "shiftValue": "{inside} trong ca · {outside} ngoài ca",
+    "ratesValue": "HH {commission}% · công {timesheet}%",
+    "note": "Giá trị phân bổ = giá trị hợp đồng sau khuyến mãi, không gồm VAT. Doanh thu PT = Show dạy × phân bổ mỗi buổi × tỷ lệ hoa hồng của dịch vụ × tỷ lệ công (trong Tham số). Show dạy gồm buổi Đã tập, vắng không báo trước và Burn Show; buổi bị xóa khỏi lịch sử không tính. Buổi thuộc kỳ theo ngày hẹn. Buổi lớp có ít nhất một khách có mặt được đếm riêng và chưa tính doanh thu. Cột Điều chỉnh có số khi PT được chi lương (M5.7).",
+    "fields": {
+      "member": "Hội viên",
+      "contract": "Hợp đồng",
+      "value": "Giá trị HĐ",
+      "allocationValue": "Giá trị phân bổ",
+      "sessions": "Số buổi",
+      "perSession": "Phân bổ mỗi buổi",
+      "credited": "Show dạy",
+      "shift": "Trong / ngoài ca",
+      "rates": "Tỷ lệ",
+      "allocation": "Doanh thu PT",
+      "adjustments": "Điều chỉnh",
+      "note": "Ghi chú"
+    }
+  },
+  "bookingReport": {
+    "title": "Báo cáo booking",
+    "description": "Các buổi PT trong kỳ: khách, số điện thoại, giờ check-in và check-out, trạng thái, nhân viên và ngày tạo.",
+    "empty": "Không có buổi nào trong kỳ này.",
+    "allTypes": "Tất cả loại",
+    "allStatuses": "Tất cả trạng thái",
+    "types": {
+      "PT": "Buổi PT",
+      "BURN_SHOW": "Burn Show"
+    },
+    "fields": {
+      "customer": "Khách hàng",
+      "phone": "Số điện thoại",
+      "scheduled": "Giờ hẹn",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "status": "Trạng thái",
+      "type": "Loại",
+      "staff": "Nhân viên",
+      "created": "Ngày tạo"
+    }
+  },
+  "overview": {
+    "period": "Kỳ",
+    "figures": "Số liệu của kỳ",
+    "fields": {
+      "newLeads": "Lead mới",
+      "conversionRate": "Tỷ lệ lead đã có hợp đồng",
+      "membersTraining": "Hội viên đã tập",
+      "activePts": "PT đang làm việc",
+      "endingSoon": "Hợp đồng sắp hết"
+    },
+    "conversionHint": "{count} lead đã có hợp đồng",
+    "endingSoonHint": "Hết hạn trong {days} ngày hoặc còn {sessions} buổi trở xuống (Tham số)",
+    "byHour": "Buổi PT theo giờ trong ngày",
+    "noSessions": "Chưa có buổi PT nào trong kỳ.",
+    "sessions": "Buổi PT",
+    "byMonth": "Doanh thu 12 tháng gần nhất",
+    "revenue": "Doanh thu",
+    "revenueTotal": "Tổng 12 tháng",
+    "note": "Lead mới tính theo ngày tạo. Hội viên đã tập là khách có buổi PT hoặc buổi lớp đã dùng trong kỳ. Buổi PT tính các buổi có tính công cho PT, theo giờ bắt đầu. Doanh thu là tiền đã thu có hiệu lực theo tháng, không gồm số dư đầu kỳ."
   }
 }

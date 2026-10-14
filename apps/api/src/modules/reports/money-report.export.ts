@@ -10,10 +10,10 @@ import { contractReport, exceptionPriceReport } from "./contract-report.service.
 /** The query keys of the money and contract report exports: the period and branch. */
 export const PERIOD_QUERY = ["from", "to", "branchId"] as const;
 
-const WHOLE = { vi: "Tổng cộng", en: "Total" };
+export const WHOLE = { vi: "Tổng cộng", en: "Total" };
 
 /** One page of a report held in memory, with its total row appended. */
-function pageOf<T>(all: T[], page: number, pageSize: number) {
+export function pageOf<T>(all: T[], page: number, pageSize: number) {
   return { items: all.slice((page - 1) * pageSize, page * pageSize), total: all.length };
 }
 

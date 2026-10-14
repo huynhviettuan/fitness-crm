@@ -49,7 +49,9 @@
     "exceptionPriceReport": "Exception prices",
     "sessionStatuses": "Session statuses",
     "checkin": "Check-in",
-    "classes": "Class schedule"
+    "classes": "Class schedule",
+    "ptRevenueReport": "PT revenue",
+    "bookingReport": "Booking report"
   },
   "status": {
     "customer": {
@@ -662,7 +664,8 @@
     "secondsOutOfRange": "The seconds must be between 1 and 3600.",
     "machineCodeTaken": "This code already belongs to someone else.",
     "weeksOutOfRange": "Weeks from 1 to 26.",
-    "belowEnrolled": "The capacity is below the customers already enrolled in an upcoming session."
+    "belowEnrolled": "The capacity is below the customers already enrolled in an upcoming session.",
+    "percentOutOfRange": "A rate from 0 to 100."
   },
   "contracts": {
     "title": "Contracts",
@@ -1325,7 +1328,12 @@
         "contractsExport": "Export the contract report",
         "exceptionPrices": "See the exception-price report",
         "exceptionPricesExport": "Export the exception-price report",
-        "manualConfirmations": "Report of sessions confirmed by hand"
+        "manualConfirmations": "Report of sessions confirmed by hand",
+        "ptRevenue": "View the PT revenue allocation",
+        "ptRevenueExport": "Export the PT revenue allocation",
+        "bookings": "View the booking report",
+        "bookingsExport": "Export the booking report",
+        "overview": "View the overview"
       },
       "service": {
         "view": "View services and price tiers",
@@ -1514,7 +1522,8 @@
       "scanRepeatSeconds": "Repeat scans counted once within (seconds)",
       "scanClockToleranceSeconds": "Machine clock tolerance (seconds)",
       "hangingEscalationHours": "Hours before a hanging session is escalated (0 = off)",
-      "classGenerateWeeks": "Weeks of class sessions made ahead"
+      "classGenerateWeeks": "Weeks of class sessions made ahead",
+      "ptTimesheetRate": "PT timesheet rate (%)"
     },
     "saved": "Parameters saved",
     "tasks": "Tasks",
@@ -1530,7 +1539,9 @@
     "contractsCard": "Contracts",
     "contractsHint": "When a customer counts as expiring soon, and when a long deactivation reminds the manager.",
     "checkinCard": "Check-in machines",
-    "checkinHint": "How scans from the fingerprint machines are paired with booked sessions (D-070 to D-072)."
+    "checkinHint": "How scans from the fingerprint machines are paired with booked sessions (D-070 to D-072).",
+    "classesCard": "Classes and PTs",
+    "classesHint": "The class schedule and the revenue allocated to PTs."
   },
   "trash": {
     "title": "Trash",
@@ -2147,7 +2158,9 @@
     "branch": "Branch",
     "allBranches": "All branches",
     "staff": "Person in charge",
-    "allStaff": "Everyone"
+    "allStaff": "Everyone",
+    "trainer": "PT",
+    "allTrainers": "All PTs"
   },
   "consultingReport": {
     "title": "Consulting dashboard",
@@ -2698,5 +2711,79 @@
       "6": "Sat",
       "7": "Sun"
     }
+  },
+  "ptRevenue": {
+    "title": "PT revenue allocation",
+    "description": "One row per PT and contract: the allocation value, the sessions taught in the period, and the PT's revenue, in GymMaster's columns.",
+    "empty": "No session is credited to a PT in this period.",
+    "totals": "Totals of the period",
+    "totalsOf": {
+      "credited": "Credited sessions",
+      "classSessions": "Class sessions taught",
+      "allocation": "PT allocation",
+      "adjustments": "Adjustments"
+    },
+    "trainerTotals": "Totals of {name}",
+    "noRows": "This PT only taught classes in the period.",
+    "noService": "No service",
+    "shiftValue": "{inside} in shift · {outside} outside",
+    "ratesValue": "Comm. {commission}% · timesheet {timesheet}%",
+    "note": "Allocation value = the contract value after discounts, excluding VAT. PT allocation = credited sessions × allocation per session × the service's commission rate × the timesheet rate (Parameters). Credited sessions are trained, no-show and Burn Show sessions; a session deleted from the history is not counted. A session belongs to the period of its scheduled day. Class sessions with at least one customer present are counted apart and carry no revenue yet. Adjustments get figures when PTs are paid out (M5.7).",
+    "fields": {
+      "member": "Member",
+      "contract": "Contract",
+      "value": "Contract value",
+      "allocationValue": "Allocation value",
+      "sessions": "Sessions",
+      "perSession": "Allocation per session",
+      "credited": "Credited",
+      "shift": "In / outside shift",
+      "rates": "Rates",
+      "allocation": "PT allocation",
+      "adjustments": "Adjustments",
+      "note": "Note"
+    }
+  },
+  "bookingReport": {
+    "title": "Booking report",
+    "description": "The PT sessions of the period: customer, phone, check-in and check-out times, status, staff, and created date.",
+    "empty": "There is no session in this period.",
+    "allTypes": "All types",
+    "allStatuses": "All statuses",
+    "types": {
+      "PT": "PT session",
+      "BURN_SHOW": "Burn Show"
+    },
+    "fields": {
+      "customer": "Customer",
+      "phone": "Phone",
+      "scheduled": "Scheduled",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "status": "Status",
+      "type": "Type",
+      "staff": "Staff",
+      "created": "Created"
+    }
+  },
+  "overview": {
+    "period": "Period",
+    "figures": "Figures of the period",
+    "fields": {
+      "newLeads": "New leads",
+      "conversionRate": "Leads with a contract",
+      "membersTraining": "Members who trained",
+      "activePts": "Active PTs",
+      "endingSoon": "Contracts ending soon"
+    },
+    "conversionHint": "{count} leads have a contract",
+    "endingSoonHint": "Ending within {days} days or {sessions} sessions left or fewer (Parameters)",
+    "byHour": "PT sessions by hour of the day",
+    "noSessions": "There is no PT session in the period.",
+    "sessions": "PT sessions",
+    "byMonth": "Revenue of the last 12 months",
+    "revenue": "Revenue",
+    "revenueTotal": "Total of 12 months",
+    "note": "New leads count by the day they were created. Members who trained have a PT session or a class session used in the period. PT sessions are the ones that credit a PT, by the hour they started. Revenue is valid receipts by month, without opening balances."
   }
 }
