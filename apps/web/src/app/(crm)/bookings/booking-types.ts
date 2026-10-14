@@ -10,6 +10,8 @@ export type BookingPermissions = {
   /** Delete a trained session from the history, and Burn Show: Admin's (D-026, D-028). */
   deleteHistory: boolean;
   burn: boolean;
+  /** Open the session log of a PT session (M7.3). */
+  log: boolean;
 };
 
 /** An employee who teaches PT (D-030). */

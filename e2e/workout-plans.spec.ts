@@ -1,27 +1,13 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { approvePendingViaApi } from "./support/approvals";
 import { bookingSetup } from "./support/data";
+import { workoutCatalog } from "./support/workouts";
 import { labels } from "./support/labels";
 
 // Workout plans and templates (brief §7.1, §7.2; FR-WKO-001, FR-WKO-002; D-033, D-018; docs/13 E2E-170): a coach writes a plan
 // from the catalog, sends it to the Master, and after approval it is read-only; a change is a revision.
 const w = labels.workoutPlans;
 const tab = labels.customers.tabs.plans;
-
-/** The catalog a plan is made from, named with the test's tag (so the search finds only these). */
-async function catalog(apiAs: Parameters<typeof bookingSetup>[0], tag: string) {
-  const admin = await apiAs("ADMIN");
-  const post = async (path: string, data: Record<string, unknown>) => {
-    const response = await admin.post(`/api/v1/workout/${path}`, { data });
-    expect(response.status(), path).toBe(201);
-    return (await response.json()) as { id: string };
-  };
-  await post("stages", { name: `Rehab ${tag}` });
-  const area = await post("areas", { code: `A-${tag}`, name: `Vùng ${tag}` });
-  await post("exercises", { name: `Squat ${tag}`, areaId: area.id, kind: "STRENGTH" });
-  await post("exercises", { name: `Chạy bộ ${tag}`, areaId: area.id, kind: "CARDIO" });
-  return { stage: `Rehab ${tag}`, squat: `Squat ${tag}`, run: `Chạy bộ ${tag}` };
-}
 
 test.describe("a coach's plan", () => {
   test.use(signedInAs("FITNESS_MANAGER"));
@@ -34,7 +20,7 @@ test.describe("a coach's plan", () => {
     workoutPlanPage: plan,
   }) => {
     const { customer, trainer } = await bookingSetup(apiAs, testTag);
-    const items = await catalog(apiAs, testTag);
+    const items = await workoutCatalog(apiAs, testTag);
     const notice = (text: string) => page.getByRole("region", { name: labels.common.notifications }).getByText(text);
 
     // Add a blank plan from the customer's page.
@@ -112,7 +98,7 @@ test.describe("a coach's plan", () => {
     workoutPlanPage: plan,
   }) => {
     const { customer, contract, trainer } = await bookingSetup(apiAs, testTag);
-    const items = await catalog(apiAs, testTag);
+    const items = await workoutCatalog(apiAs, testTag);
 
     await page.goto("/workouts/templates");
     await page.getByRole("button", { name: w.newTemplate, exact: true }).click();

@@ -4,13 +4,14 @@ import { ClipboardListIcon } from "lucide-react";
 import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
-import type { PlanSummary } from "@flow/shared/workouts";
+import type { LogSummary, PlanSummary } from "@flow/shared/workouts";
 import { NewPlanButton } from "../../workouts/new-plan-dialogs";
 
 /** The customer's workout plans (brief §4.2, §7.5): each opens its page; a new one is made blank or from a template. */
 export async function CustomerPlans({
   customerId,
   plans,
+  logs,
   canCreate,
   contracts,
   templates,
@@ -18,12 +19,14 @@ export async function CustomerPlans({
 }: {
   customerId: string;
   plans: PlanSummary[];
+  logs: LogSummary[];
   canCreate: boolean;
   contracts: { id: string; label: string }[];
   templates: { id: string; name: string }[];
   trainers: { id: string; name: string }[] | null;
 }) {
   const t = await getTranslations("workoutPlans");
+  const tl = await getTranslations("workoutLogs");
   return (
     <div className="space-y-4">
       {canCreate && (
@@ -51,6 +54,28 @@ export async function CustomerPlans({
           ))}
         </ul>
       )}
+      <section className="space-y-2" aria-label={tl("title")}>
+        <h3 className="text-sm font-medium">{tl("title")}</h3>
+        {logs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{tl("customerEmpty")}</p>
+        ) : (
+          <ul className="space-y-2">
+            {logs.map((log) => (
+              <li key={log.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
+                <div>
+                  <Link className="font-medium underline-offset-4 hover:underline" href={`/workouts/logs/${log.id}`}>
+                    <DateTime value={log.sessionDate} format="dateTime" />
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    {log.trainer.fullName} · {log.plan?.name ?? tl("noPlan")} ·{" "}
+                    {tl("exercisesCount", { count: log.exercises })}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

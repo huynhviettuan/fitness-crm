@@ -416,7 +416,7 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 - **Tests:** choosing a Cardio exercise shows the cardio fields; a plan waits for the Master's approval.
 - **Depends on:** M7.1.
 
-### M7.3 Session log on a phone
+### M7.3 Session log on a phone (done 2026-10-27: A-199 to A-205, OQ-059)
 
 - **Builds:** the log opens from a PT session and has three parts. Plan and actual sit on one row per set; actuals default to the plan, Flag to Normal, and Action to None.
 - **Source:** brief §7.3; FR-WKO-003; AC-20, AC-23.

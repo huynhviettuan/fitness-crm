@@ -58,7 +58,8 @@
     "notificationSettings": "Staff notifications",
     "workoutCatalog": "Workout catalogs",
     "workoutPlans": "Customers' plans",
-    "workoutTemplates": "Plan templates"
+    "workoutTemplates": "Plan templates",
+    "workoutLogs": "Session logs"
   },
   "status": {
     "customer": {
@@ -697,7 +698,11 @@
     "emptyPlan": "The plan has no exercise to send for approval.",
     "tooManyDecimals": "At most two decimals.",
     "cycle": "An area cannot go under itself or under one of its own children.",
-    "tooDeep": "The area tree is too deep."
+    "tooDeep": "The area tree is too deep.",
+    "plannedSetRemoved": "A set that is in the plan cannot be removed.",
+    "plannedExerciseRemoved": "An exercise that is in the plan cannot be removed.",
+    "notLoggable": "The session was cancelled, so it has no log.",
+    "noDefaultOption": "The Flag or Action list has no active entry."
   },
   "contracts": {
     "title": "Contracts",
@@ -1162,7 +1167,8 @@
     "burnDescription": "Adds a trained session by hand, to restore one deleted by mistake or one that took place without a booking. It uses one session of the contract and credits the PT like Đã tập, and is marked as added by hand.",
     "burnReason": "Reason for adding",
     "burned": "Session added, {remaining} left",
-    "addedByHand": "Added by hand"
+    "addedByHand": "Added by hand",
+    "openLog": "Session log"
   },
   "finance": {
     "title": "Finance",
@@ -1396,7 +1402,8 @@
         "view": "View the workout catalogs and plans",
         "catalog": "Keep the workout catalogs",
         "plan": "Write workout plans and templates",
-        "review": "Review workout plans (Master)"
+        "review": "Review workout plans (Master)",
+        "log": "Write session logs"
       }
     },
     "resources": {
@@ -1674,7 +1681,8 @@
       "workout_area": "Body area",
       "workout_exercise": "Exercise",
       "workout_stage": "Plan stage",
-      "workout_plan": "Workout plan"
+      "workout_plan": "Workout plan",
+      "workout_log": "Session log"
     },
     "verbs": {
       "created": "Created",
@@ -3119,5 +3127,58 @@
       "note": "Notes",
       "saved": "Evaluation saved"
     }
+  },
+  "workoutLogs": {
+    "title": "Session logs",
+    "description": "The log of each PT session: before, during (plan and actual on one row) and after.",
+    "pageTitle": "Session log · {customer}",
+    "pageDescription": "Coach {trainer} · Contract {contract}",
+    "customerPage": "Customer profile",
+    "back": "All logs",
+    "empty": "No logs yet.",
+    "customerEmpty": "This customer has no session logs yet.",
+    "noPlan": "No plan",
+    "exercisesCount": "{count, plural, one {# exercise} other {# exercises}}",
+    "parts": {
+      "info": "Session",
+      "pre": "Before the session",
+      "during": "During the session",
+      "post": "After the session"
+    },
+    "fields": {
+      "date": "Session",
+      "customer": "Customer",
+      "trainer": "Coach",
+      "plan": "Plan",
+      "exercises": "Exercises",
+      "sets": "Sets",
+      "goal": "Session goal",
+      "stress": "Stress today",
+      "energy": "Energy today",
+      "impact": "Effect on the session",
+      "srpe": "Session difficulty (sRPE)",
+      "energyAfter": "Energy after the session",
+      "summary": "Session summary",
+      "coachNotes": "Coach Notes",
+      "flag": "Flag",
+      "action": "Action",
+      "setNote": "Note",
+      "scaleNote": "Note",
+      "otherNote": "Say what the other choice is"
+    },
+    "plan": "Plan",
+    "planStrength": "{weight} kg × {reps} · RIR {rir}",
+    "planCardio": "{minutes} min · {speed} km/h · {heartRate} bpm",
+    "noPlanForSet": "Added set",
+    "followsSession": "{plan} · week {week}, session {number}",
+    "noExercises": "No exercises in this session yet. Add one from the catalog.",
+    "addedByCoach": "Added by coach",
+    "addSet": "Add set",
+    "removeSet": "Remove set",
+    "removeExercise": "Remove exercise",
+    "save": "Save log",
+    "saved": "Log saved",
+    "problems": "Fix before saving:",
+    "readOnly": "You can only read this log."
   }
 }

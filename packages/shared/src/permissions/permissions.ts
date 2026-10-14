@@ -57,7 +57,7 @@ export const PERMISSION_GROUPS = {
   // Admin, Fitness Manager, and the coach of a class mark attendance.
   classes: ["class.view", "class.manage", "class.enroll", "class.attend"],
   // Workout plans and logs (brief §7, M7): seeing the catalogs and plans, and keeping the catalogs (M7.1, A-188).
-  workouts: ["workout.view", "workout.catalog", "workout.plan", "workout.review"],
+  workouts: ["workout.view", "workout.catalog", "workout.plan", "workout.log", "workout.review"],
   // Fingerprint-ready check-in (M5.3b, D-069 to D-072): the machines are Admin's; reviewing scans is Admin's and Fitness Manager's.
   checkin: ["checkin.review", "checkin.devices"],
   // Employee profiles and working schedules (brief §8.4).

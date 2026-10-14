@@ -226,6 +226,8 @@ model User {
   notificationDeliveries      NotificationDelivery[]
   workoutPlansCreated         WorkoutPlan[]              @relation("WorkoutPlanCreatedBy")
   workoutPlansApproved        WorkoutPlan[]              @relation("WorkoutPlanApprovedBy")
+  workoutLogsCreated          WorkoutLog[]               @relation("WorkoutLogCreatedBy")
+  workoutLogsUpdated          WorkoutLog[]               @relation("WorkoutLogUpdatedBy")
 
   @@index([roleId])
   @@map("users")
@@ -268,6 +270,7 @@ model Branch {
   ptPayouts PtPayout[]
 
   workoutPlans WorkoutPlan[]
+  workoutLogs  WorkoutLog[]
 
   @@map("branches")
 }
@@ -399,6 +402,10 @@ model Option {
 
   paymentMethods       Payment[]                  @relation("PaymentMethod")
   burnShowReasons      Booking[]                  @relation("BookingAddedReason")
+  logPreImpacts        WorkoutLog[]               @relation("WorkoutLogPreImpact")
+  logPostSummaries     WorkoutLog[]               @relation("WorkoutLogPostSummary")
+  logSetFlags          WorkoutLogSet[]            @relation("WorkoutLogSetFlag")
+  logSetActions        WorkoutLogSet[]            @relation("WorkoutLogSetAction")
   cashMethods          CashTransaction[]          @relation("CashMethod")
   cashOpeningMethods   CashOpeningBalance[]       @relation("CashOpeningMethod")
   paymentDeleteReasons Payment[]                  @relation("PaymentDeleteReason")
@@ -724,6 +731,7 @@ model Customer {
   mergeAsMerged    PersonMerge?      @relation("MergeMerged")
   classAttendances ClassAttendance[]
   workoutPlans     WorkoutPlan[]
+  workoutLogs      WorkoutLog[]
 
   @@index([phone])
   @@index([searchName])
@@ -1135,6 +1143,7 @@ model Employee {
   classSessionsCoached ClassSession[]       @relation("ClassSessionCoach")
   ptPayouts            PtPayout[]           @relation("PtPayoutTrainer")
   workoutPlans         WorkoutPlan[]        @relation("WorkoutPlanTrainer")
+  workoutLogs          WorkoutLog[]         @relation("WorkoutLogTrainer")
 
   @@index([branchId])
   @@index([searchName])
@@ -1206,7 +1215,8 @@ model Booking {
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  session Session?
+  session    Session?
+  workoutLog WorkoutLog?
 
   // The pairing of a customer's scan and the PT's scan with this booking (M5.3b, D-070). Both set, in time: confirmed.
   customerScanId     String?        @map("customer_scan_id") @db.Uuid
@@ -2103,6 +2113,7 @@ model WorkoutExercise {
   createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
   planItems   WorkoutPlanItem[]
+  logItems    WorkoutLogItem[]
 
   @@index([areaId])
   @@index([equipmentId])
@@ -2180,6 +2191,7 @@ model WorkoutPlan {
   updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   stages WorkoutPlanStage[]
+  logs   WorkoutLog[]
 
   @@index([kind, status])
   @@index([customerId])
@@ -2213,6 +2225,7 @@ model WorkoutPlanSession {
   position Int
 
   items WorkoutPlanItem[]
+  logs  WorkoutLog[]
 
   @@index([stageId])
   @@map("workout_plan_sessions")
@@ -2226,7 +2239,8 @@ model WorkoutPlanItem {
   exercise   WorkoutExercise    @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
   position   Int
 
-  sets WorkoutPlanSet[]
+  sets     WorkoutPlanSet[]
+  logItems WorkoutLogItem[]
 
   @@index([sessionId])
   @@index([exerciseId])
@@ -2252,4 +2266,113 @@ model WorkoutPlanSet {
 
   @@index([itemId])
   @@map("workout_plan_sets")
+}
+
+// ---------------------------------------------------------------------------
+// The session log (M7.3, brief §7.3, FR-WKO-003): one per PT session, in three parts. The plan's targets are copied onto
+// each set when the log is made, so the plan and the actual sit on one row and later changes to the plan do not move
+// what was logged. Scales 1 to 10 and the CHECKs are in the migration SQL.
+// ---------------------------------------------------------------------------
+
+model WorkoutLog {
+  id              String              @id @default(uuid()) @db.Uuid
+  bookingId       String              @unique @map("booking_id") @db.Uuid
+  booking         Booking             @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  branchId        String              @map("branch_id") @db.Uuid
+  branch          Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customerId      String              @map("customer_id") @db.Uuid
+  customer        Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  trainerId       String              @map("trainer_id") @db.Uuid
+  trainer         Employee            @relation("WorkoutLogTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
+  // The plan and the planned session this log follows; empty for a session without a plan.
+  planId          String?             @map("plan_id") @db.Uuid
+  plan            WorkoutPlan?        @relation(fields: [planId], references: [id], onDelete: SetNull)
+  planSessionId   String?             @map("plan_session_id") @db.Uuid
+  planSession     WorkoutPlanSession? @relation(fields: [planSessionId], references: [id], onDelete: SetNull)
+  goal            String?
+  preStress       Int?                @map("pre_stress")
+  preStressNote   String?             @map("pre_stress_note")
+  preEnergy       Int?                @map("pre_energy")
+  preEnergyNote   String?             @map("pre_energy_note")
+  preImpactId     String?             @map("pre_impact_option_id") @db.Uuid
+  preImpact       Option?             @relation("WorkoutLogPreImpact", fields: [preImpactId], references: [id], onDelete: Restrict)
+  preImpactNote   String?             @map("pre_impact_note")
+  postSrpe        Int?                @map("post_srpe")
+  postSrpeNote    String?             @map("post_srpe_note")
+  postEnergy      Int?                @map("post_energy")
+  postEnergyNote  String?             @map("post_energy_note")
+  postSummaryId   String?             @map("post_summary_option_id") @db.Uuid
+  postSummary     Option?             @relation("WorkoutLogPostSummary", fields: [postSummaryId], references: [id], onDelete: Restrict)
+  postSummaryNote String?             @map("post_summary_note")
+  coachNotes      String?             @map("coach_notes")
+  createdById     String              @map("created_by") @db.Uuid
+  createdBy       User                @relation("WorkoutLogCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById     String?             @map("updated_by") @db.Uuid
+  updatedBy       User?               @relation("WorkoutLogUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  items WorkoutLogItem[]
+
+  @@index([customerId, createdAt])
+  @@index([trainerId])
+  @@index([branchId])
+  @@index([planId])
+  @@map("workout_logs")
+}
+
+model WorkoutLogItem {
+  id         String           @id @default(uuid()) @db.Uuid
+  logId      String           @map("log_id") @db.Uuid
+  log        WorkoutLog       @relation(fields: [logId], references: [id], onDelete: Cascade)
+  exerciseId String           @map("exercise_id") @db.Uuid
+  exercise   WorkoutExercise  @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  // The planned exercise this row came from; empty for one the coach added.
+  planItemId String?          @map("plan_item_id") @db.Uuid
+  planItem   WorkoutPlanItem? @relation(fields: [planItemId], references: [id], onDelete: SetNull)
+  position   Int
+
+  sets WorkoutLogSet[]
+
+  @@index([logId])
+  @@index([exerciseId])
+  @@map("workout_log_items")
+}
+
+model WorkoutLogSet {
+  id                  String         @id @default(uuid()) @db.Uuid
+  itemId              String         @map("item_id") @db.Uuid
+  item                WorkoutLogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  setNo               Int            @map("set_no")
+  // The plan's targets as they were when the log was made (null on a set the coach added).
+  planned             Boolean        @default(false)
+  planWeight          Decimal?       @map("plan_weight") @db.Decimal(7, 2)
+  planReps            Int?           @map("plan_reps")
+  planRestSeconds     Int?           @map("plan_rest_seconds")
+  planRir             Int?           @map("plan_rir")
+  planTempo           String?        @map("plan_tempo")
+  planTechnique       String?        @map("plan_technique")
+  planVideoUrl        String?        @map("plan_video_url")
+  planDurationMinutes Decimal?       @map("plan_duration_minutes") @db.Decimal(6, 1)
+  planSpeed           Decimal?       @map("plan_speed") @db.Decimal(5, 1)
+  planHeartRate       Int?           @map("plan_heart_rate")
+  planNotes           String?        @map("plan_notes")
+  weight              Decimal?       @db.Decimal(7, 2)
+  reps                Int?
+  rir                 Int?
+  durationMinutes     Decimal?       @map("duration_minutes") @db.Decimal(6, 1)
+  speed               Decimal?       @db.Decimal(5, 1)
+  heartRate           Int?           @map("heart_rate")
+  flagId              String         @map("flag_option_id") @db.Uuid
+  flag                Option         @relation("WorkoutLogSetFlag", fields: [flagId], references: [id], onDelete: Restrict)
+  flagNote            String?        @map("flag_note")
+  actionId            String         @map("action_option_id") @db.Uuid
+  action              Option         @relation("WorkoutLogSetAction", fields: [actionId], references: [id], onDelete: Restrict)
+  actionNote          String?        @map("action_note")
+  note                String?
+
+  @@index([itemId])
+  @@index([flagId])
+  @@index([actionId])
+  @@map("workout_log_sets")
 }

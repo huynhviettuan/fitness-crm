@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-27 — M7.3: the session log
+
+- **Log** (A-199 to A-205): one log for each PT session, opened from the session; plan and actual on one row per set, the actual starting as the plan; before, during and after parts with 1 to 10 scales; Flag and Action from the admin lists.
+- **Open**: OQ-059. Docs 04, 07, 09, 13, 16, 18, 28; E2E-171.
+
 ## 2026-10-26 — M7.2: templates and customer plans
 
 - **Plans** (A-192 to A-198): templates and customer plans of stages, sessions, exercises and sets with Strength and Cardio targets; approved by the Master through the approval engine, locked once in use, changed by revisions, made from a template, with PT and Master reviews.

@@ -6,16 +6,16 @@ import { PLAN_KINDS, PLAN_LIMITS, PLAN_STATUSES } from "./plan.domain.js";
 // Workout plans and templates (M7.2, brief §7.1, §7.2): inputs. Error messages are i18n keys under `validation.*`.
 
 const emptyToNull = (value: string) => (value === "" ? null : value);
-const text = (max: number) =>
+export const text = (max: number) =>
   z.string().trim().max(max, { error: "tooLong" }).refine(hasNoControlCharacters, { error: "invalidCharacters" });
-const optionalText = (max: number) => text(max).transform(emptyToNull).nullable().prefault("");
+export const optionalText = (max: number) => text(max).transform(emptyToNull).nullable().prefault("");
 const name = text(150).pipe(z.string().min(1, { error: "required" }));
-const optionalUuid = z
+export const optionalUuid = z
   .union([z.literal(""), z.null(), z.uuid({ error: "invalidChoice" })])
   .transform((value) => (value === "" ? null : value));
 
 /** A number typed in a form: "" or nothing is empty, "12,5" is 12.5; anything else must be a number in range. */
-function target(min: number, max: number, options: { integer?: boolean } = {}) {
+export function target(min: number, max: number, options: { integer?: boolean } = {}) {
   return z
     .union([z.number(), z.string(), z.null()], { error: "invalidNumber" })
     .transform((value, ctx): number | null => {

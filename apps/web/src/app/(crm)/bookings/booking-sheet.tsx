@@ -4,7 +4,16 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTimeZone, useTranslations } from "next-intl";
-import { BanIcon, CalendarClockIcon, CheckCheckIcon, HistoryIcon, LogInIcon, TrashIcon, UserXIcon } from "lucide-react";
+import {
+  BanIcon,
+  CalendarClockIcon,
+  CheckCheckIcon,
+  HistoryIcon,
+  LogInIcon,
+  NotebookPenIcon,
+  TrashIcon,
+  UserXIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -33,6 +42,7 @@ import {
   deleteTrainedSessionAction,
   markNoShowAction,
 } from "./actions";
+import { openLogAction } from "../workouts/logs/actions";
 import { BookingFormDialog } from "./booking-form";
 import type { BookingPermissions, BookingRow, TrainerOption } from "./booking-types";
 
@@ -153,6 +163,7 @@ function BookingActions({
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [rescheduling, setRescheduling] = useState(false);
   const [checkingIn, startCheckIn] = useTransition();
+  const [openingLog, startOpenLog] = useTransition();
 
   /** Runs an action; on failure shows the error and keeps the dialog open. */
   const run = async <T,>(action: () => Promise<ActionResult<T>>, success: (data: T) => string) => {
@@ -170,6 +181,25 @@ function BookingActions({
 
   return (
     <div className="flex flex-wrap justify-end gap-2">
+      {permissions.log && (booking.holdsSlot || booking.statusRule.locksOnSet) && (
+        <Button
+          variant="outline"
+          disabled={openingLog}
+          onClick={() =>
+            startOpenLog(async () => {
+              const result = await openLogAction(booking.id);
+              if (!result.ok) {
+                notify.error(errorMessage(result.code));
+                return;
+              }
+              router.push(`/workouts/logs/${result.data.id}`);
+            })
+          }
+        >
+          <NotebookPenIcon />
+          {t("openLog")}
+        </Button>
+      )}
       {permissions.manage && canReschedule(facts) && (
         <Button variant="outline" onClick={() => setRescheduling(true)}>
           <CalendarClockIcon />

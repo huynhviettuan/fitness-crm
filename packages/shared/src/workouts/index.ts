@@ -4,3 +4,6 @@ export * from "./catalog.view.js";
 export * from "./plan.domain.js";
 export * from "./plan.schema.js";
 export * from "./plan.view.js";
+export * from "./log.domain.js";
+export * from "./log.schema.js";
+export * from "./log.view.js";

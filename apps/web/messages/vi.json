@@ -58,7 +58,8 @@
     "notificationSettings": "Thông báo cho nhân viên",
     "workoutCatalog": "Danh mục giáo án",
     "workoutPlans": "Giáo án của khách",
-    "workoutTemplates": "Template giáo án"
+    "workoutTemplates": "Template giáo án",
+    "workoutLogs": "Nhật ký buổi tập"
   },
   "status": {
     "customer": {
@@ -697,7 +698,11 @@
     "emptyPlan": "Giáo án chưa có bài tập nào để gửi duyệt.",
     "tooManyDecimals": "Tối đa hai chữ số thập phân.",
     "cycle": "Không thể đặt khu vực dưới chính nó hoặc dưới khu vực con của nó.",
-    "tooDeep": "Cây khu vực quá sâu."
+    "tooDeep": "Cây khu vực quá sâu.",
+    "plannedSetRemoved": "Set có trong giáo án thì không xóa được.",
+    "plannedExerciseRemoved": "Bài tập có trong giáo án thì không xóa được.",
+    "notLoggable": "Buổi tập đã hủy nên không có nhật ký.",
+    "noDefaultOption": "Danh sách Flag hoặc Action chưa có mục nào đang dùng."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1162,7 +1167,8 @@
     "burnDescription": "Thêm tay một buổi Đã tập: khôi phục buổi xóa nhầm hoặc buổi tập không có lịch hẹn. Buổi này trừ một buổi của hợp đồng và tính cho PT như Đã tập, và được đánh dấu là thêm tay.",
     "burnReason": "Lý do thêm",
     "burned": "Đã thêm buổi tập, còn lại {remaining} buổi",
-    "addedByHand": "Thêm tay"
+    "addedByHand": "Thêm tay",
+    "openLog": "Nhật ký buổi tập"
   },
   "finance": {
     "title": "Tài chính",
@@ -1396,7 +1402,8 @@
         "view": "Xem danh mục và giáo án",
         "catalog": "Soạn danh mục giáo án",
         "plan": "Soạn giáo án và template",
-        "review": "Đánh giá giáo án (Master)"
+        "review": "Đánh giá giáo án (Master)",
+        "log": "Ghi nhật ký buổi tập"
       }
     },
     "resources": {
@@ -1674,7 +1681,8 @@
       "workout_area": "Khu vực cơ thể",
       "workout_exercise": "Bài tập",
       "workout_stage": "Stage giáo án",
-      "workout_plan": "Giáo án"
+      "workout_plan": "Giáo án",
+      "workout_log": "Nhật ký buổi tập"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -3119,5 +3127,58 @@
       "note": "Ghi chú",
       "saved": "Đã lưu đánh giá"
     }
+  },
+  "workoutLogs": {
+    "title": "Nhật ký buổi tập",
+    "description": "Nhật ký từng buổi PT: trước buổi, trong buổi (kế hoạch và thực tế cùng một dòng) và sau buổi.",
+    "pageTitle": "Nhật ký buổi tập · {customer}",
+    "pageDescription": "Coach {trainer} · Hợp đồng {contract}",
+    "customerPage": "Hồ sơ khách",
+    "back": "Danh sách nhật ký",
+    "empty": "Chưa có nhật ký nào.",
+    "customerEmpty": "Khách chưa có nhật ký buổi tập nào.",
+    "noPlan": "Không có giáo án",
+    "exercisesCount": "{count, plural, one {# bài tập} other {# bài tập}}",
+    "parts": {
+      "info": "Thông tin buổi",
+      "pre": "Trước buổi tập",
+      "during": "Trong buổi tập",
+      "post": "Sau buổi tập"
+    },
+    "fields": {
+      "date": "Buổi tập",
+      "customer": "Khách",
+      "trainer": "Coach",
+      "plan": "Giáo án",
+      "exercises": "Số bài",
+      "sets": "Số set",
+      "goal": "Mục tiêu buổi",
+      "stress": "Mức stress trong ngày",
+      "energy": "Mức năng lượng trong ngày",
+      "impact": "Ảnh hưởng đến buổi tập",
+      "srpe": "Độ khó buổi tập (sRPE)",
+      "energyAfter": "Năng lượng sau buổi",
+      "summary": "Tổng kết buổi tập",
+      "coachNotes": "Coach Notes",
+      "flag": "Flag",
+      "action": "Action",
+      "setNote": "Ghi chú",
+      "scaleNote": "Ghi chú",
+      "otherNote": "Ghi rõ lựa chọn khác"
+    },
+    "plan": "Kế hoạch",
+    "planStrength": "{weight} kg × {reps} · RIR {rir}",
+    "planCardio": "{minutes} phút · {speed} km/h · {heartRate} bpm",
+    "noPlanForSet": "Set thêm",
+    "followsSession": "{plan} · tuần {week}, buổi {number}",
+    "noExercises": "Buổi này chưa có bài tập. Thêm bài tập từ danh mục.",
+    "addedByCoach": "Coach thêm",
+    "addSet": "Thêm set",
+    "removeSet": "Xóa set",
+    "removeExercise": "Xóa bài tập",
+    "save": "Lưu nhật ký",
+    "saved": "Đã lưu nhật ký",
+    "problems": "Cần sửa trước khi lưu:",
+    "readOnly": "Bạn chỉ xem được nhật ký này."
   }
 }

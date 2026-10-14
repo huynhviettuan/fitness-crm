@@ -628,7 +628,7 @@ export function PlanEditor({
 }
 
 /** The catalog's exercises, searched on screen (accents and capitals ignored), to put one in a session. */
-function ExercisePicker({
+export function ExercisePicker({
   open,
   exercises,
   onClose,

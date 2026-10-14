@@ -12,6 +12,7 @@ import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/booking
 import { CheckinPage } from "./pages/checkin";
 import { ClassesPage } from "./pages/classes";
 import { WorkoutCatalogPage } from "./pages/workout-catalog";
+import { WorkoutLogPage } from "./pages/workout-logs";
 import { WorkoutPlanPage } from "./pages/workout-plans";
 import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
@@ -44,6 +45,7 @@ type Fixtures = {
   classesPage: ClassesPage;
   workoutCatalogPage: WorkoutCatalogPage;
   workoutPlanPage: WorkoutPlanPage;
+  workoutLogPage: WorkoutLogPage;
   employeesPage: EmployeesPage;
   tasksPage: TasksPage;
   leadsPage: LeadsPage;
@@ -115,6 +117,7 @@ export const test = base.extend<Fixtures>({
   classesPage: async ({ page }, use) => use(new ClassesPage(page)),
   workoutCatalogPage: async ({ page }, use) => use(new WorkoutCatalogPage(page)),
   workoutPlanPage: async ({ page }, use) => use(new WorkoutPlanPage(page)),
+  workoutLogPage: async ({ page }, use) => use(new WorkoutLogPage(page)),
   employeesPage: async ({ page }, use) => use(new EmployeesPage(page)),
   tasksPage: async ({ page }, use) => use(new TasksPage(page)),
   leadsPage: async ({ page }, use) => use(new LeadsPage(page)),
@@ -375,6 +378,15 @@ export const test = base.extend<Fixtures>({
       });
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: payoutIds } } });
       await prisma.ptPayout.deleteMany({ where: { id: { in: payoutIds } } });
+      // Session logs of the tagged bookings and customers go before the plans, the catalog and the bookings they point at (M7.3).
+      const logIds = ids(
+        await prisma.workoutLog.findMany({
+          where: { OR: [{ bookingId: { in: bookingIds } }, { customerId: { in: customerIds } }] },
+          select: { id: true },
+        }),
+      );
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: logIds } } });
+      await prisma.workoutLog.deleteMany({ where: { id: { in: logIds } } });
       // Workout plans of tagged customers or named with the tag; revisions and plans made from a template go first (M7.2).
       const planIds = ids(
         await prisma.workoutPlan.findMany({
