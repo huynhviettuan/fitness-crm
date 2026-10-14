@@ -8,3 +8,5 @@ export * from "./log.domain.js";
 export * from "./log.schema.js";
 export * from "./log.view.js";
 export * from "./escalation.schema.js";
+export * from "./dashboard.js";
+export * from "./progress.js";

@@ -120,3 +120,56 @@ export async function sessionsWithPlan(
       : first;
   return { customer, catalog, day, bookings: [first.id, second.id] };
 }
+
+/**
+ * Opens the log of a session as the manager and saves it with a Flag and an Action on the first set of its first exercise
+ * (codes of the option lists, A-191), a stress of 6 before and an sRPE of 8 after. Returns the log's id.
+ */
+export async function loggedSession(
+  apiAs: ApiAs,
+  bookingId: string,
+  codes: { flag: string; action: string },
+): Promise<string> {
+  const manager = await apiAs("FITNESS_MANAGER");
+  const opened = await manager.post("/api/v1/workout/logs", { data: { bookingId } });
+  expect(opened.status(), "open log").toBe(201);
+  const log = (await opened.json()) as {
+    id: string;
+    goal: string | null;
+    items: {
+      id: string;
+      exercise: { id: string };
+      sets: { id: string; weight: number | null; reps: number | null }[];
+    }[];
+  };
+  const idOf = async (list: string, code: string) => {
+    const { items } = (await (await manager.get(`/api/v1/option-lists/${list}/options`)).json()) as {
+      items: { id: string; code: string | null }[];
+    };
+    return items.find((option) => option.code === code)!.id;
+  };
+  const flagId = await idOf("workoutFlags", codes.flag);
+  const actionId = await idOf("workoutActions", codes.action);
+  const none = await idOf("workoutActions", "NONE");
+  const normal = await idOf("workoutFlags", "NORMAL");
+  const saved = await manager.put(`/api/v1/workout/logs/${log.id}`, {
+    data: {
+      goal: log.goal,
+      preStress: 6,
+      postSrpe: 8,
+      items: log.items.map((item, itemIndex) => ({
+        id: item.id,
+        exerciseId: item.exercise.id,
+        sets: item.sets.map((set, setIndex) => ({
+          id: set.id,
+          weight: set.weight,
+          reps: set.reps,
+          flagId: itemIndex === 0 && setIndex === 0 ? flagId : normal,
+          actionId: itemIndex === 0 && setIndex === 0 ? actionId : none,
+        })),
+      })),
+    },
+  });
+  expect(saved.status(), "save log").toBe(200);
+  return log.id;
+}

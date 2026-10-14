@@ -9,6 +9,11 @@ import {
   logListQuerySchema,
   logSetInputSchema,
   nextPlannedSession,
+  previousWeekOf,
+  sharePercent,
+  weekOf,
+  workoutDashboardQuerySchema,
+  workoutDrillQuerySchema,
 } from "./index.js";
 
 const id = "3f2b8a64-5d1e-4c1b-9a7e-0b6f6f0c1a11";
@@ -100,5 +105,32 @@ describe("a log in the API", () => {
     expect(logListQuerySchema.parse({})).toMatchObject({ page: 1, pageSize: 20 });
     expect(logListQuerySchema.safeParse({ pageSize: 101 }).success).toBe(false);
     expect(logListQuerySchema.safeParse({ customerId: "nope" }).success).toBe(false);
+  });
+});
+
+describe("the weekly dashboard (M7.5)", () => {
+  const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
+  it("runs a week Monday to Sunday, whatever day of it is asked for", () => {
+    for (const asked of ["2026-10-12", "2026-10-15", "2026-10-18"]) {
+      expect(weekOf(day(asked))).toEqual({ from: day("2026-10-12"), to: day("2026-10-18") });
+    }
+    expect(weekOf(day("2026-10-19")).from).toEqual(day("2026-10-19"));
+    expect(previousWeekOf(weekOf(day("2026-10-15")))).toEqual({ from: day("2026-10-05"), to: day("2026-10-11") });
+  });
+
+  it("gives shares with one decimal, and 0 when nothing was recorded", () => {
+    expect(sharePercent(1, 3)).toBe(33.3);
+    expect(sharePercent(2, 3)).toBe(66.7);
+    expect(sharePercent(5, 5)).toBe(100);
+    expect(sharePercent(0, 0)).toBe(0);
+  });
+
+  it("takes the week as dd/MM/yyyy and a drill-down by kind", () => {
+    expect(workoutDashboardQuerySchema.safeParse({ week: "15/10/2026" }).success).toBe(true);
+    expect(workoutDashboardQuerySchema.safeParse({ week: "" }).data).toEqual({});
+    expect(workoutDashboardQuerySchema.safeParse({ week: "99/99/2026" }).success).toBe(false);
+    expect(workoutDrillQuerySchema.safeParse({ kind: "flag" }).data).toMatchObject({ page: 1, pageSize: 20 });
+    expect(workoutDrillQuerySchema.safeParse({ kind: "other" }).success).toBe(false);
+    expect(workoutDrillQuerySchema.safeParse({ kind: "flag", optionId: "nope" }).success).toBe(false);
   });
 });

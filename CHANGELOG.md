@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-29 — M7.5: workout progress and the weekly dashboard
+
+- **Dashboard** (A-212 to A-215): Flag and Action shares of the week's sets, customers with a Flag beyond Normal, the week before, escalations waiting, and drill-down to the sets.
+- **Progress** (A-216): sessions against the plan, stage, scales, exercises and the Flag and Action history in the customer's profile.
+- **Open**: OQ-061. Docs 07, 09, 13, 16, 18, 28; E2E-173.
+
 ## 2026-10-28 — M7.4: escalation
 
 - **Escalation** (A-206 to A-211): *Dừng + Escalation* on a set tells the manager and the Master at once (app, email, push), makes a high-priority task in Giao việc, and waits until one of them marks it seen with a direction; the coach is told.

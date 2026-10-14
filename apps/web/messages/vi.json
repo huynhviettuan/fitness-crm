@@ -60,7 +60,8 @@
     "workoutPlans": "Giáo án của khách",
     "workoutTemplates": "Template giáo án",
     "workoutLogs": "Nhật ký buổi tập",
-    "workoutEscalations": "Escalation buổi tập"
+    "workoutEscalations": "Escalation buổi tập",
+    "workoutReport": "Dashboard giáo án"
   },
   "status": {
     "customer": {
@@ -1373,7 +1374,8 @@
         "ptRevenueExport": "Xuất doanh thu phân bổ PT",
         "bookings": "Xem báo cáo booking",
         "bookingsExport": "Xuất báo cáo booking",
-        "overview": "Xem tổng quan"
+        "overview": "Xem tổng quan",
+        "workouts": "Xem dashboard giáo án theo tuần"
       },
       "service": {
         "view": "Xem dịch vụ và bậc giá",
@@ -3213,5 +3215,75 @@
     "markSeen": "Đánh dấu đã xem",
     "confirmSeen": "Đã xem và gửi hướng xử lý",
     "seen": "Đã đánh dấu đã xem"
+  },
+  "workoutDashboard": {
+    "title": "Dashboard giáo án theo tuần",
+    "description": "Trên mọi khách: tỷ lệ từng Flag và từng Action tính trên số set đã ghi trong tuần, số khách có Flag khác Normal, so với tuần trước và các escalation đang chờ. Bấm vào một tỷ lệ để xem các set.",
+    "filters": "Bộ lọc dashboard giáo án",
+    "apply": "Áp dụng",
+    "week": "Tuần chứa ngày",
+    "weekHint": "dd/MM/yyyy, trống là tuần này",
+    "branch": "Chi nhánh",
+    "allBranches": "Mọi chi nhánh",
+    "weekOf": "Tuần",
+    "flags": "Flag",
+    "actions": "Action",
+    "drill": "Các set của tỷ lệ đã chọn",
+    "empty": "Không có set nào.",
+    "previous": "Tuần trước: {value}",
+    "percentValue": "{value}%",
+    "escalationsHint": "Đang chờ quản lý hoặc Master xử lý",
+    "exerciseSet": "{exercise} · set {set}",
+    "totals": {
+      "sets": "Set đã ghi",
+      "sessions": "Buổi có nhật ký",
+      "nonNormal": "Khách có Flag khác Normal",
+      "escalations": "Escalation đang chờ"
+    },
+    "fields": {
+      "option": "Mục",
+      "sets": "Số set",
+      "percent": "Tỷ lệ",
+      "previousPercent": "Tuần trước",
+      "change": "Chênh lệch (điểm %)",
+      "session": "Buổi tập",
+      "customer": "Khách",
+      "trainer": "Coach",
+      "exercise": "Bài tập",
+      "flag": "Flag",
+      "action": "Action",
+      "note": "Ghi chú"
+    }
+  },
+  "workoutProgress": {
+    "title": "Tiến độ tập luyện",
+    "summary": "Giáo án đang dùng",
+    "noPlan": "Khách chưa có giáo án đã duyệt.",
+    "noSessions": "Khách chưa có buổi tập nào được ghi nhật ký.",
+    "sessionsDone": "Số buổi đã tập trên kế hoạch",
+    "doneOfPlanned": "{done}/{planned} buổi",
+    "phase": "Phase",
+    "stage": "Stage hiện tại",
+    "goal": "Goal",
+    "sessions": "Các buổi tập",
+    "history": "Lịch sử Flag và Action",
+    "noHistory": "Chưa có set nào có Flag khác Normal hoặc Action khác None.",
+    "exerciseSet": "{exercise} · set {set}",
+    "fields": {
+      "session": "Buổi tập",
+      "stress": "Stress",
+      "energy": "Năng lượng",
+      "srpe": "sRPE",
+      "energyAfter": "Năng lượng sau",
+      "flagged": "Set có Flag",
+      "escalations": "Escalation",
+      "sets": "Số set",
+      "topWeight": "Mức tạ cao nhất",
+      "totalReps": "Tổng reps",
+      "exercise": "Bài tập",
+      "flag": "Flag",
+      "action": "Action",
+      "note": "Ghi chú"
+    }
   }
 }

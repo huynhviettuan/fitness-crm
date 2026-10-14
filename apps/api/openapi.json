@@ -5479,6 +5479,136 @@
         "x-permission": "report.overview"
       }
     },
+    "/api/v1/reports/workouts": {
+      "get": {
+        "operationId": "ReportsController_workouts",
+        "parameters": [
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutDashboard"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.workouts"
+      }
+    },
+    "/api/v1/reports/workouts/sets": {
+      "get": {
+        "operationId": "ReportsController_workoutSets",
+        "parameters": [
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "optionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutDrill"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reports"
+        ],
+        "x-permission": "report.workouts"
+      }
+    },
     "/api/v1/files": {
       "post": {
         "operationId": "FilesController_upload",
@@ -13532,6 +13662,47 @@
         "x-permission": "workout.review"
       }
     },
+    "/api/v1/workout/progress/{customerId}": {
+      "get": {
+        "operationId": "WorkoutProgressController_get",
+        "parameters": [
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutProgress"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-progress"
+        ],
+        "x-permission": "workout.view"
+      }
+    },
     "/api/v1/notification-preferences": {
       "get": {
         "operationId": "NotificationPreferencesController_get",
@@ -15412,6 +15583,7 @@
                             "report.bookings",
                             "report.bookingsExport",
                             "report.overview",
+                            "report.workouts",
                             "report.manualConfirmations",
                             "payment.view",
                             "payment.record",
@@ -15859,6 +16031,7 @@
                         "report.bookings",
                         "report.bookingsExport",
                         "report.overview",
+                        "report.workouts",
                         "report.manualConfirmations",
                         "payment.view",
                         "payment.record",
@@ -16154,6 +16327,7 @@
                         "report.bookings",
                         "report.bookingsExport",
                         "report.overview",
+                        "report.workouts",
                         "report.manualConfirmations",
                         "payment.view",
                         "payment.record",
@@ -18794,6 +18968,7 @@
                 "report.bookings",
                 "report.bookingsExport",
                 "report.overview",
+                "report.workouts",
                 "report.manualConfirmations",
                 "payment.view",
                 "payment.record",
@@ -23008,6 +23183,314 @@
           "runningOutSessions",
           "sessionsByHour",
           "revenueByMonth"
+        ]
+      },
+      "WorkoutDashboard": {
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ]
+          },
+          "previousWeek": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ]
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "sets": {
+                "type": "integer"
+              },
+              "sessions": {
+                "type": "integer"
+              },
+              "customers": {
+                "type": "integer"
+              },
+              "previousSets": {
+                "type": "integer"
+              },
+              "previousSessions": {
+                "type": "integer"
+              },
+              "previousCustomers": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "sets",
+              "sessions",
+              "customers",
+              "previousSets",
+              "previousSessions",
+              "previousCustomers"
+            ]
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "option": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "labelVi": {
+                      "type": "string"
+                    },
+                    "labelEn": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "isOther": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "labelVi",
+                    "labelEn",
+                    "code",
+                    "isOther"
+                  ]
+                },
+                "sets": {
+                  "type": "integer"
+                },
+                "percent": {
+                  "type": "number"
+                },
+                "previousSets": {
+                  "type": "integer"
+                },
+                "previousPercent": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "option",
+                "sets",
+                "percent",
+                "previousSets",
+                "previousPercent"
+              ]
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "option": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "labelVi": {
+                      "type": "string"
+                    },
+                    "labelEn": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "isOther": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "labelVi",
+                    "labelEn",
+                    "code",
+                    "isOther"
+                  ]
+                },
+                "sets": {
+                  "type": "integer"
+                },
+                "percent": {
+                  "type": "number"
+                },
+                "previousSets": {
+                  "type": "integer"
+                },
+                "previousPercent": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "option",
+                "sets",
+                "percent",
+                "previousSets",
+                "previousPercent"
+              ]
+            }
+          },
+          "nonNormalCustomers": {
+            "type": "integer"
+          },
+          "previousNonNormalCustomers": {
+            "type": "integer"
+          },
+          "openEscalations": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "week",
+          "previousWeek",
+          "totals",
+          "flags",
+          "actions",
+          "nonNormalCustomers",
+          "previousNonNormalCustomers",
+          "openEscalations"
+        ]
+      },
+      "WorkoutDrill": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "logId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "sessionDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "branch": {
+                  "$ref": "#/components/schemas/BranchRef"
+                },
+                "customer": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "customerCode": {
+                      "type": "string"
+                    },
+                    "fullName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "customerCode",
+                    "fullName"
+                  ]
+                },
+                "trainer": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "employeeCode": {
+                      "type": "string"
+                    },
+                    "fullName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "employeeCode",
+                    "fullName"
+                  ]
+                },
+                "exercise": {
+                  "type": "string"
+                },
+                "setNo": {
+                  "type": "integer"
+                },
+                "flag": {
+                  "$ref": "#/components/schemas/ChosenOption"
+                },
+                "action": {
+                  "$ref": "#/components/schemas/ChosenOption"
+                },
+                "note": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "logId",
+                "sessionDate",
+                "branch",
+                "customer",
+                "trainer",
+                "exercise",
+                "setNo",
+                "flag",
+                "action",
+                "note"
+              ]
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
         ]
       },
       "StoredFile": {
@@ -27455,6 +27938,231 @@
           "canMarkSeen"
         ]
       },
+      "WorkoutProgress": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "plan": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "phase": {
+                "nullable": true,
+                "type": "string"
+              },
+              "goal": {
+                "nullable": true,
+                "type": "string"
+              },
+              "done": {
+                "type": "integer"
+              },
+              "planned": {
+                "type": "integer"
+              },
+              "currentStage": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "phase",
+              "goal",
+              "done",
+              "planned",
+              "currentStage"
+            ]
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "logId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "sessionDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "stress": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "energy": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "srpe": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "energyAfter": {
+                  "nullable": true,
+                  "type": "integer"
+                },
+                "flagged": {
+                  "type": "integer"
+                },
+                "escalations": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "logId",
+                "sessionDate",
+                "stress",
+                "energy",
+                "srpe",
+                "energyAfter",
+                "flagged",
+                "escalations"
+              ]
+            }
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "exercise": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "STRENGTH",
+                        "CARDIO"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "kind"
+                  ]
+                },
+                "points": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "logId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "sessionDate": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "sets": {
+                        "type": "integer"
+                      },
+                      "topWeight": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "totalReps": {
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "durationMinutes": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "averageSpeed": {
+                        "nullable": true,
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "logId",
+                      "sessionDate",
+                      "sets",
+                      "topWeight",
+                      "totalReps",
+                      "durationMinutes",
+                      "averageSpeed"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "exercise",
+                "points"
+              ]
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "logId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "sessionDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "exercise": {
+                  "type": "string"
+                },
+                "setNo": {
+                  "type": "integer"
+                },
+                "flag": {
+                  "$ref": "#/components/schemas/ChosenOption"
+                },
+                "action": {
+                  "$ref": "#/components/schemas/ChosenOption"
+                },
+                "note": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "logId",
+                "sessionDate",
+                "exercise",
+                "setNo",
+                "flag",
+                "action",
+                "note"
+              ]
+            }
+          }
+        },
+        "required": [
+          "customerId",
+          "plan",
+          "sessions",
+          "exercises",
+          "history"
+        ]
+      },
       "NotificationPreferences": {
         "type": "object",
         "properties": {
@@ -28036,6 +28744,7 @@
                     "report.bookings",
                     "report.bookingsExport",
                     "report.overview",
+                    "report.workouts",
                     "report.manualConfirmations",
                     "payment.view",
                     "payment.record",
@@ -28324,6 +29033,7 @@
                 "report.bookings",
                 "report.bookingsExport",
                 "report.overview",
+                "report.workouts",
                 "report.manualConfirmations",
                 "payment.view",
                 "payment.record",

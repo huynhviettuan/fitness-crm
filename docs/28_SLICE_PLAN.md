@@ -430,7 +430,7 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 - **Tests:** E2E-111 (the escalation part).
 - **Depends on:** M7.3.
 
-### M7.5 Progress tab and weekly workout dashboard
+### M7.5 Progress tab and weekly workout dashboard (done 2026-10-29: A-212 to A-217, OQ-061)
 
 - **Builds:**
   - **Customer tabs** Workout plans and Session logs and progress: sessions done against planned, phase and stage, trends per exercise, stress, energy, sRPE, and the Flag and Action history.

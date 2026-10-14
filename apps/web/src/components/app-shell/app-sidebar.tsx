@@ -94,6 +94,7 @@ const NAV_ITEMS: Record<NavItemKey, { href: string; icon: typeof LayoutDashboard
   workoutLogs: { href: "/workouts/logs", icon: NotebookPenIcon },
   workoutEscalations: { href: "/workouts/escalations", icon: OctagonAlertIcon },
   bookingReport: { href: "/reports/bookings", icon: CalendarRangeIcon },
+  workoutReport: { href: "/reports/workouts", icon: ActivityIcon },
   customers: { href: "/customers", icon: UsersIcon },
   contracts: { href: "/contracts", icon: FileTextIcon },
   calendar: { href: "/calendar", icon: CalendarDaysIcon },

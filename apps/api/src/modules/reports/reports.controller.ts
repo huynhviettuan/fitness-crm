@@ -11,6 +11,8 @@ import {
 } from "@flow/shared/finance";
 import { contractReportSchema, exceptionPriceReportSchema } from "@flow/shared/contracts";
 import { bookingReportPageSchema, overviewSchema, ptRevenueReportSchema } from "@flow/shared/reports";
+import { workoutDashboardSchema, workoutDrillSchema } from "@flow/shared/workouts";
+import { workoutDashboard, workoutDrill } from "../workouts/dashboard.service.js";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { exportList } from "../../platform/export/export.service.js";
@@ -195,5 +197,24 @@ export class ReportsController {
   @ApiResult(overviewSchema)
   async overview(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
     return encode(overviewSchema, await overview(actor, queryOf(request, PERIOD_QUERY)));
+  }
+
+  /** The weekly workout dashboard: Flag and Action shares, customers with a Flag other than Normal, the week before, escalations waiting. */
+  @Get("workouts")
+  @RequirePermission("report.workouts")
+  @ApiOptionalQuery("week", "branchId")
+  @ApiResult(workoutDashboardSchema)
+  async workouts(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    return encode(workoutDashboardSchema, await workoutDashboard(actor, queryOf(request, ["week", "branchId"])));
+  }
+
+  /** The sets behind one share of the dashboard, newest session first. */
+  @Get("workouts/sets")
+  @RequirePermission("report.workouts")
+  @ApiOptionalQuery("week", "branchId", "kind", "optionId", "page", "pageSize")
+  @ApiResult(workoutDrillSchema)
+  async workoutSets(@CurrentActor() actor: CurrentUser, @Req() request: Request) {
+    const filters = ["week", "branchId", "kind", "optionId", "page", "pageSize"] as const;
+    return encode(workoutDrillSchema, await workoutDrill(actor, queryOf(request, filters)));
   }
 }

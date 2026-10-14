@@ -29,6 +29,7 @@ export const NAV_SECTIONS = [
           "ptRevenueReport",
           "ptPayouts",
           "bookingReport",
+          "workoutReport",
         ],
       },
     ],

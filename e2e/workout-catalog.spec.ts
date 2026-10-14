@@ -97,10 +97,11 @@ test.describe("who may see and keep the catalogs", () => {
   test.describe("a PT", () => {
     test.use(signedInAs("PT"));
 
-    test("sees the catalogs but has nothing to add or edit", async ({ workoutCatalogPage: catalog }) => {
+    test("sees the catalogs but has nothing to add or edit", async ({ page, workoutCatalogPage: catalog }) => {
       await catalog.goto("equipment");
       await expect(catalog.addButton).toHaveCount(0);
-      await expect(catalog.row(w.edit)).toHaveCount(0);
+      // The edit buttons, not rows whose text happens to contain the word: other tests name entries too.
+      await expect(page.getByRole("main").getByRole("button", { name: new RegExp(`^${w.edit}`) })).toHaveCount(0);
     });
   });
 

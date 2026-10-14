@@ -4,7 +4,8 @@ import { ClipboardListIcon } from "lucide-react";
 import { DateTime } from "@/components/date-time";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
-import type { LogSummary, PlanSummary } from "@flow/shared/workouts";
+import type { LogSummary, PlanSummary, WorkoutProgress } from "@flow/shared/workouts";
+import { CustomerProgress } from "./customer-progress";
 import { NewPlanButton } from "../../workouts/new-plan-dialogs";
 
 /** The customer's workout plans (brief §4.2, §7.5): each opens its page; a new one is made blank or from a template. */
@@ -12,6 +13,7 @@ export async function CustomerPlans({
   customerId,
   plans,
   logs,
+  progress,
   canCreate,
   contracts,
   templates,
@@ -20,6 +22,7 @@ export async function CustomerPlans({
   customerId: string;
   plans: PlanSummary[];
   logs: LogSummary[];
+  progress: WorkoutProgress;
   canCreate: boolean;
   contracts: { id: string; label: string }[];
   templates: { id: string; name: string }[];
@@ -54,6 +57,7 @@ export async function CustomerPlans({
           ))}
         </ul>
       )}
+      <CustomerProgress progress={progress} />
       <section className="space-y-2" aria-label={tl("title")}>
         <h3 className="text-sm font-medium">{tl("title")}</h3>
         {logs.length === 0 ? (

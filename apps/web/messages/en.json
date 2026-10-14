@@ -60,7 +60,8 @@
     "workoutPlans": "Customers' plans",
     "workoutTemplates": "Plan templates",
     "workoutLogs": "Session logs",
-    "workoutEscalations": "Workout escalations"
+    "workoutEscalations": "Workout escalations",
+    "workoutReport": "Workout dashboard"
   },
   "status": {
     "customer": {
@@ -1373,7 +1374,8 @@
         "ptRevenueExport": "Export the PT revenue allocation",
         "bookings": "View the booking report",
         "bookingsExport": "Export the booking report",
-        "overview": "View the overview"
+        "overview": "View the overview",
+        "workouts": "View the weekly workout dashboard"
       },
       "service": {
         "view": "View services and price tiers",
@@ -3213,5 +3215,75 @@
     "markSeen": "Mark seen",
     "confirmSeen": "Seen: send the direction",
     "seen": "Marked as seen"
+  },
+  "workoutDashboard": {
+    "title": "Weekly workout dashboard",
+    "description": "Over every customer: the share of each Flag and each Action among the sets recorded in the week, the customers with a Flag other than Normal, the comparison with the week before and the escalations waiting. Click a share to see its sets.",
+    "filters": "Workout dashboard filters",
+    "apply": "Apply",
+    "week": "Week containing",
+    "weekHint": "dd/MM/yyyy, empty is this week",
+    "branch": "Branch",
+    "allBranches": "All branches",
+    "weekOf": "Week",
+    "flags": "Flag",
+    "actions": "Action",
+    "drill": "The sets of the chosen share",
+    "empty": "No sets.",
+    "previous": "Last week: {value}",
+    "percentValue": "{value}%",
+    "escalationsHint": "Waiting for the manager or the Master",
+    "exerciseSet": "{exercise} · set {set}",
+    "totals": {
+      "sets": "Sets recorded",
+      "sessions": "Sessions with a log",
+      "nonNormal": "Customers with a Flag other than Normal",
+      "escalations": "Escalations waiting"
+    },
+    "fields": {
+      "option": "Entry",
+      "sets": "Sets",
+      "percent": "Share",
+      "previousPercent": "Last week",
+      "change": "Change (% points)",
+      "session": "Session",
+      "customer": "Customer",
+      "trainer": "Coach",
+      "exercise": "Exercise",
+      "flag": "Flag",
+      "action": "Action",
+      "note": "Note"
+    }
+  },
+  "workoutProgress": {
+    "title": "Training progress",
+    "summary": "Plan in use",
+    "noPlan": "The customer has no approved plan.",
+    "noSessions": "No session of this customer has a log yet.",
+    "sessionsDone": "Sessions done of the plan",
+    "doneOfPlanned": "{done}/{planned} sessions",
+    "phase": "Phase",
+    "stage": "Current stage",
+    "goal": "Goal",
+    "sessions": "Sessions",
+    "history": "Flag and Action history",
+    "noHistory": "No set has a Flag other than Normal or an Action other than None.",
+    "exerciseSet": "{exercise} · set {set}",
+    "fields": {
+      "session": "Session",
+      "stress": "Stress",
+      "energy": "Energy",
+      "srpe": "sRPE",
+      "energyAfter": "Energy after",
+      "flagged": "Flagged sets",
+      "escalations": "Escalations",
+      "sets": "Sets",
+      "topWeight": "Top weight",
+      "totalReps": "Total reps",
+      "exercise": "Exercise",
+      "flag": "Flag",
+      "action": "Action",
+      "note": "Note"
+    }
   }
 }

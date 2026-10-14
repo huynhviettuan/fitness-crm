@@ -25,6 +25,7 @@ import { listPayments } from "@/lib/api/finance";
 import { listCustomerEmails } from "@/lib/api/mail";
 import { listTrainersOfDay } from "@/lib/api/employees";
 import { listLogs } from "@/lib/api/workout-logs";
+import { getWorkoutProgress } from "@/lib/api/workout-reports";
 import { listPlans } from "@/lib/api/workout-plans";
 import { env } from "@/lib/env";
 import { formatDateOnly } from "@/lib/format";
@@ -345,9 +346,10 @@ async function loadPlans(
   customerId: string,
   contracts: { id: string; contractCode: string; packageName: string; status: string }[],
 ) {
-  const [plans, logs, templates, trainers] = await Promise.all([
+  const [plans, logs, progress, templates, trainers] = await Promise.all([
     listPlans({ customerId, kind: "CUSTOMER", pageSize: 100 }),
     listLogs({ customerId, pageSize: 100 }),
+    getWorkoutProgress(customerId),
     can(user, "workout.plan") ? listPlans({ kind: "TEMPLATE", status: "APPROVED", pageSize: 100 }) : null,
     // A PT's plan is their own; whoever reviews names the coach.
     can(user, "workout.plan") && can(user, "workout.review")
@@ -357,6 +359,7 @@ async function loadPlans(
   return {
     plans: plans.items,
     logs: logs.items,
+    progress,
     canCreate: can(user, "workout.plan"),
     contracts: contracts
       .filter((contract) => contract.status === "ACTIVE" || contract.status === "FROZEN")

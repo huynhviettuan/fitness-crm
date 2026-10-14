@@ -103,3 +103,24 @@ export async function usedPlanSessionIds(db: Db, planId: string): Promise<Set<st
   });
   return new Set(rows.flatMap((row) => (row.planSessionId ? [row.planSessionId] : [])));
 }
+
+/** The customer's latest approved plan matching `where`, with its stages and sessions: the plan in use (M7.5). */
+export function findPlanInUse(db: Db, where: Prisma.WorkoutPlanWhereInput) {
+  return db.workoutPlan.findFirst({
+    where: { AND: [{ kind: "CUSTOMER", status: "APPROVED" }, where] },
+    orderBy: [{ approvedAt: "desc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      phase: true,
+      goal: true,
+      stages: {
+        orderBy: { position: "asc" },
+        select: {
+          stage: { select: { name: true } },
+          sessions: { orderBy: { position: "asc" }, select: { id: true } },
+        },
+      },
+    },
+  });
+}
