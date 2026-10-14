@@ -62,7 +62,8 @@
     "workoutLogs": "Nhật ký buổi tập",
     "workoutEscalations": "Escalation buổi tập",
     "workoutReport": "Dashboard giáo án",
-    "taskReport": "Báo cáo giao việc"
+    "taskReport": "Báo cáo giao việc",
+    "intakeSources": "Nguồn nhận lead"
   },
   "status": {
     "customer": {
@@ -612,7 +613,9 @@
     "PAYOUT_NOTHING_TO_PAY": "Không còn gì để chi cho PT trong kỳ này: các buổi đã được chi, hoặc tổng sau điều chỉnh không dương.",
     "PLAN_NOT_EDITABLE": "Giáo án đã gửi duyệt hoặc đã duyệt nên không sửa được. Hãy tạo bản sửa.",
     "PLAN_NOT_APPROVED": "Chỉ giáo án đang dùng mới tạo được bản sửa.",
-    "CONTRACT_ON_HOLD": "Những ngày này đang bảo lưu nên không đặt lịch được."
+    "CONTRACT_ON_HOLD": "Những ngày này đang bảo lưu nên không đặt lịch được.",
+    "INTAKE_IN_PROGRESS": "Lần gửi này đang được xử lý, vui lòng thử lại sau ít giây.",
+    "RATE_LIMITED": "Gửi quá nhanh, vui lòng thử lại sau."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -1292,7 +1295,8 @@
       "promotions": "Khuyến mãi và voucher",
       "checkin": "Máy chấm công",
       "classes": "Lịch lớp",
-      "workouts": "Giáo án"
+      "workouts": "Giáo án",
+      "intake": "Nguồn nhận lead"
     },
     "labels": {
       "user": {
@@ -1439,6 +1443,9 @@
         "plan": "Soạn giáo án và template",
         "review": "Đánh giá giáo án (Master)",
         "log": "Ghi nhật ký buổi tập"
+      },
+      "intake": {
+        "manage": "Quản lý các nguồn tự động chuyển lead vào hệ thống"
       }
     },
     "resources": {
@@ -1722,7 +1729,8 @@
       "workout_log": "Nhật ký buổi tập",
       "workout_escalation": "Escalation buổi tập",
       "contract_change_voucher": "Phiếu biến động",
-      "import_run": "Lần nhập dữ liệu"
+      "import_run": "Lần nhập dữ liệu",
+      "intake_source": "Nguồn nhận lead"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1770,7 +1778,8 @@
       "branch_transferred_by_voucher": "Chuyển chi nhánh (phiếu biến động)",
       "created_by_transfer": "Tạo từ chuyển nhượng",
       "cancelled_by_voucher": "Hủy hợp đồng (phiếu biến động)",
-      "imported": "Nhập từ hệ thống cũ"
+      "imported": "Nhập từ hệ thống cũ",
+      "key_rotated": "Đổi khóa"
     },
     "fields": {
       "at": "Thời điểm",
@@ -3441,6 +3450,46 @@
       "open": "Đang làm",
       "cancelled": "Đã hủy",
       "onTimeRate": "Tỷ lệ đúng hạn"
+    }
+  },
+  "intake": {
+    "title": "Nguồn nhận lead",
+    "description": "Các kết nối tự động chuyển lead vào hệ thống (form website, sau này là WhatsApp, Messenger, Instagram, Gmail, Zalo). Mỗi nguồn có khóa riêng.",
+    "empty": "Chưa có nguồn nào. Thêm nguồn đầu tiên để nhận lead từ form website.",
+    "note": "Khóa chỉ hiện một lần khi tạo hoặc đổi. Khóa phải nằm ở máy chủ của website (không để trong trang web mà khách xem được) và gửi trong tiêu đề x-intake-key đến /api/v1/intake/website.",
+    "add": "Thêm nguồn",
+    "addBody": "Lead nhận từ nguồn này thuộc chi nhánh và kênh dưới đây, và được chia cho tư vấn theo lượt.",
+    "register": "Đăng ký",
+    "sourcePlaceholder": "Nguồn lead (không bắt buộc)",
+    "keyTitle": "Khóa của nguồn",
+    "keyBody": "Sao chép khóa này ngay bây giờ và đặt vào máy chủ của website. Khóa không hiện lại; nếu mất, hãy đổi khóa mới.",
+    "keyDone": "Đã lưu khóa",
+    "newKey": "Đổi khóa",
+    "activate": "Bật",
+    "deactivate": "Tắt",
+    "active": "Đang bật",
+    "inactive": "Đã tắt",
+    "conversation": "Tin nhắn nhận được",
+    "noMessages": "Chưa có tin nhắn nào.",
+    "kinds": {
+      "WEBSITE": "Form website",
+      "WHATSAPP": "WhatsApp",
+      "MESSENGER": "Messenger",
+      "INSTAGRAM": "Instagram",
+      "EMAIL": "Gmail",
+      "ZALO": "Zalo OA",
+      "TIKTOK": "TikTok"
+    },
+    "fields": {
+      "name": "Tên nguồn",
+      "kind": "Loại",
+      "branch": "Chi nhánh",
+      "channel": "Kênh liên hệ",
+      "source": "Nguồn lead",
+      "status": "Trạng thái",
+      "received": "Đã nhận",
+      "lastReceived": "Lần nhận cuối",
+      "actions": "Thao tác"
     }
   }
 }

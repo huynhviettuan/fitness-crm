@@ -1872,6 +1872,47 @@
         "x-permission": "lead.create"
       }
     },
+    "/api/v1/persons/{id}/messages": {
+      "get": {
+        "operationId": "PersonsController_messages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeMessageList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "persons"
+        ],
+        "x-permission": "lead.view"
+      }
+    },
     "/api/v1/persons/{id}/intake-history": {
       "get": {
         "operationId": "PersonsController_intakeHistory",
@@ -10659,6 +10700,302 @@
         "x-permission": "checkin.devices"
       }
     },
+    "/api/v1/intake/website": {
+      "post": {
+        "operationId": "IntakeController_website",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "externalId": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "phone": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "email": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "message": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "pageUrl": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "externalId",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeAnswer"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      }
+    },
+    "/api/v1/intake/sources": {
+      "get": {
+        "operationId": "IntakeSourcesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeSourceList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "intake.manage"
+      },
+      "post": {
+        "operationId": "IntakeSourcesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "WEBSITE"
+                    ]
+                  },
+                  "branchId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "channelId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeSourceCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "intake.manage"
+      }
+    },
+    "/api/v1/intake/sources/{id}": {
+      "patch": {
+        "operationId": "IntakeSourcesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceId": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "name",
+                  "active",
+                  "channelId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeSource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "intake.manage"
+      }
+    },
+    "/api/v1/intake/sources/{id}/key": {
+      "post": {
+        "operationId": "IntakeSourcesController_rotate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeSourceCreated"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "intake.manage"
+      }
+    },
     "/api/v1/classes": {
       "get": {
         "operationId": "ClassesController_list",
@@ -16617,6 +16954,7 @@
                             "workout.review",
                             "checkin.review",
                             "checkin.devices",
+                            "intake.manage",
                             "employee.view",
                             "employee.manage",
                             "task.view",
@@ -17068,6 +17406,7 @@
                         "workout.review",
                         "checkin.review",
                         "checkin.devices",
+                        "intake.manage",
                         "employee.view",
                         "employee.manage",
                         "task.view",
@@ -17367,6 +17706,7 @@
                         "workout.review",
                         "checkin.review",
                         "checkin.devices",
+                        "intake.manage",
                         "employee.view",
                         "employee.manage",
                         "task.view",
@@ -19804,6 +20144,7 @@
               "CONTRACT_NOT_ACTIVE",
               "CONTRACT_FROZEN",
               "CONTRACT_ON_HOLD",
+              "INTAKE_IN_PROGRESS",
               "CONTRACT_NO_REMAINING_SESSIONS",
               "CONTRACT_HAS_CHECKED_IN_BOOKING",
               "PAYMENT_CONTRACT_CANCELLED",
@@ -19824,6 +20165,7 @@
               "APPROVAL_NOT_PENDING",
               "APPROVAL_ALREADY_PENDING",
               "UNSUPPORTED_MEDIA_TYPE",
+              "RATE_LIMITED",
               "BOOKING_CUSTOMER_CONTRACT_MISMATCH",
               "BOOKING_OUTSIDE_CONTRACT_PERIOD",
               "BOOKING_OUTSIDE_SERVICE_HOURS",
@@ -20018,6 +20360,7 @@
                 "workout.review",
                 "checkin.review",
                 "checkin.devices",
+                "intake.manage",
                 "employee.view",
                 "employee.manage",
                 "task.view",
@@ -21429,6 +21772,85 @@
           "code",
           "reopened",
           "pic"
+        ]
+      },
+      "IntakeMessageList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntakeMessage"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "IntakeMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "IN",
+              "OUT"
+            ]
+          },
+          "body": {
+            "nullable": true,
+            "type": "string"
+          },
+          "senderName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "WEBSITE",
+                  "WHATSAPP",
+                  "MESSENGER",
+                  "INSTAGRAM",
+                  "EMAIL",
+                  "ZALO",
+                  "TIKTOK"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "kind"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "direction",
+          "body",
+          "senderName",
+          "receivedAt",
+          "source"
         ]
       },
       "PersonIntakeHistory": {
@@ -27039,6 +27461,170 @@
           "key"
         ]
       },
+      "IntakeAnswer": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "CUSTOMER"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "duplicate": {
+            "type": "boolean"
+          },
+          "existingPerson": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "personId",
+          "stage",
+          "code",
+          "duplicate",
+          "existingPerson"
+        ]
+      },
+      "IntakeSourceList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntakeSource"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "IntakeSource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "WEBSITE",
+              "WHATSAPP",
+              "MESSENGER",
+              "INSTAGRAM",
+              "EMAIL",
+              "ZALO",
+              "TIKTOK"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "branch": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "channel": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "labelVi": {
+                "type": "string"
+              },
+              "labelEn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "labelVi",
+              "labelEn"
+            ]
+          },
+          "source": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "labelVi": {
+                "type": "string"
+              },
+              "labelEn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "labelVi",
+              "labelEn"
+            ]
+          },
+          "lastReceivedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "received": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "active",
+          "branch",
+          "channel",
+          "source",
+          "lastReceivedAt",
+          "received"
+        ]
+      },
+      "IntakeSourceCreated": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/IntakeSource"
+          },
+          "key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "key"
+        ]
+      },
       "GymClassList": {
         "type": "object",
         "properties": {
@@ -30384,6 +30970,7 @@
                     "workout.review",
                     "checkin.review",
                     "checkin.devices",
+                    "intake.manage",
                     "employee.view",
                     "employee.manage",
                     "task.view",
@@ -30676,6 +31263,7 @@
                 "workout.review",
                 "checkin.review",
                 "checkin.devices",
+                "intake.manage",
                 "employee.view",
                 "employee.manage",
                 "task.view",

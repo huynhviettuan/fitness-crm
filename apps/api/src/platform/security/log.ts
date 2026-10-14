@@ -10,7 +10,9 @@ export type SecurityEvent =
   | "auth.sign_in.failed"
   | "auth.unauthenticated"
   | "authz.denied"
-  | "request.cross_origin_rejected";
+  | "request.cross_origin_rejected"
+  | "intake.rate_limited"
+  | "intake.actor_unusable";
 
 export function logSecurityEvent(event: SecurityEvent, fields: Record<string, unknown>, level: Level = "warn"): void {
   const minimum = (process.env.LOG_LEVEL as keyof typeof LEVEL_ORDER) ?? "info";

@@ -61,6 +61,8 @@ export const PERMISSION_GROUPS = {
   workouts: ["workout.view", "workout.catalog", "workout.plan", "workout.log", "workout.review"],
   // Fingerprint-ready check-in (M5.3b, D-069 to D-072): the machines are Admin's; reviewing scans is Admin's and Fitness Manager's.
   checkin: ["checkin.review", "checkin.devices"],
+  // The lead intake gateway (M10.1, D-044): the sources that hand leads to the system are Admin's.
+  intake: ["intake.manage"],
   // Employee profiles and working schedules (brief §8.4).
   employees: ["employee.view", "employee.manage"],
   // Giao việc (brief §8.2): every default role works and assigns tasks (09_RBAC.md).

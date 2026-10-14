@@ -329,6 +329,15 @@ export const test = base.extend<Fixtures>({
         data: { mergedIntoId: null, mergedAt: null },
       });
       await prisma.trashEntry.deleteMany({ where: { entityType: "person", entityId: { in: customerIds } } });
+      // Lead sources named with the tag, the messages they and the tagged people received (M10.1); messages point at both.
+      const intakeSourceIds = ids(
+        await prisma.intakeSource.findMany({ where: { name: { contains: tag } }, select: { id: true } }),
+      );
+      await prisma.intakeMessage.deleteMany({
+        where: { OR: [{ sourceId: { in: intakeSourceIds } }, { personId: { in: customerIds } }] },
+      });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: intakeSourceIds } } });
+      await prisma.intakeSource.deleteMany({ where: { id: { in: intakeSourceIds } } });
       // Check-in machines named with the tag, the scans they and the tagged people made (M5.3b); the bookings point at
       // scans, and scans at bookings, so the bookings let go first.
       const deviceIds = ids(

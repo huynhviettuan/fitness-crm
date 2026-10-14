@@ -44,6 +44,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   if (can(user, "config.manage")) items.push("options", "sessionStatuses", "parameters", "checklist", "auditCriteria");
   if (can(user, "script.manage")) items.push("scripts");
   if (can(user, "config.manage")) items.push("notificationSettings");
+  if (can(user, "intake.manage")) items.push("intakeSources");
   if (can(user, "workout.view"))
     items.push("workoutCatalog", "workoutPlans", "workoutTemplates", "workoutLogs", "workoutEscalations");
   if (can(user, "mail.template")) items.push("emailTemplates");

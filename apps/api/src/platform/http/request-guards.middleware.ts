@@ -25,7 +25,12 @@ export function requestGuards(request: Request, response: Response, next: NextFu
     request.method === "POST" &&
     /\/checkin\/scans\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
     typeof request.headers["x-device-key"] === "string";
-  if (origin !== appOrigin && !isMachine) {
+  // A lead source (the website form, M10.1) is not a browser either: it proves itself with its intake key.
+  const isSource =
+    request.method === "POST" &&
+    /\/intake\/website\/?$/.test(request.originalUrl.split("?")[0] ?? "") &&
+    typeof request.headers["x-intake-key"] === "string";
+  if (origin !== appOrigin && !isMachine && !isSource) {
     logSecurityEvent("request.cross_origin_rejected", {
       method: request.method,
       path: request.path,

@@ -11,6 +11,8 @@ import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
 import { ApiErrors, ApiResult } from "../../platform/http/openapi.js";
+import { messageListSchema } from "@flow/shared/intake";
+import { listMessages } from "../intake/intake.service.js";
 import { addInquiry, personIntakeHistory } from "./lead-inquiry.service.js";
 import { mergePersons } from "./lead-merge.service.js";
 
@@ -50,6 +52,14 @@ export class PersonsController {
     @Body({ schema: leadInquiryInputSchema }) body: unknown,
   ) {
     return encode(inquiryResultSchema, await addInquiry(actor, id, body));
+  }
+
+  /** The conversation the connections stored on a lead or customer, oldest first (M10.1, A-266). */
+  @Get(":id/messages")
+  @RequirePermission("lead.view")
+  @ApiResult(messageListSchema)
+  async messages(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
+    return encode(messageListSchema, await listMessages(actor, id));
   }
 
   /** Inquiries and merges of a lead or customer, newest first (the customer page has no lead timeline). */

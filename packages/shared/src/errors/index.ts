@@ -33,6 +33,7 @@ export const ERROR_HTTP_STATUS = {
   CONTRACT_FROZEN: 409,
   // M8.1: a day inside an approved hold of the contract is not booked, checked in, or completed.
   CONTRACT_ON_HOLD: 409,
+  INTAKE_IN_PROGRESS: 409,
   CONTRACT_NO_REMAINING_SESSIONS: 409,
   CONTRACT_HAS_CHECKED_IN_BOOKING: 409,
   PAYMENT_CONTRACT_CANCELLED: 409,
@@ -59,6 +60,8 @@ export const ERROR_HTTP_STATUS = {
   APPROVAL_NOT_PENDING: 409,
   APPROVAL_ALREADY_PENDING: 409,
   UNSUPPORTED_MEDIA_TYPE: 415,
+  // M10.1: a lead source sent too fast.
+  RATE_LIMITED: 429,
   BOOKING_CUSTOMER_CONTRACT_MISMATCH: 422,
   BOOKING_OUTSIDE_CONTRACT_PERIOD: 422,
   // A-149: the service may only be used inside its hours of the day.

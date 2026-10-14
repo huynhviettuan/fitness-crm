@@ -62,7 +62,8 @@
     "workoutLogs": "Session logs",
     "workoutEscalations": "Workout escalations",
     "workoutReport": "Workout dashboard",
-    "taskReport": "Tasks report"
+    "taskReport": "Tasks report",
+    "intakeSources": "Lead sources"
   },
   "status": {
     "customer": {
@@ -612,7 +613,9 @@
     "PAYOUT_NOTHING_TO_PAY": "Nothing is left to pay the PT in this period: the sessions are paid, or the total after adjustments is not above zero.",
     "PLAN_NOT_EDITABLE": "The plan was sent or approved, so it cannot be edited. Make a revision.",
     "PLAN_NOT_APPROVED": "Only a plan in use can have a revision.",
-    "CONTRACT_ON_HOLD": "These days are on hold, so nothing can be booked."
+    "CONTRACT_ON_HOLD": "These days are on hold, so nothing can be booked.",
+    "INTAKE_IN_PROGRESS": "This submission is still being processed; try again in a few seconds.",
+    "RATE_LIMITED": "Too many requests; try again shortly."
   },
   "validation": {
     "required": "Required.",
@@ -1292,7 +1295,8 @@
       "promotions": "Promotions and vouchers",
       "checkin": "Check-in machines",
       "classes": "Class schedule",
-      "workouts": "Workout plans"
+      "workouts": "Workout plans",
+      "intake": "Lead sources"
     },
     "labels": {
       "user": {
@@ -1439,6 +1443,9 @@
         "plan": "Write workout plans and templates",
         "review": "Review workout plans (Master)",
         "log": "Write session logs"
+      },
+      "intake": {
+        "manage": "Manage the connections that hand leads to the system"
       }
     },
     "resources": {
@@ -1722,7 +1729,8 @@
       "workout_log": "Session log",
       "workout_escalation": "Workout escalation",
       "contract_change_voucher": "Change voucher",
-      "import_run": "Data import"
+      "import_run": "Data import",
+      "intake_source": "Lead source"
     },
     "verbs": {
       "created": "Created",
@@ -1770,7 +1778,8 @@
       "branch_transferred_by_voucher": "Moved branch (change voucher)",
       "created_by_transfer": "Created by a transfer",
       "cancelled_by_voucher": "Cancelled (change voucher)",
-      "imported": "Imported from the old system"
+      "imported": "Imported from the old system",
+      "key_rotated": "Key replaced"
     },
     "fields": {
       "at": "When",
@@ -3441,6 +3450,46 @@
       "open": "Open",
       "cancelled": "Cancelled",
       "onTimeRate": "On-time rate"
+    }
+  },
+  "intake": {
+    "title": "Lead sources",
+    "description": "The connections that hand leads to the system (the website form, later WhatsApp, Messenger, Instagram, Gmail and Zalo). Each source has a key of its own.",
+    "empty": "No source yet. Add the first to receive leads from the website form.",
+    "note": "The key is shown once, when it is made or replaced. It belongs on the website's server (never in a page a visitor can read) and goes in the x-intake-key header to /api/v1/intake/website.",
+    "add": "Add a source",
+    "addBody": "Leads from this source belong to the branch and channel below, and go to the consultants in turn.",
+    "register": "Register",
+    "sourcePlaceholder": "Lead source (optional)",
+    "keyTitle": "The source key",
+    "keyBody": "Copy this key now and put it on the website's server. It is not shown again; if it is lost, replace it with a new one.",
+    "keyDone": "I have saved the key",
+    "newKey": "New key",
+    "activate": "Turn on",
+    "deactivate": "Turn off",
+    "active": "On",
+    "inactive": "Off",
+    "conversation": "Messages received",
+    "noMessages": "No messages yet.",
+    "kinds": {
+      "WEBSITE": "Website form",
+      "WHATSAPP": "WhatsApp",
+      "MESSENGER": "Messenger",
+      "INSTAGRAM": "Instagram",
+      "EMAIL": "Gmail",
+      "ZALO": "Zalo OA",
+      "TIKTOK": "TikTok"
+    },
+    "fields": {
+      "name": "Source name",
+      "kind": "Kind",
+      "branch": "Branch",
+      "channel": "Contact channel",
+      "source": "Lead source",
+      "status": "Status",
+      "received": "Received",
+      "lastReceived": "Last received",
+      "actions": "Actions"
     }
   }
 }

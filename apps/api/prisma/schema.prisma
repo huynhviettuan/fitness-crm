@@ -249,6 +249,7 @@ model User {
   escalationsSeen             WorkoutEscalation[]        @relation("WorkoutEscalationSeenBy")
   vouchersCreated             ContractChangeVoucher[]    @relation("VoucherCreatedBy")
   importRuns                  ImportRun[]                @relation("ImportRunCreatedBy")
+  intakeSources               IntakeSource[]             @relation("IntakeSourceCreatedBy")
   vouchersApproved            ContractChangeVoucher[]    @relation("VoucherApprovedBy")
 
   @@index([roleId])
@@ -291,11 +292,12 @@ model Branch {
 
   ptPayouts PtPayout[]
 
-  workoutPlans WorkoutPlan[]
-  workoutLogs  WorkoutLog[]
-  vouchers     ContractChangeVoucher[] @relation("VoucherBranch")
-  vouchersTo   ContractChangeVoucher[] @relation("VoucherToBranch")
-  importRuns   ImportRun[]
+  workoutPlans  WorkoutPlan[]
+  workoutLogs   WorkoutLog[]
+  vouchers      ContractChangeVoucher[] @relation("VoucherBranch")
+  vouchersTo    ContractChangeVoucher[] @relation("VoucherToBranch")
+  importRuns    ImportRun[]
+  intakeSources IntakeSource[]
 
   @@map("branches")
 }
@@ -460,6 +462,8 @@ model Option {
   contractsDeletedFor  Contract[]                 @relation("ContractDeleteReason")
   freezeReasons        ContractFreeze[]           @relation("FreezeReason")
   voucherReasons       ContractChangeVoucher[]    @relation("VoucherReason")
+  intakeChannels       IntakeSource[]             @relation("IntakeChannel")
+  intakeSources        IntakeSource[]             @relation("IntakeSource")
   voucherRefundMethods ContractChangeVoucher[]    @relation("VoucherRefundMethod")
   voucherRefundTypes   ContractChangeVoucher[]    @relation("VoucherRefundType")
   freezeEndReasons     ContractFreeze[]           @relation("FreezeEndReason")
@@ -765,6 +769,7 @@ model Customer {
   workoutLogs      WorkoutLog[]
   vouchers         ContractChangeVoucher[] @relation("VoucherCustomer")
   vouchersReceived ContractChangeVoucher[] @relation("VoucherToCustomer")
+  messages         IntakeMessage[]         @relation("PersonMessages")
 
   @@index([phone])
   @@index([searchName])
@@ -2546,4 +2551,66 @@ model ImportRun {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@map("import_runs")
+}
+
+// The lead intake gateway (brief §11, D-044; M10.1): a connection that hands leads to the system, with a key of its own.
+enum IntakeKind {
+  WEBSITE
+  WHATSAPP
+  MESSENGER
+  INSTAGRAM
+  EMAIL
+  ZALO
+  TIKTOK
+}
+
+enum MessageDirection {
+  IN
+  OUT
+}
+
+model IntakeSource {
+  id             String     @id @default(uuid()) @db.Uuid
+  name           String
+  kind           IntakeKind
+  branchId       String     @map("branch_id") @db.Uuid
+  branch         Branch     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  // The channel and source its leads are counted under (AC-06).
+  channelId      String     @map("channel_option_id") @db.Uuid
+  channel        Option     @relation("IntakeChannel", fields: [channelId], references: [id], onDelete: Restrict)
+  sourceId       String?    @map("source_option_id") @db.Uuid
+  source         Option?    @relation("IntakeSource", fields: [sourceId], references: [id], onDelete: Restrict)
+  // Only the hash of the key is kept; the key is shown once.
+  keyHash        String     @unique @map("key_hash")
+  active         Boolean    @default(true)
+  lastReceivedAt DateTime?  @map("last_received_at") @db.Timestamptz(3)
+  createdById    String     @map("created_by") @db.Uuid
+  createdBy      User       @relation("IntakeSourceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  messages IntakeMessage[]
+
+  @@index([branchId])
+  @@map("intake_sources")
+}
+
+// One message of a person's conversation. The source's own id for it is unique, so a repeat is never stored twice.
+model IntakeMessage {
+  id         String           @id @default(uuid()) @db.Uuid
+  sourceId   String           @map("source_id") @db.Uuid
+  source     IntakeSource     @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  externalId String           @map("external_id")
+  // Empty only while the submission is being turned into a person.
+  personId   String?          @map("person_id") @db.Uuid
+  person     Customer?        @relation("PersonMessages", fields: [personId], references: [id], onDelete: Restrict)
+  direction  MessageDirection @default(IN)
+  senderName String?          @map("sender_name")
+  body       String?
+  receivedAt DateTime         @default(now()) @map("received_at") @db.Timestamptz(3)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([sourceId, externalId])
+  @@index([personId, receivedAt])
+  @@map("intake_messages")
 }

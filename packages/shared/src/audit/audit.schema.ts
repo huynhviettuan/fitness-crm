@@ -13,6 +13,7 @@ export const AUDIT_ENTITY_TYPES = [
   "contract",
   "contract_change_voucher",
   "import_run",
+  "intake_source",
   "employee",
   "booking",
   "payment",

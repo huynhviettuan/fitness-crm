@@ -13,6 +13,10 @@
       "types": "./dist/audit/index.d.ts",
       "default": "./dist/audit/index.js"
     },
+    "./intake": {
+      "types": "./dist/intake/index.d.ts",
+      "default": "./dist/intake/index.js"
+    },
     "./import": {
       "types": "./dist/import/index.d.ts",
       "default": "./dist/import/index.js"

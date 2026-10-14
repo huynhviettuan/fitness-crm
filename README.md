@@ -95,6 +95,7 @@ Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`,
 | `docs/26_TECH_PROPOSAL.md` | Technology, architecture, hosting, costs |
 | `docs/27_ESTIMATES.md` | Effort and cost per milestone |
 | `docs/28_SLICE_PLAN.md` | Every remaining slice, M2.5 to M11, with its tests and the decisions to settle first |
+| `docs/31_LEAD_INTAKE_API.md` | The lead intake API for the website form: the key, the call, the answers, and what happens to a submission |
 | `docs/30_LEAD_CHANNEL_SURVEY.md` | The survey of the lead channels (WhatsApp, Meta, Zalo, Gmail, TikTok, Threads, website): what is feasible, the cost, the review, and the order proposed |
 | `docs/29_GYMMASTER_IMPORT.md` | The GymMaster import command: the workbook, the rules, the cleanup list, and how to run it on staging |
 | `docs/wireframes/flow-fitness-wireframes.html` | Wireframes: leads, PT calendar, workout log, permissions |

@@ -16,11 +16,13 @@ import { can } from "@/lib/permissions";
 import { getLead, getLeadChecklist, getLeadTimeline, listLeadAssignees } from "@/lib/api/leads";
 import { listScripts } from "@/lib/api/scripts";
 import { getLeadAudit, listManagerAudits } from "@/lib/api/lead-audit";
+import { listPersonMessages } from "@/lib/api/intake";
 import { countryName } from "@flow/shared/countries";
 import { isRecareStatus } from "@flow/shared/leads";
 import type { ChosenOption } from "@flow/shared/options";
 import { EditLeadButton } from "../lead-form";
 import { AssignLeadButton, ChangeStatusButton } from "../lead-journey";
+import { LeadMessages } from "../lead-messages";
 import { LeadTimeline } from "../lead-timeline";
 import { AddLeadNote } from "../lead-notes";
 import { ScriptsPanel } from "../lead-scripts";
@@ -57,9 +59,11 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
   const t = await getTranslations("leads");
   const locale = await getLocale();
   const tAudit = await getTranslations("leadAudit");
+  const tIntake = await getTranslations("intake");
   const lead = await loadLead((await params).id);
-  const [timeline, assignees, checklist, scripts, audit, managerAudits] = await Promise.all([
+  const [timeline, messages, assignees, checklist, scripts, audit, managerAudits] = await Promise.all([
     getLeadTimeline(lead.id),
+    listPersonMessages(lead.id),
     can(user, "lead.assign") ? listLeadAssignees(lead.id) : null,
     getLeadChecklist(lead.id),
     listScripts(),
@@ -192,6 +196,16 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
             <LeadTimeline entries={timeline.items} />
           </CardContent>
         </Card>
+        {messages.length > 0 && (
+          <Card role="region" aria-label={tIntake("conversation")} className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>{tIntake("conversation")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LeadMessages messages={messages} />
+            </CardContent>
+          </Card>
+        )}
         <Card role="region" aria-label={t("checklist")} className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{t("checklist")}</CardTitle>

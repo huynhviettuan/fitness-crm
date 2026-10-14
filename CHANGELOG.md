@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-11-06 — M10.1: lead intake gateway
+
+- **Gateway** (A-261 to A-265): sources with their own keys, the website form as the first channel, idempotent, rate limited; an existing phone becomes an inquiry.
+- **Conversation** (A-266): messages stored on the person and shown on the lead page. Doc 31 for the website's developer.
+- **Open**: OQ-072. Docs 04, 07, 09, 13, 16, 18, 28, 31.
+
 ## 2026-11-05 — M10.0: lead channel survey
 
 - **Survey** (A-260, doc 30, Vietnamese docx for the owner): feasibility, cost and review of each channel, a proposed order, and what the developer needs from the owner.

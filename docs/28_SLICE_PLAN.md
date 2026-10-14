@@ -467,7 +467,7 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 | Slice | Builds |
 |---|---|
 | M10.0 Survey (done 2026-11-05: A-260, OQ-071, doc 30; waits for the owner's order) | Feasibility, cost, and app review for each channel, reported to the owner before building |
-| M10.1 Intake gateway | Webhooks with signature checks, idempotency, stored messages, and mapping to the lead intake with its channel; the conversation is kept on the lead (M11 needs it) |
+| M10.1 Intake gateway (done 2026-11-06: A-261 to A-267, OQ-072, doc 31) | Webhooks with signature checks, idempotency, stored messages, and mapping to the lead intake with its channel; the conversation is kept on the lead (M11 needs it) |
 | M10.2 onward | One channel per slice in the survey's order: WhatsApp Business, Messenger and Instagram, Gmail forwarding and website form, Zalo OA (receive only), TikTok and Threads when available |
 
 ## M11 — AI-assisted audit (after OQ-025, TS-008)
