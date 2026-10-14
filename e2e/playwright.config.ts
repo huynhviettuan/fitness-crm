@@ -1,6 +1,7 @@
 import path from "node:path";
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+import { GRAPH_STUB_PORT } from "./support/graph";
 
 const API_DIR = path.join(import.meta.dirname, "..", "apps", "api");
 const WEB_DIR = path.join(import.meta.dirname, "..", "apps", "web");
@@ -69,7 +70,16 @@ export default defineConfig({
         BETTER_AUTH_URL: baseURL,
         // Reminders run on a clock; the integration tests drive them with a fixed time (T-059).
         RUN_JOBS: "false",
+        META_GRAPH_URL: `http://localhost:${GRAPH_STUB_PORT}/v21.0`,
       },
+    },
+    {
+      command: "node support/graph-stub.mjs",
+      cwd: import.meta.dirname,
+      url: `http://localhost:${GRAPH_STUB_PORT}/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 10_000,
+      env: { GRAPH_STUB_PORT: String(GRAPH_STUB_PORT) },
     },
     {
       command: `pnpm exec next start --port ${PORT}`,

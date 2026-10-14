@@ -3490,13 +3490,21 @@
       "received": "Đã nhận",
       "lastReceived": "Lần nhận cuối",
       "actions": "Thao tác",
-      "appSecret": "App Secret của Meta"
+      "appSecret": "App Secret của Meta",
+      "leadAds": "Lead Ads"
     },
     "appSecretHint": "Mã bí mật (App Secret) của ứng dụng Meta, dùng để kiểm tra chữ ký từng tin. Được mã hóa và không hiện lại.",
     "webhookTitle": "Kết nối với Meta",
     "webhookBody": "Dán địa chỉ và mã xác minh này vào phần Webhook của ứng dụng Meta (WhatsApp: trường messages; Messenger và Instagram: trường messages của Trang hoặc tài khoản Instagram). Chúng không hiện lại; nếu mất, hãy đổi khóa để lấy mã xác minh mới.",
     "webhookUrl": "Địa chỉ nhận (Callback URL)",
     "verifyToken": "Mã xác minh (Verify token)",
-    "webhookDone": "Đã lưu thông tin"
+    "webhookDone": "Đã lưu thông tin",
+    "pageToken": "Token Trang",
+    "pageTokenTitle": "Token Trang cho Lead Ads",
+    "pageTokenBody": "Dán Page access token (quyền leads_retrieval) của Trang Facebook. Hệ thống dùng nó để đọc câu trả lời của các form Lead Ads; token được mã hóa và không hiện lại. Dán token mới để thay.",
+    "pageTokenSave": "Lưu token",
+    "pageTokenSaved": "Đã lưu token Trang.",
+    "leadAdsOn": "Đang nhận",
+    "leadAdsOff": "Chưa có token"
   }
 }

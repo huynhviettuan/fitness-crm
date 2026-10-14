@@ -38,7 +38,7 @@ BETTER_AUTH_URL         # the web app's public URL: Better Auth's base URL and t
 NODE_ENV                # production: no /api/docs, HSTS on
 GYM_TIMEZONE            # Asia/Ho_Chi_Minh (A-001)
 FIELD_ENCRYPTION_KEY    # AES-256-GCM key for ID and health fields (T-052, T-064): 32 random bytes, base64; one per environment, backed up apart from the database
-EMAIL_PROVIDER (`log` or `resend`), EMAIL_FROM, RESEND_API_KEY; PUSH_PROVIDER (`log` or `webpush`), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (one key pair per environment: `npx web-push generate-vapid-keys`, doc 29)
+EMAIL_PROVIDER (`log` or `resend`), EMAIL_FROM, RESEND_API_KEY; PUSH_PROVIDER (`log` or `webpush`), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (one key pair per environment: `npx web-push generate-vapid-keys`, doc 29); META_GRAPH_URL (Lead Ads, M10.4: leave the default `https://graph.facebook.com/v21.0`)
 R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
 SENTRY_DSN, LOG_LEVEL
 

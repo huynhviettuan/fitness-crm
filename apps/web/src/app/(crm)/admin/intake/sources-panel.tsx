@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { KeyRoundIcon, PlusIcon } from "lucide-react";
+import { FileTextIcon, KeyRoundIcon, PlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,13 @@ import { optionLabel } from "@/components/option-select";
 import { useErrorMessage } from "@/components/use-error-message";
 import { useOptions } from "@/components/use-options";
 import { AVAILABLE_INTAKE_KINDS, isMetaKind, type IntakeSource } from "@flow/shared/intake";
-import { createSourceAction, rotateSourceKeyAction, updateSourceAction, type Shown } from "./actions";
+import {
+  createSourceAction,
+  rotateSourceKeyAction,
+  setPageTokenAction,
+  updateSourceAction,
+  type Shown,
+} from "./actions";
 
 type Props = { sources: IntakeSource[]; branches: { id: string; name: string }[] };
 
@@ -35,6 +41,7 @@ export function SourcesPanel({ sources, branches }: Props) {
   const errorMessage = useErrorMessage();
   const [adding, setAdding] = useState(false);
   const [shown, setShown] = useState<Shown | null>(null);
+  const [tokenFor, setTokenFor] = useState<IntakeSource | null>(null);
 
   const rotate = async (source: IntakeSource) => {
     const result = await rotateSourceKeyAction(source.id);
@@ -76,6 +83,18 @@ export function SourcesPanel({ sources, branches }: Props) {
         </Badge>
       ),
     },
+    {
+      id: "leadAds",
+      header: t("fields.leadAds"),
+      cell: ({ row }) =>
+        row.original.kind === "MESSENGER" ? (
+          <Badge variant={row.original.hasPageToken ? "success" : "muted"}>
+            {row.original.hasPageToken ? t("leadAdsOn") : t("leadAdsOff")}
+          </Badge>
+        ) : (
+          "—"
+        ),
+    },
     { id: "received", header: t("fields.received"), cell: ({ row }) => row.original.received },
     {
       id: "last",
@@ -88,6 +107,12 @@ export function SourcesPanel({ sources, branches }: Props) {
       header: () => <span className="sr-only">{t("fields.actions")}</span>,
       cell: ({ row }) => (
         <span className="flex justify-end gap-2">
+          {row.original.kind === "MESSENGER" && (
+            <Button size="sm" variant="outline" onClick={() => setTokenFor(row.original)}>
+              <FileTextIcon />
+              {t("pageToken")}
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => rotate(row.original)}>
             <KeyRoundIcon />
             {t("newKey")}
@@ -128,6 +153,16 @@ export function SourcesPanel({ sources, branches }: Props) {
         />
       )}
       {shown && <KeyDialog shown={shown} onClose={() => setShown(null)} />}
+      {tokenFor && (
+        <PageTokenDialog
+          source={tokenFor}
+          onClose={() => setTokenFor(null)}
+          onSaved={() => {
+            setTokenFor(null);
+            router.refresh();
+          }}
+        />
+      )}
     </>
   );
 }
@@ -290,6 +325,55 @@ function KeyDialog({ shown, onClose }: { shown: Shown; onClose: () => void }) {
         )}
         <DialogFooter>
           <Button onClick={onClose}>{whatsapp ? t("webhookDone") : t("keyDone")}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** The Page token of a Messenger source, so its Lead Ads forms are read (M10.4). It is sent once and never shown again. */
+function PageTokenDialog({
+  source,
+  onClose,
+  onSaved,
+}: {
+  source: IntakeSource;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const t = useTranslations("intake");
+  const errorMessage = useErrorMessage();
+  const [token, setToken] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    setBusy(true);
+    const result = await setPageTokenAction(source.id, token);
+    setBusy(false);
+    if (!result.ok) return notify.error(errorMessage(result.code));
+    notify.success(t("pageTokenSaved"));
+    onSaved();
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("pageTokenTitle")}</DialogTitle>
+          <DialogDescription>{t("pageTokenBody")}</DialogDescription>
+        </DialogHeader>
+        <Input
+          type="password"
+          autoComplete="off"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          aria-label={t("pageToken")}
+          placeholder={t("pageToken")}
+        />
+        <DialogFooter>
+          <Button onClick={save} disabled={busy || !token.trim()}>
+            {t("pageTokenSave")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

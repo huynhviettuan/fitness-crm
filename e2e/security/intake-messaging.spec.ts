@@ -143,3 +143,72 @@ test.describe("A01 and A03 what a sender can and cannot do", () => {
     expect(messages.items.map((message) => message.body)).toEqual([script]);
   });
 });
+
+const TOKEN = `EAAB${"s".repeat(60)}`;
+
+test.describe("A01, A02 and A09 the Page token for Lead Ads", () => {
+  test("only Admin sets it; it is never returned; only a Messenger source takes one", async ({ apiAs, testTag }) => {
+    const admin = await apiAs("ADMIN");
+    const messenger = await register(admin, testTag, "MESSENGER");
+    const instagram = await register(admin, testTag, "INSTAGRAM");
+    for (const role of ["FITNESS_MANAGER", "CONSULTING", "RECEPTIONIST"] as Role[]) {
+      const api = await apiAs(role);
+      const response = await api.put(`/api/v1/intake/sources/${messenger.id}/page-token`, {
+        data: { pageToken: TOKEN },
+      });
+      expect(response.status(), role).toBe(403);
+    }
+    const anonymous = await apiAs(null);
+    expect(
+      (
+        await anonymous.put(`/api/v1/intake/sources/${messenger.id}/page-token`, { data: { pageToken: TOKEN } })
+      ).status(),
+    ).toBe(401);
+
+    const set = await admin.put(`/api/v1/intake/sources/${messenger.id}/page-token`, { data: { pageToken: TOKEN } });
+    expect(set.status()).toBe(200);
+    expect(await set.json()).toMatchObject({ hasPageToken: true });
+    for (const response of [set, await admin.get("/api/v1/intake/sources")]) {
+      const text = await response.text();
+      expect(text).not.toContain(TOKEN);
+      expect(text).not.toMatch(/pageTokenEnc|page_token_enc/);
+    }
+    expect(
+      (await admin.put(`/api/v1/intake/sources/${instagram.id}/page-token`, { data: { pageToken: TOKEN } })).status(),
+    ).toBe(400);
+    for (const data of [{ pageToken: "short" }, { pageToken: `${TOKEN} x` }, { pageToken: TOKEN, extra: 1 }, {}]) {
+      const response = await admin.put(`/api/v1/intake/sources/${messenger.id}/page-token`, { data });
+      expect(response.status(), JSON.stringify(data).slice(0, 40)).toBe(400);
+    }
+  });
+});
+
+test.describe("A07 and A10 the Lead Ads webhook", () => {
+  test("a form lead without a Page token, an id that is not a lead's, or an unsigned one takes nothing in", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const admin = await apiAs("ADMIN");
+    const source = await register(admin, testTag, "MESSENGER");
+    const meta = await apiAs(null, { origin: null });
+    const leadgen = (id: string) =>
+      JSON.stringify({ object: "page", entry: [{ changes: [{ field: "leadgen", value: { leadgen_id: id } }] }] });
+    // No token yet: skipped, and Meta is told it was fine.
+    const first = leadgen("1234567890");
+    expect(await (await post(meta, source.path, first, sign(first))).json()).toEqual({ received: 0, duplicates: 0 });
+    await admin.put(`/api/v1/intake/sources/${source.id}/page-token`, { data: { pageToken: TOKEN } });
+    // A path in place of an id never reaches Meta.
+    for (const id of ["../../me", "1?fields=access_token", "1/accounts"]) {
+      const body = leadgen(id);
+      expect(await (await post(meta, source.path, body, sign(body))).json(), id).toEqual({
+        received: 0,
+        duplicates: 0,
+      });
+    }
+    // Unsigned or wrongly signed: refused before anything is read.
+    expect((await post(meta, source.path, first, sign(first, "OtherSecret0123456789abcdefABCDEF"))).status()).toBe(401);
+    // A lead Meta does not know is our failure to Meta (5xx), so Meta sends it again; nothing is kept.
+    const unknown = leadgen("9999999999999999");
+    expect((await post(meta, source.path, unknown, sign(unknown))).status()).toBe(500);
+  });
+});

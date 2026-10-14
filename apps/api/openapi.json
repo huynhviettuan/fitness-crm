@@ -11149,6 +11149,69 @@
         "x-permission": "intake.manage"
       }
     },
+    "/api/v1/intake/sources/{id}/page-token": {
+      "put": {
+        "operationId": "IntakeSourcesController_pageToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pageToken": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 1000,
+                    "pattern": "^[A-Za-z0-9_\\-|.]+$"
+                  }
+                },
+                "required": [
+                  "pageToken"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeSource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "intake.manage"
+      }
+    },
     "/api/v1/classes": {
       "get": {
         "operationId": "ClassesController_list",
@@ -27768,6 +27831,9 @@
           "webhookPath": {
             "nullable": true,
             "type": "string"
+          },
+          "hasPageToken": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -27780,7 +27846,8 @@
           "source",
           "lastReceivedAt",
           "received",
-          "webhookPath"
+          "webhookPath",
+          "hasPageToken"
         ]
       },
       "IntakeSourceCreated": {

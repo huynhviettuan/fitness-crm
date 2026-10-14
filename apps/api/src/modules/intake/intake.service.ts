@@ -5,13 +5,18 @@ import {
   INTAKE_KEY_PREFIX,
   intakeSourceInputSchema,
   intakeSourceUpdateSchema,
+  graphLeadSchema,
   isMetaKind,
+  leadFromForm,
+  pageTokenInputSchema,
+  parseLeadgenPayload,
   parseMessagingPayload,
   parseWhatsAppPayload,
   websiteLeadSchema,
   whatsAppHandshakeSchema,
   type IntakeAnswer,
   type IntakeKind,
+  type LeadgenEvent,
   type IntakeMessage,
   type IntakeSource,
   type WhatsAppReceipt,
@@ -22,6 +27,7 @@ import { loadCurrentUser } from "../../platform/auth/actor.js";
 import type { Actor } from "../../platform/auth/session.js";
 import { isUniqueViolation } from "../../platform/db/errors.js";
 import { prisma, type Db } from "../../platform/db/prisma.js";
+import { env } from "../../platform/env.js";
 import { AppError } from "../../platform/errors/app-error.js";
 import { resolveChoice } from "../../platform/options/option.service.js";
 import { assertCan } from "../../platform/permissions/assert.js";
@@ -48,6 +54,7 @@ const sourceSelect = {
   branch: { select: { id: true, name: true } },
   channel: { select: { id: true, labelVi: true, labelEn: true } },
   source: { select: { id: true, labelVi: true, labelEn: true } },
+  pageTokenEnc: true,
   _count: { select: { messages: true } },
 } as const satisfies Prisma.IntakeSourceSelect;
 
@@ -63,12 +70,13 @@ function newKey(): string {
 }
 
 function present(record: SourceRecord): IntakeSource {
-  const { _count, lastReceivedAt, ...rest } = record;
+  const { _count, lastReceivedAt, pageTokenEnc, ...rest } = record;
   return {
     ...rest,
     lastReceivedAt: lastReceivedAt?.toISOString() ?? null,
     received: _count.messages,
     webhookPath: webhookPathOf(rest.kind, rest.id),
+    hasPageToken: pageTokenEnc !== null,
   };
 }
 
@@ -198,6 +206,35 @@ export async function rotateSourceKey(actor: Actor, id: string): Promise<Created
       action: "intake_source.key_rotated",
     });
     return { source: present(source), key, verifyToken };
+  });
+}
+
+/**
+ * The Page access token of a Messenger source (A-283): with it, the Lead Ads forms of the Page are read from Meta. It is kept sealed,
+ * never returned and never audited with its value; setting it again replaces it.
+ */
+export async function setPageToken(actor: Actor, id: string, input: unknown): Promise<IntakeSource> {
+  assertCan(actor, "intake.manage");
+  const data = parseInput(pageTokenInputSchema, input);
+  return prisma.$transaction(async (tx) => {
+    const before = await findVisible(tx, actor, id);
+    if (before.kind !== "MESSENGER") {
+      throw new AppError("VALIDATION_FAILED", { fieldErrors: { pageToken: ["invalidChoice"] } });
+    }
+    const source = await tx.intakeSource.update({
+      where: { id },
+      data: { pageTokenEnc: seal(data.pageToken) },
+      select: sourceSelect,
+    });
+    await recordAudit(tx, {
+      actorUserId: actor.id,
+      entityType: "intake_source",
+      entityId: id,
+      action: "intake_source.page_token_set",
+      before: { hasPageToken: before.pageTokenEnc !== null },
+      after: { hasPageToken: true },
+    });
+    return present(source);
   });
 }
 
@@ -384,9 +421,11 @@ async function metaSource(route: WebhookRoute, sourceId: string) {
       createdById: true,
       secretEnc: true,
       verifyTokenHash: true,
+      pageTokenEnc: true,
     },
   });
 }
+type MetaSource = NonNullable<Awaited<ReturnType<typeof metaSource>>>;
 
 /**
  * Meta's handshake when the webhook is registered (A-271, A-275): the challenge is echoed only for the source's own verify token.
@@ -457,6 +496,14 @@ export async function receiveMetaDelivery(
   for (const message of messagesOf(source.kind, payload)) {
     if (await takeIn(source, message)) received += 1;
     else duplicates += 1;
+  }
+  // Lead Ads forms come on the Page's webhook too, as `leadgen` changes (A-281).
+  if (source.kind === "MESSENGER") {
+    for (const event of parseLeadgenPayload(payload)) {
+      const taken = await takeInFormLead(source, event);
+      if (taken === "received") received += 1;
+      if (taken === "duplicate") duplicates += 1;
+    }
   }
   return { received, duplicates };
 }
@@ -555,6 +602,89 @@ async function takeIn(source: AuthenticatedSource, message: ChannelMessage): Pro
     });
     await finishClaim(source.id, claim.id, personId);
     return true;
+  } catch (error) {
+    await prisma.intakeMessage.deleteMany({ where: { id: claim.id, personId: null } });
+    throw error;
+  }
+}
+
+// ------------------------------------------------------------------------------------------------------------ Lead Ads
+
+/** How long Meta has to answer for one lead before the delivery fails and Meta sends it again. */
+const GRAPH_TIMEOUT_MS = 10_000;
+
+/**
+ * The answers of one form lead, read from Meta with the Page token (A-282). The token goes in the header, never in the address, so
+ * it is in no log. Any failure (Meta down, a bad or expired token, a lead Meta does not know) is our fault to Meta: a 5xx, so the
+ * delivery comes again, and it is logged without the token.
+ */
+async function readFormLead(source: MetaSource, leadgenId: string) {
+  const token = unseal(source.pageTokenEnc);
+  const fail = (reason: string) => {
+    logSecurityEvent("intake.graph_failed", { sourceId: source.id, reason }, "warn");
+    return new AppError("INTERNAL_ERROR");
+  };
+  let response: Response;
+  try {
+    response = await fetch(`${env.META_GRAPH_URL}/${leadgenId}?fields=id,created_time,field_data`, {
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS),
+    });
+  } catch {
+    throw fail("unreachable");
+  }
+  if (!response.ok) throw fail(`status ${response.status}`);
+  const lead = graphLeadSchema.safeParse(await response.json().catch(() => null));
+  if (!lead.success || lead.data.id !== leadgenId) throw fail("unreadable");
+  return leadFromForm(lead.data);
+}
+
+/**
+ * One form lead (A-281 to A-284): claimed by Meta's lead id like a message, its answers read from Meta, then a lead or an inquiry on
+ * the person who has the phone, like a website form. Without a Page token it cannot be read: it is skipped and logged, and Meta is
+ * answered 200 (A-284).
+ */
+async function takeInFormLead(source: MetaSource, event: LeadgenEvent): Promise<"received" | "duplicate" | "skipped"> {
+  if (!source.pageTokenEnc) {
+    logSecurityEvent("intake.leadgen_without_token", { sourceId: source.id }, "warn");
+    return "skipped";
+  }
+  const externalId = `leadgen:${event.leadgenId}`;
+  let claim: { id: string };
+  try {
+    claim = await prisma.intakeMessage.create({
+      data: {
+        sourceId: source.id,
+        externalId,
+        senderName: "Lead Ads",
+        ...(event.createdAt && event.createdAt.getTime() <= Date.now() ? { receivedAt: event.createdAt } : {}),
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    const seen = await prisma.intakeMessage.findUniqueOrThrow({
+      where: { sourceId_externalId: { sourceId: source.id, externalId } },
+      select: { personId: true },
+    });
+    if (!seen.personId) throw new AppError("INTAKE_IN_PROGRESS");
+    return "duplicate";
+  }
+  try {
+    const form = await readFormLead(source, event.leadgenId);
+    const name = form.name ?? `Lead Ads ${event.leadgenId.slice(-6)}`;
+    await prisma.intakeMessage.update({
+      where: { id: claim.id },
+      data: { senderName: name, body: form.answers || null },
+    });
+    const { personId } = await personFor(source, {
+      name,
+      phone: form.phone,
+      email: form.email,
+      note: form.answers ? form.answers.slice(0, 2000) : null,
+    });
+    await finishClaim(source.id, claim.id, personId);
+    return "received";
   } catch (error) {
     await prisma.intakeMessage.deleteMany({ where: { id: claim.id, personId: null } });
     throw error;

@@ -3490,13 +3490,21 @@
       "received": "Received",
       "lastReceived": "Last received",
       "actions": "Actions",
-      "appSecret": "Meta App Secret"
+      "appSecret": "Meta App Secret",
+      "leadAds": "Lead Ads"
     },
     "appSecretHint": "The App Secret of the Meta app, used to check the signature of every message. It is stored encrypted and not shown again.",
     "webhookTitle": "Connect to Meta",
     "webhookBody": "Paste this address and verify token into the Webhook settings of the Meta app (WhatsApp: the messages field; Messenger and Instagram: the messages field of the Page or the Instagram account). They are not shown again; if lost, use New key to get a new verify token.",
     "webhookUrl": "Callback URL",
     "verifyToken": "Verify token",
-    "webhookDone": "I have saved them"
+    "webhookDone": "I have saved them",
+    "pageToken": "Page token",
+    "pageTokenTitle": "Page token for Lead Ads",
+    "pageTokenBody": "Paste the Page access token (with leads_retrieval) of the Facebook Page. The system uses it to read the answers of the Lead Ads forms; it is stored encrypted and not shown again. Paste a new token to replace it.",
+    "pageTokenSave": "Save token",
+    "pageTokenSaved": "The Page token is saved.",
+    "leadAdsOn": "Receiving",
+    "leadAdsOff": "No token"
   }
 }

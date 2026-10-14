@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-11-09 — M10.4: Lead Ads
+
+- **Forms** (A-281 to A-284): Lead Ads form leads on the Page's webhook; answers read from Meta with the sealed Page token; a lead or an inquiry with the answers.
+- **Tests** (A-285): a stand-in for Meta's Graph API in the E2E run.
+- **Open**: OQ-075. Docs 04, 07, 13, 15, 16, 18, 24, 28, 31 (§8).
+
 ## 2026-11-08 — M10.3: Messenger and Instagram
 
 - **Channels** (A-275 to A-278): Messenger and Instagram sources at a shared Meta address; the sender id ties a person's messages; a new sender is a lead named after the channel.

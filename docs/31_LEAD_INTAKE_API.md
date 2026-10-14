@@ -1,7 +1,7 @@
 # 31. Lead intake API (website form)
 
 Brief §11, D-044, TS-007; built in M10.1. For whoever builds or configures the form on the gym's website (or a tool such as Make,
-Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7. The other channels (Messenger, Instagram, Gmail, Zalo)
+Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7, Lead Ads forms in §8. The other channels (Messenger, Instagram, Gmail, Zalo)
 will have their own endpoints in later slices (doc 30).
 
 ## 1. Get a key
@@ -112,3 +112,20 @@ becomes a lead called *Messenger 654321* (the last six digits of the id), with n
 phone once they know the person, or merges it into the record the person already has. Later messages of the same sender go to that
 person, also after a merge. Within 24 hours a message joins the conversation; after that it is a new inquiry. The Page's own
 replies are not taken in. Lead Ads forms are not read yet.
+
+## 8. Lead Ads forms (M10.4)
+
+Facebook and Instagram lead ads (Instant Forms) are delivered to the **Facebook Page's** webhook, so they come through the Page's
+Messenger source (§7).
+
+1. Register the Page's **Messenger** source (§7) and, in the Meta app's Page webhook, subscribe also to the **leadgen** field.
+2. Generate a **long-lived Page access token** with the `leads_retrieval` permission (and `pages_manage_metadata`, `pages_show_list`)
+   for the Page, after App Review.
+3. Admin opens **Cấu hình → Nguồn nhận lead**, on the Messenger source clicks **Token Trang**, pastes the token and saves. The column
+   *Lead Ads* shows **Đang nhận**. The token is stored encrypted and is never shown again; paste a new one to replace it.
+4. **Set the token before the ads go live**: form leads that arrive while the source has no token are skipped.
+
+What happens: for each new form lead the system asks Meta for the answers (with the token, in the request header) and makes a lead
+from the name, phone and email, or adds an inquiry to the person who already has the phone. The other questions are kept as lines
+*question: answer* in the lead's note and in its messages. Set the Messenger source's **lead source** to the one that counts paid
+leads (for example *Paid*), so the lead analysis shows them. If Meta cannot answer, the delivery fails and Meta sends it again.

@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -24,6 +25,7 @@ import {
   intakeSourceListSchema,
   intakeSourceSchema,
   intakeSourceUpdateSchema,
+  pageTokenInputSchema,
   websiteLeadSchema,
   whatsAppReceiptSchema,
 } from "@flow/shared/intake";
@@ -41,6 +43,7 @@ import {
   receiveWebsiteLead,
   receiveMetaDelivery,
   rotateSourceKey,
+  setPageToken,
   updateSource,
   withinRate,
   type AuthenticatedSource,
@@ -201,5 +204,17 @@ export class IntakeSourcesController {
   @ApiResult(intakeSourceCreatedSchema)
   async rotate(@CurrentActor() actor: CurrentUser, @Param("id") id: string) {
     return encode(intakeSourceCreatedSchema, await rotateSourceKey(actor, id));
+  }
+
+  /** The Page token of a Messenger source, for its Lead Ads forms (M10.4); never returned. */
+  @Put(":id/page-token")
+  @RequirePermission("intake.manage")
+  @ApiResult(intakeSourceSchema)
+  async pageToken(
+    @CurrentActor() actor: CurrentUser,
+    @Param("id") id: string,
+    @Body({ schema: pageTokenInputSchema }) body: unknown,
+  ) {
+    return encode(intakeSourceSchema, await setPageToken(actor, id, body));
   }
 }

@@ -34,6 +34,17 @@ export async function rotateIntakeSourceKey(id: string) {
   );
 }
 
+/** The Page token of a Messenger source, for its Lead Ads forms (M10.4). */
+export async function setIntakePageToken(id: string, pageToken: string) {
+  return read(
+    intakeSourceSchema,
+    (await api()).PUT("/api/v1/intake/sources/{id}/page-token", {
+      params: { path: { id } },
+      body: { pageToken },
+    }),
+  );
+}
+
 export async function listPersonMessages(personId: string) {
   const { items } = await read(
     messageListSchema,

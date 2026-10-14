@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { expect, signedInAs, test } from "./fixtures";
+import { GRAPH_STUB_PORT } from "./support/graph";
 import { labels } from "./support/labels";
 
 // The lead intake gateway (brief §11, D-044; M10.1, docs/13 E2E-179): Admin registers a source and gets its key once; the
@@ -46,11 +47,13 @@ test.describe("as an admin", () => {
     const { personId } = (await sent.json()) as { personId: string };
 
     await page.reload();
+    // The "received" cell is found by its column header, so a new column does not move it.
+    const headers = await page.getByRole("columnheader").allTextContents();
     await expect(
       page
         .getByRole("row", { name: new RegExp(`Website ${testTag}`) })
         .getByRole("cell")
-        .nth(6),
+        .nth(headers.indexOf(t.fields.received)),
     ).toHaveText("1");
 
     await page.goto(`/leads/${personId}`);
@@ -204,6 +207,74 @@ test.describe("as an admin", () => {
     const conversation = page.getByRole("region", { name: t.conversation });
     await expect(conversation.getByText(`Giá PT ${testTag}`)).toBeVisible();
     await expect(conversation.getByText(`Messenger ${testTag}`)).toBeVisible();
+  });
+
+  test("@smoke E2E-182: a Page token is set and a Lead Ads form becomes a lead with its answers", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const secret = "UiLeadAdsSecret0123456789abcdefAB";
+    const admin = await apiAs("ADMIN");
+    const channels = (await (await admin.get("/api/v1/option-lists/leadChannels/options")).json()) as {
+      items: { id: string; isOther: boolean }[];
+    };
+    const created = await admin.post("/api/v1/intake/sources", {
+      data: {
+        name: `Trang ${testTag}`,
+        kind: "MESSENGER",
+        channelId: channels.items.find((option) => !option.isOther)!.id,
+        appSecret: secret,
+      },
+    });
+    const { source } = (await created.json()) as { source: { id: string; webhookPath: string } };
+
+    // Admin gives the source the Page token from the screen.
+    await page.goto("/admin/intake");
+    const row = page.getByRole("row", { name: new RegExp(`Trang ${testTag}`) });
+    await expect(row.getByText(t.leadAdsOff)).toBeVisible();
+    await row.getByRole("button", { name: t.pageToken }).click();
+    const dialog = page.getByRole("dialog", { name: t.pageTokenTitle });
+    await dialog.getByLabel(t.pageToken).fill(`EAAB${"x".repeat(60)}`);
+    await dialog.getByRole("button", { name: t.pageTokenSave }).click();
+    await expect(dialog).toBeHidden();
+    await expect(row.getByText(t.leadAdsOn)).toBeVisible();
+
+    // Someone fills the form; Meta keeps the answers and tells the Page.
+    const leadId = String(Date.now()) + String(Math.floor(Math.random() * 1000));
+    await (
+      await apiAs(null, { origin: null })
+    ).post(`http://localhost:${GRAPH_STUB_PORT}/__leads`, {
+      data: {
+        id: leadId,
+        field_data: [
+          { name: "full_name", values: [`Khách form ${testTag}`] },
+          { name: "phone_number", values: [`+849${leadId.slice(-8)}`] },
+          { name: "Bạn muốn tập gì?", values: [`PT buổi tối ${testTag}`] },
+        ],
+      },
+    });
+    const body = JSON.stringify({
+      object: "page",
+      entry: [{ id: "PAGE", time: 1, changes: [{ field: "leadgen", value: { leadgen_id: leadId, form_id: "1" } }] }],
+    });
+    const meta = await apiAs(null, { origin: null });
+    const sent = await meta.post(source.webhookPath, {
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`,
+      },
+      data: body,
+    });
+    expect(await sent.json()).toEqual({ received: 1, duplicates: 0 });
+
+    await page.goto(`/leads?q=${encodeURIComponent(`Khách form ${testTag}`)}`);
+    await page
+      .getByRole("link", { name: `Khách form ${testTag}` })
+      .first()
+      .click();
+    const conversation = page.getByRole("region", { name: t.conversation });
+    await expect(conversation.getByText(`Bạn muốn tập gì?: PT buổi tối ${testTag}`)).toBeVisible();
   });
 });
 

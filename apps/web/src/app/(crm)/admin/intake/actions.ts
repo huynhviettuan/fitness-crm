@@ -1,7 +1,7 @@
 "use server";
 
 import { runAction, type ActionResult } from "@/lib/actions/result";
-import { createIntakeSource, rotateIntakeSourceKey, updateIntakeSource } from "@/lib/api/intake";
+import { createIntakeSource, rotateIntakeSourceKey, setIntakePageToken, updateIntakeSource } from "@/lib/api/intake";
 import type { IntakeSourceInput, IntakeSourceUpdate } from "@flow/shared/intake";
 
 // The writes of the lead sources (M10.1, D-044).
@@ -26,5 +26,11 @@ export async function rotateSourceKeyAction(id: string): Promise<ActionResult<Sh
   return runAction(async () => {
     const rotated = await rotateIntakeSourceKey(id);
     return { key: rotated.key, verifyToken: rotated.verifyToken, webhookPath: rotated.source.webhookPath };
+  });
+}
+
+export async function setPageTokenAction(id: string, pageToken: string): Promise<ActionResult> {
+  return runAction(async () => {
+    await setIntakePageToken(id, pageToken);
   });
 }

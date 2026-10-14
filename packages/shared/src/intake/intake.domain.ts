@@ -122,6 +122,8 @@ export const intakeSourceSchema = z
     received: z.int(),
     /** Where Meta is told to post (WhatsApp, Messenger, Instagram); the address of the API is added in front by whoever reads it. */
     webhookPath: z.string().nullable(),
+    /** Messenger: a Page token is set, so the Page's Lead Ads forms are read (M10.4). The token itself is never returned. */
+    hasPageToken: z.boolean(),
   })
   .meta({ id: "IntakeSource" });
 export type IntakeSource = z.output<typeof intakeSourceSchema>;

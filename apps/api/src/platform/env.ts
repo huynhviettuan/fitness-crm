@@ -56,6 +56,8 @@ const envSchema = z
     VAPID_PRIVATE_KEY: z.string().min(1).optional(),
     // A mailto: or https: address the push services can reach the operator at.
     VAPID_SUBJECT: z.string().min(1).optional(),
+    // M10.4: where the answers of a Lead Ads form are read (Meta's Graph API, a fixed version). The E2E run points it at a stub.
+    META_GRAPH_URL: z.url().default("https://graph.facebook.com/v21.0"),
   })
   .superRefine((value, ctx) => {
     if (value.FILE_STORAGE === "r2") {
