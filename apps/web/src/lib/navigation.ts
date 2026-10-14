@@ -14,6 +14,7 @@ export const NAV_SECTIONS = [
       { group: "leads", items: ["leads", "leadsToday", "leadsRecare", "leadsAudit", "leadReceivers"] },
       { group: "customers", items: ["customers", "contracts"] },
       { group: "schedule", items: ["calendar", "sessions", "classes", "checkin"] },
+      { group: "workouts", items: ["workoutPlans", "workoutTemplates"] },
       "tasks",
       "finance",
       {

@@ -113,6 +113,8 @@ erDiagram
 | `workout_equipment` (M7.1) | id, code, name, notes, active; code and name unique whatever the capitals |
 | `workout_areas` (M7.1) | id, code, name, parent_id (the tree, depth 5), notes, active; name unique among siblings |
 | `workout_exercises` (M7.1) | id, name (unique), search_name, area_id, equipment_id (optional), kind (STRENGTH or CARDIO), description, video_url (https), active |
+| `workout_plans` (M7.2) | id, kind (TEMPLATE or CUSTOMER), name, status (DRAFT, PENDING, APPROVED, REJECTED, SUPERSEDED), branch_id, customer_id, contract_id, trainer_id, template_id, revises_id (one open revision per plan: partial unique index), plan_date, phase, goal, notes, approved_by/at |
+| `workout_plan_stages` / `_sessions` / `_items` / `_sets` (M7.2) | the plan's tree; a trigger refuses changes unless the plan is a draft or rejected; sets hold the Strength and Cardio targets |
 | `workout_stages` (M7.1) | id, name (unique), description, active |
 | `pt_payouts` (M5.7) | id, branch_id, trainer_id, period_from, period_to, amount (= session_amount + adjustment_amount, above zero), session_amount, adjustment_amount, session_count, adjustment_count, cash_transaction_id (the expense voucher, unique), idempotency_key (unique), created_by/at |
 | `pt_payout_lines` (M5.7) | id, payout_id, booking_id, contract_id, kind (SESSION, or ADJUSTMENT: negative), amount, released_at; unique (booking, kind) while released_at is empty; released by a trigger when the voucher is deleted, rejected or cancelled (A-174) |

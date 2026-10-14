@@ -405,7 +405,7 @@ The owner's answer of 12/10/2026 (D-059) makes this milestone the sending infras
 - **Source:** brief §7.1, §7.3 (lists); FR-WKO-001.
 - **Depends on:** M5.3.
 
-### M7.2 Templates and customer plans
+### M7.2 Templates and customer plans (done 2026-10-26: A-192 to A-198, OQ-058)
 
 - **Builds:**
   - **Plan templates:** stages × exercises.

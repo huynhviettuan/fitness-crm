@@ -23,7 +23,13 @@ import { listContracts } from "@/lib/api/contracts";
 import { listBookings } from "@/lib/api/bookings";
 import { listPayments } from "@/lib/api/finance";
 import { listCustomerEmails } from "@/lib/api/mail";
+import { listTrainersOfDay } from "@/lib/api/employees";
+import { listPlans } from "@/lib/api/workout-plans";
+import { env } from "@/lib/env";
+import { formatDateOnly } from "@/lib/format";
+import { calendarDateInTimeZone } from "@flow/shared/validation";
 import { CustomerEmails } from "./customer-emails";
+import { CustomerPlans } from "./customer-plans";
 import { bookingContext } from "../../bookings/booking-context";
 import { AddBookingButton, BookingsTable } from "../../bookings/bookings-table";
 import { CreateContractButton } from "../../contracts/contract-buttons";
@@ -74,6 +80,8 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
     : [null, null, null];
   const payments = can(user, "payment.view") ? await listPayments({ customerId: customer.id, pageSize: 100 }) : null;
   const emails = await listCustomerEmails(customer.id, { pageSize: 100 });
+  const canSeePlans = can(user, "workout.view");
+  const plans = canSeePlans ? await loadPlans(user, customer.id, contracts?.items ?? []) : null;
 
   const details: { label: string; value: React.ReactNode }[] = [
     { label: t("fields.customerCode"), value: <span className="font-mono">{customer.customerCode}</span> },
@@ -207,6 +215,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           {canSeeBookings && <TabsTrigger value="bookings">{t("tabs.bookings")}</TabsTrigger>}
           {payments && <TabsTrigger value="payments">{t("tabs.payments")}</TabsTrigger>}
           {consulting && <TabsTrigger value="consulting">{t("tabs.consulting")}</TabsTrigger>}
+          {plans && <TabsTrigger value="plans">{t("tabs.plans")}</TabsTrigger>}
           <TabsTrigger value="emails">{t("tabs.emails")}</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-6">
@@ -305,6 +314,11 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
             )}
           </TabsContent>
         )}
+        {plans && (
+          <TabsContent value="plans">
+            <CustomerPlans customerId={customer.id} {...plans} />
+          </TabsContent>
+        )}
         <TabsContent value="emails">
           <CustomerEmails emails={emails.items} />
         </TabsContent>
@@ -322,4 +336,29 @@ async function loadConsulting(id: string) {
 async function NotProvided() {
   const t = await getTranslations("common");
   return <span className="text-muted-foreground">{t("notProvided")}</span>;
+}
+
+/** What the plans tab needs (M7.2): the customer's plans, and what a new plan is made from. */
+async function loadPlans(
+  user: Awaited<ReturnType<typeof requirePageUser>>,
+  customerId: string,
+  contracts: { id: string; contractCode: string; packageName: string; status: string }[],
+) {
+  const [plans, templates, trainers] = await Promise.all([
+    listPlans({ customerId, kind: "CUSTOMER", pageSize: 100 }),
+    can(user, "workout.plan") ? listPlans({ kind: "TEMPLATE", status: "APPROVED", pageSize: 100 }) : null,
+    // A PT's plan is their own; whoever reviews names the coach.
+    can(user, "workout.plan") && can(user, "workout.review")
+      ? listTrainersOfDay(formatDateOnly(calendarDateInTimeZone(env.GYM_TIMEZONE)))
+      : null,
+  ]);
+  return {
+    plans: plans.items,
+    canCreate: can(user, "workout.plan"),
+    contracts: contracts
+      .filter((contract) => contract.status === "ACTIVE" || contract.status === "FROZEN")
+      .map((contract) => ({ id: contract.id, label: `${contract.contractCode} · ${contract.packageName}` })),
+    templates: (templates?.items ?? []).map((template) => ({ id: template.id, name: template.name })),
+    trainers: trainers ? trainers.map((entry) => ({ id: entry.trainer.id, name: entry.trainer.fullName })) : null,
+  };
 }

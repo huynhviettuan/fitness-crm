@@ -10,7 +10,8 @@
       "reports": "Báo cáo",
       "people": "Người và quyền",
       "config": "Cấu hình",
-      "monitoring": "Giám sát"
+      "monitoring": "Giám sát",
+      "workouts": "Giáo án"
     },
     "main": "Điều hướng",
     "dashboard": "Tổng quan",
@@ -55,7 +56,9 @@
     "ptPayouts": "Chi trả PT",
     "emailTemplates": "Mẫu email",
     "notificationSettings": "Thông báo cho nhân viên",
-    "workoutCatalog": "Danh mục giáo án"
+    "workoutCatalog": "Danh mục giáo án",
+    "workoutPlans": "Giáo án của khách",
+    "workoutTemplates": "Template giáo án"
   },
   "status": {
     "customer": {
@@ -140,6 +143,13 @@
       "EXPIRING_SOON": "Sắp hết hạn",
       "EXPIRED": "Hết hạn",
       "ON_HOLD": "Đang bảo lưu"
+    },
+    "plan": {
+      "DRAFT": "Bản nháp",
+      "PENDING": "Chờ Master duyệt",
+      "APPROVED": "Đang dùng",
+      "REJECTED": "Bị từ chối",
+      "SUPERSEDED": "Đã được thay"
     }
   },
   "common": {
@@ -412,7 +422,8 @@
       "bookings": "Lịch tập",
       "payments": "Thanh toán",
       "consulting": "Lịch sử tư vấn",
-      "emails": "Email đã gửi"
+      "emails": "Email đã gửi",
+      "plans": "Giáo án"
     },
     "identitySubmitted": "Đã lưu. Thay đổi họ tên, điện thoại, email đang chờ duyệt.",
     "pendingIdentity": "Đang chờ duyệt: {changes}. Thông tin hiện tại vẫn có hiệu lực đến khi được duyệt.",
@@ -586,7 +597,9 @@
     "CLASS_SESSION_CANCELLED": "Buổi lớp này đã hủy.",
     "CLASS_NOT_STARTED": "Buổi lớp chưa bắt đầu nên chưa điểm danh được.",
     "CLASS_CONTRACT_MISMATCH": "Hợp đồng không phải hợp đồng lớp nhóm của chi nhánh này.",
-    "PAYOUT_NOTHING_TO_PAY": "Không còn gì để chi cho PT trong kỳ này: các buổi đã được chi, hoặc tổng sau điều chỉnh không dương."
+    "PAYOUT_NOTHING_TO_PAY": "Không còn gì để chi cho PT trong kỳ này: các buổi đã được chi, hoặc tổng sau điều chỉnh không dương.",
+    "PLAN_NOT_EDITABLE": "Giáo án đã gửi duyệt hoặc đã duyệt nên không sửa được. Hãy tạo bản sửa.",
+    "PLAN_NOT_APPROVED": "Chỉ giáo án đang dùng mới tạo được bản sửa."
   },
   "validation": {
     "required": "Bắt buộc nhập.",
@@ -677,7 +690,14 @@
     "mandatoryEvent": "Email bắt buộc không tắt được.",
     "tooMany": "Có quá nhiều mục.",
     "invalidUrl": "Địa chỉ không hợp lệ.",
-    "invalidCode": "Mã chỉ gồm chữ, số, dấu chấm, gạch ngang và gạch dưới."
+    "invalidCode": "Mã chỉ gồm chữ, số, dấu chấm, gạch ngang và gạch dưới.",
+    "templateOneSession": "Template chỉ có một buổi cho mỗi stage.",
+    "templateHasNoWeeks": "Template không có tuần và số buổi.",
+    "notForThisExercise": "Ô này không dùng cho loại bài tập này (bài Sức mạnh dùng tạ, reps...; Cardio dùng thời gian, tốc độ, nhịp tim).",
+    "emptyPlan": "Giáo án chưa có bài tập nào để gửi duyệt.",
+    "tooManyDecimals": "Tối đa hai chữ số thập phân.",
+    "cycle": "Không thể đặt khu vực dưới chính nó hoặc dưới khu vực con của nó.",
+    "tooDeep": "Cây khu vực quá sâu."
   },
   "contracts": {
     "title": "Hợp đồng",
@@ -1374,7 +1394,9 @@
       },
       "workout": {
         "view": "Xem danh mục và giáo án",
-        "catalog": "Soạn danh mục giáo án"
+        "catalog": "Soạn danh mục giáo án",
+        "plan": "Soạn giáo án và template",
+        "review": "Đánh giá giáo án (Master)"
       }
     },
     "resources": {
@@ -1651,7 +1673,8 @@
       "workout_equipment": "Thiết bị",
       "workout_area": "Khu vực cơ thể",
       "workout_exercise": "Bài tập",
-      "workout_stage": "Stage giáo án"
+      "workout_stage": "Stage giáo án",
+      "workout_plan": "Giáo án"
     },
     "verbs": {
       "created": "Tạo mới",
@@ -1725,7 +1748,8 @@
       "cash_create": "Khoản thu chi",
       "record_delete": "Xóa dữ liệu",
       "customer_identity": "Sửa thông tin khách hàng",
-      "contract_create": "Hợp đồng mới"
+      "contract_create": "Hợp đồng mới",
+      "workout_plan": "Giáo án hoặc template"
     },
     "fields": {
       "submittedAt": "Gửi lúc",
@@ -1748,7 +1772,8 @@
       "cash_create": "Khoản này được tính vào tổng thu chi.",
       "record_delete": "Dữ liệu được xóa và chuyển vào thùng rác.",
       "customer_identity": "Thông tin mới của khách hàng có hiệu lực.",
-      "contract_create": "Hợp đồng có hiệu lực và đặt lịch được. Sau khi duyệt không sửa được nữa."
+      "contract_create": "Hợp đồng có hiệu lực và đặt lịch được. Sau khi duyệt không sửa được nữa.",
+      "workout_plan": "Giáo án có hiệu lực để tập theo. Sau khi duyệt không sửa được nữa; muốn đổi thì tạo bản sửa và gửi duyệt lại."
     },
     "approved": "Đã duyệt",
     "rejectTitle": "Từ chối {name}?",
@@ -2969,5 +2994,130 @@
     "hideInactive": "Ẩn mục đã ngừng dùng",
     "filters": "Bộ lọc bài tập",
     "apply": "Áp dụng"
+  },
+  "workoutPlans": {
+    "title": "Giáo án của khách",
+    "description": "Giáo án theo tuần và buổi, soạn từ template hoặc từ đầu. Master duyệt trước khi dùng; giáo án đã duyệt không sửa, muốn đổi thì tạo bản sửa.",
+    "templatesTitle": "Template giáo án",
+    "templatesDescription": "Mẫu giáo án gồm các stage, mỗi stage một buổi mẫu. Tạo giáo án của khách từ template đã duyệt.",
+    "filters": "Bộ lọc giáo án",
+    "apply": "Áp dụng",
+    "search": "Tìm theo tên giáo án hoặc khách",
+    "allStatuses": "Mọi trạng thái",
+    "empty": "Chưa có giáo án nào.",
+    "customerEmpty": "Khách chưa có giáo án nào.",
+    "newTemplate": "Thêm template",
+    "newPlan": "Thêm giáo án",
+    "create": "Tạo",
+    "created": "Đã tạo bản nháp",
+    "blank": "Tạo từ đầu (không dùng template)",
+    "back": "Quay lại danh sách",
+    "templateOf": "Template của chi nhánh {branch}",
+    "planOf": "Giáo án của {customer} · hợp đồng {contract}",
+    "header": "Thông tin chung",
+    "waiting": "Đang chờ Master duyệt. Giáo án chưa được dùng và chưa sửa được.",
+    "rejected": "Master đã từ chối. Hãy sửa rồi gửi lại.",
+    "revise": "Tạo bản sửa",
+    "revisionStarted": "Đã tạo bản sửa để chỉnh",
+    "replaces": "Bản sửa của một giáo án đang dùng: xem giáo án đó",
+    "revisionOf": "Có bản sửa đang soạn hoặc chờ duyệt: xem bản sửa",
+    "replacedBy": "Đã được thay bằng bản mới: xem bản mới",
+    "sessionsCount": "{count} buổi",
+    "sessionLabel": "Tuần {week} · buổi {number}",
+    "noStages": "Chưa có stage nào.",
+    "noExercises": "Chưa có bài tập.",
+    "videoOpen": "Mở video",
+    "kinds": {
+      "STRENGTH": "Sức mạnh",
+      "CARDIO": "Cardio"
+    },
+    "fields": {
+      "name": "Tên",
+      "nameOptional": "Tên giáo án (tùy chọn)",
+      "customer": "Khách hàng",
+      "contract": "Hợp đồng",
+      "trainer": "PT",
+      "template": "Template",
+      "phase": "Phase",
+      "goal": "Mục tiêu",
+      "notes": "Ghi chú giáo án",
+      "active": "Đang dùng template này",
+      "date": "Ngày lập",
+      "status": "Trạng thái",
+      "sessions": "Số buổi",
+      "updated": "Cập nhật",
+      "createdBy": "Người lập",
+      "approvedBy": "Người duyệt",
+      "stage": "Stage",
+      "week": "Tuần",
+      "number": "Buổi",
+      "sessionGoal": "Mục tiêu buổi",
+      "weeksPerStage": "Số tuần mỗi stage",
+      "sessionsPerWeek": "Số buổi mỗi tuần"
+    },
+    "place": {
+      "stages": "Stage {n}",
+      "sessions": "Buổi {n}",
+      "items": "Bài tập {n}",
+      "sets": "Set {n}",
+      "name": "Tên",
+      "stageId": "Stage",
+      "week": "Tuần",
+      "number": "Buổi",
+      "exerciseId": "Bài tập",
+      "weight": "Tạ",
+      "reps": "Reps",
+      "restSeconds": "Nghỉ",
+      "rir": "RIR",
+      "tempo": "Tempo",
+      "technique": "Kỹ thuật",
+      "videoUrl": "Video",
+      "durationMinutes": "Thời gian",
+      "speed": "Tốc độ",
+      "heartRate": "Nhịp tim",
+      "notes": "Ghi chú",
+      "goal": "Mục tiêu",
+      "stages_": "Stage"
+    },
+    "set": {
+      "no": "Set",
+      "weight": "Tạ (kg)",
+      "reps": "Reps",
+      "restSeconds": "Nghỉ (giây)",
+      "rir": "RIR",
+      "tempo": "Tempo",
+      "technique": "Kỹ thuật",
+      "notes": "Ghi chú",
+      "videoUrl": "Video",
+      "durationMinutes": "Thời gian (phút)",
+      "speed": "Tốc độ (km/h)",
+      "heartRate": "Nhịp tim (bpm)"
+    },
+    "addStage": "Thêm stage",
+    "removeStage": "Xóa stage",
+    "addSession": "Thêm buổi",
+    "removeSession": "Xóa buổi",
+    "copySession": "Sao chép buổi",
+    "addExercise": "Thêm bài tập",
+    "removeExercise": "Xóa bài tập",
+    "addSet": "Thêm set",
+    "removeSet": "Xóa set",
+    "moveUp": "Lên",
+    "moveDown": "Xuống",
+    "pickExercise": "Chọn bài tập",
+    "searchExercise": "Tìm bài tập",
+    "noExercise": "Không có bài tập nào khớp.",
+    "problems": "Cần sửa trước khi lưu:",
+    "saveDraft": "Lưu bản nháp",
+    "saveAndSend": "Lưu và gửi Master duyệt",
+    "saved": "Đã lưu giáo án",
+    "sent": "Đã gửi duyệt. Giáo án dùng được khi Master duyệt.",
+    "reviews": {
+      "PT": "Đánh giá của PT",
+      "MASTER": "Đánh giá của Master",
+      "evaluation": "Đánh giá",
+      "note": "Ghi chú",
+      "saved": "Đã lưu đánh giá"
+    }
   }
 }

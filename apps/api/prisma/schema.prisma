@@ -224,6 +224,8 @@ model User {
   notificationSettingsUpdated StaffNotificationSetting[] @relation("StaffNotificationSettingUpdatedBy")
   pushSubscriptions           PushSubscription[]
   notificationDeliveries      NotificationDelivery[]
+  workoutPlansCreated         WorkoutPlan[]              @relation("WorkoutPlanCreatedBy")
+  workoutPlansApproved        WorkoutPlan[]              @relation("WorkoutPlanApprovedBy")
 
   @@index([roleId])
   @@map("users")
@@ -264,6 +266,8 @@ model Branch {
   classSessions ClassSession[]
 
   ptPayouts PtPayout[]
+
+  workoutPlans WorkoutPlan[]
 
   @@map("branches")
 }
@@ -719,6 +723,7 @@ model Customer {
   mergesAsSurvivor PersonMerge[]     @relation("MergeSurvivor")
   mergeAsMerged    PersonMerge?      @relation("MergeMerged")
   classAttendances ClassAttendance[]
+  workoutPlans     WorkoutPlan[]
 
   @@index([phone])
   @@index([searchName])
@@ -1037,6 +1042,7 @@ model Contract {
   companions       ContractCompanion[]
   classAttendances ClassAttendance[]
   payoutLines      PtPayoutLine[]
+  workoutPlans     WorkoutPlan[]
 
   @@index([customerId])
   @@index([branchId])
@@ -1128,6 +1134,7 @@ model Employee {
   classesCoached       GymClass[]           @relation("ClassCoach")
   classSessionsCoached ClassSession[]       @relation("ClassSessionCoach")
   ptPayouts            PtPayout[]           @relation("PtPayoutTrainer")
+  workoutPlans         WorkoutPlan[]        @relation("WorkoutPlanTrainer")
 
   @@index([branchId])
   @@index([searchName])
@@ -2095,6 +2102,7 @@ model WorkoutExercise {
   active      Boolean           @default(true)
   createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  planItems   WorkoutPlanItem[]
 
   @@index([areaId])
   @@index([equipmentId])
@@ -2110,5 +2118,138 @@ model WorkoutStage {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  planStages WorkoutPlanStage[]
+
   @@map("workout_stages")
+}
+
+// ---------------------------------------------------------------------------
+// Workout plans and templates (M7.2, brief §7.2, D-033)
+// ---------------------------------------------------------------------------
+
+enum PlanKind {
+  TEMPLATE
+  CUSTOMER
+}
+
+enum PlanStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+// A template or a customer's plan. Written as a draft, approved by the Master, then never edited: a change is a revision
+// (a new draft with `previousPlanId`) that replaces it when approved. The migration's trigger locks what is under a plan
+// that is not a draft.
+model WorkoutPlan {
+  id               String        @id @default(uuid()) @db.Uuid
+  kind             PlanKind
+  name             String
+  branchId         String        @map("branch_id") @db.Uuid
+  branch           Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customerId       String?       @map("customer_id") @db.Uuid
+  customer         Customer?     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  contractId       String?       @map("contract_id") @db.Uuid
+  contract         Contract?     @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  trainerId        String?       @map("trainer_id") @db.Uuid
+  trainer          Employee?     @relation("WorkoutPlanTrainer", fields: [trainerId], references: [id], onDelete: Restrict)
+  planDate         DateTime      @map("plan_date") @db.Date
+  phase            String?
+  goal             String?
+  notes            String?
+  status           PlanStatus    @default(DRAFT)
+  active           Boolean       @default(true)
+  sourceTemplateId String?       @map("source_template_id") @db.Uuid
+  sourceTemplate   WorkoutPlan?  @relation("WorkoutPlanSource", fields: [sourceTemplateId], references: [id], onDelete: Restrict)
+  fromThisTemplate WorkoutPlan[] @relation("WorkoutPlanSource")
+  previousPlanId   String?       @map("previous_plan_id") @db.Uuid
+  previousPlan     WorkoutPlan?  @relation("WorkoutPlanRevision", fields: [previousPlanId], references: [id], onDelete: Restrict)
+  revisions        WorkoutPlan[] @relation("WorkoutPlanRevision")
+  ptEvaluation     String?       @map("pt_evaluation")
+  ptNote           String?       @map("pt_note")
+  masterEvaluation String?       @map("master_evaluation")
+  masterNote       String?       @map("master_note")
+  createdById      String        @map("created_by") @db.Uuid
+  createdBy        User          @relation("WorkoutPlanCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedById     String?       @map("approved_by") @db.Uuid
+  approvedBy       User?         @relation("WorkoutPlanApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedAt       DateTime?     @map("approved_at") @db.Timestamptz(3)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  stages WorkoutPlanStage[]
+
+  @@index([kind, status])
+  @@index([customerId])
+  @@index([contractId])
+  @@index([trainerId])
+  @@index([branchId])
+  @@map("workout_plans")
+}
+
+model WorkoutPlanStage {
+  id       String       @id @default(uuid()) @db.Uuid
+  planId   String       @map("plan_id") @db.Uuid
+  plan     WorkoutPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  stageId  String       @map("stage_id") @db.Uuid
+  stage    WorkoutStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  position Int
+
+  sessions WorkoutPlanSession[]
+
+  @@index([planId])
+  @@map("workout_plan_stages")
+}
+
+model WorkoutPlanSession {
+  id       String           @id @default(uuid()) @db.Uuid
+  stageId  String           @map("stage_id") @db.Uuid
+  stage    WorkoutPlanStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  week     Int?
+  number   Int?
+  goal     String?
+  position Int
+
+  items WorkoutPlanItem[]
+
+  @@index([stageId])
+  @@map("workout_plan_sessions")
+}
+
+model WorkoutPlanItem {
+  id         String             @id @default(uuid()) @db.Uuid
+  sessionId  String             @map("session_id") @db.Uuid
+  session    WorkoutPlanSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId String             @map("exercise_id") @db.Uuid
+  exercise   WorkoutExercise    @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  position   Int
+
+  sets WorkoutPlanSet[]
+
+  @@index([sessionId])
+  @@index([exerciseId])
+  @@map("workout_plan_items")
+}
+
+model WorkoutPlanSet {
+  id              String          @id @default(uuid()) @db.Uuid
+  itemId          String          @map("item_id") @db.Uuid
+  item            WorkoutPlanItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  setNo           Int             @map("set_no")
+  weight          Decimal?        @db.Decimal(7, 2)
+  reps            Int?
+  restSeconds     Int?            @map("rest_seconds")
+  rir             Int?
+  tempo           String?
+  technique       String?
+  videoUrl        String?         @map("video_url")
+  durationMinutes Decimal?        @map("duration_minutes") @db.Decimal(6, 1)
+  speed           Decimal?        @db.Decimal(5, 1)
+  heartRate       Int?            @map("heart_rate")
+  notes           String?
+
+  @@index([itemId])
+  @@map("workout_plan_sets")
 }

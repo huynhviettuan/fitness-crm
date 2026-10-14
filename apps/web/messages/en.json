@@ -10,7 +10,8 @@
       "reports": "Reports",
       "people": "People and access",
       "config": "Configuration",
-      "monitoring": "Monitoring"
+      "monitoring": "Monitoring",
+      "workouts": "Workout plans"
     },
     "main": "Navigation",
     "dashboard": "Dashboard",
@@ -55,7 +56,9 @@
     "ptPayouts": "PT payouts",
     "emailTemplates": "Email templates",
     "notificationSettings": "Staff notifications",
-    "workoutCatalog": "Workout catalogs"
+    "workoutCatalog": "Workout catalogs",
+    "workoutPlans": "Customers' plans",
+    "workoutTemplates": "Plan templates"
   },
   "status": {
     "customer": {
@@ -140,6 +143,13 @@
       "EXPIRING_SOON": "Expiring soon",
       "EXPIRED": "Expired",
       "ON_HOLD": "On hold"
+    },
+    "plan": {
+      "DRAFT": "Draft",
+      "PENDING": "Waiting for the Master",
+      "APPROVED": "In use",
+      "REJECTED": "Rejected",
+      "SUPERSEDED": "Replaced"
     }
   },
   "common": {
@@ -412,7 +422,8 @@
       "bookings": "Bookings",
       "payments": "Payments",
       "consulting": "Consulting history",
-      "emails": "Emails sent"
+      "emails": "Emails sent",
+      "plans": "Workout plans"
     },
     "identitySubmitted": "Saved. The change of name, phone, or email waits for approval.",
     "pendingIdentity": "Waiting for approval: {changes}. The current details apply until it is approved.",
@@ -586,7 +597,9 @@
     "CLASS_SESSION_CANCELLED": "This class session is cancelled.",
     "CLASS_NOT_STARTED": "The class has not started, so attendance cannot be marked yet.",
     "CLASS_CONTRACT_MISMATCH": "The contract is not a group-class contract of this branch.",
-    "PAYOUT_NOTHING_TO_PAY": "Nothing is left to pay the PT in this period: the sessions are paid, or the total after adjustments is not above zero."
+    "PAYOUT_NOTHING_TO_PAY": "Nothing is left to pay the PT in this period: the sessions are paid, or the total after adjustments is not above zero.",
+    "PLAN_NOT_EDITABLE": "The plan was sent or approved, so it cannot be edited. Make a revision.",
+    "PLAN_NOT_APPROVED": "Only a plan in use can have a revision."
   },
   "validation": {
     "required": "Required.",
@@ -677,7 +690,14 @@
     "mandatoryEvent": "A mandatory email cannot be switched off.",
     "tooMany": "Too many items.",
     "invalidUrl": "Not a valid address.",
-    "invalidCode": "A code has letters, digits, dots, dashes and underscores only."
+    "invalidCode": "A code has letters, digits, dots, dashes and underscores only.",
+    "templateOneSession": "A template has one session for each stage.",
+    "templateHasNoWeeks": "A template has no weeks or session numbers.",
+    "notForThisExercise": "This field is not used for this kind of exercise (Strength uses weight, reps...; Cardio uses time, speed, heart rate).",
+    "emptyPlan": "The plan has no exercise to send for approval.",
+    "tooManyDecimals": "At most two decimals.",
+    "cycle": "An area cannot go under itself or under one of its own children.",
+    "tooDeep": "The area tree is too deep."
   },
   "contracts": {
     "title": "Contracts",
@@ -1374,7 +1394,9 @@
       },
       "workout": {
         "view": "View the workout catalogs and plans",
-        "catalog": "Keep the workout catalogs"
+        "catalog": "Keep the workout catalogs",
+        "plan": "Write workout plans and templates",
+        "review": "Review workout plans (Master)"
       }
     },
     "resources": {
@@ -1651,7 +1673,8 @@
       "workout_equipment": "Equipment",
       "workout_area": "Body area",
       "workout_exercise": "Exercise",
-      "workout_stage": "Plan stage"
+      "workout_stage": "Plan stage",
+      "workout_plan": "Workout plan"
     },
     "verbs": {
       "created": "Created",
@@ -1725,7 +1748,8 @@
       "cash_create": "Income or expense",
       "record_delete": "Deletion",
       "customer_identity": "Customer details",
-      "contract_create": "New contract"
+      "contract_create": "New contract",
+      "workout_plan": "Workout plan or template"
     },
     "fields": {
       "submittedAt": "Submitted",
@@ -1748,7 +1772,8 @@
       "cash_create": "The entry counts toward the totals.",
       "record_delete": "The record is deleted and moved to the trash.",
       "customer_identity": "The customer's new details take effect.",
-      "contract_create": "The contract takes effect and can be booked. After approval it can't be edited."
+      "contract_create": "The contract takes effect and can be booked. After approval it can't be edited.",
+      "workout_plan": "The plan is in use. After approval it is not edited; to change it, make a revision and send it again."
     },
     "approved": "Approved",
     "rejectTitle": "Reject {name}?",
@@ -2969,5 +2994,130 @@
     "hideInactive": "Hide entries no longer used",
     "filters": "Exercise filters",
     "apply": "Apply"
+  },
+  "workoutPlans": {
+    "title": "Customers' workout plans",
+    "description": "Plans by week and session, made from a template or from scratch. The Master approves before use; an approved plan is not edited, a change is a revision.",
+    "templatesTitle": "Plan templates",
+    "templatesDescription": "Models of a plan: stages with one model session each. Customers' plans are made from approved templates.",
+    "filters": "Plan filters",
+    "apply": "Apply",
+    "search": "Search by plan or customer",
+    "allStatuses": "All statuses",
+    "empty": "No plan yet.",
+    "customerEmpty": "This customer has no plan yet.",
+    "newTemplate": "Add a template",
+    "newPlan": "Add a plan",
+    "create": "Create",
+    "created": "Draft created",
+    "blank": "From scratch (no template)",
+    "back": "Back to the list",
+    "templateOf": "A template of {branch}",
+    "planOf": "Plan of {customer} · contract {contract}",
+    "header": "General information",
+    "waiting": "Waiting for the Master. The plan is not in use yet and cannot be edited.",
+    "rejected": "The Master rejected it. Edit it and send it again.",
+    "revise": "Make a revision",
+    "revisionStarted": "A revision was started to edit",
+    "replaces": "A revision of a plan in use: see that plan",
+    "revisionOf": "A revision is being written or waits for approval: see it",
+    "replacedBy": "Replaced by a newer plan: see it",
+    "sessionsCount": "{count} sessions",
+    "sessionLabel": "Week {week} · session {number}",
+    "noStages": "No stage yet.",
+    "noExercises": "No exercise yet.",
+    "videoOpen": "Open video",
+    "kinds": {
+      "STRENGTH": "Strength",
+      "CARDIO": "Cardio"
+    },
+    "fields": {
+      "name": "Name",
+      "nameOptional": "Plan name (optional)",
+      "customer": "Customer",
+      "contract": "Contract",
+      "trainer": "PT",
+      "template": "Template",
+      "phase": "Phase",
+      "goal": "Goal",
+      "notes": "Plan notes",
+      "active": "This template is in use",
+      "date": "Made on",
+      "status": "Status",
+      "sessions": "Sessions",
+      "updated": "Updated",
+      "createdBy": "Made by",
+      "approvedBy": "Approved by",
+      "stage": "Stage",
+      "week": "Week",
+      "number": "Session",
+      "sessionGoal": "Session goal",
+      "weeksPerStage": "Weeks per stage",
+      "sessionsPerWeek": "Sessions per week"
+    },
+    "place": {
+      "stages": "Stage {n}",
+      "sessions": "Session {n}",
+      "items": "Exercise {n}",
+      "sets": "Set {n}",
+      "name": "Name",
+      "stageId": "Stage",
+      "week": "Week",
+      "number": "Session",
+      "exerciseId": "Exercise",
+      "weight": "Weight",
+      "reps": "Reps",
+      "restSeconds": "Rest",
+      "rir": "RIR",
+      "tempo": "Tempo",
+      "technique": "Technique",
+      "videoUrl": "Video",
+      "durationMinutes": "Time",
+      "speed": "Speed",
+      "heartRate": "Heart rate",
+      "notes": "Notes",
+      "goal": "Goal",
+      "stages_": "Stage"
+    },
+    "set": {
+      "no": "Set",
+      "weight": "Weight (kg)",
+      "reps": "Reps",
+      "restSeconds": "Rest (s)",
+      "rir": "RIR",
+      "tempo": "Tempo",
+      "technique": "Technique",
+      "notes": "Notes",
+      "videoUrl": "Video",
+      "durationMinutes": "Time (min)",
+      "speed": "Speed (km/h)",
+      "heartRate": "Heart rate (bpm)"
+    },
+    "addStage": "Add a stage",
+    "removeStage": "Remove the stage",
+    "addSession": "Add a session",
+    "removeSession": "Remove the session",
+    "copySession": "Copy the session",
+    "addExercise": "Add an exercise",
+    "removeExercise": "Remove the exercise",
+    "addSet": "Add a set",
+    "removeSet": "Remove the set",
+    "moveUp": "Up",
+    "moveDown": "Down",
+    "pickExercise": "Pick an exercise",
+    "searchExercise": "Search exercises",
+    "noExercise": "No exercise matches.",
+    "problems": "To fix before saving:",
+    "saveDraft": "Save the draft",
+    "saveAndSend": "Save and send to the Master",
+    "saved": "Plan saved",
+    "sent": "Sent for approval. The plan can be used once the Master approves it.",
+    "reviews": {
+      "PT": "The PT's evaluation",
+      "MASTER": "The Master's evaluation",
+      "evaluation": "Evaluation",
+      "note": "Notes",
+      "saved": "Evaluation saved"
+    }
   }
 }

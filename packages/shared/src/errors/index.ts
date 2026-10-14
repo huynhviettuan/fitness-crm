@@ -50,6 +50,9 @@ export const ERROR_HTTP_STATUS = {
   CLASS_CONTRACT_MISMATCH: 422,
   // M5.7, A-173: nothing is left to pay the PT for the period, or what is left is not above zero.
   PAYOUT_NOTHING_TO_PAY: 409,
+  // M7.2, A-193: a plan that is not a draft is not edited; a change is a revision.
+  PLAN_NOT_EDITABLE: 409,
+  PLAN_NOT_APPROVED: 409,
   IDEMPOTENCY_KEY_REUSED: 409,
   APPROVAL_NOT_PENDING: 409,
   APPROVAL_ALREADY_PENDING: 409,

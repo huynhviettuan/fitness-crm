@@ -15,6 +15,7 @@ describe("buildNav", () => {
       "group:leads",
       "group:customers",
       "group:schedule",
+      "group:workouts",
       "tasks",
       "finance",
       "group:reports",

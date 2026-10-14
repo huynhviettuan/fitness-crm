@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-26 — M7.2: templates and customer plans
+
+- **Plans** (A-192 to A-198): templates and customer plans of stages, sessions, exercises and sets with Strength and Cardio targets; approved by the Master through the approval engine, locked once in use, changed by revisions, made from a template, with PT and Master reviews.
+- **Open**: OQ-058. Docs 04, 07, 09, 13, 16, 18, 28; E2E-170.
+
 ## 2026-10-25 — M7.1: workout catalogs
 
 - **Catalogs** (A-188 to A-190): equipment, a tree of body areas, Strength and Cardio exercises with a video link, and plan stages; kept by Admin and the Fitness Manager, read by the Master and the PT.

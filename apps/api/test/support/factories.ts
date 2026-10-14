@@ -453,6 +453,7 @@ export const SEEDED_APPROVAL_RULES: { action: ApprovalAction; required: boolean;
   { action: "record.delete", required: true, approvers: ["ADMIN"] },
   { action: "customer.identity", required: true, approvers: ["FITNESS_MANAGER"] },
   { action: "contract.create", required: true, approvers: ["FITNESS_MANAGER", "ADMIN"] },
+  { action: "workout.plan", required: true, approvers: ["MASTER", "ADMIN"] },
 ];
 
 /**

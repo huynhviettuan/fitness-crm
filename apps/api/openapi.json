@@ -12048,6 +12048,806 @@
         "x-permission": "workout.catalog"
       }
     },
+    "/api/v1/workout/plans": {
+      "get": {
+        "operationId": "WorkoutPlansController_list",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trainerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlanPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.view"
+      },
+      "post": {
+        "operationId": "WorkoutPlansController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "TEMPLATE"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 150
+                      },
+                      "notes": {
+                        "default": "",
+                        "nullable": true,
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "branchId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "CUSTOMER"
+                        ]
+                      },
+                      "name": {
+                        "default": "",
+                        "nullable": true,
+                        "type": "string",
+                        "maxLength": 150
+                      },
+                      "customerId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "contractId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "trainerId": {
+                        "default": "",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                              null
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        ]
+                      },
+                      "templateId": {
+                        "default": "",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                              null
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        ]
+                      },
+                      "weeksPerStage": {
+                        "default": 4,
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 26
+                      },
+                      "sessionsPerWeek": {
+                        "default": 3,
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 7
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "customerId",
+                      "contractId"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlan"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.plan"
+      }
+    },
+    "/api/v1/workout/plans/{id}": {
+      "get": {
+        "operationId": "WorkoutPlansController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlan"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.view"
+      },
+      "put": {
+        "operationId": "WorkoutPlansController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "phase": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "goal": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "notes": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "stages": {
+                    "maxItems": 12,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "stageId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "sessions": {
+                          "maxItems": 60,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "week": {
+                                "default": null,
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "enum": [
+                                      null
+                                    ]
+                                  }
+                                ]
+                              },
+                              "number": {
+                                "default": null,
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "enum": [
+                                      null
+                                    ]
+                                  }
+                                ]
+                              },
+                              "goal": {
+                                "default": "",
+                                "nullable": true,
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "items": {
+                                "maxItems": 30,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "exerciseId": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "sets": {
+                                      "maxItems": 12,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "weight": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "reps": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "restSeconds": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "rir": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "tempo": {
+                                            "default": "",
+                                            "nullable": true,
+                                            "type": "string",
+                                            "maxLength": 20
+                                          },
+                                          "technique": {
+                                            "default": "",
+                                            "nullable": true,
+                                            "type": "string",
+                                            "maxLength": 200
+                                          },
+                                          "videoUrl": {
+                                            "default": "",
+                                            "nullable": true,
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "enum": [
+                                                  ""
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "maxLength": 500,
+                                                "format": "uri"
+                                              }
+                                            ]
+                                          },
+                                          "durationMinutes": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "speed": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "heartRate": {
+                                            "default": null,
+                                            "anyOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                  null
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "notes": {
+                                            "default": "",
+                                            "nullable": true,
+                                            "type": "string",
+                                            "maxLength": 500
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "exerciseId",
+                                    "sets"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "items"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "stageId",
+                        "sessions"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "stages"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlan"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.plan"
+      }
+    },
+    "/api/v1/workout/plans/{id}/submit": {
+      "post": {
+        "operationId": "WorkoutPlansController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlan"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.plan"
+      }
+    },
+    "/api/v1/workout/plans/{id}/revise": {
+      "post": {
+        "operationId": "WorkoutPlansController_revise",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlan"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.plan"
+      }
+    },
+    "/api/v1/workout/plans/{id}/review": {
+      "put": {
+        "operationId": "WorkoutPlansController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "PT",
+                      "MASTER"
+                    ]
+                  },
+                  "evaluation": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "note": {
+                    "default": "",
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "side"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlan"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "workout-plans"
+        ],
+        "x-permission": "workout.view"
+      }
+    },
     "/api/v1/notification-preferences": {
       "get": {
         "operationId": "NotificationPreferencesController_get",
@@ -13890,6 +14690,8 @@
                             "class.attend",
                             "workout.view",
                             "workout.catalog",
+                            "workout.plan",
+                            "workout.review",
                             "checkin.review",
                             "checkin.devices",
                             "employee.view",
@@ -14334,6 +15136,8 @@
                         "class.attend",
                         "workout.view",
                         "workout.catalog",
+                        "workout.plan",
+                        "workout.review",
                         "checkin.review",
                         "checkin.devices",
                         "employee.view",
@@ -14626,6 +15430,8 @@
                         "class.attend",
                         "workout.view",
                         "workout.catalog",
+                        "workout.plan",
+                        "workout.review",
                         "checkin.review",
                         "checkin.devices",
                         "employee.view",
@@ -17070,6 +17876,8 @@
               "CLASS_NOT_STARTED",
               "CLASS_CONTRACT_MISMATCH",
               "PAYOUT_NOTHING_TO_PAY",
+              "PLAN_NOT_EDITABLE",
+              "PLAN_NOT_APPROVED",
               "IDEMPOTENCY_KEY_REUSED",
               "APPROVAL_NOT_PENDING",
               "APPROVAL_ALREADY_PENDING",
@@ -17261,6 +18069,8 @@
                 "class.attend",
                 "workout.view",
                 "workout.catalog",
+                "workout.plan",
+                "workout.review",
                 "checkin.review",
                 "checkin.devices",
                 "employee.view",
@@ -24502,6 +25312,606 @@
           "updatedAt"
         ]
       },
+      "WorkoutPlanPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkoutPlanSummary"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "WorkoutPlanSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "TEMPLATE",
+              "CUSTOMER"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "SUPERSEDED"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "customer": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "customerCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "customerCode",
+              "fullName"
+            ]
+          },
+          "contract": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode"
+            ]
+          },
+          "trainer": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "employeeCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "employeeCode",
+              "fullName"
+            ]
+          },
+          "planDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sessions": {
+            "type": "integer"
+          },
+          "previousPlanId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "status",
+          "active",
+          "branch",
+          "customer",
+          "contract",
+          "trainer",
+          "planDate",
+          "sessions",
+          "previousPlanId",
+          "updatedAt"
+        ]
+      },
+      "WorkoutPlan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "TEMPLATE",
+              "CUSTOMER"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "SUPERSEDED"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/BranchRef"
+          },
+          "customer": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "customerCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "customerCode",
+              "fullName"
+            ]
+          },
+          "contract": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contractCode": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "contractCode"
+            ]
+          },
+          "trainer": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "employeeCode": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "employeeCode",
+              "fullName"
+            ]
+          },
+          "planDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sessions": {
+            "type": "integer"
+          },
+          "previousPlanId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "phase": {
+            "nullable": true,
+            "type": "string"
+          },
+          "goal": {
+            "nullable": true,
+            "type": "string"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "sourceTemplate": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "ptEvaluation": {
+            "nullable": true,
+            "type": "string"
+          },
+          "ptNote": {
+            "nullable": true,
+            "type": "string"
+          },
+          "masterEvaluation": {
+            "nullable": true,
+            "type": "string"
+          },
+          "masterNote": {
+            "nullable": true,
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "approvedBy": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "approvedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "revisionId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
+          "pendingRequestId": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid"
+          },
+          "can": {
+            "type": "object",
+            "properties": {
+              "edit": {
+                "type": "boolean"
+              },
+              "submit": {
+                "type": "boolean"
+              },
+              "revise": {
+                "type": "boolean"
+              },
+              "reviewAsPt": {
+                "type": "boolean"
+              },
+              "reviewAsMaster": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "edit",
+              "submit",
+              "revise",
+              "reviewAsPt",
+              "reviewAsMaster"
+            ]
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "stage": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "sessions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "week": {
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "number": {
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "goal": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "exercise": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "STRENGTH",
+                                    "CARDIO"
+                                  ]
+                                },
+                                "videoUrl": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "equipmentName": {
+                                  "nullable": true,
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name",
+                                "kind",
+                                "videoUrl",
+                                "equipmentName"
+                              ]
+                            },
+                            "sets": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "setNo": {
+                                    "type": "integer"
+                                  },
+                                  "weight": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  },
+                                  "reps": {
+                                    "nullable": true,
+                                    "type": "integer"
+                                  },
+                                  "restSeconds": {
+                                    "nullable": true,
+                                    "type": "integer"
+                                  },
+                                  "rir": {
+                                    "nullable": true,
+                                    "type": "integer"
+                                  },
+                                  "tempo": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "technique": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "videoUrl": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "durationMinutes": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  },
+                                  "speed": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  },
+                                  "heartRate": {
+                                    "nullable": true,
+                                    "type": "integer"
+                                  },
+                                  "notes": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "setNo",
+                                  "weight",
+                                  "reps",
+                                  "restSeconds",
+                                  "rir",
+                                  "tempo",
+                                  "technique",
+                                  "videoUrl",
+                                  "durationMinutes",
+                                  "speed",
+                                  "heartRate",
+                                  "notes"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "exercise",
+                            "sets"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "week",
+                      "number",
+                      "goal",
+                      "items"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "stage",
+                "sessions"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "status",
+          "active",
+          "branch",
+          "customer",
+          "contract",
+          "trainer",
+          "planDate",
+          "sessions",
+          "previousPlanId",
+          "updatedAt",
+          "phase",
+          "goal",
+          "notes",
+          "sourceTemplate",
+          "ptEvaluation",
+          "ptNote",
+          "masterEvaluation",
+          "masterNote",
+          "createdBy",
+          "approvedBy",
+          "approvedAt",
+          "revisionId",
+          "pendingRequestId",
+          "can",
+          "stages"
+        ]
+      },
       "NotificationPreferences": {
         "type": "object",
         "properties": {
@@ -25045,6 +26455,8 @@
                     "class.attend",
                     "workout.view",
                     "workout.catalog",
+                    "workout.plan",
+                    "workout.review",
                     "checkin.review",
                     "checkin.devices",
                     "employee.view",
@@ -25330,6 +26742,8 @@
                 "class.attend",
                 "workout.view",
                 "workout.catalog",
+                "workout.plan",
+                "workout.review",
                 "checkin.review",
                 "checkin.devices",
                 "employee.view",
@@ -25853,7 +27267,8 @@
               "cash.create",
               "record.delete",
               "customer.identity",
-              "contract.create"
+              "contract.create",
+              "workout.plan"
             ]
           },
           "entityType": {
@@ -26001,7 +27416,8 @@
               "cash.create",
               "record.delete",
               "customer.identity",
-              "contract.create"
+              "contract.create",
+              "workout.plan"
             ]
           },
           "required": {

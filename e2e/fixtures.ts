@@ -12,6 +12,7 @@ import { CalendarPage, CustomerBookingsTab, SessionsPage } from "./pages/booking
 import { CheckinPage } from "./pages/checkin";
 import { ClassesPage } from "./pages/classes";
 import { WorkoutCatalogPage } from "./pages/workout-catalog";
+import { WorkoutPlanPage } from "./pages/workout-plans";
 import { EmployeePage, EmployeesPage } from "./pages/employees";
 import { NotificationsPage, TaskPage, TasksPage } from "./pages/tasks";
 import { LeadPage, LeadsPage, RecarePage } from "./pages/leads";
@@ -42,6 +43,7 @@ type Fixtures = {
   checkinPage: CheckinPage;
   classesPage: ClassesPage;
   workoutCatalogPage: WorkoutCatalogPage;
+  workoutPlanPage: WorkoutPlanPage;
   employeesPage: EmployeesPage;
   tasksPage: TasksPage;
   leadsPage: LeadsPage;
@@ -112,6 +114,7 @@ export const test = base.extend<Fixtures>({
   checkinPage: async ({ page }, use) => use(new CheckinPage(page)),
   classesPage: async ({ page }, use) => use(new ClassesPage(page)),
   workoutCatalogPage: async ({ page }, use) => use(new WorkoutCatalogPage(page)),
+  workoutPlanPage: async ({ page }, use) => use(new WorkoutPlanPage(page)),
   employeesPage: async ({ page }, use) => use(new EmployeesPage(page)),
   tasksPage: async ({ page }, use) => use(new TasksPage(page)),
   leadsPage: async ({ page }, use) => use(new LeadsPage(page)),
@@ -372,6 +375,20 @@ export const test = base.extend<Fixtures>({
       });
       await prisma.auditEvent.deleteMany({ where: { entityId: { in: payoutIds } } });
       await prisma.ptPayout.deleteMany({ where: { id: { in: payoutIds } } });
+      // Workout plans of tagged customers or named with the tag; revisions and plans made from a template go first (M7.2).
+      const planIds = ids(
+        await prisma.workoutPlan.findMany({
+          where: { OR: [{ name: { contains: tag } }, { customerId: { in: customerIds } }] },
+          select: { id: true },
+        }),
+      );
+      await prisma.approvalRequest.deleteMany({ where: { entityId: { in: planIds } } });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: planIds } } });
+      for (let pass = 0; pass < 6 && planIds.length > 0; pass++) {
+        await prisma.workoutPlan.deleteMany({
+          where: { id: { in: planIds }, revisions: { none: {} }, fromThisTemplate: { none: {} } },
+        });
+      }
       // The workout catalog entries named with the tag, exercises first (M7.1).
       const catalogNames = { name: { contains: tag } };
       const exerciseIds = ids(

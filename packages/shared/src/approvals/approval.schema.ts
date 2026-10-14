@@ -17,6 +17,8 @@ export const APPROVAL_ACTIONS = [
   "record.delete",
   "customer.identity",
   "contract.create",
+  // A workout plan or template waiting for the Master (M7.2, A-193).
+  "workout.plan",
 ] as const;
 export type ApprovalAction = (typeof APPROVAL_ACTIONS)[number];
 

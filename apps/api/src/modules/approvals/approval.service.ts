@@ -12,6 +12,7 @@ import { resolveChoice } from "../../platform/options/option.service.js";
 import { hasBranch } from "../../platform/permissions/scope.js";
 import { parseInput } from "../../platform/validation/parse.js";
 import { lockContract } from "../contracts/contract.repository.js";
+import { decidePlan, lockPlanForDecision } from "../workouts/plan.service.js";
 import { applyContractDeletion, decideContract } from "../contracts/contract.service.js";
 import { applyIdentityChange } from "../customers/customer.service.js";
 import { applyCashDeletion, decideCashTransaction, findCashForApproval } from "../finance/cash.service.js";
@@ -73,6 +74,13 @@ const HANDLERS: Record<ApprovalAction, Handler> = {
     },
     approve: (tx, request, decider) => decideContract(tx, decider, request.entityId, "APPROVED"),
     reject: (tx, request, decider) => decideContract(tx, decider, request.entityId, "REJECTED"),
+  },
+  "workout.plan": {
+    lock: async (tx, request) => {
+      await lockPlanForDecision(tx, request.entityId);
+    },
+    approve: (tx, request, decider) => decidePlan(tx, decider, request.entityId, "APPROVED"),
+    reject: (tx, request, decider) => decidePlan(tx, decider, request.entityId, "REJECTED"),
   },
   "customer.identity": {
     approve: (tx, request, decider) =>

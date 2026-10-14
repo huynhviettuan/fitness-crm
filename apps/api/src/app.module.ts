@@ -26,6 +26,7 @@ import {
   WorkoutExercisesController,
   WorkoutStagesController,
 } from "./modules/workouts/catalog.controller.js";
+import { WorkoutPlansController } from "./modules/workouts/plans.controller.js";
 import { PayoutsController } from "./modules/payouts/payouts.controller.js";
 import { EmailTemplatesController } from "./modules/mail/templates.controller.js";
 import { ContractsController } from "./modules/contracts/contracts.controller.js";
@@ -84,6 +85,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
     WorkoutAreasController,
     WorkoutExercisesController,
     WorkoutStagesController,
+    WorkoutPlansController,
     NotificationPreferencesController,
     NotificationSettingsController,
     PushController,
