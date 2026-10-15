@@ -13,7 +13,7 @@ test.describe("A01 every API route requires a session", () => {
     );
   });
 
-  test("only the health check answers without a session, and tells nothing of the gym (M9.4, A-311)", async ({
+  test("only the health checks answer without a session, and tell nothing of the gym (M9.4, A-311, A-315)", async ({
     apiAs,
   }) => {
     const open = routes.flatMap((route) =>
@@ -21,11 +21,17 @@ test.describe("A01 every API route requires a session", () => {
         .filter((method) => route.permissions[method] === "public")
         .map((method) => `${method} ${route.template}`),
     );
-    expect(open).toEqual(["GET /api/v1/health"]);
-    const response = await (await apiAs(null)).get("/api/v1/health");
-    expect(response.status()).toBe(200);
-    expect(response.headers()["cache-control"]).toBe("no-store");
-    expect(Object.keys(await response.json()).sort()).toEqual(["database", "release", "status", "time"]);
+    expect(open).toEqual(["GET /api/v1/health", "GET /api/v1/health/ready"]);
+    const anonymous = await apiAs(null);
+    for (const [path, fields] of [
+      ["/api/v1/health", ["release", "status", "time"]],
+      ["/api/v1/health/ready", ["database", "release", "status", "time"]],
+    ] as const) {
+      const response = await anonymous.get(path);
+      expect(response.status(), path).toBe(200);
+      expect(response.headers()["cache-control"], path).toBe("no-store");
+      expect(Object.keys(await response.json()).sort(), path).toEqual(fields);
+    }
   });
 
   for (const route of routes) {

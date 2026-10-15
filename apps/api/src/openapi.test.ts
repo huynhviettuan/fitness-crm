@@ -21,9 +21,9 @@ describe("the OpenAPI contract (T-046)", () => {
     for (const key of keys) expect(PERMISSION_KEYS).toContain(key);
   });
 
-  it("opens only the health check to anyone (M9.4, A-311)", () => {
+  it("opens only the health checks to anyone (M9.4, A-311, A-315)", () => {
     expect(
       operations.filter((operation) => operation.permission === "public").map((operation) => operation.name),
-    ).toEqual(["GET /api/v1/health"]);
+    ).toEqual(["GET /api/v1/health", "GET /api/v1/health/ready"]);
   });
 });

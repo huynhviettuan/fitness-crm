@@ -4,8 +4,8 @@ A free setup to try the system online before paying for hosting (A-314). It is *
 
 | | Free trial | Production (doc 15) |
 |---|---|---|
-| API | Render free web service; sleeps after 15 minutes without requests, about 1 minute to wake | Always on |
-| Background jobs (reminders, email outbox, backup) | Inside the API: they run only while it is awake | Separate worker service |
+| API | Render free web service; sleeps after 15 minutes without requests unless a monitor calls it (step 4) | Always on |
+| Background jobs (reminders, email outbox, backup) | Inside the API: they run only while it is awake (step 4 keeps it awake) | Separate worker service |
 | Migrations | When the API starts (`apps/api/scripts/start-trial.sh`) | Release step before the new version takes traffic |
 | Database | Render free PostgreSQL 17, 1 GB, **expires 30 days after creation** (then 14 days' grace) | Paid, daily backups, point-in-time recovery |
 | Web | Vercel Hobby (personal, non-commercial use) | Vercel Pro, or Render |
@@ -21,8 +21,8 @@ Files: `render.yaml` (the API and the database), `apps/web/vercel.json` (the web
 
 - Accounts: Render, Vercel, Cloudflare, each signed up with GitHub.
 - Pick the web address now: the Vercel project name decides it. This guide uses **`flow-fitness-crm`**, so
-  `https://flow-fitness-crm.vercel.app`. If Vercel gives a different address in step 4, change `BETTER_AUTH_URL` on Render
-  (step 5).
+  `https://flow-fitness-crm.vercel.app`. If Vercel gives a different address in step 5, change `BETTER_AUTH_URL` on Render
+  (step 6).
 - Pick the first admin's email and a strong password (at least 12 characters). Keep them in your password manager.
 
 ## Step 1 — Cloudflare R2: the bucket and its key
@@ -64,10 +64,27 @@ Files: `render.yaml` (the API and the database), `apps/web/vercel.json` (the web
 ## Step 3 — Check the API
 
 1. Render → **flow-api** → copy its address at the top, e.g. `https://flow-api.onrender.com` (it may have a suffix).
-2. Open `https://<that address>/api/v1/health`. Expected: `{"status":"ok","database":"ok",…}`.
+2. Open `https://<that address>/api/v1/health/ready`. Expected: `{"status":"ok","database":"ok",…}`.
+   (`/api/v1/health` only says the process is up; Render uses it, so a slow database never makes Render restart the API, A-315.)
    If the service fails to start, its **Logs** name the setting at fault (e.g. `BETTER_AUTH_URL must be an https:// URL in production`).
+3. If the log shows `Key check: … does not decode to 32 bytes` (Render made a key of the wrong length): **flow-api** →
+   **Environment** → replace that key with the output of `openssl rand -base64 32` → **Save, rebuild and deploy**. Do this
+   before anyone types ID numbers or health notes: those are sealed with `FIELD_ENCRYPTION_KEY`.
 
-## Step 4 — Vercel: the web app
+## Step 4 — Keep the API awake (required)
+
+A free Render service sleeps after 15 minutes without requests. While it sleeps the reminders and the email outbox do not
+run, the **nightly backup (02:00) never happens**, and the first page after a quiet period fails while the API wakes up
+(about a minute). So a free monitor must call it:
+
+1. Sign up at **cron-job.org** (free) or **UptimeRobot** (free).
+2. New job / monitor: URL `https://<Render address>/api/v1/health/ready`, every **10 minutes**, alert by email on failure.
+3. Check after an hour that it shows successful calls.
+
+One service awake all month uses about 744 of the 750 free hours Render gives a workspace, so keep **only flow-api** on the
+free plan.
+
+## Step 5 — Vercel: the web app
 
 1. Vercel → **Add New…** → **Project** → import `fitness-crm` from GitHub (that repository only).
 2. **Project Name**: `flow-fitness-crm`.
@@ -82,7 +99,7 @@ Files: `render.yaml` (the API and the database), `apps/web/vercel.json` (the web
 
 5. **Deploy**. When it is done, note the address under **Domains** (e.g. `flow-fitness-crm.vercel.app`).
 
-## Step 5 — If the web address differs
+## Step 6 — If the web address differs
 
 If the Vercel address is not the one given to Render in step 2: Render → **flow-api** → **Environment** → `BETTER_AUTH_URL` →
 the real address (`https://…vercel.app`, no trailing `/`) → **Save, rebuild and deploy**. Sign-in and every change are refused
@@ -91,25 +108,18 @@ until the two match (T-033).
 Use only this production address: Vercel's preview addresses (one per branch or commit) differ, so the API refuses changes
 from them.
 
-## Step 6 — Keep the keys
+## Step 7 — Keep the keys
 
 Render → **flow-api** → **Environment** → reveal and copy into your password manager: `BETTER_AUTH_SECRET`,
 `FIELD_ENCRYPTION_KEY`, `BACKUP_ENCRYPTION_KEY`. Losing `FIELD_ENCRYPTION_KEY` loses the ID numbers and health notes typed
 into the trial; losing `BACKUP_ENCRYPTION_KEY` makes its backups unreadable.
 
-## Step 7 — First sign-in
+## Step 8 — First sign-in
 
-1. Open the Vercel address → sign in with the first admin's email and password. The first page after a quiet period can take
-   about a minute (the API wakes up).
+1. Open the Vercel address → sign in with the first admin's email and password.
 2. Then Render → **flow-api** → **Environment** → delete `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` → **Save** (the admin
    stays; the password no longer sits in the settings).
 3. Create the trial's users and branches from the Admin screens (doc 08).
-
-## Step 8 — Optional: keep the API awake
-
-So the first page is quick and the reminders run: a free monitor (cron-job.org or UptimeRobot) calling
-`https://<Render address>/api/v1/health` every 10 minutes. One service awake all month uses about 744 of the 750 free hours
-Render gives a workspace, so keep **only flow-api** on the free plan.
 
 ## Updates
 

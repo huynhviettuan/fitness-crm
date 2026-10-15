@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — Review fixes: liveness and readiness, trial keys, keep-awake
+
+- **Health** (A-315): `GET /health` is liveness (the platform's check, no database); `GET /health/ready` is readiness (the monitor's check, `503` without the database).
+- **Trial** (doc 34): the start checks the generated keys' lengths and names the fix; the keep-awake monitor is a required step (a sleeping free API takes no backup). Docs 07, 13, 15, 18, 24.
+
 ## 2026-10-15 — Free trial deployment
 
 - **Trial online** (A-314, doc 34): `render.yaml` (API and PostgreSQL on Render's free plan, Singapore), `apps/web/vercel.json`, `start-trial.sh` (migrations and first admin at start-up), and the step-by-step guide. Rehearsed with the image on an empty database. Docs 15, 18, README.

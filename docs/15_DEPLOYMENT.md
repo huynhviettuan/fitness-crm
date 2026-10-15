@@ -7,7 +7,7 @@ Architecture and costs: `26_TECH_PROPOSAL.md`. Decisions: T-041, T-042. A free t
 | Part | Host | Notes |
 |---|---|---|
 | `apps/web` (Next.js) | Vercel (Pro) | Preview deployment per pull request, pointed at the staging API |
-| `apps/api` (NestJS, HTTP) | Railway or Render, Singapore region | Docker image (`apps/api/Dockerfile`, built from the repository root: `docker build -f apps/api/Dockerfile .`); start `node dist/main.js`; health check `GET /api/v1/health` (`200` when the database answers, `503` when not; A-311) |
+| `apps/api` (NestJS, HTTP) | Railway or Render, Singapore region | Docker image (`apps/api/Dockerfile`, built from the repository root: `docker build -f apps/api/Dockerfile .`); start `node dist/main.js`; platform health check `GET /api/v1/health` (liveness: the process answers; A-315); uptime monitor on `GET /api/v1/health/ready` (`200` when the database answers, `503` when not; A-311) |
 | `apps/api` worker (pg-boss jobs) | Same platform, separate service | Same image; start `node dist/worker.js`. The API service sets `RUN_JOBS=false` so only the worker runs the reminders (T-059) |
 | PostgreSQL 17 | Same platform, managed | `btree_gist` extension; daily backups; point-in-time recovery on paid plans |
 | Files and backup copies | Cloudflare R2 | Private buckets; signed URLs |
@@ -102,11 +102,17 @@ Drill record:
 
 ## Health check
 
-`GET /api/v1/health` (through the web app too: `https://app…/api/v1/health`) answers without a session:
-`{"status":"ok","database":"ok","release":"…","time":"…"}` with `200`, or `503` with `"unavailable"` when the database does
-not answer within 3 seconds. Nothing else of the gym is in it. The platform's health check (the new release goes live only
-when it answers `200`), the uptime monitor (every minute, alert after two failures), and the E2E start-up use it; after a
-deployment, `release` shows which commit is running.
+Two routes answer without a session (A-311, A-315), directly and through the web app (`https://app…/api/v1/…`); nothing
+else of the gym is in them:
+
+- `GET /api/v1/health` (**liveness**): `{"status":"ok","release":"…","time":"…"}`; never reads the database. The
+  platform's health check: the new release goes live when it answers, and a slow database never makes the platform restart
+  a working API.
+- `GET /api/v1/health/ready` (**readiness**): `{"status":"ok","database":"ok",…}` with `200`, or `503` with
+  `"unavailable"` when the database does not answer within 3 seconds. The uptime monitor (every minute, alert after two
+  failures) and the E2E start-up use it.
+
+After a deployment, `release` shows which commit is running.
 
 ## Go-live checklist
 
@@ -115,7 +121,7 @@ deployment, `release` shows which commit is running.
    with `node dist/worker.js`; every variable above set, with a new `BETTER_AUTH_SECRET` and `FIELD_ENCRYPTION_KEY` (the key
    kept in the password manager too: losing it loses ID numbers and health notes).
 3. `pnpm --filter api db:deploy` as the release step; then `pnpm db:seed` once for the first admin.
-4. `GET /api/v1/health` answers `200` with the expected `release`, directly and through the web app.
+4. `GET /api/v1/health/ready` answers `200` with the expected `release`, directly and through the web app.
 5. Resend domain verified (SPF, DKIM, DMARC); a test email received; web push keys generated (doc 29).
 6. R2 bucket private; a picture uploaded and opened through its signed URL.
 7. Sign-in over HTTPS, HSTS present, `/api/docs` answers `404`.
@@ -136,4 +142,4 @@ deployment, `release` shows which commit is running.
   full error with its stack (`Unhandled API error`).
 - **Alerts**: bursts of failed sign-ins and cross-origin rejections, job failures, email failures, a failed backup or no
   `backup.done` for 26 hours.
-- **Uptime**: `/api/v1/health` directly and through the web app, every minute.
+- **Uptime**: `/api/v1/health/ready` directly and through the web app, every minute.

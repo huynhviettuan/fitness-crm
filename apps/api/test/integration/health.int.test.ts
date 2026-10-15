@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { checkHealth } from "../../src/platform/health/health.service.js";
+import { checkHealth, checkLiveness } from "../../src/platform/health/health.service.js";
 
-// M9.4 (A-311): the health check reads the database and nothing of the gym.
-describe("the health check", () => {
+// M9.4 (A-311, A-315): liveness answers without the database; readiness reads it, and nothing of the gym.
+describe("liveness", () => {
+  it("answers ok with the release and time, without asking the database", () => {
+    const liveness = checkLiveness();
+    expect(liveness.status).toBe("ok");
+    expect(Object.keys(liveness).sort()).toEqual(["release", "status", "time"]);
+  });
+});
+
+describe("readiness", () => {
   it("is ok when the database answers", async () => {
     const health = await checkHealth();
     expect(health).toMatchObject({ status: "ok", database: "ok" });

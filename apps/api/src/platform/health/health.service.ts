@@ -1,10 +1,15 @@
-import type { Health } from "@flow/shared/health";
+import type { Health, Liveness } from "@flow/shared/health";
 import { prisma } from "../db/prisma.js";
 import { release } from "../env.js";
 
 // M9.4 (A-311): the platform's health check and the uptime monitor call this every few seconds, so it only asks the
 // database for one row, and gives up after a short wait rather than piling up behind a stuck pool.
 const DATABASE_WAIT_MS = 3_000;
+
+/** The process is up and answering (A-315); nothing else is asked. */
+export function checkLiveness(): Liveness {
+  return { status: "ok", release, time: new Date() };
+}
 
 export async function checkHealth(ping: () => Promise<unknown> = () => prisma.$queryRaw`SELECT 1`): Promise<Health> {
   let timer: NodeJS.Timeout | undefined;
