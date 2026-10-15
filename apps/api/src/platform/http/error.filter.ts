@@ -3,6 +3,7 @@ import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
 import type { Request, Response } from "express";
 import type { ApiErrorBody } from "@flow/shared/errors";
 import { AppError, isAppError } from "../errors/app-error.js";
+import { errorReporter } from "../monitoring.js";
 
 /** Writes an error in the documented format (docs/07 "Error contract"). */
 export function sendError(response: Response, error: AppError): void {
@@ -25,6 +26,9 @@ export function sendError(response: Response, error: AppError): void {
  */
 @Catch()
 export class ErrorFilter implements ExceptionFilter {
+  /** Where unexpected errors are reported (M9.4c); replaced in tests. */
+  reporter = errorReporter;
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
     const request = http.getRequest<Request>();
@@ -57,6 +61,13 @@ export class ErrorFilter implements ExceptionFilter {
     }
 
     console.error("Unhandled API error", exception);
+    // The method and the path only (scrubbed of ids and the query); never the body, headers or user (A-313).
+    void this.reporter.report(exception, {
+      service: "api",
+      kind: "request",
+      method: request.method,
+      path: request.originalUrl,
+    });
     sendError(response, new AppError("INTERNAL_ERROR"));
   }
 }

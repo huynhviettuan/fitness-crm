@@ -12,6 +12,7 @@ import { generateAllSessions } from "./modules/classes/class.service.js";
 import { emailContractNotices } from "./modules/contracts/contract-email.js";
 import { parseBackupKey, takeBackup } from "./backup/backup.js";
 import { backupStorage } from "./platform/files/file.storage.js";
+import { reportError } from "./platform/monitoring.js";
 
 // Background work (T-045, T-059): pg-boss queues in PostgreSQL, no Redis. The same code
 // runs inside the API (RUN_JOBS=true, the default for development) or in the worker
@@ -64,6 +65,18 @@ export async function sendReminders(now: Date = new Date()): Promise<void> {
   if (now.getMinutes() === 0) await emailContractNotices(now);
 }
 
+/** A job's work, its failure reported to the monitoring (M9.4c) before pg-boss records and retries it. */
+function reported(name: string, work: () => Promise<void>): () => Promise<void> {
+  return async () => {
+    try {
+      await work();
+    } catch (error) {
+      reportError(error, { service: "worker", kind: `job:${name}` });
+      throw error;
+    }
+  };
+}
+
 export type Jobs = { stop(): Promise<void> };
 
 export async function startJobs(): Promise<Jobs> {
@@ -73,34 +86,40 @@ export async function startJobs(): Promise<Jobs> {
     max: 2,
     application_name: "flow-jobs",
   });
-  boss.on("error", (error: unknown) =>
+  boss.on("error", (error: unknown) => {
     console.error(
       JSON.stringify({ time: new Date().toISOString(), level: "error", type: "jobs", error: String(error) }),
-    ),
-  );
+    );
+    reportError(error, { service: "worker", kind: "pg-boss" });
+  });
   await boss.start();
   if (!(await boss.getQueue(REMINDERS))) await boss.createQueue(REMINDERS);
   // Every minute, in the gym's time zone.
   await boss.schedule(REMINDERS, "* * * * *", null, { tz: env.GYM_TIMEZONE });
-  await boss.work(REMINDERS, async () => {
-    await sendReminders();
-  });
+  await boss.work(
+    REMINDERS,
+    reported(REMINDERS, () => sendReminders()),
+  );
   // The customer email outbox (D-036, P-6): own queue, so a failing reminder never holds an email back.
   if (!(await boss.getQueue(MAIL))) await boss.createQueue(MAIL);
   await boss.schedule(MAIL, "* * * * *", null, { tz: env.GYM_TIMEZONE });
-  await boss.work(MAIL, async () => {
-    await sendDueEmails();
-    // Staff get the important notifications by email and on their phone too (D-053, M6.4).
-    await sendDueDeliveries();
-  });
+  await boss.work(
+    MAIL,
+    reported(MAIL, async () => {
+      await sendDueEmails();
+      // Staff get the important notifications by email and on their phone too (D-053, M6.4).
+      await sendDueDeliveries();
+    }),
+  );
   // The daily backup (M9.4b): only where a backup key is set (staging, production). Retried twice, ten minutes apart.
   const backupKey = env.BACKUP_ENCRYPTION_KEY;
   if (backupKey) {
     if (!(await boss.getQueue(BACKUP))) await boss.createQueue(BACKUP, { retryLimit: 2, retryDelay: 600 });
     await boss.schedule(BACKUP, env.BACKUP_CRON, null, { tz: env.GYM_TIMEZONE });
-    await boss.work(BACKUP, async () => {
-      await runDailyBackup(backupKey);
-    });
+    await boss.work(
+      BACKUP,
+      reported(BACKUP, () => runDailyBackup(backupKey)),
+    );
   }
   if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
     console.warn(

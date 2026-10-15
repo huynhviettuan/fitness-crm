@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDsn } from "@flow/shared/monitoring";
 import { productionIssues, releaseOf } from "./env.production.js";
 
 const isValidTimeZone = (tz: string) => {
@@ -69,6 +70,13 @@ const envSchema = z
     BACKUP_R2_BUCKET: z.string().min(1).optional(),
     // When the worker dumps the database, in the gym's time zone (cron). Infrastructure, not a business value.
     BACKUP_CRON: z.string().min(9).default("0 2 * * *"),
+    // M9.4c (A-313): unexpected errors go to this Sentry project (its DSN); unset, nothing is reported.
+    SENTRY_DSN: z
+      .string()
+      .refine((value) => parseDsn(value) !== null, "SENTRY_DSN must be a Sentry DSN (https://key@host/project)")
+      .optional(),
+    // Shown in Sentry; defaults to NODE_ENV (staging sets "staging").
+    SENTRY_ENVIRONMENT: z.string().min(1).max(64).optional(),
     // M10.4: where the answers of a Lead Ads form are read (Meta's Graph API, a fixed version). The E2E run points it at a stub.
     META_GRAPH_URL: z.url().default("https://graph.facebook.com/v21.0"),
   })

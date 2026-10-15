@@ -474,6 +474,7 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 | M9.2b GymMaster's real exports (done 2026-10-15: A-301 to A-305, OQ-078, doc 32) | The exports as they come, their columns and shapes, staff shares, members from contracts | doc 32 §2 |
 | M9.4a Go-live readiness (done 2026-10-15: A-311, doc 15) | `GET /api/v1/health` for the platform and the uptime monitor; production settings refused at start-up; the go-live checklist | doc 15 |
 | M9.4b Backups (done 2026-10-15: A-312, doc 15) | The worker's daily `pg_dump` to R2, encrypted, kept 30 days; a restore command for the monthly drill; the API's container image | doc 15 |
+| M9.4c Error monitoring (done 2026-10-15: A-313, doc 15) | Sentry for the API, the worker and the web server, scrubbed, rate-limited, without the SDK | doc 15, doc 24 |
 | M9.3 Reconciliation and cut-over (done 2026-11-05: A-256 to A-259, OQ-070, doc 29) | Totals of customers, contract value, paid, and sessions left against GymMaster; a parallel-run checklist; production import only after OQ-014 | AC-22 |
 
 ## M10 — Lead channel APIs (after the survey, TS-007)

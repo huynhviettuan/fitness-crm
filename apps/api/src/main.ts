@@ -2,6 +2,9 @@ import "dotenv/config";
 import { createApp } from "./app.js";
 import { env } from "./platform/env.js";
 import { startJobs } from "./jobs.js";
+import { watchProcess } from "./platform/monitoring.js";
+
+watchProcess("api");
 
 const app = await createApp({ docs: env.NODE_ENV !== "production" });
 await app.listen(env.PORT);

@@ -43,13 +43,15 @@ R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
 BACKUP_ENCRYPTION_KEY   # seals the daily backup (A-312): 32 random bytes, base64, not the field key; required in production; kept in the password manager, apart from the bucket
 BACKUP_R2_BUCKET        # optional: the backups' own private bucket (recommended); else the files' bucket
 BACKUP_CRON             # optional: default "0 2 * * *" (02:00 gym time)
-SENTRY_DSN, LOG_LEVEL
+SENTRY_DSN              # optional (A-313): the Sentry project's DSN; unset, no error is reported
+SENTRY_ENVIRONMENT      # optional: "staging" or "production" in Sentry; defaults to NODE_ENV
+LOG_LEVEL
 RELEASE                 # optional: the release shown by /api/v1/health; Railway's and Render's commit is used when unset
 
 # Web (apps/web/.env.example)
 API_URL                 # where the web server reaches the API; browsers never call it directly (T-053). Needed at build time too: `next build` reads it
 GYM_TIMEZONE            # for showing dates and times
-SENTRY_DSN
+SENTRY_DSN, SENTRY_ENVIRONMENT   # optional (A-313); the release is Vercel's commit
 ```
 
 Business values (calendar hours, timers, thresholds) are configuration in the database, not environment variables (T-049).
@@ -125,4 +127,13 @@ deployment, `release` shows which commit is running.
 
 ## Monitoring
 
-Sentry for web and API errors; platform logs for request logs and JSON security events; alerts on bursts of failed sign-ins and cross-origin rejections, job failures, and email failures; uptime checks on web and API health.
+- **Errors** (A-313): Sentry, one project for the API and the worker and one for the web server (or one project, told apart by
+  the `service` tag). Reported: the API's `500`s, failed jobs (`job:reminders`, `job:mail`, `job:backup`), pg-boss errors,
+  unhandled errors of both processes, and the web server's rendering, Server Action and route errors (with the digest
+  that the server log shows). Personal data is removed before sending (doc 24). Alert rule: a new issue, or more than 10
+  events in an hour.
+- **Logs**: the platform's logs hold request logs, JSON security events (doc 24), `backup.done` / `backup.failed`, and the
+  full error with its stack (`Unhandled API error`).
+- **Alerts**: bursts of failed sign-ins and cross-origin rejections, job failures, email failures, a failed backup or no
+  `backup.done` for 26 hours.
+- **Uptime**: `/api/v1/health` directly and through the web app, every minute.

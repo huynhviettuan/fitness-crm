@@ -17,6 +17,10 @@
       "types": "./dist/health/index.d.ts",
       "default": "./dist/health/index.js"
     },
+    "./monitoring": {
+      "types": "./dist/monitoring/index.d.ts",
+      "default": "./dist/monitoring/index.js"
+    },
     "./intake": {
       "types": "./dist/intake/index.d.ts",
       "default": "./dist/intake/index.js"

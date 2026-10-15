@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — M9.4c: error monitoring
+
+- **Sentry** (A-313): the API's `500`s, failed jobs, unhandled errors of the API and the worker, and the web server's errors, sent over Sentry's HTTP endpoint without its SDK when `SENTRY_DSN` is set.
+- **Privacy**: only the error, a scrubbed message, the stack, the method and the path with ids replaced; never the request's data. Browser errors are not sent (CSP unchanged). Docs 13, 15, 16, 18, 24, 28.
+
 ## 2026-10-15 — M9.4b: backups
 
 - **Daily backup** (A-312): the worker's `pg_dump`, sealed with its own key, to R2 with a `latest` pointer; retention by the bucket's lifecycle rule.
