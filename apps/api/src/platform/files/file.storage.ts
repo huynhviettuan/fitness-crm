@@ -1,5 +1,9 @@
 import { createHash, createHmac } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createReadStream, createWriteStream } from "node:fs";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import type { ReadableStream as WebReadableStream } from "node:stream/web";
 import { dirname, join, resolve, sep } from "node:path";
 import { env } from "../env.js";
 
@@ -12,6 +16,15 @@ export type FileStorage = {
   get(key: string): Promise<Buffer>;
 };
 
+/**
+ * What the backups need on top (M9.4b, A-318): a file sent and fetched as a stream, so a dump of any size never sits in
+ * memory. `sha256` and `bytes` are the file's, known from writing it; R2 checks the hash it is signed with.
+ */
+export type StreamingStorage = FileStorage & {
+  putFile(key: string, path: string, contentType: string, file: { bytes: number; sha256: string }): Promise<void>;
+  getToFile(key: string, path: string): Promise<void>;
+};
+
 const sha256Hex = (data: Buffer | string) => createHash("sha256").update(data).digest("hex");
 const hmac = (key: Buffer | string, data: string) => createHmac("sha256", key).update(data).digest();
 
@@ -21,6 +34,8 @@ export function signedRequest(input: {
   host: string;
   path: string;
   body: Buffer;
+  /** The body's SHA-256 (hex) when the body is streamed and not in `body`. */
+  payloadHash?: string;
   contentType?: string;
   region: string;
   accessKeyId: string;
@@ -32,7 +47,7 @@ export function signedRequest(input: {
     .replace(/[-:]/g, "")
     .replace(/\.\d{3}/, "");
   const day = amzDate.slice(0, 8);
-  const payloadHash = sha256Hex(input.body);
+  const payloadHash = input.payloadHash ?? sha256Hex(input.body);
   const headers: Record<string, string> = {
     host: input.host,
     "x-amz-content-sha256": payloadHash,
@@ -51,30 +66,57 @@ export function signedRequest(input: {
   return headers;
 }
 
-function r2Storage(bucket: string): FileStorage {
-  const host = `${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+function r2Storage(bucket: string): StreamingStorage {
+  // R2_ENDPOINT only for a stand-in S3 server in tests (MinIO); R2 itself is reached by the account's host.
+  const origin = new URL(env.R2_ENDPOINT ?? `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`);
   const pathOf = (key: string) => `/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
-  const call = (method: "GET" | "PUT", key: string, body: Buffer, contentType?: string) => {
-    const path = pathOf(key);
+  const signed = (
+    method: "GET" | "PUT",
+    path: string,
+    body: Buffer,
+    extra: { contentType?: string; payloadHash?: string },
+  ) => {
     const headers = signedRequest({
       method,
-      host,
+      host: origin.host,
       path,
       body,
-      contentType,
+      ...extra,
       region: "auto",
       accessKeyId: env.R2_ACCESS_KEY_ID!,
       secretAccessKey: env.R2_SECRET_ACCESS_KEY!,
       now: new Date(),
     });
     delete headers.host;
-    return fetch(`https://${host}${path}`, {
+    return headers;
+  };
+  const call = (method: "GET" | "PUT", key: string, body: Buffer, contentType?: string) => {
+    const path = pathOf(key);
+    return fetch(`${origin.origin}${path}`, {
       method,
-      headers,
+      headers: signed(method, path, body, { contentType }),
       body: method === "PUT" ? new Uint8Array(body) : undefined,
     });
   };
   return {
+    async putFile(key, file, contentType, { bytes, sha256 }) {
+      const path = pathOf(key);
+      const response = await fetch(`${origin.origin}${path}`, {
+        method: "PUT",
+        headers: {
+          ...signed("PUT", path, Buffer.alloc(0), { contentType, payloadHash: sha256 }),
+          "content-length": String(bytes),
+        },
+        body: Readable.toWeb(createReadStream(file)) as ReadableStream,
+        duplex: "half",
+      } as RequestInit);
+      if (!response.ok) throw new Error(`R2 put failed: ${response.status}`);
+    },
+    async getToFile(key, file) {
+      const response = await call("GET", key, Buffer.alloc(0));
+      if (!response.ok || !response.body) throw new Error(`R2 get failed: ${response.status}`);
+      await pipeline(Readable.fromWeb(response.body as WebReadableStream), createWriteStream(file));
+    },
     async put(key, bytes, contentType) {
       const response = await call("PUT", key, bytes, contentType);
       if (!response.ok) throw new Error(`R2 put failed: ${response.status}`);
@@ -87,7 +129,7 @@ function r2Storage(bucket: string): FileStorage {
   };
 }
 
-function localStorage(folder: string): FileStorage {
+function localStorage(folder: string): StreamingStorage {
   const root = resolve(folder);
   const pathOf = (key: string) => {
     const full = resolve(join(root, key));
@@ -102,6 +144,12 @@ function localStorage(folder: string): FileStorage {
       await writeFile(full, bytes);
     },
     get: (key) => readFile(pathOf(key)),
+    async putFile(key, file) {
+      const full = pathOf(key);
+      await mkdir(dirname(full), { recursive: true });
+      await copyFile(file, full);
+    },
+    getToFile: (key, file) => copyFile(pathOf(key), file),
   };
 }
 
@@ -112,7 +160,7 @@ export const fileStorage: FileStorage =
  * Where the database backups go (M9.4b, A-312): their own bucket when BACKUP_R2_BUCKET is set (recommended: its own
  * lifecycle rule and keys), else the files' bucket; on a developer's machine, the folder above the files (keys start with `backups/`).
  */
-export const backupStorage: FileStorage =
+export const backupStorage: StreamingStorage =
   env.FILE_STORAGE === "r2"
     ? r2Storage(env.BACKUP_R2_BUCKET ?? env.R2_BUCKET!)
     : localStorage(join(env.FILE_STORAGE_DIR, ".."));

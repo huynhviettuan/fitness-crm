@@ -1,5 +1,9 @@
 # Documentation Changelog
 
+## 2026-10-15 — Streamed backups
+
+- **Backups stream** (A-318): `pg_dump` → seal → temporary file → R2 and back, so no size of database sits in memory; the seal's tag is checked to the end before `pg_restore` runs. Drilled through a signature-checking S3 server. Docs 13, 15, 18.
+
 ## 2026-10-15 — Review fixes: release hidden, emails readable
 
 - **Health** (A-316): the public checks no longer name the release; the start-up log does.

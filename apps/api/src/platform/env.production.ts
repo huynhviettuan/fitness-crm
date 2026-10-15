@@ -8,6 +8,7 @@ export type ProductionSettings = {
   DATABASE_URL: string;
   FIELD_ENCRYPTION_KEY: string;
   BACKUP_ENCRYPTION_KEY?: string | undefined;
+  R2_ENDPOINT?: string | undefined;
 };
 
 export type SettingIssue = { key: keyof ProductionSettings; message: string };
@@ -38,6 +39,13 @@ export function productionIssues(settings: ProductionSettings): SettingIssue[] {
     issues.push({
       key: "DATABASE_URL",
       message: "DATABASE_URL points at this machine; production uses the managed database",
+    });
+  }
+  // A stand-in S3 server is for tests only (A-318): production files and backups go to R2 itself.
+  if (settings.R2_ENDPOINT) {
+    issues.push({
+      key: "R2_ENDPOINT",
+      message: "R2_ENDPOINT is for tests only; production uses the R2 account's host",
     });
   }
   // The worker's daily dump is the copy that does not depend on the database host (doc 15).

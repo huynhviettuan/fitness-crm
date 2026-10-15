@@ -53,6 +53,16 @@ describe("the production settings (M9.4, A-311)", () => {
   });
 });
 
+describe("the R2 endpoint (A-318)", () => {
+  it("is refused in production, where files and backups go to R2 itself", () => {
+    const issues = productionIssues({ ...deployed, R2_ENDPOINT: "http://minio.internal:9000" });
+    expect(issues.map((issue) => issue.key)).toEqual(["R2_ENDPOINT"]);
+    expect(productionIssues({ ...deployed, NODE_ENV: "development", R2_ENDPOINT: "http://localhost:9000" })).toEqual(
+      [],
+    );
+  });
+});
+
 describe("the backup key (A-312)", () => {
   it("is never the field key, in any environment", () => {
     for (const NODE_ENV of ["development", "production"]) {

@@ -48,6 +48,8 @@ const envSchema = z
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET: z.string().min(1).optional(),
+    // Only for a stand-in S3 server in tests (MinIO): R2 itself is reached at the account's own host.
+    R2_ENDPOINT: z.url().optional(),
     EMAIL_PROVIDER: z.enum(["log", "resend"]).default("log"),
     EMAIL_FROM: z.string().min(3).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),

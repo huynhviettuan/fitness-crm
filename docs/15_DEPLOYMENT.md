@@ -76,7 +76,8 @@ With `NODE_ENV=production` the API and the worker refuse to start, naming the se
 ## Backups and restore
 
 - Managed daily backups on the database service.
-- An independent daily `pg_dump` by the worker to R2, sealed with `BACKUP_ENCRYPTION_KEY` (A-312): `backups/YYYY/MM/flow-….dump.enc`
+- An independent daily `pg_dump` by the worker to R2, sealed with `BACKUP_ENCRYPTION_KEY` (A-312), streamed so its size never
+  matters to memory (A-318; the service needs temporary disk for one sealed copy, two while restoring): `backups/YYYY/MM/flow-….dump.enc`
   and `backups/latest.json`. Logged as `backup.done` / `backup.failed` (alert on a failure, or on no `backup.done` for 26 hours).
 - Kept 30 days by the bucket's **lifecycle rule** (Cloudflare dashboard → R2 → the bucket → Settings → Object lifecycle rules:
   prefix `backups/`, delete after 30 days). The application never deletes a backup.
@@ -99,6 +100,7 @@ Drill record:
 | Date | Source | Copy | Restored rows (users / customers / contracts / payments / bookings / sessions / audit) | Live rows | Result |
 |---|---|---|---|---|---|
 | 2026-10-15 | development database, from the API image (`pg_dump` 17.11) | 822 KB sealed | 6 / 130 / 59 / 49 / 268 / 152 / 1529 | the same | Equal; restore into the served database and into a database with tables refused |
+| 2026-10-15 | the same, streamed (A-318) through an S3 server that checks signatures (SeaweedFS) | 822 KB sealed | 6 / 130 / 59 / 49 / 268 / 152 / 1529 | the same | Equal; a wrong secret `403`; another backup key stopped before `pg_restore` (0 tables) |
 
 ## Health check
 
