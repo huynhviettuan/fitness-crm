@@ -81,12 +81,13 @@ With `NODE_ENV=production` the API and the worker refuse to start, naming the se
   and `backups/latest.json`. Logged as `backup.done` / `backup.failed` (alert on a failure, or on no `backup.done` for 26 hours).
 - Kept 30 days by the bucket's **lifecycle rule** (Cloudflare dashboard → R2 → the bucket → Settings → Object lifecycle rules:
   prefix `backups/`, delete after 30 days). The application never deletes a backup.
-- Before every production migration: `pnpm --filter api backup:now` in the worker's shell.
+- Before every production migration: `node dist/backup/cli.js backup` in the worker's shell (the image has no pnpm, A-319;
+  on a developer's machine `pnpm --filter api backup:now`).
 - A monthly restore drill: in a one-off shell with the production backup key and bucket (read-only keys), into a new empty
   database on staging:
 
   ```text
-  pnpm --filter api backup:restore -- --into postgresql://…/flow_drill_2026_11 [--from backups/2026/11/flow-….dump.enc]
+  node dist/backup/cli.js restore --into postgresql://…/flow_drill_2026_11 [--from backups/2026/11/flow-….dump.enc]
   ```
 
   It refuses the database it serves and any database with tables, checks the checksum and the seal, then prints the rows of
@@ -123,7 +124,8 @@ Neither names the release (A-316): after a deployment, the platform's dashboard 
 2. API and worker services from the same image, `NODE_ENV=production`; the API with `RUN_JOBS=false`, the worker started
    with `node dist/worker.js`; every variable above set, with a new `BETTER_AUTH_SECRET` and `FIELD_ENCRYPTION_KEY` (the key
    kept in the password manager too: losing it loses ID numbers and health notes).
-3. `pnpm --filter api db:deploy` as the release step; then `pnpm db:seed` once for the first admin.
+3. `./node_modules/.bin/prisma migrate deploy` as the release step; then `./node_modules/.bin/prisma db seed` once for the
+   first admin, with `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` set (the image's commands, A-319).
 4. `GET /api/v1/health/ready` answers `200`, directly and through the web app; the start-up log names the expected release.
 5. Resend domain verified (SPF, DKIM, DMARC); a test email received; web push keys generated (doc 29).
 6. R2 bucket private; a picture uploaded and opened through its signed URL.

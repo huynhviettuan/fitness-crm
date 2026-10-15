@@ -1,5 +1,9 @@
 # Documentation Changelog
 
+## 2026-10-15 — A smaller API image
+
+- **Image** (A-319): only what runs, `pnpm deploy --prod`, Next.js left out; 1.11 GB → 690 MB. `prisma` and `tsx` are API dependencies now. Production commands in doc 15 use the image's own (`node dist/backup/cli.js …`, `prisma migrate deploy`). Docs 15, 18.
+
 ## 2026-10-15 — Streamed backups
 
 - **Backups stream** (A-318): `pg_dump` → seal → temporary file → R2 and back, so no size of database sits in memory; the seal's tag is checked to the end before `pg_restore` runs. Drilled through a signature-checking S3 server. Docs 13, 15, 18.
