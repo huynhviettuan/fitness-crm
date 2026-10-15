@@ -3,6 +3,7 @@
 ## 2026-10-15 — ZKTeco answers
 
 - **Machine** (A-306): one TX628 on the gym LAN with ADMS push available; GymMaster's NextFace reads it from the reception PC (on 7:00–20:30).
+- **Photos** (A-308): firmware 8.0.4.3 with Push Service 2.0.33S, static IP with no gateway (LAN only), SDK port 4370, HTTPS push available, 196 users, no administrator set on the machine.
 - **Proposed way in** (A-307): the machine pushes to a small bridge on the LAN, which calls the scan API over HTTPS; nothing built until OQ-062's remaining answers and ZKTeco's push document.
 
 ## 2026-10-15 — M10 closed; M9.2b: GymMaster's real exports
