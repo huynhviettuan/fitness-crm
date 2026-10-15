@@ -25,9 +25,9 @@
     "security:audit": "node scripts/audit-check.mjs"
   },
   "devDependencies": {
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "prettier-plugin-tailwindcss": "0.8.1",
-    "turbo": "2.11.4"
+    "turbo": "2.11.7"
   },
   "engines": {
     "node": ">=22"
