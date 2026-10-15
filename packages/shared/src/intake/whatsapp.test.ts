@@ -110,7 +110,7 @@ describe("the handshake and the source (A-268, A-271)", () => {
   it("registers a WhatsApp source only with the app secret, and a website one never with it", () => {
     const base = { name: "WhatsApp", channelId: id };
     const secret = "a".repeat(32);
-    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM", "EMAIL"]);
+    expect(AVAILABLE_INTAKE_KINDS).toEqual(["WEBSITE", "WHATSAPP", "MESSENGER", "INSTAGRAM", "EMAIL", "ZALO"]);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP", appSecret: secret }).success).toBe(true);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP" }).success).toBe(false);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "WHATSAPP", appSecret: "short" }).success).toBe(false);
@@ -122,5 +122,9 @@ describe("the handshake and the source (A-268, A-271)", () => {
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "MESSENGER", appSecret: secret }).success).toBe(true);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "INSTAGRAM" }).success).toBe(false);
     expect(intakeSourceInputSchema.safeParse({ ...base, kind: "ZALO", appSecret: secret }).success).toBe(false);
+    const zalo = { ...base, kind: "ZALO", appSecret: secret, appId: "1234567890" };
+    expect(intakeSourceInputSchema.safeParse(zalo).success).toBe(true);
+    expect(intakeSourceInputSchema.safeParse({ ...zalo, appId: "abc" }).success).toBe(false);
+    expect(intakeSourceInputSchema.safeParse({ ...zalo, kind: "WHATSAPP" }).success).toBe(false);
   });
 });

@@ -19,6 +19,7 @@ import {
   IntakeSourcesController,
   MessagingController,
   WhatsAppController,
+  ZaloController,
 } from "./modules/intake/intake.controller.js";
 import { ClassSessionsController, ClassesController } from "./modules/classes/classes.controller.js";
 import {
@@ -91,6 +92,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
     IntakeController,
     WhatsAppController,
     MessagingController,
+    ZaloController,
     IntakeSourcesController,
     ClassesController,
     ClassSessionsController,

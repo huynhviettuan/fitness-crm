@@ -43,6 +43,7 @@ import {
   receiveWebsiteLead,
   receiveEmail,
   receiveMetaDelivery,
+  receiveZalo,
   rotateSourceKey,
   setPageToken,
   updateSource,
@@ -185,6 +186,30 @@ export class MessagingController {
     const signature = request.headers["x-hub-signature-256"];
     const receipt = await receiveMetaDelivery(
       "meta",
+      sourceId,
+      request.rawBody,
+      typeof signature === "string" ? signature : undefined,
+      body,
+    );
+    return encode(whatsAppReceiptSchema, receipt);
+  }
+}
+
+/**
+ * What Zalo calls for the gym's OA (M10.6): the source is named in the path and proved by `X-ZEvent-Signature` over the body (checked
+ * in the service). Zalo has no handshake.
+ */
+@ApiTags("intake")
+@ApiErrors()
+@Controller("intake/zalo")
+export class ZaloController {
+  @Post(":sourceId")
+  @DeviceKeyEndpoint()
+  @HttpCode(200)
+  @ApiResult(whatsAppReceiptSchema)
+  async event(@Param("sourceId") sourceId: string, @Req() request: WebhookRequest, @Body() body: unknown) {
+    const signature = request.headers["x-zevent-signature"];
+    const receipt = await receiveZalo(
       sourceId,
       request.rawBody,
       typeof signature === "string" ? signature : undefined,

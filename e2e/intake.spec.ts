@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { expect, signedInAs, test } from "./fixtures";
 import { GRAPH_STUB_PORT } from "./support/graph";
 import { labels } from "./support/labels";
@@ -331,6 +331,64 @@ test.describe("as an admin", () => {
       .click();
     const conversation = page.getByRole("region", { name: t.conversation });
     await expect(conversation.getByText(`Hỏi giá PT ${testTag}`)).toBeVisible();
+  });
+
+  test("@smoke E2E-184: a Zalo OA source is connected and a user's message becomes a lead with its conversation", async ({
+    page,
+    apiAs,
+    testTag,
+  }) => {
+    const secret = "UiZaloOaSecretKey0123456789";
+    const appId = "360846524940903967";
+    await page.goto("/admin/intake");
+    await page.getByRole("button", { name: t.add }).click();
+    const dialog = page.getByRole("dialog", { name: t.add });
+    await dialog.getByLabel(t.fields.name).fill(`Zalo ${testTag}`);
+    await dialog.getByRole("combobox", { name: t.fields.kind }).click();
+    await page.getByRole("listbox").getByRole("option", { name: t.kinds.ZALO }).click();
+    await dialog.getByRole("combobox", { name: t.fields.channel }).click();
+    await page.getByRole("listbox").getByRole("option").first().click();
+    // Registering waits for the app id and the OA secret key.
+    await expect(dialog.getByRole("button", { name: t.register })).toBeDisabled();
+    await dialog.getByLabel(t.fields.appId).fill(appId);
+    await dialog.getByLabel(t.fields.oaSecret).fill(secret);
+    await dialog.getByRole("button", { name: t.register }).click();
+
+    const url = new URL((await page.getByTestId("intake-webhook-url").textContent())?.trim() ?? "");
+    expect(url.pathname).toMatch(/^\/api\/v1\/intake\/zalo\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("intake-key")).toHaveCount(0);
+    await page.getByRole("button", { name: t.webhookDone }).click();
+    // Nothing to replace on a Zalo source.
+    await expect(
+      page.getByRole("row", { name: new RegExp(`Zalo ${testTag}`) }).getByRole("button", { name: t.newKey }),
+    ).toHaveCount(0);
+
+    const user = String(1_000_000_000_000_000 + Math.floor(Math.random() * 1_000_000_000));
+    const body = JSON.stringify({
+      app_id: appId,
+      sender: { id: user },
+      recipient: { id: "388613280878808645" },
+      event_name: "user_send_text",
+      message: { text: `Giá PT ${testTag}`, msg_id: `zm.${testTag}` },
+      timestamp: String(Date.now()),
+    });
+    const timestamp = (JSON.parse(body) as { timestamp: string }).timestamp;
+    const mac = createHash("sha256").update(appId).update(body).update(timestamp).update(secret).digest("hex");
+    const zalo = await apiAs(null, { origin: null });
+    const sent = await zalo.post(url.pathname, {
+      headers: { "content-type": "application/json", "x-zevent-signature": `mac=${mac}` },
+      data: body,
+    });
+    expect(await sent.json()).toEqual({ received: 1, duplicates: 0 });
+
+    await page.goto(`/leads?q=${encodeURIComponent(`Zalo ${user.slice(-6)}`)}`);
+    await page
+      .getByRole("link", { name: `Zalo ${user.slice(-6)}` })
+      .first()
+      .click();
+    const conversation = page.getByRole("region", { name: t.conversation });
+    await expect(conversation.getByText(`Giá PT ${testTag}`)).toBeVisible();
+    await expect(conversation.getByText(`Zalo ${testTag}`)).toBeVisible();
   });
 });
 

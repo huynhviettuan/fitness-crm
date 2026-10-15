@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { hasNoControlCharacters, normalizePhone } from "../validation/index.js";
 import { whatsAppSecretSchema } from "./whatsapp.js";
+import { ZALO_APP_ID_PATTERN } from "./zalo.js";
 
 // The lead intake gateway (brief §11, D-044, TS-007; M10.1; A-261 to A-267): what a channel hands over, and the sources Admin
 // registers. A source is one connection (the website form, later WhatsApp and the others) with its own key.
@@ -16,12 +17,16 @@ export const AVAILABLE_INTAKE_KINDS = [
   "MESSENGER",
   "INSTAGRAM",
   "EMAIL",
+  "ZALO",
 ] as const satisfies readonly IntakeKind[];
 
 /** The kinds Meta delivers to, each proved by the signature of the app secret and set up with a verify token (A-268, A-275). */
 export const META_KINDS = ["WHATSAPP", "MESSENGER", "INSTAGRAM"] as const satisfies readonly IntakeKind[];
 export const isMetaKind = (kind: string): kind is (typeof META_KINDS)[number] =>
   (META_KINDS as readonly string[]).includes(kind);
+
+/** The kinds proved by a secret of the platform's app (Meta's app secret, Zalo's OA secret key), kept sealed (A-268, A-294). */
+export const needsAppSecret = (kind: string): boolean => isMetaKind(kind) || kind === "ZALO";
 
 /** A message came in from the person, or was sent to them (later, when staff reply from the system). */
 export const MESSAGE_DIRECTIONS = ["IN", "OUT"] as const;
@@ -54,20 +59,36 @@ export const intakeSourceInputSchema = z
     branchId: optionalUuid.prefault(""),
     channelId: z.uuid({ error: "required" }),
     sourceId: optionalUuid.prefault(""),
-    /** Meta kinds only (A-268, A-275): the Meta app secret that signs its webhooks. It is kept sealed and never shown again. */
+    /**
+     * Meta kinds (A-268, A-275): the Meta app secret that signs its webhooks; Zalo (A-294): the OA secret key. Kept sealed and never
+     * shown again.
+     */
     appSecret: z
       .string()
       .trim()
       .transform(emptyToNull)
       .pipe(z.union([z.null(), whatsAppSecretSchema]))
       .prefault(""),
+    /** Zalo only (A-294): the id of the Zalo app that receives the OA's events; it is part of each event's signature. */
+    appId: z
+      .string()
+      .trim()
+      .transform(emptyToNull)
+      .pipe(z.union([z.null(), z.string().regex(ZALO_APP_ID_PATTERN, { error: "invalidFormat" })]))
+      .prefault(""),
   })
   .superRefine((value, context) => {
-    if (isMetaKind(value.kind) && value.appSecret === null) {
+    if (needsAppSecret(value.kind) && value.appSecret === null) {
       context.addIssue({ code: "custom", path: ["appSecret"], message: "required" });
     }
-    if (!isMetaKind(value.kind) && value.appSecret !== null) {
+    if (!needsAppSecret(value.kind) && value.appSecret !== null) {
       context.addIssue({ code: "custom", path: ["appSecret"], message: "invalidChoice" });
+    }
+    if (value.kind === "ZALO" && value.appId === null) {
+      context.addIssue({ code: "custom", path: ["appId"], message: "required" });
+    }
+    if (value.kind !== "ZALO" && value.appId !== null) {
+      context.addIssue({ code: "custom", path: ["appId"], message: "invalidChoice" });
     }
   });
 export type IntakeSourceInput = z.input<typeof intakeSourceInputSchema>;

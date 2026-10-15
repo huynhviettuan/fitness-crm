@@ -81,8 +81,8 @@ the subject, the body is kept as the first message, and the consultant completes
 - The OA API can deliver a customer's messages to a webhook; we would **not send** through Zalo (D-036).
 - It needs an **OA verified** by Zalo (company documents; about 7 working days [third party]) and a developer app on
   developers.zalo.me. OA packages are paid; the only figures found are the 2022 press ones (10,000 / 59,000 / 399,000 VND a month)
-  [third party, old]. **The OA webhook's events and signature check could not be read from here** [not found]; the slice starts by reading
-  the official page. Do not confuse it with Zalo's separate *Bot* product, whose webhook differs.
+  [third party, old]. **Update 2026-11-11 (M10.6):** the OA webhook was read on developers.zalo.me (*Webhook → Tin nhắn*): events `user_send_*` and `user_submit_info`, signed `X-ZEvent-Signature: mac = sha256(appId + data + timeStamp + OAsecretKey)`, 200 within 2 seconds, resent only when Zalo cannot connect [official]; built as A-294 to A-300. (Before: could not be read from here; the slice was to start by reading
+  the official page.) Do not confuse it with Zalo's separate *Bot* product, whose webhook differs.
 
 ### TikTok and Threads
 - TikTok: leads from **Instant Forms (lead ads)** reach a CRM by webhook through the TikTok for Business lead API [third party]. Messages

@@ -3454,7 +3454,7 @@
   },
   "intake": {
     "title": "Lead sources",
-    "description": "The connections that hand leads to the system (the website form, WhatsApp, Messenger, Instagram, Gmail; later Zalo). Each source has its own way of proving itself.",
+    "description": "The connections that hand leads to the system (the website form, WhatsApp, Messenger, Instagram, Gmail, Zalo OA). Each source has its own way of proving itself.",
     "empty": "No source yet. Add the first to receive leads from the website form.",
     "note": "The key is shown once, when it is made or replaced. It belongs on the website's server (never in a page a visitor can read) and goes in the x-intake-key header to /api/v1/intake/website.",
     "add": "Add a source",
@@ -3491,7 +3491,9 @@
       "lastReceived": "Last received",
       "actions": "Actions",
       "appSecret": "Meta App Secret",
-      "leadAds": "Lead Ads"
+      "leadAds": "Lead Ads",
+      "appId": "Zalo app ID",
+      "oaSecret": "OA Secret Key"
     },
     "appSecretHint": "The App Secret of the Meta app, used to check the signature of every message. It is stored encrypted and not shown again.",
     "webhookTitle": "Connect to Meta",
@@ -3508,6 +3510,9 @@
     "leadAdsOff": "No token",
     "inboundUrl": "Inbound webhook URL",
     "inboundBody": "Paste this address (it contains the key) into the inbound webhook of the inbound-mail service (Postmark). Then, in the gym's Gmail, add the service's inbound email address as a forwarding address; the confirmation code Gmail sends will show under this source's name.",
-    "notice": "Latest notice"
+    "notice": "Latest notice",
+    "oaSecretHint": "The OA Secret Key of the Zalo app (app settings → Official Account), used to check the signature of every event. It is stored encrypted and not shown again.",
+    "zaloTitle": "Connect Zalo OA",
+    "zaloBody": "Paste this address into the Webhook settings of the Zalo app, then turn on the events for users sending messages and users sharing their information. The address's domain must first be verified with Zalo (a DNS record). The system only receives; it never sends through Zalo."
   }
 }

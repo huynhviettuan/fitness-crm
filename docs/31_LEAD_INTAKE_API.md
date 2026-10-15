@@ -1,7 +1,7 @@
 # 31. Lead intake API (website form)
 
 Brief §11, D-044, TS-007; built in M10.1. For whoever builds or configures the form on the gym's website (or a tool such as Make,
-Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7, Lead Ads forms in §8, Gmail forwarding in §9. The other channels (Messenger, Instagram, Gmail, Zalo)
+Zapier or a WordPress form plugin that can post to a URL). WhatsApp is in §6, Messenger and Instagram in §7, Lead Ads forms in §8, Gmail forwarding in §9, Zalo OA in §10. The other channels (Messenger, Instagram, Gmail, Zalo)
 will have their own endpoints in later slices (doc 30).
 
 ## 1. Get a key
@@ -147,3 +147,21 @@ What happens: an email a person wrote becomes a message of the person with that 
 in it (`0909 123 456`), else of a new lead named after the sender, with the address and that phone. Within 24 hours of their last
 email it joins the conversation; later it is an inquiry. Auto-replies, newsletters, bounces and Gmail's own confirmation make no lead.
 Attachments are listed by name, not kept. An email over 8 MB is refused.
+
+## 10. Zalo OA (M10.6)
+
+The system **receives** what users write to the gym's Zalo Official Account; it never sends through Zalo (D-036).
+
+1. On developers.zalo.me, open (or create) the app linked to the OA and grant it the OA's access. Note the **App ID** and, under the
+   Official Account settings, the **OA Secret Key**.
+2. Verify the domain of the web app with Zalo (the DNS record Zalo gives, in the app's domain settings).
+3. Admin opens **Cấu hình → Nguồn nhận lead**, **Thêm nguồn**, kind **Zalo OA**, enters the App ID and the OA Secret Key, and
+   registers. The system shows once the **webhook address** (`https://<web host>/api/v1/intake/zalo/<source id>`).
+4. Paste it as the app's **Webhook URL** and turn on the events *người dùng gửi tin nhắn* (all kinds) and *người dùng đồng ý chia sẻ
+   thông tin*. Leave *Lọc cú pháp* off.
+
+What happens: Zalo gives no phone and no name with a message, only the user's id for the OA. A new user becomes a lead called
+*Zalo 197922* (the last six digits of the id); the consultant renames it, adds the phone, or merges it with the person's record.
+When a user shares their information through the OA, the name and phone come with it: the person with that phone gets the message,
+or a new lead is made with them. Within 24 hours a message joins the conversation; after that it is a new inquiry. Pictures and files
+are kept as their kind or name. Zalo does not send an event again after an error, so a failed event is logged for Admin.

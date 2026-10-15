@@ -7,9 +7,11 @@ import {
   intakeSourceUpdateSchema,
   graphLeadSchema,
   isMetaKind,
+  needsAppSecret,
   leadFromForm,
   pageTokenInputSchema,
   readInboundEmail,
+  readZaloEvent,
   parseLeadgenPayload,
   parseMessagingPayload,
   parseWhatsAppPayload,
@@ -115,8 +117,9 @@ type Created = { source: IntakeSource; key: string | null; verifyToken: string |
 export async function createSource(actor: Actor, input: unknown): Promise<Created> {
   assertCan(actor, "intake.manage");
   const data = parseInput(intakeSourceInputSchema, input);
+  // Meta kinds get a verify token for their handshake; Zalo has none (A-294); the website and email get a key.
   const meta = isMetaKind(data.kind);
-  const key = meta ? null : newKey();
+  const key = needsAppSecret(data.kind) ? null : newKey();
   const verifyToken = meta ? newVerifyToken() : null;
   return prisma.$transaction(async (tx) => {
     const branchId = await resolveBranch(tx, actor, data.branchId ?? undefined);
@@ -128,7 +131,8 @@ export async function createSource(actor: Actor, input: unknown): Promise<Create
         branchId,
         ...chosen,
         keyHash: key ? hashKey(key) : null,
-        secretEnc: meta ? seal(data.appSecret) : null,
+        secretEnc: needsAppSecret(data.kind) ? seal(data.appSecret) : null,
+        appRef: data.appId,
         verifyTokenHash: verifyToken ? hashKey(verifyToken) : null,
         createdById: actor.id,
       },
@@ -195,6 +199,8 @@ export async function rotateSourceKey(actor: Actor, id: string): Promise<Created
   assertCan(actor, "intake.manage");
   return prisma.$transaction(async (tx) => {
     const before = await findVisible(tx, actor, id);
+    // A Zalo source has nothing to replace: its proof is the OA secret key, which a new source takes (A-294).
+    if (before.kind === "ZALO") throw new AppError("VALIDATION_FAILED", { fieldErrors: { kind: ["invalidChoice"] } });
     const meta = isMetaKind(before.kind);
     const key = meta ? null : newKey();
     const verifyToken = meta ? newVerifyToken() : null;
@@ -407,6 +413,7 @@ export type WebhookRoute = keyof typeof WEBHOOK_KINDS;
 
 export function webhookPathOf(kind: IntakeKind, id: string): string | null {
   if (kind === "EMAIL") return "/api/v1/intake/email";
+  if (kind === "ZALO") return `/api/v1/intake/zalo/${id}`;
   if (kind === "WHATSAPP") return `/api/v1/intake/whatsapp/${id}`;
   if (kind === "MESSENGER" || kind === "INSTAGRAM") return `/api/v1/intake/meta/${id}`;
   return null;
@@ -738,6 +745,87 @@ export async function receiveEmail(source: AuthenticatedSource, payload: unknown
   return taken ? { received: 1, duplicates: 0 } : { received: 0, duplicates: 1 };
 }
 
+// ---------------------------------------------------------------------------------------------------------------- Zalo
+
+/**
+ * The signature Zalo puts in `X-ZEvent-Signature` (developers.zalo.me, Webhook → Tin nhắn): `mac = sha256(appId + data + timeStamp +
+ * OAsecretKey)`, with `data` the body as received and `timeStamp` the event's `timestamp` field. A plain SHA-256, not an HMAC.
+ */
+export function zaloSignature(appId: string, rawBody: Buffer, timestamp: string, secret: string): string {
+  return createHash("sha256").update(appId).update(rawBody).update(timestamp).update(secret).digest("hex");
+}
+
+/** The hex of `mac=<hex>` (or the bare hex) in the header, lower-cased; null when it is not one. */
+function zaloMac(header: string | undefined): string | null {
+  const match = /^(?:mac\s*=\s*)?([0-9a-f]{64})$/i.exec(header?.trim() ?? "");
+  return match ? match[1]!.toLowerCase() : null;
+}
+
+/**
+ * An event of the gym's Zalo OA (A-294 to A-300). The signature is checked over the exact bytes with the source's app id and sealed
+ * OA secret key before anything is used, and the event must name that app. A user's message or shared information is taken in like a
+ * Messenger message (the user id is the thread), the shared phone finding a known person; other events are answered 200 and dropped.
+ * Zalo sends an event again only when it cannot connect, so a failure here is logged with the event's id (A-299).
+ */
+export async function receiveZalo(
+  sourceId: string,
+  rawBody: Buffer | undefined,
+  signature: string | undefined,
+  payload: unknown,
+): Promise<WhatsAppReceipt> {
+  const source = z.uuid().safeParse(sourceId).success
+    ? await prisma.intakeSource.findFirst({
+        where: { id: sourceId, kind: "ZALO", active: true },
+        select: {
+          id: true,
+          name: true,
+          kind: true,
+          branchId: true,
+          channelId: true,
+          sourceId: true,
+          createdById: true,
+          secretEnc: true,
+          appRef: true,
+        },
+      })
+    : null;
+  const event = readZaloEvent(payload);
+  const timestamp = String((payload as { timestamp?: unknown } | null)?.timestamp ?? "");
+  const mac = zaloMac(signature);
+  const secret = source?.secretEnc ? unseal(source.secretEnc) : null;
+  const valid =
+    source !== null &&
+    secret !== null &&
+    source.appRef !== null &&
+    rawBody !== undefined &&
+    mac !== null &&
+    event.appId === source.appRef &&
+    sameText(mac, zaloSignature(source.appRef, rawBody, timestamp, secret));
+  if (!valid || !source) {
+    logSecurityEvent("intake.webhook_refused", { sourceId, reason: "signature" }, "warn");
+    throw new AppError("UNAUTHENTICATED");
+  }
+  if (!withinRate(source.id, Date.now(), META_PER_MINUTE)) {
+    logSecurityEvent("intake.rate_limited", { sourceId: source.id }, "warn");
+    throw new AppError("RATE_LIMITED");
+  }
+  if (event.kind === "ignored") return { received: 0, duplicates: 0 };
+  try {
+    const taken = await takeIn(source, {
+      externalId: event.externalId,
+      phone: event.phone,
+      senderRef: event.senderRef,
+      name: event.name,
+      body: event.body,
+      receivedAt: event.receivedAt,
+    });
+    return taken ? { received: 1, duplicates: 0 } : { received: 0, duplicates: 1 };
+  } catch (error) {
+    logSecurityEvent("intake.event_lost", { sourceId: source.id, externalId: event.externalId }, "warn");
+    throw error;
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------- reading
 
 /** The conversation of a lead or customer, oldest first, for someone who may see the person (A-266). */
@@ -746,7 +834,8 @@ export async function listMessages(actor: Actor, personId: string): Promise<{ it
   await visiblePerson(prisma, actor, personId);
   const messages = await prisma.intakeMessage.findMany({
     where: { personId },
-    orderBy: [{ receivedAt: "asc" }, { id: "asc" }],
+    // A channel's time may be whole seconds (WhatsApp): two messages of one second keep the order they arrived in.
+    orderBy: [{ receivedAt: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     select: {
       id: true,
       direction: true,

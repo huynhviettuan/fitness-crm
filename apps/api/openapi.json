@@ -10953,6 +10953,47 @@
         "x-permission": "device-key"
       }
     },
+    "/api/v1/intake/zalo/{sourceId}": {
+      "post": {
+        "operationId": "ZaloController_event",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "intake"
+        ],
+        "x-permission": "device-key"
+      }
+    },
     "/api/v1/intake/sources": {
       "get": {
         "operationId": "IntakeSourcesController_list",
@@ -11005,7 +11046,8 @@
                       "WHATSAPP",
                       "MESSENGER",
                       "INSTAGRAM",
-                      "EMAIL"
+                      "EMAIL",
+                      "ZALO"
                     ]
                   },
                   "branchId": {
@@ -11025,6 +11067,10 @@
                     "format": "uuid"
                   },
                   "appSecret": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "appId": {
                     "default": "",
                     "type": "string"
                   }

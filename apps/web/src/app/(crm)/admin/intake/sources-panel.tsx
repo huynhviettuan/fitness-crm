@@ -123,10 +123,12 @@ export function SourcesPanel({ sources, branches }: Props) {
               {t("pageToken")}
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => rotate(row.original)}>
-            <KeyRoundIcon />
-            {t("newKey")}
-          </Button>
+          {row.original.kind !== "ZALO" && (
+            <Button size="sm" variant="outline" onClick={() => rotate(row.original)}>
+              <KeyRoundIcon />
+              {t("newKey")}
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => toggle(row.original)}>
             {row.original.active ? t("deactivate") : t("activate")}
           </Button>
@@ -193,8 +195,11 @@ function AddSourceDialog({
   const sources = useOptions("leadSources");
   const [name, setName] = useState("");
   const [kind, setKind] = useState<(typeof AVAILABLE_INTAKE_KINDS)[number]>("WEBSITE");
-  const meta = isMetaKind(kind);
+  const zalo = kind === "ZALO";
+  // Meta's app secret, or Zalo's OA secret key (A-268, A-294).
+  const withSecret = isMetaKind(kind) || zalo;
   const [appSecret, setAppSecret] = useState("");
+  const [appId, setAppId] = useState("");
   const [branchId, setBranchId] = useState(branches.length === 1 ? (branches[0]?.id ?? "") : "");
   const [channelId, setChannelId] = useState("");
   const [sourceId, setSourceId] = useState("");
@@ -208,7 +213,8 @@ function AddSourceDialog({
       branchId,
       channelId,
       sourceId,
-      appSecret: meta ? appSecret : "",
+      appSecret: withSecret ? appSecret : "",
+      appId: zalo ? appId : "",
     });
     setBusy(false);
     if (!result.ok) return notify.error(errorMessage(result.code));
@@ -280,23 +286,39 @@ function AddSourceDialog({
               ))}
           </SelectContent>
         </Select>
-        {meta && (
+        {zalo && (
+          <Input
+            value={appId}
+            onChange={(event) => setAppId(event.target.value)}
+            inputMode="numeric"
+            aria-label={t("fields.appId")}
+            placeholder={t("fields.appId")}
+          />
+        )}
+        {withSecret && (
           <div className="space-y-1">
             <Input
               type="password"
               autoComplete="off"
               value={appSecret}
               onChange={(event) => setAppSecret(event.target.value)}
-              aria-label={t("fields.appSecret")}
-              placeholder={t("fields.appSecret")}
+              aria-label={zalo ? t("fields.oaSecret") : t("fields.appSecret")}
+              placeholder={zalo ? t("fields.oaSecret") : t("fields.appSecret")}
             />
-            <p className="text-xs text-muted-foreground">{t("appSecretHint")}</p>
+            <p className="text-xs text-muted-foreground">{zalo ? t("oaSecretHint") : t("appSecretHint")}</p>
           </div>
         )}
         <DialogFooter>
           <Button
             onClick={submit}
-            disabled={busy || !name.trim() || !branchId || !channelId || (meta && !appSecret.trim())}
+            disabled={
+              busy ||
+              !name.trim() ||
+              !branchId ||
+              !channelId ||
+              (withSecret && !appSecret.trim()) ||
+              (zalo && !appId.trim())
+            }
           >
             {t("register")}
           </Button>
@@ -306,10 +328,32 @@ function AddSourceDialog({
   );
 }
 
-/** The key (or, for the Meta channels, the verify token with the address to post to) is shown once and never again (like the machines). */
+/**
+ * What is shown once and never again (like the machines' keys): the key of a website or email source; the verify token with the
+ * address to post to for the Meta channels; only the address for Zalo, which has neither (A-294).
+ */
 function KeyDialog({ shown, onClose }: { shown: Shown; onClose: () => void }) {
   const t = useTranslations("intake");
   const whatsapp = shown.verifyToken !== null;
+  if (!whatsapp && shown.key === null) {
+    return (
+      <Dialog open onOpenChange={(open) => !open && onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("zaloTitle")}</DialogTitle>
+            <DialogDescription>{t("zaloBody")}</DialogDescription>
+          </DialogHeader>
+          <p className="text-sm font-medium">{t("webhookUrl")}</p>
+          <code className="rounded-md border bg-muted p-3 text-sm break-all" data-testid="intake-webhook-url">
+            {`${window.location.origin}${shown.webhookPath ?? ""}`}
+          </code>
+          <DialogFooter>
+            <Button onClick={onClose}>{t("webhookDone")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>

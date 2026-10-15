@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-11-11 — M10.6: Zalo OA (receive only)
+
+- **Channel** (A-294 to A-300): Zalo OA events signed with the OA Secret Key; the user id ties a person's messages; shared information brings the phone; nothing is sent.
+- **Survey** (doc 30): the Zalo webhook, which could not be read before, is now confirmed on developers.zalo.me.
+- **Fix**: messages of the same second keep the order they arrived in.
+- **Open**: OQ-077. Docs 04, 07, 13, 16, 18, 24, 28, 30, 31 (§10).
+
 ## 2026-11-10 — M10.5: Gmail forwarding
 
 - **Channel** (A-287 to A-293): an inbound-mail service posts each forwarded email with the source key as the Basic password; Gmail's confirmation for Admin; automatic mail skipped; the sender found by address, then by a written phone.

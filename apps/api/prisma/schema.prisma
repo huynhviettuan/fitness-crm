@@ -2587,6 +2587,8 @@ model IntakeSource {
   verifyTokenHash String?    @map("verify_token_hash")
   // Messenger (M10.4): the Page access token, sealed, that reads the answers of a Lead Ads form.
   pageTokenEnc    String?    @map("page_token_enc")
+  // Zalo (M10.6): the id of the Zalo app that receives the OA's events, part of each event's signature.
+  appRef          String?    @map("app_ref")
   // Email (M10.5): the last notice the forwarding sent for Admin (Gmail's confirmation of the rule).
   lastNotice      String?    @map("last_notice")
   lastNoticeAt    DateTime?  @map("last_notice_at") @db.Timestamptz(3)
