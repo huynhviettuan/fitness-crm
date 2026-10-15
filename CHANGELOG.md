@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-15 — Customer input: framework and GymMaster exports
+
+- **Source**: the framework document transcribed in `docs/source/FRAMEWORK_2026-10-15_vi.md`; the exports are not stored (personal data).
+- **Review** (doc 32): the framework mapped to what is built; PT pay of D-032 confirmed by GymMaster's report; the import needs the real headers and file layout (M9.2b).
+- **Open**: OQ-078 (real exports), OQ-079 (new areas: campaign costs, Assessment results, retention, targets, BI).
+
 ## 2026-11-11 — M10.6: Zalo OA (receive only)
 
 - **Channel** (A-294 to A-300): Zalo OA events signed with the OA Secret Key; the user id ties a person's messages; shared information brings the phone; nothing is sent.
