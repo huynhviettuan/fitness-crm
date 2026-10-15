@@ -36,6 +36,14 @@ export function DeviceKeyEndpoint() {
   return applyDecorators(SetMetadata(PERMISSION_METADATA, DEVICE_KEY), ApiExtension("x-permission", DEVICE_KEY));
 }
 
+/** Declared only by the health check (M9.4, A-311): no session, no key. The security suite allows this one route alone. */
+export const PUBLIC = "public";
+
+/** The endpoint answers anyone. Only for what tells nothing about the gym (the health check). */
+export function PublicEndpoint() {
+  return applyDecorators(SetMetadata(PERMISSION_METADATA, PUBLIC), ApiExtension("x-permission", PUBLIC));
+}
+
 /** For endpoints about the signed-in user themselves. */
 export function AnySignedInUser() {
   return applyDecorators(
@@ -55,7 +63,8 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     // A machine endpoint is guarded by its own guard, which checks the device key (D-072).
-    if (Reflect.getMetadata(PERMISSION_METADATA, context.getHandler()) === DEVICE_KEY) return true;
+    const declared: unknown = Reflect.getMetadata(PERMISSION_METADATA, context.getHandler());
+    if (declared === DEVICE_KEY || declared === PUBLIC) return true;
     const headers = fromNodeHeaders(request.headers);
     const user = await getSessionUser(headers);
     if (!user) {
@@ -68,8 +77,7 @@ export class AuthGuard implements CanActivate {
     }
     request.user = user;
 
-    const required = Reflect.getMetadata(PERMISSION_METADATA, context.getHandler()) as
-      Permission[] | typeof ANY_SIGNED_IN_USER | undefined;
+    const required = declared as Permission[] | typeof ANY_SIGNED_IN_USER | undefined;
     if (required === undefined) {
       logSecurityEvent("authz.denied", {
         userId: user.id,

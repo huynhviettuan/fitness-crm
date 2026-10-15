@@ -13,8 +13,23 @@ test.describe("A01 every API route requires a session", () => {
     );
   });
 
+  test("only the health check answers without a session, and tells nothing of the gym (M9.4, A-311)", async ({
+    apiAs,
+  }) => {
+    const open = routes.flatMap((route) =>
+      route.methods
+        .filter((method) => route.permissions[method] === "public")
+        .map((method) => `${method} ${route.template}`),
+    );
+    expect(open).toEqual(["GET /api/v1/health"]);
+    const response = await (await apiAs(null)).get("/api/v1/health");
+    expect(response.status()).toBe(200);
+    expect(response.headers()["cache-control"]).toBe("no-store");
+    expect(Object.keys(await response.json()).sort()).toEqual(["database", "release", "status", "time"]);
+  });
+
   for (const route of routes) {
-    for (const method of route.methods) {
+    for (const method of route.methods.filter((method) => route.permissions[method] !== "public")) {
       test(`${method} ${route.template} without a session is 401`, async ({ apiAs }) => {
         const api = await apiAs(null);
         const response = await api.fetch(route.path, { method, data: method === "GET" ? undefined : {} });

@@ -3,6 +3,7 @@ import type { MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "./platform/auth/auth.guard.js";
 import { MeController } from "./platform/auth/me.controller.js";
+import { HealthController } from "./platform/health/health.controller.js";
 import { BranchesController } from "./platform/branches/branches.controller.js";
 import { RolesController } from "./platform/roles/roles.controller.js";
 import { OptionListsController } from "./platform/options/options.controller.js";
@@ -68,6 +69,7 @@ import { NotificationsController } from "./platform/notifications/notifications.
 // with its shared schema. Services authorize, validate, and own transactions (docs/22).
 @Module({
   controllers: [
+    HealthController,
     MeController,
     LeadsController,
     PersonsController,

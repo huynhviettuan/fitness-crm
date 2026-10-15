@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — M9.4a: go-live readiness
+
+- **Health check** (A-311): `GET /api/v1/health`, the only route open without a session: database reachable, release, time; `503` when the database is not.
+- **Production settings**: the API and the worker refuse to start on an `http://` app URL, local file storage, or a database on the same machine. Doc 15 gains the health check and a go-live checklist. Docs 07, 13, 16, 18, 24, 28.
+
 ## 2026-10-15 — M5.8b: ZKTeco trial kit
 
 - **Key check** (A-310): `GET /checkin/device` names a key's machine and branch; the bridge checks each key at start-up and with `--check`.

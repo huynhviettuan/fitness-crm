@@ -61,7 +61,7 @@ export default defineConfig({
       // database (CI) the global setup would run too late.
       command: "pnpm exec prisma migrate deploy && node dist/main.js",
       cwd: API_DIR,
-      url: `http://localhost:${API_PORT}/api/auth/ok`,
+      url: `http://localhost:${API_PORT}/api/v1/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       env: {

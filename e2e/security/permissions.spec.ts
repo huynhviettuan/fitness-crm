@@ -37,7 +37,11 @@ test.describe("A01 permissions on every endpoint (T-046)", () => {
         // A check-in machine's route wants its key, which a user session is not (M5.3b): 401.
         const declared = route.permissions[method];
         const expected =
-          declared === "authenticated" ? [200, 204, 400, 404] : declared === "device-key" ? [401] : [403];
+          declared === "authenticated" || declared === "public"
+            ? [200, 204, 400, 404]
+            : declared === "device-key"
+              ? [401]
+              : [403];
         expect(expected, `${method} ${route.template} answered ${response.status()}`).toContain(response.status());
       }
     }

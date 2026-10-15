@@ -17,7 +17,13 @@ const operations = Object.entries(document.paths).flatMap(([path, methods]) =>
 describe("the OpenAPI contract (T-046)", () => {
   it.each(operations)("$name declares a known permission", ({ permission }) => {
     expect(permission).toBeDefined();
-    const keys = permission === "authenticated" || permission === "device-key" ? [] : permission!.split(" | ");
+    const keys = ["authenticated", "device-key", "public"].includes(permission!) ? [] : permission!.split(" | ");
     for (const key of keys) expect(PERMISSION_KEYS).toContain(key);
+  });
+
+  it("opens only the health check to anyone (M9.4, A-311)", () => {
+    expect(
+      operations.filter((operation) => operation.permission === "public").map((operation) => operation.name),
+    ).toEqual(["GET /api/v1/health"]);
   });
 });
