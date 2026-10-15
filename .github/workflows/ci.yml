@@ -34,7 +34,7 @@ jobs:
           --health-cmd "pg_isready -U fitness -d fitness_crm"
           --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Installs the pnpm version pinned in package.json (packageManager).
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -84,7 +84,7 @@ jobs:
           --health-cmd "pg_isready -U fitness -d flow_image"
           --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build the API image
         run: docker build -f apps/api/Dockerfile -t flow-api:ci .
       - name: The image has pg_dump 17 (the backups, A-312)
