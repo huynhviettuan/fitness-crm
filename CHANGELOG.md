@@ -1,5 +1,9 @@
 # Documentation Changelog
 
+## 2026-10-15 — Free trial deployment
+
+- **Trial online** (A-314, doc 34): `render.yaml` (API and PostgreSQL on Render's free plan, Singapore), `apps/web/vercel.json`, `start-trial.sh` (migrations and first admin at start-up), and the step-by-step guide. Rehearsed with the image on an empty database. Docs 15, 18, README.
+
 ## 2026-10-15 — M9.4c: error monitoring
 
 - **Sentry** (A-313): the API's `500`s, failed jobs, unhandled errors of the API and the worker, and the web server's errors, sent over Sentry's HTTP endpoint without its SDK when `SENTRY_DSN` is set.

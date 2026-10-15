@@ -1,6 +1,6 @@
 # 15 — Deployment
 
-Architecture and costs: `26_TECH_PROPOSAL.md`. Decisions: T-041, T-042.
+Architecture and costs: `26_TECH_PROPOSAL.md`. Decisions: T-041, T-042. A free trial setup before paying for hosting: `34_TRIAL_DEPLOYMENT.md` (A-314).
 
 ## Topology
 

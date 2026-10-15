@@ -96,6 +96,7 @@ Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`,
 | `docs/26_TECH_PROPOSAL.md` | Technology, architecture, hosting, costs |
 | `docs/27_ESTIMATES.md` | Effort and cost per milestone |
 | `docs/28_SLICE_PLAN.md` | Every remaining slice, M2.5 to M11, with its tests and the decisions to settle first |
+| `docs/34_TRIAL_DEPLOYMENT.md` | The free trial online (Render, Vercel, Cloudflare R2): step by step, and how it differs from production |
 | `docs/33_ZKTECO_BRIDGE.md` | The ZKTeco bridge: why, what it does, how to set it up at the gym and on the machine |
 | `docs/32_CUSTOMER_INPUT_2026-10-15.md` | Review of the customer's framework document and GymMaster exports of 2026-10-15: what is built, the gaps, the import changes |
 | `docs/31_LEAD_INTAKE_API.md` | The lead intake API for the website form: the key, the call, the answers, and what happens to a submission |
