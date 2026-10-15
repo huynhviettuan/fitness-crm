@@ -17,6 +17,10 @@ const CLEANUP_TEXT = {
   PRICE_DIFFERS_FROM_TIER: "Đơn giá khác giá bậc / Price differs from the tier",
   NO_SERVICE: "Chưa gắn dịch vụ / No service matched",
   NO_TIER: "Không có bậc giá cho số buổi / No tier for the sessions",
+  SESSIONS_LEFT_DIFFER: "Số buổi còn lại khác GymMaster / Sessions left differ from GymMaster",
+  DEBT_DIFFERS: "Công nợ khác GymMaster / Debt differs from GymMaster",
+  NOT_APPROVED_IN_SOURCE: "GymMaster chưa duyệt / Not approved in GymMaster",
+  STAFF_NOT_FOUND: "Không tìm thấy nhân viên PT/Sale / PT or Sale staff not found",
 } as const;
 
 export async function writeReport(plan: Plan, mode: "DRY_RUN" | "COMMIT", applied: Applied | null): Promise<Buffer> {
@@ -44,6 +48,18 @@ export async function writeReport(plan: Plan, mode: "DRY_RUN" | "COMMIT", applie
   summary.getColumn(1).width = 28;
   summary.getRow(3).font = { bold: true };
 
+  // GymMaster's exports come one file each: what each was taken for, and what was left out (M9.2b, OQ-078).
+  if (plan.files.length > 0) {
+    const files = book.addWorksheet("Files");
+    files.addRow(["Tệp / File", "Tab", "Dùng làm / Used as", "Dòng tiêu đề / Header row", "Số dòng / Rows"]);
+    for (const use of plan.files) {
+      files.addRow([use.file, use.tab, use.usedAs ?? "Không nhập / Not imported", use.headerRow ?? "", use.rows]);
+    }
+    files.getRow(1).font = { bold: true };
+    files.getColumn(1).width = 40;
+    files.getColumn(3).width = 26;
+  }
+
   const cleanup = book.addWorksheet("Cleanup");
   cleanup.addRow([
     "Mã hợp đồng cũ / Legacy code",
@@ -70,7 +86,15 @@ export async function writeReport(plan: Plan, mode: "DRY_RUN" | "COMMIT", applie
   cleanup.getColumn(6).width = 70;
 
   const left = book.addWorksheet("Left out");
-  left.addRow(["Sheet", "Dòng / Row", "Mã cũ / Legacy code", "Nội dung / Item", "Kết quả / Result", "Lý do / Why"]);
+  left.addRow([
+    "Sheet",
+    "Dòng / Row",
+    "Mã cũ / Legacy code",
+    "Nội dung / Item",
+    "Kết quả / Result",
+    "Lý do / Why",
+    "Tệp / File",
+  ]);
   for (const item of [...plan.customers, ...plan.staff, ...plan.contracts]) {
     if (item.entry.action === "CREATE" || item.entry.action === "ALREADY_IMPORTED") continue;
     left.addRow([
@@ -80,6 +104,7 @@ export async function writeReport(plan: Plan, mode: "DRY_RUN" | "COMMIT", applie
       item.entry.label,
       ACTION_TEXT[item.entry.action],
       item.entry.issues.join("; "),
+      item.entry.file ?? "",
     ]);
   }
   if (applied) {

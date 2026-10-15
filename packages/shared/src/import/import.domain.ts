@@ -1,5 +1,5 @@
-// The GymMaster import (brief §11, D-039, FR-IMP-001; M9.2): pure rules. The columns of the GymMaster exports are not known
-// yet (OQ-053, OQ-069), so each field is matched by a list of header names; fitting a real file means adding names here.
+// The GymMaster import (brief §11, D-039, FR-IMP-001; M9.2, M9.2b): pure rules. Each field is matched by a list of header names,
+// the first name that a file has winning; the names of GymMaster's own exports (received 2026-10-15, doc 32) come first.
 
 export const IMPORT_SHEETS = ["customers", "contracts", "staff"] as const;
 export type ImportSheet = (typeof IMPORT_SHEETS)[number];
@@ -19,24 +19,59 @@ type ColumnSpec = { required: boolean; aliases: readonly string[] };
 /** What a sheet has: its field names, the header names each is known by, and whether the row is useless without it. */
 export const IMPORT_COLUMNS = {
   customers: {
-    legacyCode: { required: true, aliases: ["Mã khách hàng", "Mã hội viên", "Customer code", "Member ID", "Mã"] },
-    fullName: { required: true, aliases: ["Họ tên", "Họ và tên", "Tên", "Full name", "Name"] },
-    phone: { required: true, aliases: ["Số điện thoại", "SĐT", "Điện thoại", "Phone", "Mobile"] },
+    legacyCode: {
+      required: true,
+      aliases: ["Mã HV", "Mã khách hàng", "Mã hội viên", "Customer code", "Member ID", "Mã"],
+    },
+    fullName: {
+      required: true,
+      aliases: ["Họ tên hội viên", "Họ tên HV", "Họ tên", "Họ và tên", "Tên", "Full name", "Name"],
+    },
+    phone: { required: true, aliases: ["SĐT", "Số điện thoại", "Điện thoại", "Phone", "Mobile"] },
     email: { required: false, aliases: ["Email", "E-mail"] },
     dateOfBirth: { required: false, aliases: ["Ngày sinh", "Date of birth", "Birthday", "DOB"] },
   },
   contracts: {
-    legacyCode: { required: true, aliases: ["Mã hợp đồng", "Contract code", "Contract ID", "Mã"] },
-    customerLegacyCode: { required: true, aliases: ["Mã khách hàng", "Mã hội viên", "Customer code", "Member ID"] },
-    packageName: { required: true, aliases: ["Tên gói", "Gói tập", "Package", "Package name"] },
+    legacyCode: { required: true, aliases: ["Mã HĐ", "Mã hợp đồng", "Contract code", "Contract ID", "Mã"] },
+    customerLegacyCode: {
+      required: true,
+      aliases: ["Mã HV", "Mã khách hàng", "Mã hội viên", "Customer code", "Member ID"],
+    },
+    packageName: { required: true, aliases: ["Dịch vụ - gói thẻ", "Tên gói", "Gói tập", "Package", "Package name"] },
     serviceName: { required: false, aliases: ["Dịch vụ", "Service"] },
-    contractDate: { required: false, aliases: ["Ngày ký", "Ngày tạo", "Contract date", "Signed date"] },
-    startDate: { required: true, aliases: ["Ngày bắt đầu", "Start date", "Start"] },
-    endDate: { required: true, aliases: ["Ngày hết hạn", "Ngày kết thúc", "End date", "Expiry"] },
-    sessions: { required: true, aliases: ["Số buổi", "Tổng số buổi", "Sessions", "Total sessions"] },
-    sessionsUsed: { required: true, aliases: ["Số buổi đã dùng", "Đã tập", "Sessions used", "Used"] },
-    value: { required: true, aliases: ["Giá trị hợp đồng", "Tổng tiền", "Contract value", "Total", "Amount"] },
+    contractDate: { required: false, aliases: ["Ngày HĐ", "Ngày ký", "Ngày tạo", "Contract date", "Signed date"] },
+    startDate: { required: true, aliases: ["Ngày bắt đầu tập", "Ngày bắt đầu", "Start date", "Start"] },
+    endDate: { required: true, aliases: ["Ngày hết hạn tập", "Ngày hết hạn", "Ngày kết thúc", "End date", "Expiry"] },
+    /** The sessions bought; the bonus ones are their own column (D-021). */
+    sessions: {
+      required: true,
+      aliases: ["Số buổi thẻ gạch", "Số buổi", "Tổng số buổi", "Sessions", "Total sessions"],
+    },
+    bonusSessions: { required: false, aliases: ["Số buổi KM", "Buổi tặng", "Bonus sessions"] },
+    /** Empty means none used yet; when the file has the sessions left, those say how many were used (A-302). */
+    sessionsUsed: {
+      required: false,
+      aliases: ["Số buổi đã tập", "Số buổi đã dùng", "Đã tập", "Sessions used", "Used"],
+    },
+    sessionsLeft: { required: false, aliases: ["Số buổi còn lại", "Sessions left"] },
+    /** The amount owed after discounts: GymMaster's "Tổng thanh toán", not "Tổng tiền", which is before them (A-302). */
+    value: {
+      required: true,
+      aliases: ["Giá trị hợp đồng", "Tổng thanh toán", "Tổng tiền", "Contract value", "Total", "Amount"],
+    },
     paid: { required: true, aliases: ["Đã thanh toán", "Đã trả", "Paid", "Paid amount"] },
+    debt: { required: false, aliases: ["Còn nợ", "Công nợ", "Debt"] },
+    contractType: { required: false, aliases: ["Loại HĐ", "Loại hợp đồng", "Contract type"] },
+    approval: { required: false, aliases: ["Duyệt HĐ?", "Duyệt HĐ", "Approved"] },
+    /** "Name (100%)", several separated by commas (A-303). */
+    trainers: { required: false, aliases: ["Nhân viên PT", "PT"] },
+    sellers: { required: false, aliases: ["Nhân viên Sale", "Sale", "Nhân viên bán"] },
+    /** The member as the contract shows them, for a member the members' file lacks (A-304). */
+    customerName: {
+      required: false,
+      aliases: ["Họ tên hội viên", "Họ tên HV", "Tên hội viên", "Họ tên", "Customer name"],
+    },
+    customerPhone: { required: false, aliases: ["SĐT", "Số điện thoại", "Phone"] },
   },
   // The totals GymMaster itself shows, one row under the headers, for the reconciliation (AC-22, M9.3).
   totals: {
@@ -89,18 +124,23 @@ export type ColumnMatch<S extends ImportSheet | "totals"> = {
   unknown: string[];
 };
 
-/** Matches a header row to the fields of a sheet. The first column that matches a field wins. */
+/**
+ * Matches a header row to the fields of a sheet. A field takes the column of its first name that the row has, so a file with both
+ * "Tổng thanh toán" and "Tổng tiền" gives the value the amount after discounts (A-302).
+ */
 export function matchColumns<S extends ImportSheet | "totals">(sheet: S, headers: readonly string[]): ColumnMatch<S> {
   const spec = IMPORT_COLUMNS[sheet] as Record<string, ColumnSpec>;
   const normalized = headers.map(normalizeHeader);
   const index: Record<string, number> = {};
   const claimed = new Set<number>();
   for (const [field, column] of Object.entries(spec)) {
-    const names = column.aliases.map(normalizeHeader);
-    const position = normalized.findIndex((header, at) => !claimed.has(at) && header !== "" && names.includes(header));
-    if (position >= 0) {
-      index[field] = position;
-      claimed.add(position);
+    for (const alias of column.aliases.map(normalizeHeader)) {
+      const position = normalized.findIndex((header, at) => !claimed.has(at) && header !== "" && header === alias);
+      if (position >= 0) {
+        index[field] = position;
+        claimed.add(position);
+        break;
+      }
     }
   }
   const missing = Object.entries(spec)
@@ -116,12 +156,67 @@ export function packageSessions(packageName: string): number | null {
   return found ? Number(found[0]) : null;
 }
 
-/** Why a contract is on the owner's cleanup list (D-039). */
+/**
+ * A tab that is not named for what it holds (GymMaster names every export "Worksheet"): what its header row is, trying the record
+ * with the most required fields first, since a contracts export also has the member's code, name and phone (A-301). Null when no
+ * record has all its required columns there.
+ */
+export function detectSheet(headers: readonly string[]): ImportSheet | null {
+  for (const sheet of ["contracts", "customers", "staff"] as const) {
+    const match = matchColumns(sheet, headers);
+    if (match.missing.length === 0 && Object.keys(match.index).length > 0) return sheet;
+  }
+  return null;
+}
+
+/** The staff a contract names, as GymMaster writes them: "Trần Văn A (100%), Lê B (50%)"; no percent is 100 (A-303). */
+export function parseShares(value: unknown): { name: string; percent: number }[] {
+  if (typeof value !== "string") return [];
+  return (
+    value
+      // A comma inside the brackets is a decimal one ("33,5%"), not between two people.
+      .split(/[,;\n](?![^(]*\))/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const found = /^(.*?)\s*\((\d+(?:[.,]\d+)?)\s*%\)\s*$/.exec(part);
+        return found
+          ? { name: found[1]!.trim(), percent: Number(found[2]!.replace(",", ".")) }
+          : { name: part, percent: 100 };
+      })
+      .filter((share) => share.name !== "")
+  );
+}
+
+/** GymMaster's "no date": `30/11/-0001` (and zero dates), which is an empty cell, not a wrong one (A-302). */
+export function isNoDate(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  return /^(30\/11\/-0*1|0{1,2}\/0{1,2}\/0{4}|0{4}-0{2}-0{2})(\s.*)?$/.test(value.trim());
+}
+
+/** Whether a contract was approved in GymMaster: "Chưa duyệt" (not approved) is the only no (A-305). */
+export function approvedInSource(value: unknown): boolean {
+  if (typeof value !== "string" || value.trim() === "") return true;
+  const text = normalizeHeader(value);
+  return !(text.startsWith("chua") || text === "no" || text === "false" || text === "0");
+}
+
+/** The contract type GymMaster writes: "New" or "Renew" (and their Vietnamese); anything else is new (A-302). */
+export function contractTypeOf(value: unknown): "NEW" | "RENEW" {
+  const text = typeof value === "string" ? normalizeHeader(value) : "";
+  return text === "renew" || text === "giahan" || text === "taiky" ? "RENEW" : "NEW";
+}
+
+/** Why a contract is on the owner's cleanup list (D-039; M9.2b adds the last four, A-302 to A-305). */
 export const CLEANUP_REASONS = [
   "SESSIONS_DIFFER_FROM_NAME",
   "PRICE_DIFFERS_FROM_TIER",
   "NO_SERVICE",
   "NO_TIER",
+  "SESSIONS_LEFT_DIFFER",
+  "DEBT_DIFFERS",
+  "NOT_APPROVED_IN_SOURCE",
+  "STAFF_NOT_FOUND",
 ] as const;
 export type CleanupReason = (typeof CLEANUP_REASONS)[number];
 
@@ -150,7 +245,7 @@ export function cleanupReasons(input: {
 
 export type RowIssue = { row: number; code: string; field?: string };
 
-/** A day from a cell: a Date, or text as dd/MM/yyyy or yyyy-MM-dd; null when it is neither. */
+/** A day from a cell: a Date, or text as dd/MM/yyyy or yyyy-MM-dd, a time after it ignored; null when it is neither. */
 export function parseDay(value: unknown): Date | null {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime())
@@ -158,7 +253,8 @@ export function parseDay(value: unknown): Date | null {
       : new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
   }
   if (typeof value !== "string") return null;
-  const text = value.trim();
+  // GymMaster writes some days with their time: "05/10/2026 00:00:00".
+  const text = value.trim().replace(/[ T]\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?$/, "");
   const dmy = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(text);
   const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
   const [year, month, day] = dmy ? [dmy[3], dmy[2], dmy[1]] : ymd ? [ymd[1], ymd[2], ymd[3]] : [];

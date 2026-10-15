@@ -1,6 +1,16 @@
 import { createCustomerSchema } from "@flow/shared/customers";
 import { employeeInputSchema } from "@flow/shared/employees";
-import { cleanupReasons, parseDay, parseWhole, type CleanupReason, type ImportSheet } from "@flow/shared/import";
+import {
+  approvedInSource,
+  cleanupReasons,
+  contractTypeOf,
+  isNoDate,
+  parseDay,
+  parseShares,
+  parseWhole,
+  type CleanupReason,
+  type ImportSheet,
+} from "@flow/shared/import";
 import { displayNameOf } from "@flow/shared/services";
 import { normalizePhone } from "@flow/shared/validation";
 import type { Db } from "../platform/db/prisma.js";
@@ -16,6 +26,8 @@ export type Action = "CREATE" | "ALREADY_IMPORTED" | "DUPLICATE" | "REJECT";
 export type Entry = {
   sheet: ImportSheet;
   row: number;
+  /** The file of the row, when the data came as several files (GymMaster's exports). */
+  file?: string;
   legacyCode: string;
   action: Action;
   /** Why a row is rejected or a duplicate: codes the report explains. */
@@ -45,9 +57,13 @@ export type PlannedContract = {
   startDate: Date;
   endDate: Date;
   sessions: number;
+  bonusSessions: number;
   sessionsUsed: number;
   value: number;
   paid: number;
+  contractType: "NEW" | "RENEW";
+  /** The PT and Sale staff with their shares, by name as GymMaster writes them (A-303). */
+  shares: { role: "PT" | "SALE"; name: string; percent: number }[];
   cleanup: CleanupReason[];
 };
 
@@ -59,6 +75,8 @@ export type Plan = {
   sheetIssues: { sheet: ImportSheet; code: string; fields: string[] }[];
   ignoredSheets: string[];
   unknownColumns: { sheet: ImportSheet; headers: string[] }[];
+  /** What each file was taken for, when the data came as files (M9.2b). */
+  files: NonNullable<ParsedWorkbook["files"]>;
 };
 
 const text = (value: unknown): string => (value === null || value === undefined ? "" : String(value).trim());
@@ -70,12 +88,24 @@ const norm = (value: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .replace(/đ/gi, "d")
     .toLowerCase()
+    .replace(/\s+/g, " ")
     .trim();
+
+/** A person's name as staff are matched by it: no accents, case or double spaces (A-303). */
+export const staffNameKey = norm;
 
 type Context = { db: Db; actor: CurrentUser; branchId: string; today: Date };
 
 function entry(sheet: ImportSheet, source: ParsedRow, legacyCode: string, label: string): Entry {
-  return { sheet, row: source.row, legacyCode, action: "CREATE", issues: [], label };
+  return {
+    sheet,
+    row: source.row,
+    ...(source.file ? { file: source.file } : {}),
+    legacyCode,
+    action: "CREATE",
+    issues: [],
+    label,
+  };
 }
 
 function rejected(item: Entry, ...issues: string[]): void {
@@ -90,7 +120,8 @@ async function planCustomers(context: Context, rows: ParsedRow[]): Promise<Plann
   for (const source of rows) {
     const legacyCode = text(source.cells.legacyCode);
     const item = entry("customers", source, legacyCode, text(source.cells.fullName));
-    const dob = source.cells.dateOfBirth;
+    // GymMaster writes "no birth date" as 30/11/-0001 (A-302).
+    const dob = isNoDate(source.cells.dateOfBirth) ? null : source.cells.dateOfBirth;
     const birth = dob === null || dob === undefined || dob === "" ? null : parseDay(dob);
     const input = {
       fullName: text(source.cells.fullName),
@@ -164,11 +195,15 @@ async function planContracts(
   context: Context,
   rows: ParsedRow[],
   customerCodes: Set<string>,
+  staffNames: Set<string>,
 ): Promise<PlannedContract[]> {
   const services = await context.db.service.findMany({
     where: { active: true, branches: { some: { branchId: context.branchId } } },
     select: { id: true, name: true },
   });
+  // The staff a contract can name: those already in the system and those this run makes (A-303).
+  const known = await context.db.employee.findMany({ select: { fullName: true } });
+  const names = new Set([...staffNames, ...known.map((employee) => staffNameKey(employee.fullName))]);
   const planned: PlannedContract[] = [];
   const codes = new Set<string>();
   for (const source of rows) {
@@ -181,9 +216,19 @@ async function planContracts(
     const endDate = parseDay(c.endDate);
     const contractDate = c.contractDate === null || c.contractDate === undefined ? startDate : parseDay(c.contractDate);
     const sessions = parseWhole(c.sessions);
-    const sessionsUsed = parseWhole(c.sessionsUsed);
+    const blank = (cell: unknown) => cell === null || cell === undefined || cell === "";
+    const bonusSessions = blank(c.bonusSessions) ? 0 : parseWhole(c.bonusSessions);
+    const sessionsLeft = blank(c.sessionsLeft) ? null : parseWhole(c.sessionsLeft);
+    // An empty "used" is none used, unless the file has the sessions left, which then say how many were (A-302).
+    const entitled = (sessions ?? 0) + (bonusSessions ?? 0);
+    const sessionsUsed = !blank(c.sessionsUsed)
+      ? parseWhole(c.sessionsUsed)
+      : sessionsLeft !== null && sessions !== null
+        ? Math.max(0, entitled - sessionsLeft)
+        : 0;
     const value = parseWhole(c.value);
     const paid = parseWhole(c.paid);
+    const debt = blank(c.debt) ? null : parseWhole(c.debt);
 
     if (legacyCode === "") rejected(item, "legacyCode:required");
     if (packageName === "") rejected(item, "packageName:required");
@@ -191,11 +236,12 @@ async function planContracts(
     if (!endDate) rejected(item, "endDate:invalidDate");
     if (!contractDate) rejected(item, "contractDate:invalidDate");
     if (sessions === null || sessions < 1) rejected(item, "sessions:invalidNumber");
+    if (bonusSessions === null || bonusSessions < 0) rejected(item, "bonusSessions:invalidNumber");
     if (sessionsUsed === null || sessionsUsed < 0) rejected(item, "sessionsUsed:invalidNumber");
     if (value === null || value < 0) rejected(item, "value:invalidNumber");
     if (paid === null || paid < 0) rejected(item, "paid:invalidNumber");
     if (startDate && endDate && endDate < startDate) rejected(item, "endDate:endBeforeStart");
-    if (sessions !== null && sessionsUsed !== null && sessionsUsed > sessions)
+    if (sessions !== null && sessionsUsed !== null && sessionsUsed > entitled)
       rejected(item, "sessionsUsed:aboveSessions");
     if (value !== null && paid !== null && paid > value) rejected(item, "paid:aboveValue");
 
@@ -235,6 +281,18 @@ async function planContracts(
       }
     }
     const real = sessions ?? 0;
+    const shares = [
+      ...parseShares(c.trainers).map((share) => ({ role: "PT" as const, ...share })),
+      ...parseShares(c.sellers).map((share) => ({ role: "SALE" as const, ...share })),
+    ];
+    // What GymMaster says that the figures do not, for the owner to confirm (A-302 to A-305).
+    const more: CleanupReason[] = [];
+    if (sessionsLeft !== null && sessionsUsed !== null && entitled - sessionsUsed !== sessionsLeft) {
+      more.push("SESSIONS_LEFT_DIFFER");
+    }
+    if (debt !== null && value !== null && paid !== null && value - paid !== debt) more.push("DEBT_DIFFERS");
+    if (!approvedInSource(c.approval)) more.push("NOT_APPROVED_IN_SOURCE");
+    if (shares.some((share) => !names.has(staffNameKey(share.name)))) more.push("STAFF_NOT_FOUND");
     planned.push({
       entry: item,
       customerLegacyCode,
@@ -247,19 +305,25 @@ async function planContracts(
       startDate: startDate ?? new Date(0),
       endDate: endDate ?? new Date(0),
       sessions: real,
+      bonusSessions: bonusSessions ?? 0,
       sessionsUsed: sessionsUsed ?? 0,
       value: value ?? 0,
       paid: paid ?? 0,
+      contractType: contractTypeOf(c.contractType),
+      shares,
       cleanup:
         item.action === "REJECT"
           ? []
-          : cleanupReasons({
-              packageName,
-              sessions: real,
-              value: value ?? 0,
-              tierUnitPrice,
-              hasService: service !== undefined,
-            }),
+          : [
+              ...cleanupReasons({
+                packageName,
+                sessions: real,
+                value: value ?? 0,
+                tierUnitPrice,
+                hasService: service !== undefined,
+              }),
+              ...more,
+            ],
     });
   }
   return planned;
@@ -276,18 +340,51 @@ export async function buildPlan(context: Context, workbook: ParsedWorkbook): Pro
     if (parsed.unknown.length > 0) unknownColumns.push({ sheet, headers: parsed.unknown });
   }
   const broken = (sheet: ImportSheet) => sheetIssues.some((issue) => issue.sheet === sheet);
-  const customers =
-    workbook.customers && !broken("customers") ? await planCustomers(context, workbook.customers.rows) : [];
+  const customers = await planCustomers(context, [
+    ...(workbook.customers && !broken("customers") ? workbook.customers.rows : []),
+    ...membersOnlyInContracts(workbook),
+  ]);
   const staff = workbook.staff && !broken("staff") ? await planStaff(context, workbook.staff.rows) : [];
   // A contract may name a customer that is in the same file, or one imported earlier.
   const customerCodes = new Set(
     customers.filter((item) => item.entry.action !== "REJECT").map((item) => item.entry.legacyCode),
   );
+  const staffNames = new Set(
+    staff.filter((item) => item.entry.action === "CREATE").map((item) => staffNameKey(item.input.fullName)),
+  );
   const contracts =
     workbook.contracts && !broken("contracts")
-      ? await planContracts(context, workbook.contracts.rows, customerCodes)
+      ? await planContracts(context, workbook.contracts.rows, customerCodes, staffNames)
       : [];
-  return { customers, staff, contracts, sheetIssues, ignoredSheets: workbook.ignoredSheets, unknownColumns };
+  return {
+    customers,
+    staff,
+    contracts,
+    sheetIssues,
+    ignoredSheets: workbook.ignoredSheets,
+    unknownColumns,
+    files: workbook.files ?? [],
+  };
+}
+
+/**
+ * The members a contracts export names that the members' file does not have: made from the contract's code, name and phone, once
+ * each, so a contract is never left without its member (A-304). Members already in the system are found as usual.
+ */
+function membersOnlyInContracts(workbook: ParsedWorkbook): ParsedRow[] {
+  const listed = new Set((workbook.customers?.rows ?? []).map((row) => text(row.cells.legacyCode)));
+  const added: ParsedRow[] = [];
+  for (const row of workbook.contracts?.rows ?? []) {
+    const code = text(row.cells.customerLegacyCode);
+    if (code === "" || listed.has(code) || text(row.cells.customerName) === "") continue;
+    listed.add(code);
+    added.push({
+      row: row.row,
+      ...(row.file ? { file: row.file } : {}),
+      cells: { legacyCode: code, fullName: row.cells.customerName, phone: row.cells.customerPhone ?? "" },
+    });
+  }
+  return added;
 }
 
 /** The counts of a plan by sheet and action, for the summary. */

@@ -7,7 +7,7 @@ import { recordAudit } from "../platform/audit/audit.repository.js";
 import type { CurrentUser } from "../platform/auth/actor.js";
 import { prisma } from "../platform/db/prisma.js";
 import { AppError } from "../platform/errors/app-error.js";
-import type { Plan, PlannedContract } from "./plan.js";
+import { staffNameKey, type Plan, type PlannedContract } from "./plan.js";
 
 // Carrying out an import plan (brief §11, D-039, D-011; M9.2). Each record is written on its own and carries its legacy
 // code, so a run that stops can be run again: what was brought over is skipped by its legacy code.
@@ -20,12 +20,38 @@ const reasonOf = (error: unknown): string =>
 
 type Context = { actor: CurrentUser; branchId: string };
 
+/**
+ * The PT and Sale shares of a contract, each to the one employee with that name; a name no employee has, or more than one has, is
+ * left out (the contract is on the cleanup list for it, A-303).
+ */
+async function sharesOf(
+  planned: PlannedContract,
+): Promise<{ role: "PT" | "SALE"; employeeId: string; percent: number }[]> {
+  if (planned.shares.length === 0) return [];
+  const employees = await prisma.employee.findMany({ select: { id: true, fullName: true } });
+  const byName = new Map<string, string[]>();
+  for (const employee of employees) {
+    const key = staffNameKey(employee.fullName);
+    byName.set(key, [...(byName.get(key) ?? []), employee.id]);
+  }
+  const shares: { role: "PT" | "SALE"; employeeId: string; percent: number }[] = [];
+  for (const share of planned.shares) {
+    const ids = byName.get(staffNameKey(share.name)) ?? [];
+    const id = ids.length === 1 ? ids[0] : undefined;
+    if (id && !shares.some((taken) => taken.role === share.role && taken.employeeId === id)) {
+      shares.push({ role: share.role, employeeId: id, percent: share.percent });
+    }
+  }
+  return shares;
+}
+
 async function createContractRow(context: Context, planned: PlannedContract): Promise<void> {
   const customer = await prisma.customer.findUnique({
     where: { legacyCode: planned.customerLegacyCode },
     select: { id: true },
   });
   if (!customer) throw new AppError("NOT_FOUND");
+  const shares = await sharesOf(planned);
   await prisma.$transaction(async (tx) => {
     const created = await contractRepo.createContract(
       tx,
@@ -39,11 +65,12 @@ async function createContractRow(context: Context, planned: PlannedContract): Pr
         packageName: planned.newName,
         serviceId: planned.serviceId,
         priceTierId: planned.tierId,
-        contractType: "NEW",
+        contractType: planned.contractType,
         contractDate: planned.contractDate,
         // What was agreed, as it stands in GymMaster; the opening balances below are immutable (D-011).
         contractValue: planned.value,
         totalSessions: planned.sessions,
+        bonusSessions: planned.bonusSessions,
         openingSessionsUsed: planned.sessionsUsed,
         openingPaidAmount: planned.paid,
         startDate: planned.startDate,
@@ -54,7 +81,7 @@ async function createContractRow(context: Context, planned: PlannedContract): Pr
         isImported: true,
         notes: planned.packageName === planned.newName ? null : `GymMaster: ${planned.packageName}`,
       },
-      [],
+      shares,
       [],
     );
     if ((await contractRepo.approve(tx, created.id, context.actor.id, new Date())) !== 1) {
@@ -69,7 +96,9 @@ async function createContractRow(context: Context, planned: PlannedContract): Pr
         contractCode: created.contractCode,
         legacyCode: planned.entry.legacyCode,
         sessions: planned.sessions,
+        bonusSessions: planned.bonusSessions,
         sessionsUsed: planned.sessionsUsed,
+        contractType: planned.contractType,
         value: planned.value,
         paid: planned.paid,
         cleanup: planned.cleanup,

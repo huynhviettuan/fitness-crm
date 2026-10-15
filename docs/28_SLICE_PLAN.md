@@ -460,9 +460,13 @@ Source: brief §5.6; FR-CHG-001, FR-CHG-002; D-024. Depends on M4 and M5.
 |---|---|---|
 | M9.1 Overview dashboard and remaining reports (done 2026-11-03: A-245 to A-248, OQ-068) | The final overview dashboard, the tasks report (A-045), and a check of every export against AC-01 | brief §9; doc 10 |
 | M9.2 GymMaster import (done 2026-11-04: A-249 to A-255, OQ-069, doc 29) | A staging-first command: customers, active contracts, sessions used, receipts, staff, booking history; legacy codes kept; dry run; a cleanup list (session count different from the package name, price different from the tier) for the owner to confirm | brief §10, §11; D-039; FR-IMP-001 |
+| M9.2b GymMaster's real exports (done 2026-10-15: A-301 to A-305, OQ-078, doc 32) | The exports as they come, their columns and shapes, staff shares, members from contracts | doc 32 §2 |
 | M9.3 Reconciliation and cut-over (done 2026-11-05: A-256 to A-259, OQ-070, doc 29) | Totals of customers, contract value, paid, and sessions left against GymMaster; a parallel-run checklist; production import only after OQ-014 | AC-22 |
 
 ## M10 — Lead channel APIs (after the survey, TS-007)
+
+Closed 2026-10-15: every slice's integration and smoke run green, then the full suite (E2E and OWASP, 1327 tests) green. TikTok lead
+forms wait for OQ-071.
 
 | Slice | Builds |
 |---|---|

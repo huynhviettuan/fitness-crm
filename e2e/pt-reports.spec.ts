@@ -58,7 +58,7 @@ test.describe("PT reports as admin", () => {
     // GymMaster's order: the employee, the member, the contract, the allocation, the credited sessions, the PT's pay.
     expect(file.header.slice(0, 4)).toEqual(["Mã nhân viên", "Tên nhân viên", "Mã hội viên", "Tên hội viên"]);
     expect(file.header).toEqual(
-      expect.arrayContaining(["Mã hợp đồng", "Giá trị phân bổ", "Show dạy", "Doanh thu PT", "Điều chỉnh"]),
+      expect.arrayContaining(["Mã hợp đồng", "Giá trị phân bổ", "Show dạy", "Tổng show", "Doanh thu PT", "Điều chỉnh"]),
     );
     const detail = file.rows.find((line) => line[2] === customer.customerCode);
     expect(detail?.[0]).toBe(trainer.employeeCode);

@@ -2,7 +2,8 @@
 
 Brief §11, D-039, D-011, FR-IMP-001, AC-22. Built in M9.2; reconciliation and the cut-over come with M9.3.
 
-The import is a command for the developer, not a screen. It reads one Excel workbook, checks every row, and **writes nothing
+The import is a command for the developer, not a screen. It reads one Excel workbook, or GymMaster's own exports as they come
+(M9.2b), checks every row, and **writes nothing
 unless `--commit` is given**. Run it on staging until the owner has confirmed the cleanup list; production only after OQ-014.
 
 ## 1. The workbook
@@ -10,8 +11,23 @@ unless `--commit` is given**. Run it on staging until the owner has confirmed th
 One tab for each kind of record. A tab is found by its name (`customers`, `contracts`, `staff`, or the Vietnamese names
 `Khách hàng`, `Hợp đồng`, `Nhân viên`); other tabs are ignored and named in the report. The first row is the headers, matched to
 fields by name without regard to accents, case or punctuation, so `Mã khách hàng`, `ma_khach_hang` and `Customer code` are the same.
-The names each field answers to are in `packages/shared/src/import/import.domain.ts` (`IMPORT_COLUMNS`). **The columns of the real
-GymMaster exports are not known yet (OQ-053, OQ-069)**: fitting a real file means adding its header names there.
+The names each field answers to are in `packages/shared/src/import/import.domain.ts` (`IMPORT_COLUMNS`); a field takes the first of
+its names that the file has. GymMaster's own names come first (received 2026-10-15, doc 32 §2).
+
+### GymMaster's exports (M9.2b)
+
+GymMaster exports each report as its own file with one tab called *Worksheet*. Give them all at once; each is recognised by its
+headers (A-301), and the report's **Files** tab says what each was taken for:
+
+| GymMaster export | Taken as |
+|---|---|
+| Thông tin hội viên | customers |
+| Danh sách hợp đồng | contracts (and the members it names that the members' file lacks, A-304) |
+| Báo cáo booking, Báo cáo thu chi, PT Training Report | not imported (OQ-078) |
+
+In the contracts export (A-302, A-303): the value is *Tổng thanh toán* (after discounts); sessions are *Số buổi thẻ gạch* plus the bonus
+*Số buổi KM*; an empty *Số buổi đã tập* comes from *Số buổi còn lại*; *Loại HĐ* gives New or Renew; *Nhân viên PT* and *Nhân viên Sale*
+("Name (100%)") become the contract's shares when one employee has that name; `30/11/-0001` is an empty date.
 
 `pnpm --filter api import:template out.xlsx` writes the blank workbook with every header.
 
@@ -43,6 +59,10 @@ A contract is on the owner's list, with the reason, when:
 | `PRICE_DIFFERS_FROM_TIER` | Value ÷ sessions is not the unit price of the service's tier on the contract date (the contract is marked as an exception price) |
 | `NO_SERVICE` | No service of the branch matched |
 | `NO_TIER` | The service has no tier for that count of sessions |
+| `SESSIONS_LEFT_DIFFER` | GymMaster's sessions left are not bought + bonus − used (M9.2b) |
+| `DEBT_DIFFERS` | GymMaster's debt is not value − paid (M9.2b) |
+| `NOT_APPROVED_IN_SOURCE` | GymMaster shows the contract *Chưa duyệt* (A-305) |
+| `STAFF_NOT_FOUND` | A PT or Sale name matches no employee, or several (A-303) |
 
 The list is the **Cleanup** tab of the report and is stored with the run (`import_runs.cleanup`). The contract is still imported;
 the owner confirms or corrects the list, and a correction is a change voucher or a delete and re-create like any other (D-022).
@@ -52,11 +72,16 @@ the owner confirms or corrects the list, and a correction is a change voucher or
 ```bash
 pnpm --filter api import:gymmaster -- --file gymmaster.xlsx --user admin@flow.vn --branch "Flow Q1" --report dry-run.xlsx
 pnpm --filter api import:gymmaster -- --file gymmaster.xlsx --user admin@flow.vn --branch "Flow Q1" --report done.xlsx --commit
+# GymMaster's exports, as they come: each file, or a folder of them
+pnpm --filter api import:gymmaster -- --dir exports/ --user admin@flow.vn --report dry-run.xlsx
 ```
+
+The command needs the API's settings in its environment (`apps/api/.env`).
 
 - `--user` is an Admin with every branch; the records say they were made by this account.
 - `--branch` is a name or id; it may be left out when there is only one active branch.
-- The report has three tabs: **Summary** (counts by tab and result), **Cleanup**, **Left out** (rows rejected or duplicate, with the reason).
+- The report has four tabs: **Summary** (counts by tab and result), **Files** (what each file was taken for), **Cleanup**, **Left out**
+  (rows rejected or duplicate, with the reason and the file).
 
 ### Results of a row
 

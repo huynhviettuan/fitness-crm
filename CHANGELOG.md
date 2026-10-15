@@ -1,5 +1,12 @@
 # Documentation Changelog
 
+## 2026-10-15 — M10 closed; M9.2b: GymMaster's real exports
+
+- **M10 close**: the full suite (E2E and OWASP, 1327 tests) green after M10.6.
+- **Import** (A-301 to A-305): GymMaster's exports read as they come (several files, known by their headers), with their column names and value shapes; bonus sessions, contract type, PT and Sale shares; members from the contracts; cleanup reasons for GymMaster's own disagreements, unapproved contracts and unknown staff.
+- **PT report**: GymMaster's *Tổng show* column.
+- **Open**: OQ-078 (interim answers recorded). Docs 13, 16, 18, 28, 29.
+
 ## 2026-10-15 — Customer input: framework and GymMaster exports
 
 - **Source**: the framework document transcribed in `docs/source/FRAMEWORK_2026-10-15_vi.md`; the exports are not stored (personal data).

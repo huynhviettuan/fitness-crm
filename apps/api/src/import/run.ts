@@ -6,13 +6,13 @@ import { env } from "../platform/env.js";
 import { applyPlan, recordRun, type Applied } from "./apply.js";
 import { buildPlan, type Plan } from "./plan.js";
 import { writeReport } from "./report.js";
-import { readWorkbook } from "./workbook.js";
+import { readWorkbook, type ImportSource } from "./workbook.js";
 
 // One import run (brief §11, D-039; M9.2): read the workbook, check every row, and, only when asked, write.
 
 export type RunOptions = {
-  /** The workbook (a path or its bytes). */
-  source: string | Buffer;
+  /** The workbook (a path or its bytes), or GymMaster's exports, one file each (M9.2b). */
+  source: ImportSource | ImportSource[];
   /** The name shown on record. */
   sourceName: string;
   /** The Admin the import is done as; the records say they were made by this account. */

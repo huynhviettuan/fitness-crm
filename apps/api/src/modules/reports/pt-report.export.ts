@@ -107,6 +107,12 @@ export const ptRevenueExport: ExportDefinition<PtLine> = {
         line.kind === "row" ? line.row.credited : line.kind === "trainer" ? line.trainer.credited : line.credited,
     },
     {
+      // GymMaster repeats the PT's sessions of the period on each row ("Tổng show", doc 32 §2); the PT's own row has it too.
+      header: { vi: "Tổng show", en: "PT's credited sessions" },
+      kind: "number",
+      value: (line) => (line.kind === "row" ? line.trainer.credited : null),
+    },
+    {
       header: { vi: "Trong ca", en: "In shift" },
       kind: "number",
       value: (line) => (line.kind === "row" ? line.row.inShift : line.kind === "trainer" ? line.trainer.inShift : null),

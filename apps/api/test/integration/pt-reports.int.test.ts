@@ -304,6 +304,9 @@ describe("the PT revenue allocation (D-032, A-166 to A-170)", () => {
     expect(headers.slice(0, 4)).toEqual(["Mã nhân viên", "Tên nhân viên", "Mã hội viên", "Tên hội viên"]);
     const allocation = ptRevenueExport.columns.find((column) => column.header.vi === "Doanh thu PT")!;
     expect(items.map((line) => allocation.value(line, "vi"))).toEqual([1_000_000, 1_000_000, 1_000_000]);
+    // GymMaster's "Tổng show" (doc 32 §2): the PT's sessions of the period on each of their rows.
+    const shows = ptRevenueExport.columns.find((column) => column.header.vi === "Tổng show")!;
+    expect(items.map((line) => shows.value(line, "vi"))).toEqual([2, null, null]);
   });
 });
 

@@ -131,7 +131,7 @@ describe("a dry run", () => {
     // The report for the owner: the cleanup list names the three contracts to confirm, and what was left out is there.
     const read = new ExcelJS.Workbook();
     await read.xlsx.load(report as unknown as ArrayBuffer);
-    expect(read.worksheets.map((sheet) => sheet.name)).toEqual(["Summary", "Cleanup", "Left out"]);
+    expect(read.worksheets.map((sheet) => sheet.name)).toEqual(["Summary", "Files", "Cleanup", "Left out"]);
     const listed = (sheetName: string, column = 1) =>
       read
         .getWorksheet(sheetName)!

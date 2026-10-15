@@ -1,5 +1,5 @@
-import { writeFile } from "node:fs/promises";
-import { basename } from "node:path";
+import { readdir, writeFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import { prisma } from "../platform/db/prisma.js";
 import { summarize } from "./plan.js";
 import { reconcile, writeReconciliation } from "./reconcile.js";
@@ -10,10 +10,31 @@ import { readWorkbook, writeTemplate } from "./workbook.js";
 //
 //   pnpm --filter api import:template out.xlsx                  the blank workbook to fill from GymMaster
 //   pnpm --filter api import:gymmaster -- --file in.xlsx --user admin@example.com [--branch Name] [--report out.xlsx] [--commit]
+//   pnpm --filter api import:gymmaster -- --file members.xlsx --file contracts.xlsx --user …   GymMaster's exports, as they come
+//   pnpm --filter api import:gymmaster -- --dir exports/ --user …                              every .xlsx of a folder
 
 function arg(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
   return at >= 0 ? process.argv[at + 1] : undefined;
+}
+
+/** Every value of an option that may be given more than once. */
+function args(name: string): string[] {
+  return process.argv.flatMap((value, at) =>
+    value === `--${name}` && process.argv[at + 1] ? [process.argv[at + 1]!] : [],
+  );
+}
+
+/** The files to read: each --file, and every .xlsx of --dir (GymMaster's exports, M9.2b). */
+async function filesToRead(): Promise<string[]> {
+  const files = args("file");
+  const dir = arg("dir");
+  if (dir) {
+    for (const name of (await readdir(dir)).sort()) {
+      if (name.toLowerCase().endsWith(".xlsx") && !name.startsWith("~$")) files.push(join(dir, name));
+    }
+  }
+  return files;
 }
 
 async function main(): Promise<void> {
@@ -23,14 +44,15 @@ async function main(): Promise<void> {
     console.log(`Template written to ${template}`);
     return;
   }
-  const file = arg("file");
+  const files = await filesToRead();
+  const file = files[0];
   if (process.argv.includes("--reconcile")) {
     if (!file) {
       console.error("Usage: --reconcile --file <workbook.xlsx> [--report <out.xlsx>]");
       process.exitCode = 2;
       return;
     }
-    const result = await reconcile(prisma, await readWorkbook(file));
+    const result = await reconcile(prisma, await readWorkbook(files));
     console.table(result.lines);
     console.log(`Contracts that differ or are missing: ${result.differences.length}`);
     console.log(`Customers missing in the system: ${result.missingCustomers.length}`);
@@ -43,15 +65,15 @@ async function main(): Promise<void> {
   const user = arg("user");
   if (!file || !user) {
     console.error(
-      "Usage: --file <workbook.xlsx> --user <admin email> [--branch <name>] [--report <out.xlsx>] [--commit]",
+      "Usage: (--file <file.xlsx> ... | --dir <folder>) --user <admin email> [--branch <name>] [--report <out.xlsx>] [--commit]",
     );
     process.exitCode = 2;
     return;
   }
   const commit = process.argv.includes("--commit");
   const result = await runImport({
-    source: file,
-    sourceName: basename(file),
+    source: files.length === 1 ? file : files,
+    sourceName: files.map((one) => basename(one)).join(", "),
     userEmail: user,
     branch: arg("branch"),
     commit,
@@ -62,6 +84,9 @@ async function main(): Promise<void> {
   console.table(counts);
   const cleanup = result.plan.contracts.filter((contract) => contract.cleanup.length > 0).length;
   console.log(`Contracts for the owner to confirm: ${cleanup}`);
+  for (const use of result.plan.files) {
+    console.log(`${basename(use.file)} [${use.tab}]: ${use.usedAs ?? "not imported"} (${use.rows} rows)`);
+  }
   for (const issue of result.plan.sheetIssues) {
     console.error(`Sheet ${issue.sheet}: ${issue.code}: ${issue.fields.join(", ")}`);
   }
