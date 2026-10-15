@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — ZKTeco answers
+
+- **Machine** (A-306): one TX628 on the gym LAN with ADMS push available; GymMaster's NextFace reads it from the reception PC (on 7:00–20:30).
+- **Proposed way in** (A-307): the machine pushes to a small bridge on the LAN, which calls the scan API over HTTPS; nothing built until OQ-062's remaining answers and ZKTeco's push document.
+
 ## 2026-10-15 — M10 closed; M9.2b: GymMaster's real exports
 
 - **M10 close**: the full suite (E2E and OWASP, 1327 tests) green after M10.6.
