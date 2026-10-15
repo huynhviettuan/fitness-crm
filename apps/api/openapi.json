@@ -7188,6 +7188,55 @@
         "x-permission": "customer.view"
       }
     },
+    "/api/v1/customers/{id}/emails/{emailId}": {
+      "get": {
+        "operationId": "CustomersController_email",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "emailId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailMessageDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ],
+        "x-permission": "customer.view"
+      }
+    },
     "/api/v1/contracts": {
       "get": {
         "operationId": "ContractsController_list",
@@ -26700,6 +26749,9 @@
             "nullable": true,
             "type": "string",
             "format": "date-time"
+          },
+          "recordedOnly": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -26712,7 +26764,83 @@
           "attempts",
           "failure",
           "createdAt",
-          "sentAt"
+          "sentAt",
+          "recordedOnly"
+        ]
+      },
+      "EmailMessageDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "toAddress": {
+            "nullable": true,
+            "type": "string"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "vi",
+              "en"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "SENT",
+              "FAILED"
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "failure": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "noEmail",
+              "providerRejected",
+              "providerUnavailable"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sentAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time"
+          },
+          "recordedOnly": {
+            "type": "boolean"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "subject",
+          "toAddress",
+          "locale",
+          "status",
+          "attempts",
+          "failure",
+          "createdAt",
+          "sentAt",
+          "recordedOnly",
+          "body"
         ]
       },
       "ContractStaffList": {

@@ -34,7 +34,7 @@ The API is the NestJS app `apps/api`, under `/api/v1`, described by **OpenAPI** 
 | Workouts | `/catalog/equipment`, `/catalog/areas`, `/catalog/exercises`, `/catalog/stages`, `/plan-templates`, `/customers/:id/plans`, `/plans/:id`, `/sessions/:id/log`, `/escalations` (review) |
 | Cash book | `/receipts`, `/expense-vouchers`, `/payouts` (from an allocation period), `/receipts/:id/date` (date edit permission), `/cashbook?from=&to=&branch=&method=` |
 | Tasks | `/tasks` (`?view=mine|assigned|department|all`), `/tasks/:id/accept`, `/start`, `/complete`, `/cancel`, `/tasks/:id/comments`; `/notifications` |
-| Email | `/email-templates`, `/customers/:id/emails` |
+| Email | `/email-templates`, `/customers/:id/emails` (no bodies), `/customers/:id/emails/:emailId` (one email with its body; `recordedOnly` when the server only logged it, A-317) |
 | Reports | `/reports/overview`, `/reports/consulting`, `/reports/leads`, `/reports/workouts-weekly`, `/reports/contracts`, `/reports/exception-prices`, `/reports/bookings`, `/reports/pt-revenue`, `/reports/cashbook`, `/reports/tasks` — each with `/export` |
 | Import | `/imports` (upload, dry run on staging, cleanup list, apply) |
 

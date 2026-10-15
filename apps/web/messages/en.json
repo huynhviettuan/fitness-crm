@@ -2410,12 +2410,23 @@
       "subject": "Subject",
       "to": "Sent to",
       "status": "Status",
-      "attempts": "Attempts"
+      "attempts": "Attempts",
+      "actions": "Actions"
     },
     "failure": {
       "noEmail": "The customer has no email",
       "providerRejected": "The provider refused it",
       "providerUnavailable": "The provider did not respond"
+    },
+    "view": "View",
+    "viewLabel": "View email: {subject}",
+    "recordedOnly": "Recorded only",
+    "recordedOnlyHint": "The server is in trial mode: the email was recorded, not sent to the customer.",
+    "detail": {
+      "title": "Email content",
+      "sentAt": "Sent",
+      "notSent": "Not sent yet",
+      "loading": "Loading…"
     }
   },
   "services": {

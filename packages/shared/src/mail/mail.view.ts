@@ -15,9 +15,17 @@ export const emailMessageSchema = z
     failure: z.enum(EMAIL_FAILURES).nullable(),
     createdAt: instant,
     sentAt: instant.nullable(),
+    /** Recorded but never delivered: the server writes emails to its log instead of sending them (trial, A-317). */
+    recordedOnly: z.boolean(),
   })
   .meta({ id: "EmailMessage" });
 export type EmailMessage = z.infer<typeof emailMessageSchema>;
+
+/** One email with what it said (A-317): the subject and the plain-text body, as rendered when it was queued. */
+export const emailMessageDetailSchema = emailMessageSchema
+  .extend({ body: z.string() })
+  .meta({ id: "EmailMessageDetail" });
+export type EmailMessageDetail = z.infer<typeof emailMessageDetailSchema>;
 
 export const emailMessagePageSchema = pageOf(emailMessageSchema).meta({ id: "EmailMessagePage" });
 export type EmailMessagePage = z.infer<typeof emailMessagePageSchema>;

@@ -1,7 +1,7 @@
 import { expect, signedInAs, test } from "./fixtures";
 import { createCustomerViaApi } from "./support/data";
 import { insertEmailRow } from "./support/db";
-import { labels } from "./support/labels";
+import { fill, labels } from "./support/labels";
 
 // E2E-151: the customer's "Emails sent" tab (FR-MAIL-003, D-036). The sender, its retries, and the task for a
 // failed email are covered by the API's integration tests (`apps/api/test/integration/mail.int.test.ts`).
@@ -41,5 +41,37 @@ test.describe("the Emails sent tab", () => {
     await page.goto(`/customers/${quiet.id}`);
     await customerDetailPage.openTab(labels.customers.tabs.emails);
     await expect(customerDetailPage.tabPanel(labels.customers.tabs.emails)).toContainText(mail.empty);
+  });
+
+  test("E2E-186: reception opens an email to read what the customer was told, and sees when it was only recorded (A-317)", async ({
+    apiAs,
+    customerDetailPage,
+    page,
+    testTag,
+  }) => {
+    const api = await apiAs("RECEPTIONIST");
+    const customer = await createCustomerViaApi(api, testTag);
+    const subject = `Buổi tập ${testTag}`;
+    await insertEmailRow(customer.id, {
+      subject,
+      status: "SENT",
+      body: `Chào anh/chị,
+Bạn còn 9 buổi. ${testTag}`,
+      providerMessageId: `log:${testTag}`,
+    });
+
+    await page.goto(`/customers/${customer.id}`);
+    await customerDetailPage.openTab(labels.customers.tabs.emails);
+    const panel = customerDetailPage.tabPanel(labels.customers.tabs.emails);
+    const row = panel.getByRole("row").filter({ hasText: subject });
+    await expect(row).toContainText(mail.recordedOnly);
+
+    await row.getByRole("button", { name: fill(mail.viewLabel, { subject }) }).click();
+    const dialog = page.getByRole("dialog", { name: subject });
+    await expect(dialog).toContainText(`Bạn còn 9 buổi. ${testTag}`);
+    await expect(dialog).toContainText("khach@example.com");
+    await expect(dialog).toContainText(mail.recordedOnlyHint);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
   });
 });

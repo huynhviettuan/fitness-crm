@@ -9,7 +9,7 @@ import {
   customerStaffListSchema,
   updateCustomerSchema,
 } from "@flow/shared/customers";
-import { emailMessagePageSchema } from "@flow/shared/mail";
+import { emailMessageDetailSchema, emailMessagePageSchema } from "@flow/shared/mail";
 import { CurrentActor, RequirePermission } from "../../platform/auth/auth.guard.js";
 import type { CurrentUser } from "../../platform/auth/session.js";
 import { encode } from "../../platform/http/encode.js";
@@ -24,7 +24,7 @@ import { queryOf } from "../../platform/http/query.js";
 import { exportList } from "../../platform/export/export.service.js";
 import { customersExport, CUSTOMER_EXPORT_QUERY } from "./customer.export.js";
 import { createContract, listContracts } from "../contracts/contract.service.js";
-import { listCustomerEmails } from "../mail/mail.service.js";
+import { getCustomerEmail, listCustomerEmails } from "../mail/mail.service.js";
 import { createCustomer, getCustomer, listCustomers, staffChoices, updateCustomer } from "./customer.service.js";
 
 @ApiTags("customers")
@@ -133,6 +133,14 @@ export class CustomersController {
   @ApiResult(emailMessagePageSchema)
   async emails(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Req() request: Request) {
     return encode(emailMessagePageSchema, await listCustomerEmails(actor, id, queryOf(request, ["page", "pageSize"])));
+  }
+
+  /** One email with its subject and body, to see what the customer was told (A-317). */
+  @Get(":id/emails/:emailId")
+  @RequirePermission("customer.view")
+  @ApiResult(emailMessageDetailSchema)
+  async email(@CurrentActor() actor: CurrentUser, @Param("id") id: string, @Param("emailId") emailId: string) {
+    return encode(emailMessageDetailSchema, await getCustomerEmail(actor, id, emailId));
   }
 
   /** T-015: a replay with the same key returns 200 with the original contract. */

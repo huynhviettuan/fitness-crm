@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  emailMessageDetailSchema,
   emailMessagePageSchema,
   emailTemplateListSchema,
   emailTemplateSchema,
@@ -12,6 +13,14 @@ export async function listCustomerEmails(customerId: string, params: { page?: nu
   return read(
     emailMessagePageSchema,
     (await api()).GET("/api/v1/customers/{id}/emails", { params: { path: { id: customerId }, query: query(params) } }),
+  );
+}
+
+/** One email with what it said (A-317). */
+export async function getCustomerEmail(customerId: string, emailId: string) {
+  return read(
+    emailMessageDetailSchema,
+    (await api()).GET("/api/v1/customers/{id}/emails/{emailId}", { params: { path: { id: customerId, emailId } } }),
   );
 }
 

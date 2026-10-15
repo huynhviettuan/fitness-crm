@@ -322,7 +322,7 @@ export default async function CustomerPage({ params }: PageProps<"/customers/[id
           </TabsContent>
         )}
         <TabsContent value="emails">
-          <CustomerEmails emails={emails.items} />
+          <CustomerEmails customerId={customer.id} emails={emails.items} />
         </TabsContent>
       </Tabs>
     </>

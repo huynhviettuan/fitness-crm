@@ -2,8 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PARAMETER_DEFAULTS } from "@flow/shared/parameters";
 import { prisma } from "../../src/platform/db/prisma.js";
 import { createCustomer } from "../../src/modules/customers/customer.service.js";
-import { createResendProvider } from "../../src/modules/mail/mail.provider.js";
-import { listCustomerEmails, queueEmail, sendDueEmails } from "../../src/modules/mail/mail.service.js";
+import { createLogProvider, createResendProvider } from "../../src/modules/mail/mail.provider.js";
+import {
+  getCustomerEmail,
+  listCustomerEmails,
+  queueEmail,
+  sendDueEmails,
+} from "../../src/modules/mail/mail.service.js";
 import { updateParameters } from "../../src/platform/parameters/parameter.service.js";
 import { resetDatabase } from "../support/database.js";
 import { createTestBranch, createTestOption, createTestUser, uniquePhone } from "../support/factories.js";
@@ -292,6 +297,63 @@ describe("the Emails sent tab (FR-MAIL-003)", () => {
     await expect(listCustomerEmails(actor, "not-a-uuid", {})).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(listCustomerEmails(actor, customer.id, { pageSize: 1000 })).rejects.toMatchObject({
       code: "VALIDATION_FAILED",
+    });
+  });
+});
+
+describe("one email with what it said (A-317)", () => {
+  it("shows the subject and body, and whether it was only recorded", async () => {
+    const { actor, customer } = await customerWithEmail();
+    await queueEmail(prisma, mail(customer.id, actor.id, { dedupeKey: "sent" }));
+    await sendDueEmails(T0, resend(200).provider);
+    await queueEmail(prisma, mail(customer.id, actor.id, { dedupeKey: "logged", subject: "Chỉ ghi" }));
+    await sendDueEmails(minutesLater(1), createLogProvider());
+    const [sent, logged] = await rowsOf(customer.id);
+
+    expect(await getCustomerEmail(actor, customer.id, sent!.id)).toMatchObject({
+      subject: "Buổi tập đã ghi nhận",
+      body: "Bạn còn 9 buổi.",
+      toAddress: "an@example.test",
+      status: "SENT",
+      recordedOnly: false,
+    });
+    expect(await getCustomerEmail(actor, customer.id, logged!.id)).toMatchObject({
+      status: "SENT",
+      recordedOnly: true,
+    });
+    const page = await listCustomerEmails(actor, customer.id, {});
+    expect(page.items.map((item) => item.recordedOnly).sort()).toEqual([false, true]);
+  });
+
+  it("hides the address from a role that may not see emails", async () => {
+    const { actor, customer } = await customerWithEmail();
+    await queueEmail(prisma, mail(customer.id, actor.id));
+    const [row] = await rowsOf(customer.id);
+
+    const email = await getCustomerEmail({ ...actor, masks: new Set(["customer.email"]) }, customer.id, row!.id);
+    expect(email).toMatchObject({ toAddress: null, body: "Bạn còn 9 buổi." });
+  });
+
+  it("is NOT_FOUND out of scope, under another customer, or for a bad id; FORBIDDEN without customer.view", async () => {
+    const { actor, customer } = await customerWithEmail();
+    const { customer: other } = await customerWithEmail("other@example.test");
+    await queueEmail(prisma, mail(customer.id, actor.id));
+    const [row] = await rowsOf(customer.id);
+    const { actor: trainer } = await createTestUser("PT");
+    const otherBranch = await createTestBranch();
+    const { actor: outsider } = await createTestUser("RECEPTIONIST", { branchIds: [otherBranch.id] });
+
+    for (const [who, customerId, emailId] of [
+      [trainer, customer.id, row!.id],
+      [outsider, customer.id, row!.id],
+      [actor, other.id, row!.id],
+      [actor, customer.id, "not-a-uuid"],
+      [actor, "not-a-uuid", row!.id],
+    ] as const) {
+      await expect(getCustomerEmail(who, customerId, emailId)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    }
+    await expect(getCustomerEmail({ ...actor, permissions: new Set() }, customer.id, row!.id)).rejects.toMatchObject({
+      code: "FORBIDDEN",
     });
   });
 });

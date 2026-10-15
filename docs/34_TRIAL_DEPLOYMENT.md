@@ -10,7 +10,7 @@ A free setup to try the system online before paying for hosting (A-314). It is *
 | Database | Render free PostgreSQL 17, 1 GB, **expires 30 days after creation** (then 14 days' grace) | Paid, daily backups, point-in-time recovery |
 | Web | Vercel Hobby (personal, non-commercial use) | Vercel Pro, or Render |
 | Files and backups | Cloudflare R2 (free up to 10 GB) | Same |
-| Email | Logged, not sent (`EMAIL_PROVIDER=log`) | Resend |
+| Email | Recorded, not sent (`EMAIL_PROVIDER=log`): read them on the customer's **Emails sent** tab → **View**, marked *Recorded only* (A-317) | Resend |
 
 **Test data only.** Never enter real customers' details in the trial.
 

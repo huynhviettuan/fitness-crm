@@ -245,7 +245,15 @@ export async function setStepDue(leadId: string, key: string, minutesAgo: number
  */
 export async function insertEmailRow(
   personId: string,
-  row: { subject: string; status: "QUEUED" | "SENT" | "FAILED"; failure?: string; attempts?: number },
+  row: {
+    subject: string;
+    status: "QUEUED" | "SENT" | "FAILED";
+    failure?: string;
+    attempts?: number;
+    body?: string;
+    /** "log:…" for an email the server only recorded (A-317). */
+    providerMessageId?: string;
+  },
 ): Promise<void> {
   const prisma = connect();
   try {
@@ -258,7 +266,8 @@ export async function insertEmailRow(
         toAddress: "khach@example.com",
         locale: "vi",
         subject: row.subject,
-        body: "Nội dung",
+        body: row.body ?? "Nội dung",
+        providerMessageId: row.providerMessageId ?? null,
         status: row.status,
         attempts: row.attempts ?? (row.status === "QUEUED" ? 0 : 1),
         failure: row.failure ?? null,

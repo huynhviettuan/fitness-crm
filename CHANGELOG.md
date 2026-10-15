@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — Review fixes: release hidden, emails readable
+
+- **Health** (A-316): the public checks no longer name the release; the start-up log does.
+- **Emails** (A-317): `GET /customers/:id/emails/:emailId` and **View** on the Emails sent tab show what the customer was told; emails the trial only recorded are marked. Docs 07, 08, 13, 15, 18, 24, 34.
+
 ## 2026-10-15 — Faster integration tests, the image in CI
 
 - **Integration tests in parallel**: one database per worker, cloned from the migrated test database; `resetDatabase` restores the configuration with one statement per table (630 ms → 130 ms). About 15 minutes → about 4.

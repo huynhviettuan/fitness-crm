@@ -78,6 +78,11 @@ export async function listForPerson(db: Db, personId: string, page: { skip: numb
   return { items, total };
 }
 
+/** One email of a person; null when the id is someone else's (A-317). */
+export function findForPerson(db: Db, personId: string, id: string) {
+  return db.emailMessage.findFirst({ where: { id, personId } });
+}
+
 export function findPerson(db: Db, id: string) {
   return db.customer.findUnique({
     where: { id },

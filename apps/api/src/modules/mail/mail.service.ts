@@ -7,6 +7,7 @@ import {
   type EmailFailure,
   type EmailLocale,
   type EmailMessage,
+  type EmailMessageDetail,
   type EmailMessagePage,
 } from "@flow/shared/mail";
 import { hasNoControlCharacters } from "@flow/shared/validation";
@@ -19,7 +20,7 @@ import { parseInput } from "../../platform/validation/parse.js";
 import { findCustomer } from "../customers/customer.repository.js";
 import { visibleTo } from "../customers/customer.service.js";
 import { createMailFailureTask } from "../tasks/task.service.js";
-import { configuredMailProvider, type MailProvider } from "./mail.provider.js";
+import { LOGGED_ONLY_PREFIX, configuredMailProvider, type MailProvider } from "./mail.provider.js";
 import * as repo from "./mail.repository.js";
 
 // Customer email (D-036, D-059). A feature that must tell a customer something calls `queueEmail` in the transaction
@@ -156,22 +157,42 @@ export async function listCustomerEmails(
     take: query.pageSize,
   });
   return {
-    items: items.map((row): EmailMessage => ({
-      id: row.id,
-      event: row.event,
-      subject: row.subject,
-      toAddress: hideAddress ? null : row.toAddress,
-      locale: row.locale === "en" ? "en" : "vi",
-      status: row.status,
-      attempts: row.attempts,
-      failure: isFailure(row.failure) ? row.failure : null,
-      createdAt: row.createdAt,
-      sentAt: row.sentAt,
-    })),
+    items: items.map((row) => emailView(row, hideAddress)),
     total,
     page: query.page,
     pageSize: query.pageSize,
   };
+}
+
+type EmailRow = NonNullable<Awaited<ReturnType<typeof repo.findForPerson>>>;
+
+function emailView(row: EmailRow, hideAddress: boolean): EmailMessage {
+  return {
+    id: row.id,
+    event: row.event,
+    subject: row.subject,
+    toAddress: hideAddress ? null : row.toAddress,
+    locale: row.locale === "en" ? "en" : "vi",
+    status: row.status,
+    attempts: row.attempts,
+    failure: isFailure(row.failure) ? row.failure : null,
+    createdAt: row.createdAt,
+    sentAt: row.sentAt,
+    recordedOnly: row.providerMessageId?.startsWith(LOGGED_ONLY_PREFIX) ?? false,
+  };
+}
+
+/**
+ * One email to a customer with what it said (A-317): the same people, branches and masked address as the list; the body
+ * holds nothing the tab does not already show of the customer (templates have no email or phone placeholder).
+ */
+export async function getCustomerEmail(actor: Actor, customerId: string, emailId: string): Promise<EmailMessageDetail> {
+  assertCan(actor, "customer.view");
+  if (!z.uuid().safeParse(customerId).success || !z.uuid().safeParse(emailId).success) throw new AppError("NOT_FOUND");
+  if (!(await findCustomer(prisma, customerId, visibleTo(actor)))) throw new AppError("NOT_FOUND");
+  const row = await repo.findForPerson(prisma, customerId, emailId);
+  if (!row) throw new AppError("NOT_FOUND");
+  return { ...emailView(row, isMasked(actor, "customer.email")), body: row.body };
 }
 
 function isFailure(value: string | null): value is EmailFailure {

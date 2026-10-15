@@ -59,6 +59,9 @@ export function createResendProvider({ apiKey, from, fetch: fetcher = fetch }: R
   };
 }
 
+/** The provider message id of an email the log provider recorded instead of sending (A-317). */
+export const LOGGED_ONLY_PREFIX = "log:";
+
 /** Development and tests: nothing leaves the machine; the log says only that an email would have gone out. */
 export function createLogProvider(): MailProvider {
   return {
@@ -66,7 +69,7 @@ export function createLogProvider(): MailProvider {
       console.info(
         JSON.stringify({ time: new Date().toISOString(), level: "info", type: "mail", id: email.idempotencyKey }),
       );
-      return { ok: true, providerMessageId: `log:${email.idempotencyKey}` };
+      return { ok: true, providerMessageId: `${LOGGED_ONLY_PREFIX}${email.idempotencyKey}` };
     },
   };
 }

@@ -2410,12 +2410,23 @@
       "subject": "Tiêu đề",
       "to": "Gửi tới",
       "status": "Trạng thái",
-      "attempts": "Lần thử"
+      "attempts": "Lần thử",
+      "actions": "Thao tác"
     },
     "failure": {
       "noEmail": "Khách chưa có email",
       "providerRejected": "Nhà cung cấp từ chối",
       "providerUnavailable": "Nhà cung cấp không phản hồi"
+    },
+    "view": "Xem",
+    "viewLabel": "Xem email: {subject}",
+    "recordedOnly": "Chỉ ghi nhận",
+    "recordedOnlyHint": "Máy chủ đang ở chế độ thử: email được ghi lại, không gửi tới khách.",
+    "detail": {
+      "title": "Nội dung email",
+      "sentAt": "Gửi lúc",
+      "notSent": "Chưa gửi",
+      "loading": "Đang tải…"
     }
   },
   "services": {
