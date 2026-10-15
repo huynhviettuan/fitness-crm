@@ -20687,10 +20687,6 @@
               "ok"
             ]
           },
-          "release": {
-            "nullable": true,
-            "type": "string"
-          },
           "time": {
             "type": "string",
             "format": "date-time"
@@ -20698,7 +20694,6 @@
         },
         "required": [
           "status",
-          "release",
           "time"
         ]
       },
@@ -20719,10 +20714,6 @@
               "unavailable"
             ]
           },
-          "release": {
-            "nullable": true,
-            "type": "string"
-          },
           "time": {
             "type": "string",
             "format": "date-time"
@@ -20731,7 +20722,6 @@
         "required": [
           "status",
           "database",
-          "release",
           "time"
         ]
       },

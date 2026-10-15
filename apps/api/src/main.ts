@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createApp } from "./app.js";
-import { env } from "./platform/env.js";
+import { env, release } from "./platform/env.js";
 import { startJobs } from "./jobs.js";
 import { watchProcess } from "./platform/monitoring.js";
 
@@ -8,7 +8,7 @@ watchProcess("api");
 
 const app = await createApp({ docs: env.NODE_ENV !== "production" });
 await app.listen(env.PORT);
-console.info(`API listening on port ${env.PORT}`);
+console.info(`API listening on port ${env.PORT}${release ? ` (release ${release})` : ""}`);
 
 // T-059: in development the API also runs the reminders; in production the worker does.
 if (env.RUN_JOBS) {

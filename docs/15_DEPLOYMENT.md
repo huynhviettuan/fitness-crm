@@ -46,7 +46,7 @@ BACKUP_CRON             # optional: default "0 2 * * *" (02:00 gym time)
 SENTRY_DSN              # optional (A-313): the Sentry project's DSN; unset, no error is reported
 SENTRY_ENVIRONMENT      # optional: "staging" or "production" in Sentry; defaults to NODE_ENV
 LOG_LEVEL
-RELEASE                 # optional: the release shown by /api/v1/health; Railway's and Render's commit is used when unset
+RELEASE                 # optional: the release named in the start-up log and Sentry; Railway's and Render's commit is used when unset
 
 # Web (apps/web/.env.example)
 API_URL                 # where the web server reaches the API; browsers never call it directly (T-053). Needed at build time too: `next build` reads it
@@ -105,14 +105,15 @@ Drill record:
 Two routes answer without a session (A-311, A-315), directly and through the web app (`https://app…/api/v1/…`); nothing
 else of the gym is in them:
 
-- `GET /api/v1/health` (**liveness**): `{"status":"ok","release":"…","time":"…"}`; never reads the database. The
+- `GET /api/v1/health` (**liveness**): `{"status":"ok","time":"…"}`; never reads the database. The
   platform's health check: the new release goes live when it answers, and a slow database never makes the platform restart
   a working API.
 - `GET /api/v1/health/ready` (**readiness**): `{"status":"ok","database":"ok",…}` with `200`, or `503` with
   `"unavailable"` when the database does not answer within 3 seconds. The uptime monitor (every minute, alert after two
   failures) and the E2E start-up use it.
 
-After a deployment, `release` shows which commit is running.
+Neither names the release (A-316): after a deployment, the platform's dashboard and the start-up log line
+(`API listening on port 4000 (release …)`) show which commit is running.
 
 ## Go-live checklist
 
@@ -121,7 +122,7 @@ After a deployment, `release` shows which commit is running.
    with `node dist/worker.js`; every variable above set, with a new `BETTER_AUTH_SECRET` and `FIELD_ENCRYPTION_KEY` (the key
    kept in the password manager too: losing it loses ID numbers and health notes).
 3. `pnpm --filter api db:deploy` as the release step; then `pnpm db:seed` once for the first admin.
-4. `GET /api/v1/health/ready` answers `200` with the expected `release`, directly and through the web app.
+4. `GET /api/v1/health/ready` answers `200`, directly and through the web app; the start-up log names the expected release.
 5. Resend domain verified (SPF, DKIM, DMARC); a test email received; web push keys generated (doc 29).
 6. R2 bucket private; a picture uploaded and opened through its signed URL.
 7. Sign-in over HTTPS, HSTS present, `/api/docs` answers `404`.

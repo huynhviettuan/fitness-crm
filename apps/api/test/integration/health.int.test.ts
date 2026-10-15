@@ -3,10 +3,10 @@ import { checkHealth, checkLiveness } from "../../src/platform/health/health.ser
 
 // M9.4 (A-311, A-315): liveness answers without the database; readiness reads it, and nothing of the gym.
 describe("liveness", () => {
-  it("answers ok with the release and time, without asking the database", () => {
+  it("answers ok with the time, without asking the database or naming the release (A-316)", () => {
     const liveness = checkLiveness();
     expect(liveness.status).toBe("ok");
-    expect(Object.keys(liveness).sort()).toEqual(["release", "status", "time"]);
+    expect(Object.keys(liveness).sort()).toEqual(["status", "time"]);
   });
 });
 

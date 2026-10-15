@@ -24,8 +24,8 @@ test.describe("A01 every API route requires a session", () => {
     expect(open).toEqual(["GET /api/v1/health", "GET /api/v1/health/ready"]);
     const anonymous = await apiAs(null);
     for (const [path, fields] of [
-      ["/api/v1/health", ["release", "status", "time"]],
-      ["/api/v1/health/ready", ["database", "release", "status", "time"]],
+      ["/api/v1/health", ["status", "time"]],
+      ["/api/v1/health/ready", ["database", "status", "time"]],
     ] as const) {
       const response = await anonymous.get(path);
       expect(response.status(), path).toBe(200);
