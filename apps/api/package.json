@@ -21,7 +21,9 @@
     "db:seed:bulk": "tsx prisma/seed-bulk.ts",
     "import:gymmaster": "tsx src/import/cli.ts",
     "import:template": "tsx src/import/cli.ts --template",
-    "import:reconcile": "tsx src/import/cli.ts --reconcile"
+    "import:reconcile": "tsx src/import/cli.ts --reconcile",
+    "backup:now": "tsx src/backup/cli.ts backup",
+    "backup:restore": "tsx src/backup/cli.ts restore"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

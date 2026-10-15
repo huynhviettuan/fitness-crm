@@ -7,7 +7,7 @@ Architecture and costs: `26_TECH_PROPOSAL.md`. Decisions: T-041, T-042.
 | Part | Host | Notes |
 |---|---|---|
 | `apps/web` (Next.js) | Vercel (Pro) | Preview deployment per pull request, pointed at the staging API |
-| `apps/api` (NestJS, HTTP) | Railway or Render, Singapore region | Docker image; start `node dist/main.js`; health check `GET /api/v1/health` (`200` when the database answers, `503` when not; A-311) |
+| `apps/api` (NestJS, HTTP) | Railway or Render, Singapore region | Docker image (`apps/api/Dockerfile`, built from the repository root: `docker build -f apps/api/Dockerfile .`); start `node dist/main.js`; health check `GET /api/v1/health` (`200` when the database answers, `503` when not; A-311) |
 | `apps/api` worker (pg-boss jobs) | Same platform, separate service | Same image; start `node dist/worker.js`. The API service sets `RUN_JOBS=false` so only the worker runs the reminders (T-059) |
 | PostgreSQL 17 | Same platform, managed | `btree_gist` extension; daily backups; point-in-time recovery on paid plans |
 | Files and backup copies | Cloudflare R2 | Private buckets; signed URLs |
@@ -40,6 +40,9 @@ GYM_TIMEZONE            # Asia/Ho_Chi_Minh (A-001)
 FIELD_ENCRYPTION_KEY    # AES-256-GCM key for ID and health fields (T-052, T-064): 32 random bytes, base64; one per environment, backed up apart from the database
 EMAIL_PROVIDER (`log` or `resend`), EMAIL_FROM, RESEND_API_KEY; PUSH_PROVIDER (`log` or `webpush`), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (one key pair per environment: `npx web-push generate-vapid-keys`, doc 29); META_GRAPH_URL (Lead Ads, M10.4: leave the default `https://graph.facebook.com/v21.0`)
 R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+BACKUP_ENCRYPTION_KEY   # seals the daily backup (A-312): 32 random bytes, base64, not the field key; required in production; kept in the password manager, apart from the bucket
+BACKUP_R2_BUCKET        # optional: the backups' own private bucket (recommended); else the files' bucket
+BACKUP_CRON             # optional: default "0 2 * * *" (02:00 gym time)
 SENTRY_DSN, LOG_LEVEL
 RELEASE                 # optional: the release shown by /api/v1/health; Railway's and Render's commit is used when unset
 
@@ -71,9 +74,29 @@ With `NODE_ENV=production` the API and the worker refuse to start, naming the se
 ## Backups and restore
 
 - Managed daily backups on the database service.
-- An independent daily `pg_dump` by the worker to R2, kept 30 days (encrypted).
-- A monthly restore of the latest dump into staging, checked and recorded.
-- Before every production migration: an on-demand backup.
+- An independent daily `pg_dump` by the worker to R2, sealed with `BACKUP_ENCRYPTION_KEY` (A-312): `backups/YYYY/MM/flow-….dump.enc`
+  and `backups/latest.json`. Logged as `backup.done` / `backup.failed` (alert on a failure, or on no `backup.done` for 26 hours).
+- Kept 30 days by the bucket's **lifecycle rule** (Cloudflare dashboard → R2 → the bucket → Settings → Object lifecycle rules:
+  prefix `backups/`, delete after 30 days). The application never deletes a backup.
+- Before every production migration: `pnpm --filter api backup:now` in the worker's shell.
+- A monthly restore drill: in a one-off shell with the production backup key and bucket (read-only keys), into a new empty
+  database on staging:
+
+  ```text
+  pnpm --filter api backup:restore -- --into postgresql://…/flow_drill_2026_11 [--from backups/2026/11/flow-….dump.enc]
+  ```
+
+  It refuses the database it serves and any database with tables, checks the checksum and the seal, then prints the rows of
+  users, customers, contracts, payments, bookings, sessions and audit events. Record them beside the live counts of that
+  night, then drop the drill database.
+- Keys: `BACKUP_ENCRYPTION_KEY` and `FIELD_ENCRYPTION_KEY` are kept in the password manager. A restored copy needs the
+  field key of the environment it came from to read ID numbers and health notes.
+
+Drill record:
+
+| Date | Source | Copy | Restored rows (users / customers / contracts / payments / bookings / sessions / audit) | Live rows | Result |
+|---|---|---|---|---|---|
+| 2026-10-15 | development database, from the API image (`pg_dump` 17.11) | 822 KB sealed | 6 / 130 / 59 / 49 / 268 / 152 / 1529 | the same | Equal; restore into the served database and into a database with tables refused |
 
 ## Health check
 
@@ -97,7 +120,8 @@ deployment, `release` shows which commit is running.
 8. The import: dry run, cleanup list confirmed by the owner, reconciliation (M9.3), then the real import with
    `--confirm-production` (A-258, OQ-014).
 9. The ZKTeco bridge pointed at the production API with the production machine key (doc 33).
-10. Uptime monitor on the health check; Sentry DSNs set; the first backup restored into staging and checked.
+10. Uptime monitor on the health check; Sentry DSNs set; the backup bucket's lifecycle rule set; `backup:now` run once
+    and that copy restored into an empty staging database with `backup:restore` (A-312).
 
 ## Monitoring
 

@@ -57,6 +57,18 @@ const envSchema = z
     VAPID_PRIVATE_KEY: z.string().min(1).optional(),
     // A mailto: or https: address the push services can reach the operator at.
     VAPID_SUBJECT: z.string().min(1).optional(),
+    // M9.4b (A-312): the database backups. The AES-256-GCM key that seals each dump (32 bytes, base64), not the field key:
+    // a backup and the key that opens it are never kept together. Without it the worker takes no backup (development).
+    BACKUP_ENCRYPTION_KEY: z
+      .string()
+      .refine(
+        (value) => Buffer.from(value, "base64").length === 32,
+        "BACKUP_ENCRYPTION_KEY must be 32 bytes, base64-encoded",
+      )
+      .optional(),
+    BACKUP_R2_BUCKET: z.string().min(1).optional(),
+    // When the worker dumps the database, in the gym's time zone (cron). Infrastructure, not a business value.
+    BACKUP_CRON: z.string().min(9).default("0 2 * * *"),
     // M10.4: where the answers of a Lead Ads form are read (Meta's Graph API, a fixed version). The E2E run points it at a stub.
     META_GRAPH_URL: z.url().default("https://graph.facebook.com/v21.0"),
   })

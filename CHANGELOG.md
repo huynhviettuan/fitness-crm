@@ -1,5 +1,11 @@
 # Documentation Changelog
 
+## 2026-10-15 — M9.4b: backups
+
+- **Daily backup** (A-312): the worker's `pg_dump`, sealed with its own key, to R2 with a `latest` pointer; retention by the bucket's lifecycle rule.
+- **Restore drill**: `backup:restore` into an empty database only, checksum and seal checked, row counts printed; `backup:now` before migrations.
+- **Image**: `apps/api/Dockerfile` for the API, the worker and the release step. Docs 13, 15, 16, 18, 28.
+
 ## 2026-10-15 — M9.4a: go-live readiness
 
 - **Health check** (A-311): `GET /api/v1/health`, the only route open without a session: database reachable, release, time; `503` when the database is not.

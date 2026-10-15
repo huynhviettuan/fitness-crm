@@ -10,6 +10,8 @@ import { remindLongFreezes } from "./modules/contracts/contract-freeze.service.j
 import { escalateHangingSessions } from "./modules/checkin/checkin.service.js";
 import { generateAllSessions } from "./modules/classes/class.service.js";
 import { emailContractNotices } from "./modules/contracts/contract-email.js";
+import { parseBackupKey, takeBackup } from "./backup/backup.js";
+import { backupStorage } from "./platform/files/file.storage.js";
 
 // Background work (T-045, T-059): pg-boss queues in PostgreSQL, no Redis. The same code
 // runs inside the API (RUN_JOBS=true, the default for development) or in the worker
@@ -19,6 +21,29 @@ import { emailContractNotices } from "./modules/contracts/contract-email.js";
 
 const REMINDERS = "reminders";
 const MAIL = "mail";
+const BACKUP = "backup";
+
+const log = (level: "info" | "error", fields: Record<string, unknown>) =>
+  console[level](JSON.stringify({ time: new Date().toISOString(), level, ...fields }));
+
+/** The daily database backup (M9.4b, A-312), logged either way; a failure is retried and then left for the alert. */
+export async function runDailyBackup(key: string): Promise<void> {
+  try {
+    const record = await takeBackup({
+      databaseUrl: env.DATABASE_URL,
+      key: parseBackupKey(key),
+      storage: backupStorage,
+    });
+    log("info", { type: "backup", event: "backup.done", key: record.key, bytes: record.bytes });
+  } catch (error) {
+    log("error", {
+      type: "backup",
+      event: "backup.failed",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
 
 /** Every reminder that is due: tasks before and after their deadline, overdue approvals, consulting steps, and leads to move on. */
 export async function sendReminders(now: Date = new Date()): Promise<void> {
@@ -68,6 +93,15 @@ export async function startJobs(): Promise<Jobs> {
     // Staff get the important notifications by email and on their phone too (D-053, M6.4).
     await sendDueDeliveries();
   });
+  // The daily backup (M9.4b): only where a backup key is set (staging, production). Retried twice, ten minutes apart.
+  const backupKey = env.BACKUP_ENCRYPTION_KEY;
+  if (backupKey) {
+    if (!(await boss.getQueue(BACKUP))) await boss.createQueue(BACKUP, { retryLimit: 2, retryDelay: 600 });
+    await boss.schedule(BACKUP, env.BACKUP_CRON, null, { tz: env.GYM_TIMEZONE });
+    await boss.work(BACKUP, async () => {
+      await runDailyBackup(backupKey);
+    });
+  }
   if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
     console.warn(
       JSON.stringify({

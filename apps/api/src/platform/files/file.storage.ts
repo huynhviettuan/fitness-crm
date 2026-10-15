@@ -51,9 +51,9 @@ export function signedRequest(input: {
   return headers;
 }
 
-function r2Storage(): FileStorage {
+function r2Storage(bucket: string): FileStorage {
   const host = `${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-  const pathOf = (key: string) => `/${env.R2_BUCKET}/${key.split("/").map(encodeURIComponent).join("/")}`;
+  const pathOf = (key: string) => `/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
   const call = (method: "GET" | "PUT", key: string, body: Buffer, contentType?: string) => {
     const path = pathOf(key);
     const headers = signedRequest({
@@ -87,8 +87,8 @@ function r2Storage(): FileStorage {
   };
 }
 
-function localStorage(): FileStorage {
-  const root = resolve(env.FILE_STORAGE_DIR);
+function localStorage(folder: string): FileStorage {
+  const root = resolve(folder);
   const pathOf = (key: string) => {
     const full = resolve(join(root, key));
     // A key is generated here, but a path outside the folder is never read or written.
@@ -105,4 +105,14 @@ function localStorage(): FileStorage {
   };
 }
 
-export const fileStorage: FileStorage = env.FILE_STORAGE === "r2" ? r2Storage() : localStorage();
+export const fileStorage: FileStorage =
+  env.FILE_STORAGE === "r2" ? r2Storage(env.R2_BUCKET!) : localStorage(env.FILE_STORAGE_DIR);
+
+/**
+ * Where the database backups go (M9.4b, A-312): their own bucket when BACKUP_R2_BUCKET is set (recommended: its own
+ * lifecycle rule and keys), else the files' bucket; on a developer's machine, the folder above the files (keys start with `backups/`).
+ */
+export const backupStorage: FileStorage =
+  env.FILE_STORAGE === "r2"
+    ? r2Storage(env.BACKUP_R2_BUCKET ?? env.R2_BUCKET!)
+    : localStorage(join(env.FILE_STORAGE_DIR, ".."));

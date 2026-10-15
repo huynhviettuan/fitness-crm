@@ -6,6 +6,8 @@ const deployed = {
   BETTER_AUTH_URL: "https://app.flowfitness.vn",
   FILE_STORAGE: "r2",
   DATABASE_URL: "postgresql://flow:secret@db.internal:5432/flow",
+  FIELD_ENCRYPTION_KEY: "ZmllbGQta2V5LWZpZWxkLWtleS1maWVsZC1rZXktMzI=",
+  BACKUP_ENCRYPTION_KEY: "YmFja3VwLWtleS1iYWNrdXAta2V5LWJhY2t1cC0zMmI=",
 };
 
 describe("the production settings (M9.4, A-311)", () => {
@@ -15,12 +17,18 @@ describe("the production settings (M9.4, A-311)", () => {
 
   it("names each setting that would lose data or break sign-in", () => {
     const issues = productionIssues({
-      NODE_ENV: "production",
+      ...deployed,
+      BACKUP_ENCRYPTION_KEY: undefined,
       BETTER_AUTH_URL: "http://app.flowfitness.vn",
       FILE_STORAGE: "local",
       DATABASE_URL: "postgresql://flow:secret@localhost:5432/flow",
     });
-    expect(issues.map((issue) => issue.key)).toEqual(["BETTER_AUTH_URL", "FILE_STORAGE", "DATABASE_URL"]);
+    expect(issues.map((issue) => issue.key)).toEqual([
+      "BETTER_AUTH_URL",
+      "FILE_STORAGE",
+      "DATABASE_URL",
+      "BACKUP_ENCRYPTION_KEY",
+    ]);
     expect(JSON.stringify(issues)).not.toContain("secret");
   });
 
@@ -38,8 +46,18 @@ describe("the production settings (M9.4, A-311)", () => {
           BETTER_AUTH_URL: "http://localhost:3000",
           FILE_STORAGE: "local",
           DATABASE_URL: "postgresql://u:p@localhost/x",
+          FIELD_ENCRYPTION_KEY: deployed.FIELD_ENCRYPTION_KEY,
         }),
       ).toEqual([]);
+    }
+  });
+});
+
+describe("the backup key (A-312)", () => {
+  it("is never the field key, in any environment", () => {
+    for (const NODE_ENV of ["development", "production"]) {
+      const issues = productionIssues({ ...deployed, NODE_ENV, BACKUP_ENCRYPTION_KEY: deployed.FIELD_ENCRYPTION_KEY });
+      expect(issues.map((issue) => issue.key)).toEqual(["BACKUP_ENCRYPTION_KEY"]);
     }
   });
 });

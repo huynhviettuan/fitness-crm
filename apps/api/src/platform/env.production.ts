@@ -6,13 +6,22 @@ export type ProductionSettings = {
   BETTER_AUTH_URL: string;
   FILE_STORAGE: string;
   DATABASE_URL: string;
+  FIELD_ENCRYPTION_KEY: string;
+  BACKUP_ENCRYPTION_KEY?: string | undefined;
 };
 
 export type SettingIssue = { key: keyof ProductionSettings; message: string };
 
 export function productionIssues(settings: ProductionSettings): SettingIssue[] {
-  if (settings.NODE_ENV !== "production") return [];
   const issues: SettingIssue[] = [];
+  // A backup sealed with the field key would put the key's two secrets in one place (A-312), in every environment.
+  if (settings.BACKUP_ENCRYPTION_KEY && settings.BACKUP_ENCRYPTION_KEY === settings.FIELD_ENCRYPTION_KEY) {
+    issues.push({
+      key: "BACKUP_ENCRYPTION_KEY",
+      message: "BACKUP_ENCRYPTION_KEY must differ from FIELD_ENCRYPTION_KEY",
+    });
+  }
+  if (settings.NODE_ENV !== "production") return issues;
   // The session cookie is Secure and browsers keep it only over HTTPS; the Origin check compares with this URL (T-033).
   if (!/^https:\/\//i.test(settings.BETTER_AUTH_URL)) {
     issues.push({ key: "BETTER_AUTH_URL", message: "BETTER_AUTH_URL must be an https:// URL in production" });
@@ -29,6 +38,13 @@ export function productionIssues(settings: ProductionSettings): SettingIssue[] {
     issues.push({
       key: "DATABASE_URL",
       message: "DATABASE_URL points at this machine; production uses the managed database",
+    });
+  }
+  // The worker's daily dump is the copy that does not depend on the database host (doc 15).
+  if (!settings.BACKUP_ENCRYPTION_KEY) {
+    issues.push({
+      key: "BACKUP_ENCRYPTION_KEY",
+      message: "BACKUP_ENCRYPTION_KEY is required in production: the daily backup is sealed with it",
     });
   }
   return issues;
