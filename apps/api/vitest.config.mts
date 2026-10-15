@@ -21,12 +21,15 @@ export default defineConfig({
           name: "integration",
           include: ["test/integration/**/*.int.test.ts"],
           globalSetup: ["test/integration/global-setup.ts"],
-          // Integration tests share one database, so files run one at a time.
-          fileParallelism: false,
+          // Each worker has its own database, cloned from the migrated test database (test/integration/worker-databases.ts).
+          setupFiles: ["test/integration/worker-setup.ts"],
+          maxWorkers: Math.max(1, Number(process.env.INTEGRATION_WORKERS ?? 4) || 1),
           testTimeout: 30_000,
           hookTimeout: 60_000,
           env: {
+            // Replaced per worker by worker-setup.ts.
             DATABASE_URL: process.env.TEST_DATABASE_URL ?? "",
+            TEST_DATABASE_URL: process.env.TEST_DATABASE_URL ?? "",
             BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
           },
         },

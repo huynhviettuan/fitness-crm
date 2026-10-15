@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — Faster integration tests, the image in CI
+
+- **Integration tests in parallel**: one database per worker, cloned from the migrated test database; `resetDatabase` restores the configuration with one statement per table (630 ms → 130 ms). About 15 minutes → about 4.
+- **CI builds the API image** on every push and starts it as the trial does, through readiness and an admin sign-in. Docs 13, AGENTS.
+
 ## 2026-10-15 — Review fixes: liveness and readiness, trial keys, keep-awake
 
 - **Health** (A-315): `GET /health` is liveness (the platform's check, no database); `GET /health/ready` is readiness (the monitor's check, `503` without the database).

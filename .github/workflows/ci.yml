@@ -66,3 +66,43 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 7
+
+  # The API's container image (apps/api/Dockerfile; A-312, A-314): built on every push and started the way the free trial
+  # starts it (keys checked, migrations, first admin, NODE_ENV=production settings), so a change that breaks the image
+  # fails here rather than at a deployment.
+  image:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: fitness
+          POSTGRES_PASSWORD: fitness
+          POSTGRES_DB: flow_image
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fitness -d flow_image"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the API image
+        run: docker build -f apps/api/Dockerfile -t flow-api:ci .
+      - name: The image has pg_dump 17 (the backups, A-312)
+        run: docker run --rm flow-api:ci pg_dump --version | grep "(PostgreSQL) 17"
+      - name: Start it as the trial does, then sign in
+        # CI-only values; none protects anything real. The database is reached by name, as on a platform.
+        run: |
+          docker run -d --name api -p 4000:4000 --add-host=db:host-gateway             -e NODE_ENV=production -e RUN_JOBS=false             -e DATABASE_URL=postgresql://fitness:fitness@db:5432/flow_image             -e BETTER_AUTH_SECRET=ci-only-secret-that-protects-nothing-real             -e BETTER_AUTH_URL=https://ci.example.invalid             -e FIELD_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=             -e BACKUP_ENCRYPTION_KEY=AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=             -e FILE_STORAGE=r2 -e R2_ACCOUNT_ID=ci -e R2_ACCESS_KEY_ID=ci -e R2_SECRET_ACCESS_KEY=ci -e R2_BUCKET=ci             -e SEED_ADMIN_EMAIL=ci-admin@example.invalid -e SEED_ADMIN_PASSWORD=ci-only-password-1234             flow-api:ci sh scripts/start-trial.sh
+          for attempt in $(seq 1 60); do
+            if curl -fs http://localhost:4000/api/v1/health/ready; then break; fi
+            if [ "$attempt" = 60 ]; then docker logs api; exit 1; fi
+            sleep 2
+          done
+          curl -fs http://localhost:4000/api/v1/health
+          status=$(curl -s -o sign-in.json -w "%{http_code}" -X POST http://localhost:4000/api/auth/sign-in/email             -H "content-type: application/json" -H "origin: https://ci.example.invalid"             -d '{"email":"ci-admin@example.invalid","password":"ci-only-password-1234"}')
+          rm -f sign-in.json
+          echo "sign-in: $status"
+          test "$status" = 200
+      - name: Container log
+        if: always()
+        run: docker logs api || true

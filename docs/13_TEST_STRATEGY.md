@@ -12,6 +12,13 @@
 
 Integration tests run against a real PostgreSQL database because row locks, exclusion constraints, and unique indexes are PostgreSQL behavior.
 
+They run in parallel, four files at a time (`INTEGRATION_WORKERS`, `1` runs them one by one): the global setup migrates the
+test database once, then clones it per worker (`<test database>_w1`, `_w2`, …, `CREATE DATABASE … TEMPLATE`), and each
+worker's files use their own clone (`test/integration/worker-setup.ts`), so a file's `resetDatabase` never meets another's
+data. `resetDatabase` puts the configuration back with one statement per table (about 130 ms). The suite took about 15
+minutes one file at a time and about 4 minutes now (2026-10-15); more workers did not help, as the one database server is
+then the limit.
+
 ## E2E structure
 
 - Specs import `test` and `expect` only from the composition root `e2e/fixtures.ts`; page objects in `e2e/pages/` hold every locator, scoped to the region that owns it.
@@ -23,6 +30,10 @@ Integration tests run against a real PostgreSQL database because row locks, excl
 - The shared branch has one consultant, so its new leads always go to them. A test that needs its own round-robin makes a branch with its own consultants (`branchWithConsultants`) in a `*.branch.spec.ts` file; those run in the `own-branch` project after the others, since while an extra branch exists, users of every branch must say where a new record goes (D-014). The sign-in rate-limit spec runs last.
 
 ### Smoke in CI, everything by hand
+
+CI also builds the API's image on every push (job `image` in `ci.yml`): `pg_dump` 17 is in it, and it starts the way the
+free trial does (keys checked, migrations, first admin, `NODE_ENV=production` settings) until `/health/ready` answers and
+the admin signs in, so a change that breaks the image fails there rather than at a deployment (A-314).
 
 The whole Playwright suite is slow, so the CI that runs on every push and pull request runs only `pnpm test:e2e:smoke`: the cases tagged `@smoke` in their title (one per main feature: sign-in, lead, Show, customer, contract and its lock, receipt and approval, booking, completing a session, the PT grid, check-in, cash book, employees, tasks, services) and the OWASP security suite (the `A01` to `A10` describes of `e2e/security`, API-only and fast). `.github/workflows/full-e2e.yml` runs everything, only when started by hand (Actions, Full E2E, Run workflow); run it before closing a milestone. A new main feature gets one `@smoke` case; the rest stay in the full suite.
 
