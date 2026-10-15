@@ -10148,6 +10148,38 @@
         "x-permission": "booking.view"
       }
     },
+    "/api/v1/checkin/device": {
+      "get": {
+        "operationId": "CheckinController_device",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckinDeviceIdentity"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error (docs/07 error contract)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "checkin"
+        ],
+        "x-permission": "device-key"
+      }
+    },
     "/api/v1/checkin/scans": {
       "post": {
         "operationId": "CheckinController_receive",
@@ -27400,6 +27432,44 @@
           "branchId",
           "workingHours",
           "dayOff"
+        ]
+      },
+      "CheckinDeviceIdentity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "branch",
+          "serverTime"
         ]
       },
       "CheckinScansAnswer": {

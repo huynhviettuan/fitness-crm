@@ -12,7 +12,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "package": "tsc -p tsconfig.build.json && node scripts/package.mjs"
   },
   "devDependencies": {
     "@flow/config": "workspace:*",

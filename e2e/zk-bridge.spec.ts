@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -143,6 +143,51 @@ test("a machine the bridge does not know is refused, and a key the CRM does not 
     expect(health.waiting).toBe(1);
   } finally {
     bridge.process.kill();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+/** Runs the bridge's `--check` with these settings; resolves with its exit code and what it printed. */
+async function check(settings: Record<string, unknown>, dir: string): Promise<{ code: number; output: string }> {
+  const file = join(dir, "zk-bridge.json");
+  await writeFile(file, JSON.stringify(settings));
+  return new Promise((resolve) => {
+    execFile(process.execPath, [BRIDGE, "--config", file, "--check"], (error, stdout, stderr) =>
+      resolve({ code: error ? Number((error as { code?: number }).code ?? 1) : 0, output: `${stdout}${stderr}` }),
+    );
+  });
+}
+
+test("the bridge's --check names the machine and branch of a good key, and fails plainly on a wrong one (A-310)", async ({
+  apiAs,
+  testTag,
+}) => {
+  const admin = await apiAs("ADMIN");
+  const me = (await (await admin.get("/api/v1/me")).json()) as { branches: { id: string; name: string }[] };
+  const registered = await admin.post("/api/v1/checkin/devices", {
+    data: { branchId: me.branches[0]!.id, name: `TX628 ${testTag}` },
+  });
+  const { key } = (await registered.json()) as { key: string };
+  const dir = await mkdtemp(join(tmpdir(), "zk-bridge-check-"));
+  const settings = (deviceKey: string) => ({
+    apiUrl: test.info().project.use.baseURL,
+    queueFile: join(dir, "queue.json"),
+    machines: [{ serialNumber: SERIAL, deviceKey }],
+  });
+  try {
+    const good = await check(settings(key), dir);
+    expect(good.code).toBe(0);
+    expect(good.output).toContain(`OK  ${SERIAL}`);
+    expect(good.output).toContain(`TX628 ${testTag}`);
+    expect(good.output).toContain(me.branches[0]!.name);
+    expect(good.output).not.toContain(key);
+
+    const wrong = `fcd_${"w".repeat(43)}`;
+    const bad = await check(settings(wrong), dir);
+    expect(bad.code).toBe(1);
+    expect(bad.output).toContain(`LỖI ${SERIAL}`);
+    expect(bad.output).not.toContain(wrong);
+  } finally {
     await rm(dir, { recursive: true, force: true });
   }
 });

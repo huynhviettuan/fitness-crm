@@ -22,6 +22,7 @@ import {
   deviceCreatedSchema,
   deviceInputSchema,
   deviceListSchema,
+  deviceIdentitySchema,
   deviceSchema,
   deviceUpdateSchema,
   hangingListSchema,
@@ -48,7 +49,14 @@ import {
   requestManualConfirmation,
   setMachineCode,
 } from "./checkin.service.js";
-import { authenticateDevice, createDevice, listDevices, rotateDeviceKey, updateDevice } from "./device.service.js";
+import {
+  authenticateDevice,
+  createDevice,
+  describeDevice,
+  listDevices,
+  rotateDeviceKey,
+  updateDevice,
+} from "./device.service.js";
 import type { AuthenticatedDevice } from "./device.service.js";
 import { receiveScans } from "./scan.service.js";
 
@@ -131,6 +139,18 @@ export class CheckinDevicesController {
 @ApiErrors()
 @Controller("checkin")
 export class CheckinController {
+  /**
+   * Which machine a key belongs to (M5.8b, A-310): the bridge asks at start-up and when its settings are checked, so a wrong or
+   * replaced key shows before the first scan. Authenticated by `x-device-key`; changes nothing.
+   */
+  @Get("device")
+  @DeviceKeyEndpoint()
+  @UseGuards(DeviceGuard)
+  @ApiResult(deviceIdentitySchema)
+  async device(@CurrentDevice() device: AuthenticatedDevice) {
+    return encode(deviceIdentitySchema, await describeDevice(device));
+  }
+
   /** What a machine sends: its scans, each with the real time of the scan. Authenticated by `x-device-key`. */
   @Post("scans")
   @DeviceKeyEndpoint()

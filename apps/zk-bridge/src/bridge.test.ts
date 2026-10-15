@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { startBridge, type RunningBridge } from "./bridge.js";
+import { checkMachines, describeChecks } from "./check.js";
 import { parseConfig, type BridgeConfig } from "./config.js";
 import { silentLogger, type Logger } from "./log.js";
 
@@ -24,6 +25,24 @@ beforeEach(async () => {
     let body = "";
     request.on("data", (chunk: Buffer) => (body += chunk.toString()));
     request.on("end", () => {
+      // The key check (A-310): the machine of the key, or 401 for any other key.
+      if (request.method === "GET" && request.url === "/api/v1/checkin/device") {
+        const known = request.headers["x-device-key"] === KEY && crm.status === 200;
+        response.writeHead(known ? 200 : 401, { "content-type": "application/json" });
+        response.end(
+          JSON.stringify(
+            known
+              ? {
+                  id: "d1",
+                  name: "TX628 quầy",
+                  branch: { id: "b1", name: "Chi nhánh tổng" },
+                  serverTime: new Date().toISOString(),
+                }
+              : { code: "UNAUTHENTICATED" },
+          ),
+        );
+        return;
+      }
       if (crm.status === 200 && request.url === "/api/v1/checkin/scans") {
         crm.received.push({ key: request.headers["x-device-key"] as string | undefined, body: JSON.parse(body) });
       }
@@ -170,15 +189,18 @@ describe("the CRM's side", () => {
     ]);
   });
 
-  it("keeps a punch the machine sends twice only once", async () => {
+  it("keeps a punch the machine sends twice while it waits only once (the CRM also answers a resend with its first answer)", async () => {
     const bridge = await start();
+    crm.status = 503;
     for (let index = 0; index < 2; index += 1) {
       await fetch(`${bridge}/iclock/cdata?SN=${SERIAL}&table=ATTLOG`, {
         method: "POST",
-        body: "2606002\t2026-10-15 07:30:12\t0\t1",
+        body: "2606002	2026-10-15 07:30:12	0	1",
       });
     }
-    await running.bridge!.forwarder.flush();
+    expect(running.bridge!.queue.size).toBe(1);
+    crm.status = 200;
+    await running.bridge!.forwarder.flush(Date.now() + 20 * 60_000);
     expect(crm.received.flatMap((call) => call.body.scans)).toHaveLength(1);
   });
 
@@ -240,5 +262,42 @@ describe("the settings", () => {
     }
     expect(message).toContain("deviceKey");
     expect(message).not.toContain(wrong);
+  });
+});
+
+describe("the key check (A-310)", () => {
+  const settings = (deviceKey: string, apiUrl = crm.url) =>
+    parseConfig({ apiUrl, queueFile: "unused.json", machines: [{ serialNumber: SERIAL, deviceKey }] });
+
+  it("names the machine and branch of an accepted key, and the clock difference", async () => {
+    const [check] = await checkMachines(settings(KEY));
+    expect(check).toMatchObject({
+      serialNumber: SERIAL,
+      accepted: true,
+      device: { name: "TX628 quầy", branch: "Chi nhánh tổng" },
+    });
+    expect(Math.abs(check!.clockOffSeconds!)).toBeLessThan(5);
+    expect(describeChecks([check!])[0]).toMatch(/^OK {2}8116235100093: khóa hợp lệ/);
+  });
+
+  it("says a refused key or an unreachable CRM plainly, and never repeats the key", async () => {
+    const other = `fcd_${"o".repeat(43)}`;
+    const [refused] = await checkMachines(settings(other));
+    expect(refused).toMatchObject({ accepted: false, problem: expect.stringContaining("key refused") });
+    const [unreachable] = await checkMachines(settings(KEY, "http://127.0.0.1:1"));
+    expect(unreachable).toMatchObject({ accepted: false, problem: expect.stringContaining("unreachable") });
+    for (const line of describeChecks([refused!, unreachable!])) {
+      expect(line).toMatch(/^LỖI/);
+      expect(line).not.toContain(other);
+      expect(line).not.toContain(KEY);
+    }
+  });
+
+  it("runs when the bridge starts, and its result is in the health answer without the key", async () => {
+    const bridge = await start();
+    await expect
+      .poll(async () => ((await (await fetch(`${bridge}/health`)).json()) as { keys: unknown[] }).keys)
+      .toEqual([{ serialNumber: SERIAL, accepted: true, device: { name: "TX628 quầy", branch: "Chi nhánh tổng" } }]);
+    expect(await (await fetch(`${bridge}/health`)).text()).not.toContain(KEY);
   });
 });

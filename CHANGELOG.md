@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — M5.8b: ZKTeco trial kit
+
+- **Key check** (A-310): `GET /checkin/device` names a key's machine and branch; the bridge checks each key at start-up and with `--check`.
+- **Package and install**: one folder for the gym's computer, Windows install and uninstall scripts (start at boot, restarted if stopped, port open to the local subnet only, settings readable by Administrators and SYSTEM), the Vietnamese guide. Docs 07, 13, 16, 18, 28, 33.
+
 ## 2026-10-15 — M5.8: ZKTeco bridge
 
 - **Bridge** (A-309, doc 33): `apps/zk-bridge` takes the TX628's push on the LAN and sends the punches to the scan API with the machine key, queued on disk and retried; proven end to end (E2E-185).

@@ -15,6 +15,7 @@ import {
 import {
   authenticateDevice,
   createDevice,
+  describeDevice,
   rotateDeviceKey,
   updateDevice,
 } from "../../src/modules/checkin/device.service.js";
@@ -61,6 +62,16 @@ describe("devices (D-072)", () => {
     expect(await authenticateDevice(next)).toBeNull();
     expect(await authenticateDevice("fcd_notakey-notakey-notakey-notakey")).toBeNull();
     expect(await authenticateDevice("")).toBeNull();
+  });
+
+  it("tells the bridge which machine and branch its key belongs to, and the server's time (A-310)", async () => {
+    const { actor: admin } = await createTestUser("ADMIN", { allBranches: true });
+    const { device, key } = await createDevice(admin, { branchId: DEFAULT_BRANCH_ID, name: "TX628 quầy" });
+    const before = Date.now();
+    const identity = await describeDevice((await authenticateDevice(key))!);
+    expect(identity).toMatchObject({ id: device.id, name: "TX628 quầy", branch: { id: DEFAULT_BRANCH_ID } });
+    expect(new Date(identity.serverTime).getTime()).toBeGreaterThanOrEqual(before);
+    expect(JSON.stringify(identity)).not.toContain(key);
   });
 
   it("is Admin's only", async () => {

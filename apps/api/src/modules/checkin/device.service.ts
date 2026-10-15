@@ -126,3 +126,12 @@ export async function authenticateDevice(key: string) {
 }
 
 export type AuthenticatedDevice = NonNullable<Awaited<ReturnType<typeof authenticateDevice>>>;
+
+/** The machine a key belongs to, for the bridge's check (A-310): its name, its branch and the server's time. */
+export async function describeDevice(device: AuthenticatedDevice) {
+  const branch = await prisma.branch.findUniqueOrThrow({
+    where: { id: device.branchId },
+    select: { id: true, name: true },
+  });
+  return { id: device.id, name: device.name, branch, serverTime: new Date().toISOString() };
+}

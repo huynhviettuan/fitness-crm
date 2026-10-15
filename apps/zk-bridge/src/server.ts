@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import type { MachineCheck } from "./check.js";
 import type { BridgeConfig } from "./config.js";
 import type { Forwarder } from "./forwarder.js";
 import type { Logger } from "./log.js";
@@ -41,7 +42,13 @@ function zoneHours(timeZone: string): number {
   return Math.round((local.getTime() - utc.getTime()) / 3_600_000);
 }
 
-export function createBridgeServer(config: BridgeConfig, queue: ScanQueue, forwarder: Forwarder, log: Logger): Server {
+export function createBridgeServer(
+  config: BridgeConfig,
+  queue: ScanQueue,
+  forwarder: Forwarder,
+  log: Logger,
+  checks: () => MachineCheck[] = () => [],
+): Server {
   const known = new Set(config.machines.map((machine) => machine.serialNumber));
   const hours = zoneHours(config.timeZone);
 
@@ -53,7 +60,17 @@ export function createBridgeServer(config: BridgeConfig, queue: ScanQueue, forwa
         reply(
           response,
           200,
-          JSON.stringify({ waiting: queue.size, ...forwarder.state, machines: config.machines.length }),
+          JSON.stringify({
+            waiting: queue.size,
+            ...forwarder.state,
+            machines: config.machines.length,
+            keys: checks().map(({ serialNumber, accepted, device, problem }) => ({
+              serialNumber,
+              accepted,
+              device,
+              problem,
+            })),
+          }),
           "application/json",
         );
         return;

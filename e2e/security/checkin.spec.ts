@@ -16,6 +16,39 @@ async function registerDevice(admin: APIRequestContext, tag: string) {
   return (await response.json()) as { device: { id: string }; key: string };
 }
 
+test.describe("A07 a bridge checks its key (A-310)", () => {
+  test("the key tells its machine and branch and nothing more; no key, a wrong, replaced or switched-off key is 401", async ({
+    apiAs,
+    testTag,
+  }) => {
+    const admin = await apiAs("ADMIN");
+    const { device, key } = await registerDevice(admin, testTag);
+    const machine = await apiAs(null, { origin: null });
+    const ask = (headers: Record<string, string>) => machine.get("/api/v1/checkin/device", { headers });
+
+    const answer = await ask({ "x-device-key": key });
+    expect(answer.status()).toBe(200);
+    const body = await answer.text();
+    expect(JSON.parse(body)).toMatchObject({ id: device.id, name: `Máy ${testTag}` });
+    expect(body).not.toContain(key);
+    expect(body).not.toMatch(/keyHash|key_hash/);
+
+    for (const headers of [{}, { "x-device-key": "fcd_wrong" }, { "x-device-key": `${key}x` }] as Record<
+      string,
+      string
+    >[]) {
+      expect((await ask(headers)).status(), JSON.stringify(headers)).toBe(401);
+    }
+    // A signed-in user is not a machine.
+    expect((await admin.get("/api/v1/checkin/device")).status()).toBe(401);
+    const rotated = (await (await admin.post(`/api/v1/checkin/devices/${device.id}/key`)).json()) as { key: string };
+    expect((await ask({ "x-device-key": key })).status()).toBe(401);
+    expect((await ask({ "x-device-key": rotated.key })).status()).toBe(200);
+    await admin.patch(`/api/v1/checkin/devices/${device.id}`, { data: { name: `Máy ${testTag}`, active: false } });
+    expect((await ask({ "x-device-key": rotated.key })).status()).toBe(401);
+  });
+});
+
 test.describe("A01 the machines and the review screens are for their roles", () => {
   const deviceRoles: [Role, number][] = [
     ["ADMIN", 200],

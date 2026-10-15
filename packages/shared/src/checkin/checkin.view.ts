@@ -35,6 +35,20 @@ export const scanAnswerSchema = z
   })
   .meta({ id: "CheckinScanAnswer" });
 
+/**
+ * What a machine's key belongs to (M5.8b, A-310): the machine and its branch, and the server's time, so whoever sets up the bridge
+ * sees at once that the key is right and how far the computer's clock is off. Nothing else about the gym.
+ */
+export const deviceIdentitySchema = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    branch: z.object({ id: z.uuid(), name: z.string() }),
+    serverTime: z.iso.datetime(),
+  })
+  .meta({ id: "CheckinDeviceIdentity" });
+export type CheckinDeviceIdentity = z.output<typeof deviceIdentitySchema>;
+
 export const scansAnswerSchema = z
   .object({ items: z.array(scanAnswerSchema), clockOff: z.boolean() })
   .meta({ id: "CheckinScansAnswer" });

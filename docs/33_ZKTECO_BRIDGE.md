@@ -32,6 +32,15 @@ nothing but the punches waiting to be sent (user number, time); no fingerprint e
 
 ## 3. Setting it up
 
+The short way (M5.8b, A-310): `pnpm --filter zk-bridge package` writes `apps/zk-bridge/release/flow-zk-bridge/`; zip it and copy it to
+the gym's computer, then follow its `HUONG-DAN.txt` (the same text as `docs/customer/Huong_dan_cai_dat_cau_noi_ZKTeco.docx`): fill
+`zk-bridge.json`, run `install-windows.ps1` as Administrator (it checks Node.js and the settings, checks each key against the CRM
+with `--check`, opens the port to the local subnet, and registers the task *Flow ZK Bridge* that starts at boot and again within 5
+minutes if it stopped), then set the machine (step 4 below). `node main.js --config zk-bridge.json --check` can be run at any time:
+it prints, for each machine, "OK … khóa hợp lệ — máy …, chi nhánh …" or "LỖI …" and the clock difference.
+
+The steps in detail:
+
 1. **In the CRM** (Admin): *Check-in → Máy chấm công → Thêm máy*, the branch and a name ("TX628 quầy lễ tân"); copy the **key** shown once.
    On each customer and employee, the *Mã người dùng trên máy* is the number the machine knows them by (D-072).
 2. **On the gym computer** (Windows, Node.js 22 or later): copy the built bridge (`apps/zk-bridge/dist`, after

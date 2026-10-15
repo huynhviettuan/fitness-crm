@@ -341,6 +341,11 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** the owner sends a GymMaster "employee_pt_training" export with the data behind it, to match AC-18.
 - **Depends on:** M5.5.
 
+### M5.8b ZKTeco trial kit (done 2026-10-15: A-310, doc 33 §3)
+
+- **Builds:** `GET /checkin/device` for a key to name its machine; the bridge's start-up check and `--check`; `pnpm --filter zk-bridge package`; `install-windows.ps1` / `uninstall-windows.ps1`; the Vietnamese guide (`HUONG-DAN.txt`, `docs/customer/Huong_dan_cai_dat_cau_noi_ZKTeco.docx`).
+- **Next:** the first run at the gym (OQ-062: the machine's administrator, the computer's hours, the date and the technical contact).
+
 ### M5.8 ZKTeco bridge (done 2026-10-15: A-306 to A-309, OQ-062, doc 33)
 
 - **Builds:** `apps/zk-bridge`, run at the gym: the machine pushes its punches (ADMS) to it on the LAN; it queues them on disk and sends them to `POST /api/v1/checkin/scans` with the machine's key over HTTPS. No change to the CRM. Setup in doc 33.
