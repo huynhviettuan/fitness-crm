@@ -10,6 +10,17 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Major versions of the toolchain are deliberate upgrades, each in its own change with its fixes, not weekly bumps.
+    # @types/node follows the runtime: Node 22 (engines, the Docker image), so its major moves only with Node's.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
