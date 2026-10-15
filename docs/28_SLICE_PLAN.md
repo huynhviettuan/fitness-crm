@@ -341,6 +341,12 @@ M4.1a is the services, the price tiers in versions, the quick-pick packages, the
 - **Decide first:** the owner sends a GymMaster "employee_pt_training" export with the data behind it, to match AC-18.
 - **Depends on:** M5.5.
 
+### M5.8 ZKTeco bridge (done 2026-10-15: A-306 to A-309, OQ-062, doc 33)
+
+- **Builds:** `apps/zk-bridge`, run at the gym: the machine pushes its punches (ADMS) to it on the LAN; it queues them on disk and sends them to `POST /api/v1/checkin/scans` with the machine's key over HTTPS. No change to the CRM. Setup in doc 33.
+- **Tests:** unit tests of the protocol, the time zone, the queue and the retries; E2E-185 runs the built bridge against the real API.
+- **Open:** OQ-062 (ZKTeco's push document, the machine's administrator, where the bridge runs all opening hours).
+
 ### M5.7 PT payouts and adjustments (done 2026-10-21: A-173 to A-176, OQ-054)
 
 - **Builds:**

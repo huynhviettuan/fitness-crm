@@ -1,5 +1,10 @@
 # Documentation Changelog
 
+## 2026-10-15 — M5.8: ZKTeco bridge
+
+- **Bridge** (A-309, doc 33): `apps/zk-bridge` takes the TX628's push on the LAN and sends the punches to the scan API with the machine key, queued on disk and retried; proven end to end (E2E-185).
+- **Open**: OQ-062 (ZKTeco's push document, the machine's administrator, where the bridge runs). Docs 13, 16, 18, 24, 28, 33, README.
+
 ## 2026-10-15 — ZKTeco answers
 
 - **Machine** (A-306): one TX628 on the gym LAN with ADMS push available; GymMaster's NextFace reads it from the reception PC (on 7:00–20:30).

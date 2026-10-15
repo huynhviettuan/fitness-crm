@@ -62,15 +62,15 @@
       "cache": false
     },
     "test:e2e": {
-      "dependsOn": ["^build", "api#build", "web#build"],
+      "dependsOn": ["^build", "api#build", "web#build", "zk-bridge#build"],
       "cache": false
     },
     "test:e2e:smoke": {
-      "dependsOn": ["^build", "api#build", "web#build"],
+      "dependsOn": ["^build", "api#build", "web#build", "zk-bridge#build"],
       "cache": false
     },
     "test:security": {
-      "dependsOn": ["^build", "api#build", "web#build"],
+      "dependsOn": ["^build", "api#build", "web#build", "zk-bridge#build"],
       "cache": false
     }
   }

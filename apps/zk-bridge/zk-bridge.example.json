@@ -1,0 +1,14 @@
+{
+  "apiUrl": "https://crm.example.vn",
+  "timeZone": "Asia/Ho_Chi_Minh",
+  "listenHost": "0.0.0.0",
+  "listenPort": 8081,
+  "queueFile": "zk-bridge-queue.json",
+  "forwardIntervalSeconds": 5,
+  "machines": [
+    {
+      "serialNumber": "8116235100093",
+      "deviceKey": "fcd_paste-the-key-the-CRM-showed-when-the-machine-was-registered"
+    }
+  ]
+}

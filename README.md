@@ -38,6 +38,7 @@ Phases 0–4 of the first brief (customers, contracts, PT bookings and sessions,
 | Package | What it holds |
 |---|---|
 | `apps/api` | NestJS API under `/api/v1`: services, repositories, Prisma schema and migrations, Better Auth, integration tests. `openapi.json` is the committed contract. |
+| `apps/zk-bridge` | Runs at the gym, not on the servers: takes the ZKTeco machine's push on the LAN and sends the punches to the scan API (A-309, `docs/33_ZKTECO_BRIDGE.md`). |
 | `apps/web` | Next.js UI. Pages and Server Actions call the API through a client generated from `openapi.json`; browsers reach the API through the web app's `/api/*` (T-053). |
 | `packages/shared` | Zod input and response schemas, permission keys, error codes, pure domain rules |
 | `packages/config` | ESLint and TypeScript presets |
@@ -95,6 +96,7 @@ Common tasks run through Turborepo from the root: `pnpm typecheck`, `pnpm lint`,
 | `docs/26_TECH_PROPOSAL.md` | Technology, architecture, hosting, costs |
 | `docs/27_ESTIMATES.md` | Effort and cost per milestone |
 | `docs/28_SLICE_PLAN.md` | Every remaining slice, M2.5 to M11, with its tests and the decisions to settle first |
+| `docs/33_ZKTECO_BRIDGE.md` | The ZKTeco bridge: why, what it does, how to set it up at the gym and on the machine |
 | `docs/32_CUSTOMER_INPUT_2026-10-15.md` | Review of the customer's framework document and GymMaster exports of 2026-10-15: what is built, the gaps, the import changes |
 | `docs/31_LEAD_INTAKE_API.md` | The lead intake API for the website form: the key, the call, the answers, and what happens to a submission |
 | `docs/30_LEAD_CHANNEL_SURVEY.md` | The survey of the lead channels (WhatsApp, Meta, Zalo, Gmail, TikTok, Threads, website): what is feasible, the cost, the review, and the order proposed |
