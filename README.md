@@ -11,6 +11,43 @@ and English.
 > The requirements brief that the documentation cites as "brief §n" is not included. The decisions, rules and
 > specifications in [`docs/`](docs) carry its content.
 
+## A quick tour
+
+A lead gets an appointment: only the moves allowed from the lead's status are offered, and each one is recorded.
+
+![A lead gets an appointment](docs/images/flow-lead-appointment.gif)
+
+A PT session is booked on the calendar, against the customer's contract; trainer and customer overlaps are refused.
+
+![A PT session is booked](docs/images/flow-pt-booking.gif)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/01-dashboard.png" alt="Dashboard"><br><sub><b>Dashboard</b>: leads, members who trained, contracts ending soon, sessions by hour, revenue.</sub></td>
+    <td width="50%"><img src="docs/images/02-leads.png" alt="Leads"><br><sub><b>Leads</b> from every channel, with the person in charge and the status; also as a Kanban board.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/03-lead.png" alt="A lead"><br><sub><b>A lead</b>: its journey, history, and the timed consulting checklist.</sub></td>
+    <td><img src="docs/images/04-customer.png" alt="A customer"><br><sub><b>A customer</b>: one profile from lead to member, with contracts, bookings, payments and emails.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/05-contract.png" alt="A contract"><br><sub><b>A contract</b>: sessions and debt derived, never typed; approved, then locked.</sub></td>
+    <td><img src="docs/images/06-pt-calendar.png" alt="PT calendar"><br><sub><b>PT calendar</b>: one column per trainer; status colors come from configuration.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/07-cash-book.png" alt="Cash book"><br><sub><b>Cash book</b>: opening, in, out and closing by branch, method and day.</sub></td>
+    <td><img src="docs/images/08-permissions.png" alt="Roles and permissions"><br><sub><b>Roles and permissions</b>: a permission tree per role, with data scope and hidden fields.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/09-system-status.png" alt="System status"><br><sub><b>System status</b>: jobs, backups, emails and check-in machines, for the owner.</sub></td>
+    <td align="center"><img src="docs/images/10-phone-lead.png" alt="A lead on a phone" width="45%"><br><sub><b>On a phone</b>: leads, the PT calendar and the workout log work at phone width.</sub></td>
+  </tr>
+</table>
+
+The screens show the demo data of `pnpm db:seed:demo`, in English (each user picks Vietnamese or English). To refresh them
+after a UI change: `pnpm build`, a freshly seeded demo database, `pnpm --filter e2e tour`, then
+`python scripts/frames-to-gif.py` for the GIFs (see [`e2e/tour.config.ts`](e2e/tour.config.ts)).
+
 ## What it does
 
 **Leads and consulting**

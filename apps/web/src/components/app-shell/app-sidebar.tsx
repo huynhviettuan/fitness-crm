@@ -157,7 +157,7 @@ export function AppSidebar({ items }: AppSidebarProps) {
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <DumbbellIcon className="size-4" />
           </span>
-          <span className="truncate group-data-[collapsible=icon]:hidden">Fitness CRM</span>
+          <span className="truncate group-data-[collapsible=icon]:hidden">Gym CRM</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>

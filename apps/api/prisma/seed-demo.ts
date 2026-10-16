@@ -46,6 +46,9 @@ async function seed(prisma: typeof client) {
   const { recordCashTransaction, deleteCashTransaction } = await import("../src/modules/finance/cash.service.js");
   const { loadCurrentUser } = await import("../src/platform/auth/actor.js");
   const { approveRequest } = await import("../src/modules/approvals/approval.service.js");
+  const { createLead } = await import("../src/modules/leads/lead.service.js");
+  const { assignLead, changeLeadStatus } = await import("../src/modules/leads/lead-journey.service.js");
+  const { createTask } = await import("../src/modules/tasks/task.service.js");
   const actorOf = async (userId: string): Promise<Actor> => (await loadCurrentUser(prisma, userId))!;
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
@@ -109,16 +112,16 @@ async function seed(prisma: typeof client) {
   // --- Customers
   const people: [string, string, string?][] = [
     ["Nguyễn Văn An", "0909123456", "an.nguyen@example.com"],
-    ["Hoàng Thị Mai", "0912345678"],
-    ["Đỗ Quang Huy", "0987654321"],
+    ["Hoàng Thị Mai", "0912345678", "mai.hoang@example.com"],
+    ["Đỗ Quang Huy", "0987654321", "huy.do@example.com"],
     ["Vũ Ngọc Lan", "0933221100", "lan.vu@example.com"],
-    ["Trần Thị Thu Hương", "0905556677"],
-    ["Lê Minh Tuấn", "0938889900"],
-    ["Bùi Thanh Tâm", "0977112233"],
-    ["Ngô Gia Bảo", "0966554433"],
-    ["Phan Thị Kim Ngân", "0944332211"],
-    ["Đinh Công Sơn", "0922113344"],
-    ["Lý Thị Hoa", "0911002200"],
+    ["Trần Thị Thu Hương", "0905556677", "huong.tran@example.com"],
+    ["Lê Minh Tuấn", "0938889900", "tuan.le@example.com"],
+    ["Bùi Thanh Tâm", "0977112233", "tam.bui@example.com"],
+    ["Ngô Gia Bảo", "0966554433", "bao.ngo@example.com"],
+    ["Phan Thị Kim Ngân", "0944332211", "ngan.phan@example.com"],
+    ["Đinh Công Sơn", "0922113344", "son.dinh@example.com"],
+    ["Lý Thị Hoa", "0911002200", "hoa.ly@example.com"],
   ];
   const customers = [];
   for (const [fullName, phone, email] of people)
@@ -336,17 +339,66 @@ async function seed(prisma: typeof client) {
   await pay(c1, "6.000.000", "CASH", -15);
   await pay(yoga, "3.600.000", "CARD", -5);
   await pay(c2, "5.000.000", "CARD", -30);
-  await pay(c3, "6.500.000", "BANK_TRANSFER", -40);
+  await pay(c3, "6.000.000", "BANK_TRANSFER", -40);
   await pay(c4, "4.000.000", "CASH", -20);
   await pay(c4, "2.000.000", "OTHER", -2, "Ví MoMo");
   await pay(c5, "3.000.000", "CASH", -10);
-  const wrong = await pay(c5, "3.250.000", "CASH", -9);
+  const wrong = await pay(c5, "2.500.000", "CASH", -9);
   await approvePending();
   await deletePayment(accountant, wrong.payment.id, { reasonId: wrongAmount, reasonNote: "Khách chỉ trả 3.000.000" });
   await pay(c8, "10.000.000", "BANK_TRANSFER", -199);
   await pay(c9, "2.000.000", "CASH", -5);
   await pay(c10, "1.000.000", "CASH", -7);
   await cancelContract(manager, c9.id);
+
+  // --- Leads (brief §4): new enquiries from several channels, handed out round-robin, at each stage of the journey.
+  const CHANNEL = {
+    WHATSAPP: "c0000000-0000-4000-8000-000000000111",
+    MESSENGER: "c0000000-0000-4000-8000-000000000112",
+    ZALO: "c0000000-0000-4000-8000-000000000113",
+    PHONE: "c0000000-0000-4000-8000-000000000114",
+    INSTAGRAM: "c0000000-0000-4000-8000-000000000115",
+    TIKTOK: "c0000000-0000-4000-8000-000000000117",
+    WALK_IN: "c0000000-0000-4000-8000-000000000119",
+  };
+  const leads: [string, string, keyof typeof CHANNEL, string, string][] = [
+    ["Trương Minh Quân", "0901234501", "MESSENGER", "Giảm cân trước Tết", ""],
+    ["Lâm Thị Thảo", "0901234502", "ZALO", "Tập PT buổi tối", "CONSULTING"],
+    ["Hồ Văn Phúc", "0901234503", "WALK_IN", "Tăng cơ, đã tập 1 năm", "BOOKED"],
+    ["Mai Anh Thư", "0901234504", "INSTAGRAM", "Yoga cho dân văn phòng", "CONSIDERING"],
+    ["Cao Đức Thịnh", "0901234505", "WHATSAPP", "Phục hồi sau chấn thương gối", "BOOKED"],
+    ["Đoàn Ngọc Hân", "0901234506", "TIKTOK", "Hỏi giá gói 3 tháng", "NO_RESPONSE"],
+    ["Kiều Quốc Việt", "0901234507", "PHONE", "Tập cùng vợ, cuối tuần", "CONSULTING"],
+    ["Tạ Thu Uyên", "0901234508", "MESSENGER", "Muốn thử một buổi PT", ""],
+  ];
+  for (const [index, [fullName, phone, channel, need, status]] of leads.entries()) {
+    const lead = await createLead(reception, { fullName, phone, channelId: CHANNEL[channel], notes: need });
+    if (!status) continue;
+    // Given to the demo consultant, it starts Consulting (brief §3); then it moves on.
+    await assignLead(manager, lead.id, { userId: staff.CONSULTING.id });
+    if (status === "CONSULTING") continue;
+    await changeLeadStatus(manager, lead.id, {
+      status,
+      ...(status === "BOOKED" ? { appointmentDate: day(1 + index), appointmentTime: "18:00" } : {}),
+      note: status === "CONSIDERING" ? "Gửi bảng giá, hẹn gọi lại thứ Bảy" : "",
+    });
+  }
+
+  // --- Tasks between staff (brief §8.2)
+  for (const [title, assignee, due, priority] of [
+    ["Gọi lại khách hỏi giá gói 3 tháng", reception.id, 0, "HIGH"],
+    ["Chuẩn bị phòng cho buổi Assessment 18:00", reception.id, 1, "NORMAL"],
+    ["Đối chiếu sổ quỹ tuần này", accountant.id, 2, "NORMAL"],
+  ] as const) {
+    await createTask(manager, {
+      branchId: branch.id,
+      title,
+      assigneeUserId: assignee,
+      dueDate: day(due),
+      dueTime: "17:00",
+      priority,
+    });
+  }
 
   // --- Income and expenses (this month and last)
   const cash = async (type: "INCOME" | "EXPENSE", category: string, amount: string, offset: number, reference = "") =>

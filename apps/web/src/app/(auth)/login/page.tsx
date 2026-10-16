@@ -24,7 +24,7 @@ export default async function LoginPage() {
           <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <DumbbellIcon className="size-4" />
           </span>
-          Fitness CRM
+          Gym CRM
         </div>
         <Card>
           <CardHeader>
