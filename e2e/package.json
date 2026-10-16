@@ -1,0 +1,25 @@
+{
+  "name": "e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test -c playwright.smoke.config.ts",
+    "test:security": "playwright test -c playwright.security.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
+  },
+  "devDependencies": {
+    "@gymcrm/config": "workspace:*",
+    "@gymcrm/shared": "workspace:*",
+    "@playwright/test": "^1.64.0",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@types/node": "^22.20.5",
+    "better-auth": "^1.7.7",
+    "dotenv": "^18.0.7",
+    "eslint": "^9.39.5",
+    "exceljs": "^4.4.0",
+    "typescript": "^5.9.3"
+  }
+}

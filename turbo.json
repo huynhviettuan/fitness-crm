@@ -1,0 +1,78 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalDependencies": ["**/.env"],
+  "globalPassThroughEnv": [
+    "CI",
+    "NODE_ENV",
+    "PORT",
+    "API_URL",
+    "FIELD_ENCRYPTION_KEY",
+    "DATABASE_URL",
+    "DATABASE_POOL_SIZE",
+    "TEST_DATABASE_URL",
+    "INTEGRATION_WORKERS",
+    "E2E_DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "GYM_TIMEZONE",
+    "LOG_LEVEL",
+    "SCHEDULE_START_HOUR",
+    "SCHEDULE_END_HOUR",
+    "SEED_ADMIN_EMAIL",
+    "SEED_ADMIN_PASSWORD",
+    "SEED_ADMIN_NAME"
+  ],
+  "tasks": {
+    "generate": {},
+    "api#generate": {
+      "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
+      "outputs": ["src/generated/**"]
+    },
+    "web#generate": {
+      "inputs": ["$TURBO_ROOT$/apps/api/openapi.json"],
+      "outputs": ["src/lib/api/schema.d.ts"]
+    },
+    "build": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build", "generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "e2e#typecheck": {
+      "dependsOn": ["^build", "api#generate"]
+    },
+    "test": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build", "generate"],
+      "cache": false
+    },
+    "openapi:check": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "test:e2e": {
+      "dependsOn": ["^build", "api#build", "web#build", "zk-bridge#build"],
+      "cache": false
+    },
+    "test:e2e:smoke": {
+      "dependsOn": ["^build", "api#build", "web#build", "zk-bridge#build"],
+      "cache": false
+    },
+    "test:security": {
+      "dependsOn": ["^build", "api#build", "web#build", "zk-bridge#build"],
+      "cache": false
+    }
+  }
+}

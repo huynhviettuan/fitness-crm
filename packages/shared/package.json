@@ -1,0 +1,168 @@
+{
+  "name": "@gymcrm/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zod schemas, response shapes, permission keys, error codes, and pure domain rules shared by the API and the web app.",
+  "type": "module",
+  "exports": {
+    "./approvals": {
+      "types": "./dist/approvals/index.d.ts",
+      "default": "./dist/approvals/index.js"
+    },
+    "./audit": {
+      "types": "./dist/audit/index.d.ts",
+      "default": "./dist/audit/index.js"
+    },
+    "./health": {
+      "types": "./dist/health/index.d.ts",
+      "default": "./dist/health/index.js"
+    },
+    "./monitoring": {
+      "types": "./dist/monitoring/index.d.ts",
+      "default": "./dist/monitoring/index.js"
+    },
+    "./system": {
+      "types": "./dist/system/index.d.ts",
+      "default": "./dist/system/index.js"
+    },
+    "./intake": {
+      "types": "./dist/intake/index.d.ts",
+      "default": "./dist/intake/index.js"
+    },
+    "./import": {
+      "types": "./dist/import/index.d.ts",
+      "default": "./dist/import/index.js"
+    },
+    "./changes": {
+      "types": "./dist/changes/index.d.ts",
+      "default": "./dist/changes/index.js"
+    },
+    "./checkin": {
+      "types": "./dist/checkin/index.d.ts",
+      "default": "./dist/checkin/index.js"
+    },
+    "./classes": {
+      "types": "./dist/classes/index.d.ts",
+      "default": "./dist/classes/index.js"
+    },
+    "./bookings": {
+      "types": "./dist/bookings/index.d.ts",
+      "default": "./dist/bookings/index.js"
+    },
+    "./branches": {
+      "types": "./dist/branches/index.d.ts",
+      "default": "./dist/branches/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "default": "./dist/contracts/index.js"
+    },
+    "./countries": {
+      "types": "./dist/countries/index.d.ts",
+      "default": "./dist/countries/index.js"
+    },
+    "./customers": {
+      "types": "./dist/customers/index.d.ts",
+      "default": "./dist/customers/index.js"
+    },
+    "./employees": {
+      "types": "./dist/employees/index.d.ts",
+      "default": "./dist/employees/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
+    },
+    "./files": {
+      "types": "./dist/files/index.d.ts",
+      "default": "./dist/files/index.js"
+    },
+    "./finance": {
+      "types": "./dist/finance/index.d.ts",
+      "default": "./dist/finance/index.js"
+    },
+    "./leads": {
+      "types": "./dist/leads/index.d.ts",
+      "default": "./dist/leads/index.js"
+    },
+    "./mail": {
+      "types": "./dist/mail/index.d.ts",
+      "default": "./dist/mail/index.js"
+    },
+    "./notifications": {
+      "types": "./dist/notifications/index.d.ts",
+      "default": "./dist/notifications/index.js"
+    },
+    "./options": {
+      "types": "./dist/options/index.d.ts",
+      "default": "./dist/options/index.js"
+    },
+    "./parameters": {
+      "types": "./dist/parameters/index.d.ts",
+      "default": "./dist/parameters/index.js"
+    },
+    "./permissions": {
+      "types": "./dist/permissions/index.d.ts",
+      "default": "./dist/permissions/index.js"
+    },
+    "./promotions": {
+      "types": "./dist/promotions/index.d.ts",
+      "default": "./dist/promotions/index.js"
+    },
+    "./workouts": {
+      "types": "./dist/workouts/index.d.ts",
+      "default": "./dist/workouts/index.js"
+    },
+    "./payouts": {
+      "types": "./dist/payouts/index.d.ts",
+      "default": "./dist/payouts/index.js"
+    },
+    "./reports": {
+      "types": "./dist/reports/index.d.ts",
+      "default": "./dist/reports/index.js"
+    },
+    "./roles": {
+      "types": "./dist/roles/index.d.ts",
+      "default": "./dist/roles/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "default": "./dist/services/index.js"
+    },
+    "./tasks": {
+      "types": "./dist/tasks/index.d.ts",
+      "default": "./dist/tasks/index.js"
+    },
+    "./trash": {
+      "types": "./dist/trash/index.d.ts",
+      "default": "./dist/trash/index.js"
+    },
+    "./users": {
+      "types": "./dist/users/index.d.ts",
+      "default": "./dist/users/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "default": "./dist/validation/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "date-fns": "^4.4.0",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@gymcrm/config": "workspace:*",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4"
+  }
+}

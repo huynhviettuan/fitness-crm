@@ -1,0 +1,51 @@
+DEMO GYM — CẦU NỐI MÁY CHẤM CÔNG ZKTECO
+==========================================
+
+Chương trình nhỏ này chạy trên máy tính của phòng tập. Máy chấm công gửi lượt quét vân tay đến nó qua mạng nội bộ;
+nó gửi lên hệ thống CRM qua kết nối bảo mật (HTTPS) bằng khóa của máy chấm công. Hệ thống ghép lượt quét của khách
+và PT để xác nhận "Đã tập". Không có dữ liệu vân tay nào rời khỏi máy chấm công.
+
+CẦN CÓ
+------
+- Một máy tính Windows trong cùng mạng với máy chấm công, bật suốt giờ phòng tập mở cửa.
+- Node.js 22 trở lên: tải tại https://nodejs.org (bản LTS), cài đặt mặc định.
+- Khóa của máy chấm công trong CRM: Admin vào Check-in → Máy chấm công → Thêm máy, chép khóa (chỉ hiện một lần).
+- Số sê ri máy chấm công: trên máy, Menu → Thông tin hệ thống → Thông tin thiết bị → Số sê ri.
+
+CÀI ĐẶT (khoảng 15 phút)
+------------------------
+1. Giải nén thư mục này vào máy tính, ví dụ C:\FlowZKBridge.
+2. Chép zk-bridge.example.json thành zk-bridge.json, mở bằng Notepad và điền:
+     "apiUrl"        địa chỉ CRM, bắt đầu bằng https://
+     "serialNumber"  số sê ri máy chấm công
+     "deviceKey"     khóa đã chép từ CRM (bắt đầu bằng fcd_)
+   Giữ nguyên "listenPort": 8081.
+3. Mở PowerShell bằng quyền Administrator (chuột phải → Run as administrator), vào thư mục và chạy:
+     cd C:\FlowZKBridge
+     powershell -ExecutionPolicy Bypass -File .\install-windows.ps1
+   Phải thấy dòng "OK ... khóa hợp lệ — máy ..., chi nhánh ...". Nếu thấy "LỖI": kiểm tra lại địa chỉ CRM và khóa.
+   Chương trình được đặt tự chạy khi bật máy và tự chạy lại nếu dừng.
+4. Đặt địa chỉ IP cố định cho máy tính này trên modem/router (để máy chấm công luôn tìm thấy nó).
+5. Trên máy chấm công: Menu → Truyền thông → Cài đặt máy chủ đám mây:
+     Kiểu máy chủ: Tự động tải dữ liệu
+     Khởi động tên miền: TẮT
+     Địa chỉ máy chủ: địa chỉ IP của máy tính này (ví dụ 192.168.1.10)
+     Cổng máy chủ: 8081
+     Cho phép máy chủ ủy nhiệm: TẮT
+     HTTPS: TẮT   (chỉ trong mạng nội bộ; đoạn lên CRM vẫn là HTTPS)
+   Không bấm Xóa, Đặt lại hay Khôi phục cài đặt gốc.
+
+KIỂM TRA
+--------
+- Trên máy tính này, mở trình duyệt: http://127.0.0.1:8081/health
+  "waiting": số lượt quét đang chờ gửi (bình thường là 0), "lastError": lỗi gần nhất (bình thường là null).
+- Quét thử một vân tay đã đăng ký; sau vài giây lượt quét hiện trong CRM: Check-in → Tất cả lần quét.
+- Nhật ký chương trình: file zk-bridge.log trong thư mục này.
+
+LƯU Ý
+-----
+- File zk-bridge.json chứa khóa: không gửi cho người khác, không để trên máy khác. Mất khóa thì Admin "Đổi khóa" trong CRM
+  và sửa lại file.
+- Nếu máy tính tắt, máy chấm công vẫn giữ lượt quét và gửi khi máy tính bật lại; buổi tập được xác nhận muộn hơn.
+- Nên đặt quản trị viên cho máy chấm công để người khác không đổi được cài đặt.
+- Gỡ: chạy uninstall-windows.ps1 bằng quyền Administrator.

@@ -1,0 +1,170 @@
+import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
+import { ScrollTextIcon } from "lucide-react";
+import { DateTime } from "@/components/date-time";
+import { EmptyState } from "@/components/empty-state";
+import { Money } from "@/components/money";
+import { StatusBadge } from "@/components/status-badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { Voucher } from "@gymcrm/shared/changes";
+import {
+  BranchTransferButton,
+  CancellationButton,
+  ExchangeButton,
+  HoldButton,
+  RenewalButton,
+  TransferButton,
+} from "../change-dialogs";
+
+/** The change vouchers of a contract, newest first, with the buttons to raise one (M8, brief §5.6). */
+export async function ContractChanges({
+  contract,
+  paid,
+  vouchers,
+  canRenew,
+  canHold,
+  services,
+  branches,
+}: {
+  contract: { id: string; contractCode: string };
+  /** What was paid on it, shown when cancelling. */
+  paid: number;
+  vouchers: Voucher[];
+  canRenew: boolean;
+  canHold: boolean;
+  /** The services an upgrade or a conversion can go to; empty when the viewer cannot raise one. */
+  services: { id: string; name: string }[];
+  /** The other branches the viewer works in, for a branch transfer. */
+  branches: { id: string; name: string }[];
+}) {
+  const t = await getTranslations("contractChanges");
+  return (
+    <section aria-labelledby="contract-changes" className="max-w-5xl space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="contract-changes" className="text-lg font-semibold">
+          {t("title")}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {canRenew && <RenewalButton contract={contract} />}
+          {canHold && <HoldButton contract={contract} />}
+          {canHold && services.length > 0 && <ExchangeButton kind="upgrades" contract={contract} services={services} />}
+          {canHold && services.length > 0 && (
+            <ExchangeButton kind="conversions" contract={contract} services={services} />
+          )}
+          {canHold && <TransferButton contract={contract} />}
+          {canHold && <CancellationButton contract={contract} paid={paid} />}
+          {canHold && branches.length > 0 && <BranchTransferButton contract={contract} branches={branches} />}
+        </div>
+      </div>
+      {vouchers.length === 0 ? (
+        <EmptyState icon={ScrollTextIcon} title={t("empty")} />
+      ) : (
+        <Table aria-label={t("title")}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("fields.voucher")}</TableHead>
+              <TableHead>{t("fields.kind")}</TableHead>
+              <TableHead>{t("fields.what")}</TableHead>
+              <TableHead className="text-right">{t("fields.amount")}</TableHead>
+              <TableHead>{t("fields.status")}</TableHead>
+              <TableHead>{t("fields.createdBy")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {vouchers.map((voucher) => (
+              <TableRow key={voucher.id}>
+                <TableCell>
+                  <span className="font-mono">{voucher.voucherNumber}</span>
+                  <div className="text-xs text-muted-foreground">
+                    <DateTime value={voucher.createdAt} format="dateTime" />
+                  </div>
+                </TableCell>
+                <TableCell>{t(`kinds.${voucher.kind}`)}</TableCell>
+                <TableCell>
+                  <VoucherSummary voucher={voucher} />
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {voucher.kind === "TRANSFER" && voucher.credit !== null ? (
+                    <Money amount={voucher.credit} />
+                  ) : voucher.amount !== null ? (
+                    <Money amount={voucher.amount} />
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge entity="voucher" status={voucher.status} />
+                  {voucher.pendingRequestId && (
+                    <div className="text-xs">
+                      <Link className="underline underline-offset-4" href="/approvals">
+                        {t("toApprovals")}
+                      </Link>
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>{voucher.createdBy.name}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </section>
+  );
+}
+
+async function VoucherSummary({ voucher }: { voucher: Voucher }) {
+  const t = await getTranslations("contractChanges");
+  const locale = await getLocale();
+  if (voucher.kind === "HOLD" && voucher.fromDate && voucher.toDate) {
+    return (
+      <span>
+        <DateTime value={voucher.fromDate} format="dateOnly" /> – <DateTime value={voucher.toDate} format="dateOnly" />{" "}
+        ({t("daysCount", { count: voucher.days ?? 0 })})
+      </span>
+    );
+  }
+  if ((voucher.kind === "UPGRADE" || voucher.kind === "CONVERSION") && voucher.targetService) {
+    return (
+      <span>
+        {voucher.targetService.name} · {t("sessionsCount", { count: voucher.sessions ?? 0 })}
+      </span>
+    );
+  }
+  if (voucher.kind === "TRANSFER" && voucher.toCustomer) {
+    return (
+      <span>
+        {voucher.toCustomer.customerCode} · {voucher.toCustomer.fullName}
+        {voucher.newContract && (
+          <>
+            {" · "}
+            <Link className="underline underline-offset-4" href={`/contracts/${voucher.newContract.id}`}>
+              {voucher.newContract.contractCode}
+            </Link>
+          </>
+        )}
+      </span>
+    );
+  }
+  if (voucher.kind === "BRANCH_TRANSFER" && voucher.toBranch) return <span>{voucher.toBranch.name}</span>;
+  if (voucher.kind === "CANCELLATION") {
+    return (
+      <span>
+        {voucher.reason ? (locale === "vi" ? voucher.reason.labelVi : voucher.reason.labelEn) : "—"}
+        {voucher.refundVoucher && (
+          <>
+            {" · "}
+            <Link className="underline underline-offset-4" href="/finance/cash">
+              {voucher.refundVoucher.number}
+            </Link>
+          </>
+        )}
+      </span>
+    );
+  }
+  const parts = [
+    voucher.sessions ? t("sessionsCount", { count: voucher.sessions }) : null,
+    voucher.months ? t("monthsCount", { count: voucher.months }) : null,
+    voucher.days ? t("daysCount", { count: voucher.days }) : null,
+  ].filter(Boolean);
+  return <span>{parts.length > 0 ? parts.join(" · ") : "—"}</span>;
+}

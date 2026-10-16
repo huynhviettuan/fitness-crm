@@ -1,0 +1,161 @@
+/**
+ * The permission tree (D-017, 09_RBAC.md): groups per module, each with its actions.
+ * This catalog is code; which role holds which permission is configuration in the
+ * database, edited by admin on screen. Keys are added as the features that need them
+ * are built. Safe to import from client components; the API enforces permissions.
+ */
+export const PERMISSION_GROUPS = {
+  // system.view: the System status page (A-321): jobs, backups, the outbox and the check-in machines; Admin's.
+  system: ["user.manage", "role.manage", "branch.manage", "approval.manage", "system.view"],
+  configuration: ["config.manage"],
+  history: ["audit.view", "trash.view"],
+  // Leads and consulting (brief §4.1): seeing, adding, and working leads; reassigning them
+  // (managers); and receiving new leads round-robin (consultants, BR-203); merging two records of one person (managers, A-065);
+  // managing the script library (managers, A-072); the automatic consulting audit (managers, A-084); and
+  // removing a wrong tick of a consulting step (Admin only, D-054).
+  leads: [
+    "lead.view",
+    "lead.create",
+    "lead.manage",
+    "lead.assign",
+    "lead.receive",
+    "lead.merge",
+    "script.manage",
+    "lead.audit",
+    "lead.untick",
+  ],
+  customers: ["customer.view", "customer.manage"],
+  // Services and their price tiers (brief §5.1, D-021): everyone who sells reads them, only Admin edits them.
+  services: ["service.view", "service.manage"],
+  // Promotions and vouchers (brief §5.1, A-110): Admin creates them; selling staff see those on offer through service.view.
+  promotions: ["promotion.manage"],
+  // Unapproving and deleting a contract are Admin's (brief §5.3, A-124, A-125); printing and updating the note are
+  // their own permissions (A-127).
+  contracts: [
+    "contract.view",
+    "contract.create",
+    "contract.approve",
+    "contract.cancel",
+    "contract.unapprove",
+    "contract.delete",
+    "contract.print",
+    "contract.note",
+    "contract.change",
+    // Deactivating (Tạm vô hiệu) and reactivating a contract are Admin's (D-023).
+    "contract.deactivate",
+    "contract.reactivate",
+  ],
+  // Deleting a trained session from the check-in history and Burn Show are Admin's (D-026, D-028).
+  schedule: [
+    "booking.view",
+    "booking.manage",
+    "booking.delete",
+    "session.checkIn",
+    "session.complete",
+    "session.deleteHistory",
+    "session.burn",
+  ],
+  // The class schedule (M5.5, brief §6.4): Admin and Fitness Manager manage classes; reception and coaches enroll;
+  // Admin, Fitness Manager, and the coach of a class mark attendance.
+  classes: ["class.view", "class.manage", "class.enroll", "class.attend"],
+  // Workout plans and logs (brief §7, M7): seeing the catalogs and plans, and keeping the catalogs (M7.1, A-188).
+  workouts: ["workout.view", "workout.catalog", "workout.plan", "workout.log", "workout.review"],
+  // Fingerprint-ready check-in (M5.3b, D-069 to D-072): the machines are Admin's; reviewing scans is Admin's and Fitness Manager's.
+  checkin: ["checkin.review", "checkin.devices"],
+  // The lead intake gateway (M10.1, D-044): the sources that hand leads to the system are Admin's.
+  intake: ["intake.manage"],
+  // Employee profiles and working schedules (brief §8.4).
+  employees: ["employee.view", "employee.manage"],
+  // Giao việc (brief §8.2): every default role works and assigns tasks (09_RBAC.md).
+  tasks: ["task.view", "task.create"],
+  // Export to Excel, one per list (brief §2, A-077): needed in addition to seeing the list.
+  exports: [
+    "user.export",
+    "customer.export",
+    "lead.export",
+    "contract.export",
+    "payment.export",
+    "cash.export",
+    "task.export",
+    "audit.export",
+    "trash.export",
+  ],
+  // Reports (brief §9, D-041, A-093): each report and its export is its own permission.
+  reports: [
+    "report.consulting",
+    "report.consultingExport",
+    "report.leadAnalysis",
+    "report.leadAnalysisExport",
+    "report.cashBook",
+    "report.cashBookExport",
+    "report.incomeExpense",
+    "report.incomeExpenseExport",
+    "report.memberDebtExport",
+    "report.contracts",
+    "report.contractsExport",
+    "report.exceptionPrices",
+    "report.exceptionPricesExport",
+    "report.tasks",
+    "report.tasksExport",
+    "report.ptRevenue",
+    "report.ptRevenueExport",
+    "report.bookings",
+    "report.bookingsExport",
+    "report.overview",
+    "report.workouts",
+    "report.manualConfirmations",
+  ],
+  // Deleting vouchers is its own permission (09_RBAC.md, D-035).
+  // Editing a receipt's date is its own permission, always logged (D-034).
+  cashbook: [
+    "payment.view",
+    "payment.record",
+    "payment.delete",
+    "payment.editDate",
+    "cash.manage",
+    "cash.delete",
+    "cash.opening",
+    "payout.view",
+    "payout.create",
+    "mail.template",
+  ],
+} as const;
+
+export type PermissionGroup = keyof typeof PERMISSION_GROUPS;
+export type Permission = (typeof PERMISSION_GROUPS)[PermissionGroup][number];
+
+export const PERMISSION_KEYS = Object.values(PERMISSION_GROUPS).flat() as Permission[];
+
+export function isPermission(value: string): value is Permission {
+  return (PERMISSION_KEYS as string[]).includes(value);
+}
+
+/**
+ * Data scope (D-017): per resource, a role sees ALL records in the user's branches or
+ * only its OWN — the ones the user is responsible for (A-029).
+ */
+export const DATA_SCOPE_RESOURCES = [
+  "leads",
+  "customers",
+  "contracts",
+  "schedule",
+  "vouchers",
+  "staff",
+  "tasks",
+] as const;
+export type DataScopeResource = (typeof DATA_SCOPE_RESOURCES)[number];
+export const DATA_SCOPES = ["ALL", "OWN"] as const;
+export type DataScope = (typeof DATA_SCOPES)[number];
+
+/** Fields a role can have hidden on every screen and in every export (D-017). */
+// ID documents and health notes are sensitive personal data (D-042).
+export const MASKABLE_FIELDS = [
+  "customer.phone",
+  "customer.email",
+  // The address and the emergency contact together (A-069).
+  "customer.address",
+  "customer.idDocument",
+  "customer.health",
+  "receipts.totals",
+] as const;
+export type MaskableField = (typeof MASKABLE_FIELDS)[number];

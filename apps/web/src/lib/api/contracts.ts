@@ -1,0 +1,126 @@
+import "server-only";
+import {
+  contractHistorySchema,
+  contractPageSchema,
+  contractSchema,
+  contractStaffListSchema,
+} from "@gymcrm/shared/contracts";
+import type { DeleteInput } from "@gymcrm/shared/trash";
+import type { RejectInput } from "@gymcrm/shared/approvals";
+import type { DeactivateInput, ReactivateInput, UnapproveInput } from "@gymcrm/shared/contracts";
+import { api, query, read, submittedOrDone } from "./client";
+
+/** The list's filters (brief §5.3); a value left out is no filter. */
+export type ContractListParams = {
+  q?: string;
+  customerId?: string;
+  branchId?: string;
+  contractType?: string;
+  from?: string;
+  to?: string;
+  serviceId?: string;
+  ptId?: string;
+  promotionId?: string;
+  paymentStatus?: string;
+  signed?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function listContracts(params: ContractListParams) {
+  return read(contractPageSchema, (await api()).GET("/api/v1/contracts", { params: { query: query(params) } }));
+}
+
+/** Active employees of a branch, to name on the PT and Sale shares (A-115). */
+export async function listContractStaff(branchId?: string) {
+  const { items } = await read(
+    contractStaffListSchema,
+    (await api()).GET("/api/v1/contracts/staff", { params: { query: query({ branchId }) } }),
+  );
+  return items;
+}
+
+export async function getContract(id: string) {
+  return read(contractSchema, (await api()).GET("/api/v1/contracts/{id}", { params: { path: { id } } }));
+}
+
+/** T-015: `idempotencyKey` is generated when the form opens, so a double submit reuses it. */
+export async function createContract(customerId: string, input: unknown, idempotencyKey: string) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/customers/{id}/contracts", {
+      params: { path: { id: customerId }, header: { "Idempotency-Key": idempotencyKey } },
+      body: input as never,
+    }),
+  );
+}
+
+export async function updateContract(id: string, input: unknown) {
+  return read(
+    contractSchema,
+    (await api()).PATCH("/api/v1/contracts/{id}", { params: { path: { id } }, body: input as never }),
+  );
+}
+
+export async function activateContract(id: string) {
+  return read(contractSchema, (await api()).POST("/api/v1/contracts/{id}/activate", { params: { path: { id } } }));
+}
+
+export async function cancelContract(id: string) {
+  return read(contractSchema, (await api()).POST("/api/v1/contracts/{id}/cancel", { params: { path: { id } } }));
+}
+
+/** A-121: turns a pending contract down; the reason is from the `rejectReasons` list. */
+export async function rejectContract(id: string, input: RejectInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/reject", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** A-124: an approved contract back to pending approval, with a reason. */
+export async function unapproveContract(id: string, input: UnapproveInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/unapprove", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** A-125: moves the contract to the trash; true when the deletion waits for approval (D-018). */
+export async function deleteContract(id: string, input: DeleteInput) {
+  return submittedOrDone((await api()).DELETE("/api/v1/contracts/{id}", { params: { path: { id } }, body: input }));
+}
+
+/** The package history tab: the contract's recorded changes, newest first. */
+export async function getContractHistory(id: string) {
+  const { items } = await read(
+    contractHistorySchema,
+    (await api()).GET("/api/v1/contracts/{id}/history", { params: { path: { id } } }),
+  );
+  return items;
+}
+
+/** The note can change after approval (A-127). */
+export async function updateContractNote(id: string, input: { notes: string }) {
+  return read(
+    contractSchema,
+    (await api()).PATCH("/api/v1/contracts/{id}/note", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** D-023: a temporary lock for review, with a reason. */
+export async function deactivateContract(id: string, input: DeactivateInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/deactivate", { params: { path: { id } }, body: input }),
+  );
+}
+
+/** D-023: ends the lock with a reason and the choice about the frozen days. */
+export async function reactivateContract(id: string, input: ReactivateInput) {
+  return read(
+    contractSchema,
+    (await api()).POST("/api/v1/contracts/{id}/reactivate", { params: { path: { id } }, body: input }),
+  );
+}

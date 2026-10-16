@@ -1,0 +1,16 @@
+# Only what the API image needs is sent to the builder; never secrets or local data.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/.env
+**/.env.*
+!**/.env.example
+**/.data
+**/coverage
+.git
+apps/web
+apps/zk-bridge/release
+e2e/test-results
+e2e/playwright-report
+docs

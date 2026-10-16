@@ -1,0 +1,22 @@
+packages:
+  - apps/*
+  - packages/*
+  - e2e
+
+# Dependencies whose install scripts may run (pnpm blocks all others). @parcel/watcher
+# and @swc/core come with next-intl's message extractor, which this app does not use;
+# @scarf/scarf is install telemetry from swagger-ui-dist.
+allowBuilds:
+  "@parcel/watcher": false
+  "@prisma/engines": true
+  "@scarf/scarf": false
+  "@swc/core": false
+  "@tailwindcss/oxide": true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
+
+overrides:
+  # Forces a patched version under better-auth and prisma (docs/24, A03).
+  mysql2: ^3.24.5

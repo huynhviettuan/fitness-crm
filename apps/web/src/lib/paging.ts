@@ -1,0 +1,51 @@
+/** Paging shared by every list screen: the page and the rows per page live in the URL. */
+
+export const PAGE_SIZES = [10, 20, 50, 100] as const;
+export const DEFAULT_PAGE_SIZE = 10;
+
+/** A page number no list reaches: a link made with it is the template the "go to page" box fills in. */
+export const PAGE_PLACEHOLDER = 2147483647;
+
+export type SearchParams = Record<string, string | string[] | undefined>;
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function positiveInteger(value: string | string[] | undefined): number | undefined {
+  const parsed = Number(first(value));
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+/** A page or size that is missing, malformed, or not on offer falls back to the first page and 10 rows. */
+export type PagingKeys = { page: string; pageSize: string };
+
+const DEFAULT_KEYS: PagingKeys = { page: "page", pageSize: "pageSize" };
+
+/** Reads one list's paging; a screen with a second list gives that one its own parameter names. */
+export function readPaging(params: SearchParams, keys: PagingKeys = DEFAULT_KEYS): { page: number; pageSize: number } {
+  const size = positiveInteger(params[keys.pageSize]);
+  return {
+    page: positiveInteger(params[keys.page]) ?? 1,
+    pageSize: PAGE_SIZES.some((allowed) => allowed === size) ? (size as number) : DEFAULT_PAGE_SIZE,
+  };
+}
+
+/** The link to a page of a list: keeps every filter in the URL and leaves default values out of it. */
+export function pagingHref(
+  path: string,
+  params: SearchParams,
+  page: number,
+  pageSize: number,
+  keys: PagingKeys = DEFAULT_KEYS,
+): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    const single = first(value);
+    if (key !== keys.page && key !== keys.pageSize && single !== undefined && single !== "") query.set(key, single);
+  }
+  if (pageSize !== DEFAULT_PAGE_SIZE) query.set(keys.pageSize, String(pageSize));
+  if (page > 1) query.set(keys.page, String(page));
+  const search = query.toString();
+  return search ? `${path}?${search}` : path;
+}

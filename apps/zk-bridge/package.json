@@ -1,0 +1,28 @@
+{
+  "name": "zk-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runs at the gym: receives the punches a ZKTeco machine pushes (ADMS) and sends them to the CRM's scan API (A-307, docs/33).",
+  "type": "module",
+  "bin": {
+    "zk-bridge": "./dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run",
+    "package": "tsc -p tsconfig.build.json && node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@gymcrm/config": "workspace:*",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

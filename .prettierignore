@@ -1,0 +1,18 @@
+# Besides .gitignore, which Prettier reads too.
+
+# Generated: the Prisma client, the API contract, and the web client typed from it.
+apps/api/src/generated/
+apps/api/openapi.json
+apps/web/src/lib/api/schema.d.ts
+pnpm-lock.yaml
+
+# Prose and wide tables read better as written.
+*.md
+
+# The wireframes.
+docs/wireframes/
+
+# Test output.
+e2e/test-results/
+e2e/playwright-report/
+e2e/.auth/

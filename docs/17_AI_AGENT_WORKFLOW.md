@@ -1,0 +1,113 @@
+# 17 — AI Agent Workflow
+
+## Recommended first prompt
+
+```text
+Read AGENTS.md and all documents required by the task.
+Treat them as the source of truth.
+Do not invent business rules.
+
+The source of truth is the requirements brief (cited as brief §n, not included in this public sample) and docs/18_DECISIONS_ASSUMPTIONS.md.
+The architecture is a monorepo: apps/web (Next.js, UI only) and apps/api (NestJS, all business logic),
+PostgreSQL + Prisma, web on Vercel, API on Railway or Render.
+Do not add other backends, microservices, Redis, or brokers.
+Never hard-code a value the brief marks as admin-configurable.
+
+Before coding:
+1. summarize the requirement,
+2. list affected business rules,
+3. identify ambiguity or risks,
+4. propose the implementation plan,
+5. then implement the smallest complete vertical slice,
+6. add tests,
+7. run validation,
+8. update documentation if behavior changes.
+```
+
+## Task template
+
+```markdown
+# Task
+Implement: <feature>
+
+## Goal
+<business outcome>
+
+## Source of truth
+- AGENTS.md
+- docs/22_TECHNICAL_ARCHITECTURE.md
+- docs/...
+- BR-...
+- FR-...
+- Acceptance criteria ...
+
+## Required behavior
+- ...
+
+## Architecture constraints
+- apps/web: Next.js App Router, calls the API through the generated client
+- apps/api: NestJS controller → service → repository, permission key on every endpoint
+- PostgreSQL + Prisma, migrations
+- configuration from the database (option lists, parameters, status rules)
+- approval matrix, audit with before/after, trash instead of delete
+
+## Out of scope
+- ...
+
+## Deliverables
+- UI where applicable
+- API controller with OpenAPI and permission key
+- application/domain service
+- repository/data access
+- migration if required
+- unit/integration tests
+- Playwright update when user-visible
+- docs update
+
+## Definition of done
+- tests pass
+- lint/type-check pass
+- acceptance criteria pass
+- authorization enforced on server
+- no unapproved second backend/runtime introduced
+```
+
+## Review template
+
+Ask a second agent/review pass:
+
+```text
+Review this implementation against AGENTS.md, docs/22_TECHNICAL_ARCHITECTURE.md, and the business rules.
+Prioritize:
+1. money correctness,
+2. session-consumption correctness,
+3. authorization,
+4. concurrency/idempotency,
+5. data consistency,
+6. permissions, data scope, masking, and approvals,
+7. separation of request/UI handling from business logic,
+8. missing tests.
+Do not focus on style before correctness.
+```
+
+## Anti-patterns
+
+Do not prompt:
+
+```text
+Build the complete Gym CRM.
+```
+
+Do not allow the agent to:
+
+- invent status transitions
+- store debt as manually editable truth
+- decrement sessions on booking
+- silently delete payment history
+- put financial/session business logic directly in React components
+- put business workflows in controllers or in the web app
+- access the database from apps/web
+- hard-code prices, timers, reasons, statuses, colors, or permissions
+- edit an approved contract or hard-delete business data
+- add services beyond apps/web, apps/api, and its worker
+- merge large unrelated features into one change
