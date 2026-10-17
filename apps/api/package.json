@@ -38,13 +38,13 @@
     "dotenv": "^18.0.7",
     "exceljs": "^4.4.0",
     "pg": "^8.23.1",
-    "pg-boss": "^12.37.1",
+    "pg-boss": "^12.38.0",
     "prisma": "^7.10.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "tsx": "^4.23.15",
     "web-push": "^3.6.7",
-    "zod": "^4.6.6"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@gymcrm/config": "workspace:*",
